@@ -192,7 +192,7 @@ export class RoundManager {
         type: question.type,
       })
 
-      await sleep(2)
+      await sleep(4)
 
       if (!this.started) {
         return
