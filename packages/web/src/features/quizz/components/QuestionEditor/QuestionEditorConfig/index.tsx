@@ -33,12 +33,12 @@ const QuestionEditorConfig = () => {
               type="range"
               min="0"
               max="100"
-              value={(currentQuestion.backgroundOpacity ?? 1) * 100}
+              value={(currentQuestion.backgroundOpacity ?? 0.5) * 100}
               onChange={(e) => handleUpdateQuestion("backgroundOpacity")(Number(e.target.value) / 100)}
               className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-primary"
             />
             <span className="w-8 text-right text-xs font-medium text-gray-500">
-              {Math.round((currentQuestion.backgroundOpacity ?? 1) * 100)}%
+              {Math.round((currentQuestion.backgroundOpacity ?? 0.5) * 100)}%
             </span>
           </div>
           <ConfigField.Description>

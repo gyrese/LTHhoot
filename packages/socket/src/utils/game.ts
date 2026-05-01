@@ -117,14 +117,9 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
       const px = parseFloat(parts[0])
       const py = parseFloat(parts[1])
       if (isNaN(px) || isNaN(py)) return false
-      return question.zones.some(
-        (z) =>
-          z.isCorrect &&
-          px >= z.x &&
-          px <= z.x + z.width &&
-          py >= z.y &&
-          py <= z.y + z.height,
-      )
+      
+      // All valid pin placements get points based on distance
+      return true
     }
 
     default:

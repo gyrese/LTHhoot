@@ -72,7 +72,7 @@ const QuestionEditor = () => {
             className="absolute inset-0 pointer-events-none bg-cover bg-center bg-no-repeat"
             style={{ 
               backgroundImage: `url(${slideBg})`,
-              opacity: currentQuestion.backgroundOpacity ?? 1 
+              opacity: currentQuestion.backgroundOpacity ?? 0.5 
             }}
           />
         ) : (
@@ -80,7 +80,7 @@ const QuestionEditor = () => {
             className="absolute inset-0 pointer-events-none"
             style={{ 
               ...customBgStyle,
-              opacity: currentQuestion.backgroundOpacity ?? 1
+              opacity: currentQuestion.backgroundOpacity ?? 0.5
             }}
           />
         )}

@@ -99,7 +99,7 @@ const Room = ({ data }: Props) => {
           </span>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-4">
           <AnimatePresence>
             {playerList.map((player) => (
               <motion.div
@@ -109,10 +109,17 @@ const Room = ({ data }: Props) => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.4, y: 20 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className="bg-primary rounded-md px-4 py-3 font-bold text-white shadow-lg"
+                className="bg-primary flex items-center gap-3 rounded-md px-4 py-2 font-bold text-white shadow-lg"
                 onClick={handleKick(player.id)}
               >
-                <span className="cursor-pointer text-3xl drop-shadow-sm hover:line-through">
+                <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-white/50 bg-white/20">
+                  <img
+                    alt={player.username}
+                    className="h-full w-full object-cover"
+                    src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar || player.username}`}
+                  />
+                </div>
+                <span className="cursor-pointer text-2xl drop-shadow-sm hover:line-through">
                   {player.username}
                 </span>
               </motion.div>

@@ -15,7 +15,7 @@ export class PlayerManager {
     this.getManagerId = getManagerId
   }
 
-  join(socket: Socket, username: string): void {
+  join(socket: Socket, username: string, avatar?: string): void {
     if (this.findByClientId(socket.handshake.auth.clientId)) {
       socket.emit(
         EVENTS.GAME.ERROR_MESSAGE,
@@ -40,6 +40,7 @@ export class PlayerManager {
       clientId: socket.handshake.auth.clientId,
       connected: true,
       username,
+      avatar,
       points: 0,
       streak: 0,
     }

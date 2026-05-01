@@ -134,8 +134,8 @@ class Game {
 
   // Player actions
 
-  join(socket: Socket, username: string) {
-    this.playerManager.join(socket, username)
+  join(socket: Socket, username: string, avatar?: string) {
+    this.playerManager.join(socket, username, avatar)
   }
 
   kickPlayer(socket: Socket, playerId: string) {

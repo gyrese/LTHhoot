@@ -42,70 +42,101 @@ const StreakBadge = ({ streak }: { streak: number }) => (
   </AnimatePresence>
 )
 
-const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
-  const [displayedLeaderboard, setDisplayedLeaderboard] =
-    useState(oldLeaderboard)
-  const [isAnimating, setIsAnimating] = useState(false)
+const Leaderboard = ({
+  data: { oldLeaderboard, leaderboard, roundLeaderboard },
+}: Props) => {
+  const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
+  const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
   const { t } = useTranslation()
 
   useEffect(() => {
-    setDisplayedLeaderboard(oldLeaderboard)
-    setIsAnimating(false)
+    setDisplayedPlayers(roundLeaderboard)
+    setPhase("round")
 
-    const timer = setTimeout(() => {
-      setIsAnimating(true)
-      setDisplayedLeaderboard(leaderboard)
-    }, 1600)
+    const timer1 = setTimeout(() => {
+      setPhase("adding")
+    }, 2000)
+
+    const timer2 = setTimeout(() => {
+      setPhase("total")
+      setDisplayedPlayers(leaderboard)
+    }, 4000)
 
     return () => {
-      clearTimeout(timer)
+      clearTimeout(timer1)
+      clearTimeout(timer2)
     }
-  }, [oldLeaderboard, leaderboard])
+  }, [roundLeaderboard, leaderboard])
 
   return (
     <section className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
       <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
-        {t("game:leaderboard")}
+        {phase === "round" ? t("game:roundRanking") : t("game:leaderboard")}
       </h2>
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col gap-3">
         <AnimatePresence mode="popLayout">
-          {displayedLeaderboard.map(({ id, username, points, streak }) => (
-            <motion.div
-              key={id}
-              layout
-              initial={{ opacity: 0, y: 50 }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: 50,
-                transition: { duration: 0.2 },
-              }}
-              transition={{
-                layout: {
-                  type: "spring",
-                  stiffness: 350,
-                  damping: 25,
-                },
-              }}
-              className="bg-primary flex w-full justify-between rounded-md p-3 text-3xl font-bold text-white"
-            >
-              <span className="flex items-center gap-2 drop-shadow-md">
-                {username}
-                <StreakBadge streak={streak} />
-              </span>
-              {isAnimating ? (
-                <AnimatedPoints
-                  from={oldLeaderboard.find((u) => u.id === id)?.points || 0}
-                  to={leaderboard.find((u) => u.id === id)?.points || 0}
-                />
-              ) : (
-                <span className="drop-shadow-md">{points}</span>
-              )}
-            </motion.div>
-          ))}
+          {displayedPlayers.map((player, index) => {
+            const { id, username, streak, roundPoints } = player
+            const oldPlayer = oldLeaderboard.find((p) => p.id === id)
+            const oldPoints = oldPlayer?.points ?? 0
+            const finalPoints = leaderboard.find((p) => p.id === id)?.points ?? 0
+
+            return (
+              <motion.div
+                key={id}
+                layout
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                transition={{
+                  layout: { type: "spring", stiffness: 350, damping: 25 },
+                }}
+                className="bg-primary/90 flex w-full items-center justify-between rounded-xl p-4 text-3xl font-bold text-white shadow-2xl backdrop-blur-sm"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="w-8 text-2xl opacity-50">#{index + 1}</span>
+                  <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-white/50 bg-white/10">
+                    <img
+                      alt={username}
+                      className="h-full w-full object-cover"
+                      src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${
+                        player.avatar || username
+                      }`}
+                    />
+                  </div>
+                  <span className="drop-shadow-md">
+                    {username}
+                    <StreakBadge streak={streak} />
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {phase === "round" ? (
+                    <motion.span
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="text-yellow-300"
+                    >
+                      +{roundPoints}
+                    </motion.span>
+                  ) : phase === "adding" ? (
+                    <div className="flex flex-col items-end">
+                      <AnimatedPoints from={oldPoints} to={finalPoints} />
+                      <motion.span
+                        initial={{ y: 0, opacity: 1 }}
+                        animate={{ y: -20, opacity: 0 }}
+                        className="text-sm text-yellow-300"
+                      >
+                        +{roundPoints}
+                      </motion.span>
+                    </div>
+                  ) : (
+                    <span className="drop-shadow-md">{finalPoints}</span>
+                  )}
+                </div>
+              </motion.div>
+            )
+          })}
         </AnimatePresence>
       </div>
     </section>

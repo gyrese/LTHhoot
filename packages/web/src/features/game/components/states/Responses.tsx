@@ -333,22 +333,32 @@ const DropPinResult = ({ pinImage, zones }: { pinImage: string; zones: DropPinZo
         {zones.map((zone) => (
           <div
             key={zone.id}
-            className="absolute"
+            className="absolute z-20 pointer-events-none"
             style={{
               left: `${zone.x}%`,
               top: `${zone.y}%`,
-              width: `${zone.width}%`,
-              height: `${zone.height}%`,
-              backgroundColor: zone.isCorrect ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.20)",
-              border: zone.isCorrect ? "2px solid rgba(34,197,94,0.9)" : "2px solid rgba(239,68,68,0.5)",
-              borderRadius: "6px",
+              transform: 'translate(-50%, -50%)',
             }}
           >
-            {zone.label && (
-              <span className="absolute bottom-0.5 left-1 text-xs font-bold text-white drop-shadow">
-                {zone.label}
-              </span>
-            )}
+            <div className="relative flex flex-col items-center justify-center animate-in zoom-in-50 duration-500">
+              {/* Pulsing ring */}
+              <div className="absolute inset-0 bg-green-500/50 rounded-full animate-ping scale-150" />
+              
+              {/* Physical Target */}
+              <div className="relative w-12 h-12 rounded-full border-[5px] border-green-500 bg-green-500/20 flex items-center justify-center shadow-[0_0_25px_rgba(34,197,94,0.8)] backdrop-blur-md">
+                <div className="w-4 h-4 bg-green-500 rounded-full shadow-md" />
+                {/* Crosshairs */}
+                <div className="absolute top-0 bottom-0 left-1/2 w-0.5 -translate-x-1/2 bg-green-500/50" />
+                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-green-500/50" />
+              </div>
+              
+              {/* Tooltip */}
+              {zone.label && (
+                <div className="absolute top-full mt-3 bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-green-500/30 text-sm font-bold text-green-400 whitespace-nowrap shadow-2xl">
+                  {zone.label}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

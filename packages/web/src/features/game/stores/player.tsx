@@ -7,6 +7,7 @@ import { create } from "zustand"
 
 type PlayerState = {
   username?: string
+  avatar?: string
   points?: number
 }
 
@@ -18,8 +19,8 @@ type PlayerStore<T> = {
   setGameId: (_gameId: string | null) => void
 
   setPlayer: (_state: PlayerState) => void
-  login: (_gameId: string) => void
-  join: (_username: string) => void
+  login: (_username: string, _avatar?: string) => void
+  join: (_username: string, _avatar?: string) => void
   updatePoints: (_points: number) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
@@ -39,9 +40,9 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
   setGameId: (gameId) => set({ gameId }),
 
   setPlayer: (player: PlayerState) => set({ player }),
-  login: (username) =>
+  login: (username, avatar) =>
     set((state) => ({
-      player: { ...state.player, username },
+      player: { ...state.player, username, avatar },
     })),
 
   join: (gameId) => {

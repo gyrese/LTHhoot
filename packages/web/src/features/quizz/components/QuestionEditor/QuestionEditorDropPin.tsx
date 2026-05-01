@@ -34,15 +34,30 @@ const QuestionEditorDropPin = () => {
     }
   }
 
-  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!wrapperRef.current) return
-    const rect = wrapperRef.current.getBoundingClientRect()
-    const xPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
-    const yPct = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+  const imgRef = useRef<HTMLImageElement>(null)
 
-    // Single Target Logic: Replace or Create the ONE pin
+  const handleImageClick = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    e.preventDefault()
+    
+    if (!imgRef.current) return
+
+    // Support both mouse and touch events
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY
+
+    const rect = imgRef.current.getBoundingClientRect()
+    
+    // Clamp to 0-100%
+    const xPct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+    const yPct = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
+
+    if (isNaN(xPct) || isNaN(yPct)) {
+      toast.error("Erreur: Impossible de calculer la position.")
+      return
+    }
+
     const newZone: DropPinZone = {
-      id: q.zones[0]?.id || crypto.randomUUID().slice(0, 8),
+      id: q.zones?.[0]?.id || Math.random().toString(36).substring(2, 10),
       x: parseFloat(xPct.toFixed(1)),
       y: parseFloat(yPct.toFixed(1)),
       width: 5,
@@ -58,7 +73,7 @@ const QuestionEditorDropPin = () => {
     updateQuestion(currentIndex, { zones: [] })
   }
 
-  const pin = q.zones[0]
+  const pin = q.zones?.[0]
 
   return (
     <div className="flex flex-col gap-6 flex-1 min-h-0 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -148,7 +163,10 @@ const QuestionEditorDropPin = () => {
           />
 
           {/* Interactive Canvas Container */}
-          <div className="relative flex-1 min-h-0 w-full rounded-3xl overflow-hidden bg-black/40 border border-white/5 shadow-[inset_0_2px_20px_rgba(0,0,0,0.5)] flex items-center justify-center cursor-crosshair">
+          <div 
+            className="relative flex-1 min-h-0 w-full rounded-3xl overflow-hidden bg-black/40 border border-white/5 shadow-[inset_0_2px_20px_rgba(0,0,0,0.5)] flex items-center justify-center cursor-crosshair touch-none select-none"
+            onPointerDown={handleImageClick}
+          >
             
             {/* Hint Overlay (Disappears once pinned) */}
             {!pin && (
@@ -160,12 +178,9 @@ const QuestionEditorDropPin = () => {
               </div>
             )}
 
-            <div 
-              ref={wrapperRef}
-              className="relative flex items-center justify-center max-w-full max-h-full h-full transition-transform duration-300"
-              onClick={handleImageClick}
-            >
+            <div className="relative inline-block max-w-full max-h-full pointer-events-none">
               <img 
+                ref={imgRef}
                 src={q.pinImage} 
                 alt="Target" 
                 className="block max-h-[60vh] max-w-full w-auto h-auto object-contain select-none rounded-xl"
@@ -175,7 +190,7 @@ const QuestionEditorDropPin = () => {
               {/* The Map Pin */}
               {pin && (
                 <div
-                  className="absolute pointer-events-none z-20"
+                  className="absolute z-20 pointer-events-none"
                   style={{
                     left: `${pin.x}%`,
                     top: `${pin.y}%`,

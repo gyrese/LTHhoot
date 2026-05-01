@@ -325,7 +325,7 @@ const Answers = ({
       <div className="absolute inset-0 bg-black" />
       <div
         className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 1 }}
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
       />
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
@@ -344,7 +344,10 @@ const Answers = ({
       </div>
 
       <div className="relative mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <QuestionMedia media={media} alt={question} />
+        <QuestionMedia 
+          media={type === "drop_pin" && pinImage && !isPlayer ? { type: "image", url: pinImage } : media} 
+          alt={question} 
+        />
       </div>
 
       <div className={`relative${isPlayer ? " pb-12" : ""}`}>

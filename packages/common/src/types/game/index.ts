@@ -5,6 +5,7 @@ export type Player = {
   clientId: string
   connected: boolean
   username: string
+  avatar?: string
   points: number
   streak: number
 }
@@ -209,6 +210,7 @@ export type QuestionResult = Question & {
 
 export type GameResultPlayer = {
   username: string
+  avatar?: string
   points: number
   rank: number
 }

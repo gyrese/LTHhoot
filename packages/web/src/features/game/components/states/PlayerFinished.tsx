@@ -24,6 +24,16 @@ const PlayerFinished = ({ data: { rank, subject } }: Props) => {
         {subject}
       </p>
 
+      {player?.avatar && (
+        <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-white/20 shadow-xl">
+          <img
+            alt={player.username}
+            className="h-full w-full object-cover"
+            src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar}`}
+          />
+        </div>
+      )}
+
       <p className="text-center text-3xl font-bold text-white drop-shadow-lg md:text-4xl">
         {rankKey !== null ? t(rankKey, { rank }) : "—"}
       </p>

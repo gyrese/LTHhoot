@@ -34,6 +34,7 @@ export type CommonStatusDataMap = {
     elements?: SlideElement[]
     audio?: string
     cooldown: number
+    pinImage?: string
   }
   SELECT_ANSWER: {
     question: string
@@ -83,7 +84,11 @@ type ManagerExtraStatus = {
     pinImage?: string
     zones?: DropPinZone[]
   }
-  SHOW_LEADERBOARD: { oldLeaderboard: Player[]; leaderboard: Player[] }
+  SHOW_LEADERBOARD: {
+    oldLeaderboard: Player[]
+    leaderboard: Player[]
+    roundLeaderboard: (Player & { roundPoints: number })[]
+  }
 }
 
 export type PlayerStatusDataMap = CommonStatusDataMap

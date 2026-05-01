@@ -137,6 +137,7 @@ export class RoundManager {
           elements: question.elements,
           audio: question.audio,
           cooldown: question.cooldown,
+          pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
         })
 
         await sleep(question.cooldown)
@@ -206,6 +207,7 @@ export class RoundManager {
         elements: question.elements,
         audio: question.audio,
         cooldown: question.cooldown,
+        pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
       })
 
       await sleep(question.cooldown)
@@ -304,8 +306,28 @@ export class RoundManager {
           ? checkAnswer(question, playerAnswer)
           : false
 
-        const points =
+        let points =
           playerAnswer && isCorrect ? Math.round(playerAnswer.points) : 0
+
+        if (question.type === "drop_pin" && playerAnswer && isCorrect && playerAnswer.textAnswer) {
+          const parts = playerAnswer.textAnswer.split(":")
+          const px = parseFloat(parts[0])
+          const py = parseFloat(parts[1])
+          const z = question.zones?.[0]
+
+          if (z && !isNaN(px) && !isNaN(py)) {
+            const distance = Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
+            const maxDistance = 141.42 // Diagonal of 100x100 square
+            
+            // Accuracy scales from 0.1 (farthest) to 1.0 (exact match)
+            const accuracy = Math.max(0.1, 1 - (distance / maxDistance))
+            points = Math.round(playerAnswer.points * accuracy)
+            points = Math.max(1, points) // Minimum 1 point just for answering
+          } else {
+            points = 1
+          }
+          playerAnswer.points = points // Update answer record with final points
+        }
 
         player.points += points
         player.streak = isCorrect ? player.streak + 1 : 0
@@ -478,6 +500,7 @@ export class RoundManager {
         date: new Date().toISOString(),
         players: this.leaderboard.map((player, index) => ({
           username: player.username,
+          avatar: player.avatar,
           points: player.points,
           rank: index + 1,
         })),
@@ -502,9 +525,19 @@ export class RoundManager {
 
     const oldLeaderboard = this.tempOldLeaderboard ?? this.leaderboard
 
+    const roundLeaderboard = [...this.leaderboard]
+      .map((player) => {
+        const oldPlayer = oldLeaderboard.find((p) => p.id === player.id)
+        const roundPoints = player.points - (oldPlayer?.points ?? 0)
+
+        return { ...player, roundPoints }
+      })
+      .sort((a, b) => b.roundPoints - a.roundPoints)
+
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_LEADERBOARD, {
       oldLeaderboard: oldLeaderboard.slice(0, 5),
       leaderboard: this.leaderboard.slice(0, 5),
+      roundLeaderboard: roundLeaderboard.slice(0, 5),
     })
 
     this.tempOldLeaderboard = null

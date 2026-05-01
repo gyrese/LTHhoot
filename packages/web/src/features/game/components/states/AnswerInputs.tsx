@@ -136,19 +136,25 @@ export const DropPinAnswer = ({
   onTextAnswer: (_text: string) => void
 }) => {
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
-  const [placing, setPlacing] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [zoom, setZoom] = useState(1)
   const { t } = useTranslation()
 
-  const handleImgClick = (e: React.MouseEvent<HTMLImageElement>) => {
-    if (!placing || submitted) { return }
-    const rect = e.currentTarget.getBoundingClientRect()
-    setPin({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-    })
-    setPlacing(false)
+  const handleImgClick = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    if (submitted) return
+    e.preventDefault()
+
+    const target = e.currentTarget as HTMLElement
+    const rect = target.getBoundingClientRect()
+    
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY
+
+    const xPct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+    const yPct = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
+
+    if (!isNaN(xPct) && !isNaN(yPct)) {
+      setPin({ x: xPct, y: yPct })
+    }
   }
 
   const handleSubmit = () => {
@@ -158,104 +164,53 @@ export const DropPinAnswer = ({
     }
   }
 
-  const pinBtnLabel = placing
-    ? t("game:dropPinCancel")
-    : pin !== null
-      ? t("game:dropPinReplace")
-      : t("game:dropPinPlace")
-
   return (
-    <div className="mx-auto mb-4 w-full max-w-2xl px-2" style={{ userSelect: "none" }}>
-      {/* Conteneur clip avec zoom */}
-      <div className="mb-2 overflow-hidden rounded-xl" style={{ maxHeight: "52vh" }}>
-        <div
-          style={{
-            transformOrigin: "top center",
-            transform: `scale(${zoom})`,
-            transition: "transform 0.2s",
-          }}
-        >
-          <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
-            <img
-              src={pinImage}
-              alt=""
-              draggable={false}
-              onClick={handleImgClick}
-              className="block w-full"
-              style={{ cursor: placing && !submitted ? "crosshair" : "default" }}
-            />
-            <div className="pointer-events-none absolute inset-0">
-              {pin !== null && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${pin.x}%`,
-                    top: `${pin.y}%`,
-                    transform: `translate(-50%, -100%) scale(${1 / zoom})`,
-                    transformOrigin: "bottom center",
-                  }}
-                >
-                  <div
-                    key={`${pin.x}-${pin.y}`}
-                    className="anim-pop-in flex flex-col items-center drop-shadow-lg"
-                  >
-                    <div className="h-7 w-7 rounded-full border-2 border-white bg-red-500" />
-                    <div className="h-3 w-0.5 bg-red-500" />
-                  </div>
-                </div>
-              )}
-              {placing && (
-                <div className="absolute inset-0 flex items-center justify-center ring-2 ring-yellow-400">
-                  <span
-                    className="rounded-lg bg-black/60 px-4 py-2 text-sm font-semibold text-yellow-300 backdrop-blur-sm"
-                    style={{ transform: `scale(${1 / zoom})` }}
-                  >
-                    {t("game:dropPinHint")}
-                  </span>
-                </div>
-              )}
+    <div className="mx-auto mb-4 w-full max-w-3xl px-2 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ userSelect: "none" }}>
+      
+      {/* 🚀 PRO MAX UX: Tap anywhere on the image container */}
+      <div className="relative w-full rounded-2xl bg-black/40 border border-white/10 shadow-2xl p-2 flex items-center justify-center overflow-hidden touch-none">
+        
+        {!pin && !submitted && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+            <div className="px-6 py-3 bg-black/60 backdrop-blur-md rounded-full text-white/90 font-bold text-sm sm:text-base border border-white/10 shadow-xl animate-pulse">
+              Touchez l'image pour placer l'épingle
             </div>
           </div>
+        )}
+
+        <div className="relative inline-block max-w-full">
+          <img
+            src={pinImage}
+            alt="Target"
+            draggable={false}
+            onPointerDown={handleImgClick}
+            className="block max-h-[50vh] max-w-full w-auto h-auto object-contain rounded-xl cursor-crosshair transition-transform duration-300"
+          />
+
+          {pin !== null && (
+            <div
+              className="absolute z-20 pointer-events-none"
+              style={{
+                left: `${pin.x}%`,
+                top: `${pin.y}%`,
+                transform: 'translate(-50%, -100%)', // Align pin tip exactly on coordinate
+              }}
+            >
+              <div className="flex flex-col items-center drop-shadow-2xl animate-in zoom-in duration-300">
+                <div className="w-8 h-8 rounded-full border-4 border-white bg-red-500 shadow-lg" />
+                <div className="w-1 h-4 bg-red-500 shadow-md" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Boutons zoom */}
-      <div className="mb-2 flex justify-center gap-2">
-        <button
-          type="button"
-          onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
-          disabled={zoom <= 1}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30 disabled:opacity-30"
-        >
-          −
-        </button>
-        <span className="flex h-8 items-center px-2 text-sm font-semibold text-white/70">
-          {Math.round(zoom * 100)}%
-        </span>
-        <button
-          type="button"
-          onClick={() => setZoom((z) => Math.min(4, z + 0.5))}
-          disabled={zoom >= 4}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30 disabled:opacity-30"
-        >
-          +
-        </button>
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={submitted}
-          onClick={() => setPlacing((p) => !p)}
-          className={`flex-1 rounded-xl px-4 py-3 font-bold transition-colors ${placing ? "bg-yellow-400 text-gray-900" : "bg-white/20 text-white hover:bg-white/30"}`}
-        >
-          📍 {pinBtnLabel}
-        </button>
+      <div className="flex justify-center mt-2">
         <button
           type="button"
           disabled={pin === null || submitted}
           onClick={handleSubmit}
-          className="flex-1 rounded-xl bg-yellow-500 px-4 py-3 font-bold text-white hover:bg-yellow-600 disabled:opacity-40"
+          className="w-full max-w-sm rounded-2xl bg-yellow-500 px-6 py-4 text-xl font-bold text-white shadow-xl hover:bg-yellow-600 disabled:opacity-40 transition-all duration-300 transform active:scale-95"
         >
           {submitted ? t("game:answerSent") : t("common:submit")}
         </button>

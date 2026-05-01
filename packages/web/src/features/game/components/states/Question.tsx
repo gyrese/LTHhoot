@@ -19,7 +19,7 @@ const DEFAULT_BG: CSSProperties = {
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
 
-const Question = ({ data: { question, type, media, background, backgroundOpacity, elements, audio, cooldown } }: Props) => {
+const Question = ({ data: { question, type, media, background, backgroundOpacity, elements, audio, cooldown, pinImage } }: Props) => {
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
       <div className="absolute inset-0 bg-black" />
       <div
         className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 1 }}
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
       />
 
       {elements && elements.length > 0 && (
@@ -62,7 +62,7 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
 
       <section className="relative mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center px-4">
         <div className="flex flex-1 flex-col items-center justify-center gap-5">
-          <QuestionMedia media={media} alt={question} />
+          <QuestionMedia media={type === "drop_pin" && pinImage ? { type: "image", url: pinImage } : media} alt={question} />
         </div>
         {type !== "title" && (
           <div
