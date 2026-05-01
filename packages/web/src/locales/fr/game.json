@@ -1,0 +1,38 @@
+{
+  "answerSent": "Réponse envoyée !",
+  "correct": "Bravo !",
+  "false": "Faux",
+  "gamePinLabel": "PIN de la partie :",
+  "hud": {
+    "answers": "Réponses",
+    "time": "Temps"
+  },
+  "joinInstruction": "Rejoins la partie sur",
+  "leaderboard": "Classement",
+  "openAnswerPlaceholder": "Tape ta réponse...",
+  "pinPlaceholder": "Code PIN",
+  "playersJoined": "Joueurs connectés : ",
+  "questionPrefix": "Question n°",
+  "rank": {
+    "1": "1er",
+    "2": "2ème place",
+    "3": "3ème place",
+    "other": "{{rank}}ème place"
+  },
+  "rankSuffix": "e place",
+  "resultBehind": ", derrière ",
+  "resultTop": "Tu es ",
+  "startGame": "Demarrer la partie",
+  "true": "Vrai",
+  "usernamePlaceholder": "Pseudo",
+  "waitingForAnswers": "En attente des réponses des joueurs",
+  "waitingForPlayers": "En attente des joueurs",
+  "wrong": "Dommage",
+  "correctAnswer": "Bonne réponse",
+  "correctOrder": "Ordre correct",
+  "correctZones": "Zones correctes",
+  "dropPinHint": "Clique sur l'image pour placer ton épingle",
+  "dropPinPlace": "Placer l'épingle",
+  "dropPinReplace": "Replacer l'épingle",
+  "dropPinCancel": "Annuler"
+}

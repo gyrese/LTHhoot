@@ -1,0 +1,38 @@
+{
+  "answerSent": "¡Respuesta enviada!",
+  "correct": "¡Bien!",
+  "false": "Falso",
+  "gamePinLabel": "PIN del juego:",
+  "hud": {
+    "answers": "Respuestas",
+    "time": "Tiempo"
+  },
+  "joinInstruction": "Únete al juego en",
+  "leaderboard": "Clasificación",
+  "openAnswerPlaceholder": "Escribe tu respuesta...",
+  "pinPlaceholder": "Código PIN",
+  "playersJoined": "Jugadores conectados: ",
+  "questionPrefix": "Pregunta #",
+  "rank": {
+    "1": "1er puesto",
+    "2": "2do puesto",
+    "3": "3er puesto",
+    "other": "Puesto {{rank}}"
+  },
+  "rankSuffix": " puesto",
+  "resultBehind": ", detrás de ",
+  "resultTop": "Terminaste ",
+  "startGame": "Iniciar juego",
+  "true": "Verdadero",
+  "usernamePlaceholder": "Nombre de usuario aquí",
+  "waitingForAnswers": "Esperando que los jugadores respondan",
+  "waitingForPlayers": "Esperando jugadores",
+  "wrong": "Mala suerte",
+  "correctAnswer": "Respuesta correcta",
+  "correctOrder": "Orden correcto",
+  "correctZones": "Zonas correctas",
+  "dropPinHint": "Haz clic en la imagen para colocar tu pin",
+  "dropPinPlace": "Colocar pin",
+  "dropPinReplace": "Reemplazar pin",
+  "dropPinCancel": "Cancelar"
+}

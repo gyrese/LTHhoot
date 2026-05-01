@@ -1,0 +1,22 @@
+{
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "connecting": "Connecting...",
+  "delete": "Delete",
+  "exit": "Exit",
+  "language": {
+    "de": "German",
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "it": "Italian"
+  },
+  "loading": "Loading...",
+  "next": "Next",
+  "done": "Done",
+  "optional": "Optional",
+  "save": "Save",
+  "seconds": "sec",
+  "skip": "Skip",
+  "submit": "Submit"
+}

@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777556937258,
+  "projectRoot": "c:\\ai\\testrahoot",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "pnpm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "pnpm build",
+    "testCommand": null,
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
+    "scripts": {
+      "dev": "dotenv -e .env -- pnpm -r --parallel dev",
+      "dev:web": "dotenv -e .env -- pnpm --filter web dev",
+      "dev:socket": "dotenv -e .env -- pnpm --filter socket dev",
+      "build": "pnpm -r run build",
+      "start": "pnpm -r --parallel run start",
+      "clean": "pnpm -r exec rm -rf dist node_modules",
+      "lint": "pnpm -r --parallel run lint",
+      "format": "pnpm -r --parallel run format",
+      "format:fix": "pnpm -r --parallel run format:fix"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1777556937219,
+      "keyFiles": [
+        "game.json"
+      ]
+    },
+    "docker": {
+      "path": "docker",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1777556937220,
+      "keyFiles": [
+        "nginx.conf",
+        "supervisord.conf"
+      ]
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1777556937232,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "packages/web/src",
+      "accessCount": 3,
+      "lastAccessed": 1777629889962,
+      "type": "directory"
+    },
+    {
+      "path": "packages\\web\\index.html",
+      "accessCount": 2,
+      "lastAccessed": 1777622931641,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\manager\\components\\ManagerDashboard\\index.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777629901726,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\components\\Logo.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777629880503,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

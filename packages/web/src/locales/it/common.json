@@ -1,0 +1,22 @@
+{
+  "cancel": "Annulla",
+  "confirm": "Conferma",
+  "connecting": "Connessione...",
+  "delete": "Elimina",
+  "exit": "Esci",
+  "language": {
+    "de": "Tedesco",
+    "en": "Inglese",
+    "es": "Spagnolo",
+    "fr": "Francese",
+    "it": "Italiano"
+  },
+  "loading": "Caricamento...",
+  "next": "Avanti",
+  "done": "Fatto",
+  "optional": "Facoltativo",
+  "save": "Salva",
+  "seconds": "sec",
+  "skip": "Salta",
+  "submit": "Invia"
+}

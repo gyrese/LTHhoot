@@ -1,0 +1,38 @@
+{
+  "answerSent": "Answer sent!",
+  "correct": "Nice!",
+  "false": "False",
+  "gamePinLabel": "Game PIN:",
+  "hud": {
+    "answers": "Answers",
+    "time": "Time"
+  },
+  "joinInstruction": "Join the game at",
+  "leaderboard": "Leaderboard",
+  "openAnswerPlaceholder": "Type your answer...",
+  "pinPlaceholder": "PIN Code",
+  "playersJoined": "Players Joined: ",
+  "questionPrefix": "Question #",
+  "rank": {
+    "1": "1st place",
+    "2": "2nd place",
+    "3": "3rd place",
+    "other": "{{rank}}th place"
+  },
+  "rankSuffix": " place",
+  "resultBehind": ", behind ",
+  "resultTop": "You finished ",
+  "startGame": "Start Game",
+  "true": "True",
+  "usernamePlaceholder": "Username here",
+  "waitingForAnswers": "Waiting for the players to answer",
+  "waitingForPlayers": "Waiting for players",
+  "wrong": "Too bad",
+  "correctAnswer": "Correct answer",
+  "correctOrder": "Correct order",
+  "correctZones": "Correct zones",
+  "dropPinHint": "Click on the image to place your pin",
+  "dropPinPlace": "Place pin",
+  "dropPinReplace": "Replace pin",
+  "dropPinCancel": "Cancel"
+}
