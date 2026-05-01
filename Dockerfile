@@ -20,13 +20,16 @@ RUN pnpm build
 # ---- RUNNER ----
 FROM alpine:3.21 AS runner
 
-RUN apk add --no-cache nginx nodejs supervisor
+RUN apk add --no-cache nginx nodejs supervisor npm
 
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 
 COPY --from=builder /app/packages/web/dist /app/web
 COPY --from=builder /app/packages/socket/dist/index.cjs /app/socket/index.cjs
+
+WORKDIR /app/socket
+RUN npm install sharp
 
 EXPOSE 3000
 
