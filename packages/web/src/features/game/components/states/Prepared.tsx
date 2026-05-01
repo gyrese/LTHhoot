@@ -1,29 +1,30 @@
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
-import CalendarIcon from "@rahoot/web/features/game/components/icons/CalendarIcon"
-import PencilText from "@rahoot/web/features/game/components/icons/PencilText"
-import SliderIcon from "@rahoot/web/features/game/components/icons/SliderIcon"
-import {
-  ANSWERS_COLORS,
-  ANSWERS_ICONS,
-} from "@rahoot/web/features/game/utils/constants"
-import clsx from "clsx"
-import { createElement } from "react"
+import dateImg from "@rahoot/web/assets/game/types/date.png"
+import dropPinImg from "@rahoot/web/assets/game/types/drop_pin.png"
+import mcqImg from "@rahoot/web/assets/game/types/mcq.png"
+import openImg from "@rahoot/web/assets/game/types/open.png"
+import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
+import sliderImg from "@rahoot/web/assets/game/types/slider.png"
+import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
 import { useTranslation } from "react-i18next"
 
 type Props = {
   data: CommonStatusDataMap["SHOW_PREPARED"]
 }
 
-const TYPE_ICONS: Record<string, { icon: React.FC<{ className?: string }>; bg: string; label: string }> = {
-  open: { icon: PencilText, bg: "bg-yellow-500", label: "game:typeOpen" },
-  date: { icon: CalendarIcon, bg: "bg-blue-500", label: "game:typeDate" },
-  slider: { icon: SliderIcon, bg: "bg-purple-500", label: "game:typeSlider" },
+const TYPE_ASSETS: Record<string, string> = {
+  open: openImg,
+  date: dateImg,
+  slider: sliderImg,
+  mcq: mcqImg,
+  true_false: trueFalseImg,
+  puzzle: puzzleImg,
+  drop_pin: dropPinImg,
 }
 
-const Prepared = ({ data: { totalAnswers, questionNumber, type } }: Props) => {
+const Prepared = ({ data: { questionNumber, type } }: Props) => {
   const { t } = useTranslation()
-
-  const specialType = TYPE_ICONS[type]
+  const image = TYPE_ASSETS[type]
 
   return (
     <section className="anim-show relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center">
@@ -32,29 +33,19 @@ const Prepared = ({ data: { totalAnswers, questionNumber, type } }: Props) => {
         {questionNumber}
       </h2>
 
-      {totalAnswers > 0 ? (
-        <div className="anim-quizz grid aspect-square w-60 grid-cols-2 gap-4 rounded-2xl bg-gray-700 p-5 md:w-60">
-          {[...Array(totalAnswers)].map((_, key) => (
-            <div
-              key={key}
-              className={clsx(
-                "button shadow-inset flex aspect-square h-full w-full items-center justify-center rounded-2xl",
-                ANSWERS_COLORS[key],
-              )}
-            >
-              {createElement(ANSWERS_ICONS[key], { className: "h-10 md:h-14" })}
-            </div>
-          ))}
-        </div>
-      ) : specialType ? (
-        <div className={clsx("anim-show flex aspect-square w-60 flex-col items-center justify-center gap-4 rounded-2xl", specialType.bg)}>
-          {createElement(specialType.icon, { className: "h-20 md:h-24" })}
-        </div>
-      ) : (
-        <div className="anim-show flex aspect-square w-60 items-center justify-center rounded-2xl bg-white/10 text-8xl text-white">
-          ?
-        </div>
-      )}
+      <div className="anim-show relative aspect-square w-64 overflow-hidden rounded-3xl bg-white/5 p-4 shadow-2xl backdrop-blur-md border border-white/10 md:w-80">
+        {image ? (
+          <img
+            src={image}
+            alt={type}
+            className="h-full w-full object-contain drop-shadow-2xl"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-8xl text-white opacity-20">
+            ?
+          </div>
+        )}
+      </div>
     </section>
   )
 }

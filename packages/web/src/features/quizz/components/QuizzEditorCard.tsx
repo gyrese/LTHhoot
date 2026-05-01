@@ -1,36 +1,33 @@
 import type { QuestionType, SlideElement } from "@rahoot/common/types/game"
+import dateImg from "@rahoot/web/assets/game/types/date.png"
+import dropPinImg from "@rahoot/web/assets/game/types/drop_pin.png"
+import mcqImg from "@rahoot/web/assets/game/types/mcq.png"
+import openImg from "@rahoot/web/assets/game/types/open.png"
+import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
+import sliderImg from "@rahoot/web/assets/game/types/slider.png"
+import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
 import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
 import {
-  AlignLeft,
-  Calendar,
-  CheckSquare,
-  ListChecks,
-  MapPin,
   Presentation,
-  Shuffle,
-  SlidersHorizontal,
   Trash2,
-  type LucideIcon,
 } from "lucide-react"
 import { type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
 
-const TYPE_ICONS: Record<QuestionType, LucideIcon> = {
+const TYPE_ASSETS: Record<QuestionType, any> = {
   title: Presentation,
-  mcq: ListChecks,
-  // eslint-disable-next-line camelcase
-  true_false: CheckSquare,
-  open: AlignLeft,
-  date: Calendar,
-  slider: SlidersHorizontal,
-  puzzle: Shuffle,
-  // eslint-disable-next-line camelcase
-  drop_pin: MapPin,
+  mcq: mcqImg,
+  true_false: trueFalseImg,
+  open: openImg,
+  date: dateImg,
+  slider: sliderImg,
+  puzzle: puzzleImg,
+  drop_pin: dropPinImg,
 }
 
 const SlideElementPreview = ({ el }: { el: SlideElement }) => {
@@ -148,7 +145,8 @@ type Props = {
 
 const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete }: Props) => {
   const { t } = useTranslation()
-  const TypeIcon = TYPE_ICONS[question.type]
+  const Asset = TYPE_ASSETS[question.type]
+  const isImage = typeof Asset === "string"
 
   return (
     <div
@@ -165,10 +163,14 @@ const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDele
       </div>
 
       <div
-        className="absolute top-1 right-6 z-10 flex items-center gap-0.5 rounded bg-black/40 px-1 py-0.5 text-white"
+        className="absolute top-1 right-6 z-10 flex h-4 w-4 items-center justify-center rounded bg-black/40 p-0.5 text-white"
         title={t(`quizz:questionType.${question.type}`)}
       >
-        <TypeIcon className="size-2.5" />
+        {isImage ? (
+          <img src={Asset} alt="" className="h-full w-full object-contain" />
+        ) : (
+          <Asset className="size-2.5" />
+        )}
       </div>
 
       <SlideThumbnail question={question} />
