@@ -12,7 +12,7 @@ COPY packages/web/package.json ./packages/web/
 COPY packages/socket/package.json ./packages/socket/
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-RUN pnpm add --os=linux --libc=musl --cpu=x64 sharp
+RUN cd packages/socket && npm_config_platform=linux npm_config_libc=musl npm_config_arch=x64 npm install sharp
 
 COPY . .
 
