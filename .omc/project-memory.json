@@ -85,10 +85,22 @@
   },
   "hotPaths": [
     {
+      "path": "Dockerfile",
+      "accessCount": 6,
+      "lastAccessed": 1777643647255,
+      "type": "file"
+    },
+    {
       "path": "packages/web/src",
-      "accessCount": 3,
-      "lastAccessed": 1777629889962,
+      "accessCount": 4,
+      "lastAccessed": 1777644870413,
       "type": "directory"
+    },
+    {
+      "path": "docker\\nginx.conf",
+      "accessCount": 3,
+      "lastAccessed": 1777644424807,
+      "type": "file"
     },
     {
       "path": "packages\\web\\index.html",
@@ -103,9 +115,33 @@
       "type": "file"
     },
     {
+      "path": "packages/socket/src",
+      "accessCount": 2,
+      "lastAccessed": 1777644415102,
+      "type": "directory"
+    },
+    {
       "path": "packages\\web\\src\\components\\Logo.tsx",
       "accessCount": 1,
       "lastAccessed": 1777629880503,
+      "type": "file"
+    },
+    {
+      "path": "docker\\supervisord.conf",
+      "accessCount": 1,
+      "lastAccessed": 1777643069351,
+      "type": "file"
+    },
+    {
+      "path": "packages\\socket\\src\\services\\config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777644056387,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\pages\\(auth)\\index.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777644874602,
       "type": "file"
     }
   ],

@@ -26,15 +26,15 @@ const Room = ({ data }: Props) => {
   const { t } = useTranslation()
 
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
-    setPlayerList([...playerList, player])
+    setPlayerList((prev) => [...prev, player])
   })
 
   useEvent(EVENTS.MANAGER.REMOVE_PLAYER, (playerId) => {
-    setPlayerList(playerList.filter((p) => p.id !== playerId))
+    setPlayerList((prev) => prev.filter((p) => p.id !== playerId))
   })
 
   useEvent(EVENTS.MANAGER.PLAYER_KICKED, (playerId) => {
-    setPlayerList(playerList.filter((p) => p.id !== playerId))
+    setPlayerList((prev) => prev.filter((p) => p.id !== playerId))
   })
 
   useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
@@ -78,11 +78,13 @@ const Room = ({ data }: Props) => {
             </div>
           </div>
 
-          <div className="flex h-40 shrink-0 rounded-md bg-white p-2">
-            <QRCodeSVG
-              className="h-auto w-auto"
-              value={`${webUrl}?pin=${inviteCode}`}
-            />
+          <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-md bg-white p-2">
+            {inviteCode && (
+              <QRCodeSVG
+                size={144}
+                value={webUrl}
+              />
+            )}
           </div>
         </div>
 
