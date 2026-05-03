@@ -23,9 +23,9 @@ Par rapport au projet original, LTNHoot apporte :
 - 🃏 **Nouveaux types de questions** — `drop_pin`, `puzzle`, `slider`, `date`, `open`
 
 <p align="center">
-  <img width="30%" src=".github/preview1.jpg" alt="Connexion">
-  <img width="30%" src=".github/preview2.jpg" alt="Manager Dashboard">
-  <img width="30%" src=".github/preview3.jpg" alt="Écran de question">
+  <img width="30%" src=".github/preview1.png" alt="Connexion">
+  <img width="30%" src=".github/preview2.png" alt="Manager Dashboard">
+  <img width="30%" src=".github/preview3.png" alt="Écran de question">
 </p>
 
 ---
