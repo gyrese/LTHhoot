@@ -36,12 +36,16 @@ const QuestionMedia = ({ media, alt = "" }: Props) => {
     const youtubeId = parseYoutubeId(media.url)
     if (youtubeId) {
       return (
-        <iframe
-          className="m-4 mb-2 aspect-video max-h-60 w-auto rounded-md px-4 sm:max-h-100"
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+        <div className="m-4 mb-2 w-full max-w-2xl sm:max-w-3xl">
+          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              className="absolute inset-0 h-full w-full rounded-md"
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
       )
     }
     return (

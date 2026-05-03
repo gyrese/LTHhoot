@@ -288,7 +288,9 @@ const Answers = ({
       MEDIA_TYPES.VIDEO,
     ] as QuestionMediaType[]
 
-    if (disabledMusicMedia.includes(media?.type) || audio) {
+    const hasYoutube = elements?.some((el) => el.type === "youtube") ?? false
+
+    if (disabledMusicMedia.includes(media?.type) || audio || hasYoutube) {
       return
     }
 
@@ -329,7 +331,7 @@ const Answers = ({
       />
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
-          <SlideCanvas elements={elements} onChange={noopChange} selectedId={undefined} onSelect={noopSelect} />
+          <SlideCanvas elements={elements} onChange={noopChange} selectedId={undefined} onSelect={noopSelect} readOnly />
         </div>
       )}
 

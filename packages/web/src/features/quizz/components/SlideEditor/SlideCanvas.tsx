@@ -7,9 +7,10 @@ type SlideCanvasProps = {
   onChange: (_elements: SlideElement[]) => void
   selectedId?: string
   onSelect: (_id: string | undefined) => void
+  readOnly?: boolean
 }
 
-const SlideCanvas = ({ elements, onChange, selectedId, onSelect }: SlideCanvasProps) => {
+const SlideCanvas = ({ elements, onChange, selectedId, onSelect, readOnly = false }: SlideCanvasProps) => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
 
@@ -192,6 +193,10 @@ return () => window.removeEventListener("resize", checkSize)
               }
 
               if (el.type === "youtube") {
+                if (readOnly) {
+                  return null
+                }
+
                 return (
                   <CanvasYoutubeElement
                     key={el.id}
@@ -209,6 +214,53 @@ return () => window.removeEventListener("resize", checkSize)
           </Layer>
         </Stage>
       )}
+
+      {readOnly &&
+        size.width > 0 &&
+        elements
+          .filter((el): el is Extract<SlideElement, { type: "youtube" }> => el.type === "youtube")
+          .map((el) => {
+            const params = new URLSearchParams({
+              autoplay: el.autoplay ? "1" : "0",
+              mute: el.mute ? "1" : "0",
+              loop: el.loop ? "1" : "0",
+              controls: el.controls ? "1" : "0",
+              rel: "0",
+              playsinline: "1",
+            })
+
+            if (el.loop) {
+              params.set("playlist", el.videoId)
+            }
+
+            if (el.startTime) {
+              params.set("start", String(el.startTime))
+            }
+
+            if (el.endTime) {
+              params.set("end", String(el.endTime))
+            }
+
+            return (
+              <iframe
+                key={el.id}
+                src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute rounded-md"
+                style={{
+                  left: offsetX + el.x * scale,
+                  top: offsetY + el.y * scale,
+                  width: el.width * scale,
+                  height: el.height * scale,
+                  transform: `rotate(${el.rotation}deg)`,
+                  transformOrigin: "top left",
+                  opacity: el.opacity,
+                  pointerEvents: "auto",
+                }}
+              />
+            )
+          })}
     </div>
   )
 }
