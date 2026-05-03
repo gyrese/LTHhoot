@@ -89,6 +89,8 @@ const QuestionEditor = () => {
           <SlideEditor 
             elements={currentQuestion.elements || []} 
             onChange={(elements) => updateQuestion(currentIndex, { elements })} 
+            background={currentQuestion.background}
+            backgroundOpacity={currentQuestion.backgroundOpacity}
           />
         </div>
 

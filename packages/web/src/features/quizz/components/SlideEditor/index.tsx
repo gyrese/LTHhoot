@@ -3,6 +3,7 @@ import { Expand, Play, Type, Square, Image as ImageIcon, Upload } from "lucide-r
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { v4 as uuidv4 } from "uuid"
+import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import SlideCanvas from "./SlideCanvas"
 import SlidePreviewModal from "./SlidePreviewModal"
 import YoutubePanel from "./YoutubePanel"
@@ -10,12 +11,15 @@ import YoutubePanel from "./YoutubePanel"
 type SlideEditorProps = {
   elements: SlideElement[]
   onChange: (_elements: SlideElement[]) => void
+  background?: SlideBackground
+  backgroundOpacity?: number
 }
 
 const hasColor = (el: SlideElement): el is TextElement | ShapeElement =>
   el.type === "text" || el.type === "shape"
 
-const SlideEditor = ({ elements, onChange }: SlideEditorProps) => {
+const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: SlideEditorProps) => {
+  const { currentQuestion } = useQuizzEditor()
   const { t } = useTranslation()
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [showYoutubePanel, setShowYoutubePanel] = useState(false)
@@ -314,12 +318,14 @@ const SlideEditor = ({ elements, onChange }: SlideEditorProps) => {
           onChange={onChange}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          background={background}
+          backgroundOpacity={backgroundOpacity}
         />
       </div>
 
       {showPreview && (
         <SlidePreviewModal
-          elements={elements}
+          question={currentQuestion}
           onClose={() => setShowPreview(false)}
         />
       )}

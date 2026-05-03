@@ -1,4 +1,5 @@
-import { type SlideElement } from "@rahoot/common/types/game"
+import { type SlideElement, type SlideBackground } from "@rahoot/common/types/game"
+import slideBg from "@rahoot/web/assets/slide-bg.png"
 import { useRef, useState, useEffect } from "react"
 import { Stage, Layer, Text, Rect, Transformer, Group, Image as KonvaImage } from "react-konva"
 
@@ -8,9 +9,19 @@ type SlideCanvasProps = {
   selectedId?: string
   onSelect: (_id: string | undefined) => void
   readOnly?: boolean
+  background?: SlideBackground
+  backgroundOpacity?: number
 }
 
-const SlideCanvas = ({ elements, onChange, selectedId, onSelect, readOnly = false }: SlideCanvasProps) => {
+const SlideCanvas = ({
+  elements,
+  onChange,
+  selectedId,
+  onSelect,
+  readOnly = false,
+  background,
+  backgroundOpacity,
+}: SlideCanvasProps) => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
 
@@ -104,23 +115,27 @@ return el
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const checkSize = () => {
-      if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect()
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
         setSize({ width, height })
       }
+    })
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
     }
 
-    checkSize()
-    window.addEventListener("resize", checkSize)
-
-    
-return () => window.removeEventListener("resize", checkSize)
+    return () => observer.disconnect()
   }, [])
 
   const scale = Math.min(size.width / 1920, size.height / 1080)
   const offsetX = (size.width - 1920 * scale) / 2
   const offsetY = (size.height - 1080 * scale) / 2
+
+  const bgImage = useSimpleImage(background?.type === "image" ? background.value : slideBg)
+  const bgColor = background?.type === "color" ? background.value : undefined
+  const bgOpacity = backgroundOpacity ?? (background ? 1 : 0.5)
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -133,6 +148,17 @@ return () => window.removeEventListener("resize", checkSize)
           ref={stageRef}
         >
           <Layer x={offsetX} y={offsetY} scaleX={scale} scaleY={scale}>
+            <Rect width={1920} height={1080} fill="#000000" />
+            {bgColor ? (
+              <Rect width={1920} height={1080} fill={bgColor} opacity={bgOpacity} />
+            ) : (
+              <KonvaImage
+                image={bgImage || undefined}
+                width={1920}
+                height={1080}
+                opacity={bgOpacity}
+              />
+            )}
             {elements.map((el) => {
               if (el.type === "text") {
                 return (
