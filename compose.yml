@@ -1,7 +1,6 @@
 services:
   ltnhoot:
     image: gyrese/lthoot:latest
-    build: .
     restart: unless-stopped
     ports:
       - "3000:3000"
