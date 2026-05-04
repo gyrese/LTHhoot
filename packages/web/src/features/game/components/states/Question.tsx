@@ -11,9 +11,7 @@ type Props = {
 }
 
 const DEFAULT_BG: CSSProperties = {
-  backgroundImage: "url(/bg-salon.png)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
+  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
 }
 
 const noopChange = (_els: SlideElement[]) => undefined

@@ -51,7 +51,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   return (
     <section
       className="relative flex h-dvh flex-col overflow-hidden"
-      style={{ backgroundImage: "url(/bg-salon.png)", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{ background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)" }}
     >
       {/* Fond garage uniquement sur l'écran d'attente */}
       {isRoomScreen && (

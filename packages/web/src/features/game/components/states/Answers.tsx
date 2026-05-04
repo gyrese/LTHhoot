@@ -101,9 +101,7 @@ const Answers = ({
   })
 
   let bgStyle: CSSProperties = {
-    backgroundImage: "url(/bg-salon.png)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
+    background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
   }
 
   if (background?.type === "image") {
@@ -114,6 +112,16 @@ const Answers = ({
 
   const isPlayer = player !== null
 
+  const progress = time > 0 ? (cooldown / time) * 100 : 0
+
+  function getProgressColor(pct: number) {
+    if (pct > 50) { return "#22c55e" }
+
+    if (pct > 25) { return "#f59e0b" }
+
+    return "#ef4444"
+  }
+
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
       <div className="absolute inset-0 bg-black" />
@@ -121,6 +129,15 @@ const Answers = ({
         className="absolute inset-0"
         style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
       />
+
+      {/* Barre de progression du temps */}
+      <div className="absolute top-0 left-0 right-0 z-20 h-2 bg-white/10">
+        <div
+          className="h-full transition-all duration-1000 ease-linear rounded-r-full"
+          style={{ width: `${progress}%`, backgroundColor: getProgressColor(progress) }}
+        />
+      </div>
+
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
           <SlideCanvas elements={elements} onChange={noopChange} selectedId={undefined} onSelect={noopSelect} readOnly />
