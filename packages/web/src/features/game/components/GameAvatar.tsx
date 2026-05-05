@@ -1,5 +1,5 @@
 import {
-  getAvatarUrl,
+  getDiceBearUrl,
   getPetdexAvatar,
 } from "@rahoot/web/features/game/utils/avatars"
 import clsx from "clsx"
@@ -74,7 +74,6 @@ const GameAvatar = ({
     let raf = 0
     let stopped = false
     const img = new Image()
-    img.crossOrigin = "anonymous"
 
     img.onerror = () => {
       if (stopped) return
@@ -179,7 +178,7 @@ const GameAvatar = ({
 
   return (
     <img
-      src={getAvatarUrl(seed)}
+      src={getDiceBearUrl(seed)}
       alt={seed}
       className={clsx(
         "shrink-0 object-cover",
