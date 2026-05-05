@@ -24,6 +24,8 @@
       "opacityHint": "Lower opacity to darken the image",
       "questionDisplay": "Question display",
       "questionDisplayHint": "Duration before answers appear",
+      "showLeaderboard": "Leaderboard",
+      "showLeaderboardHint": "Show the leaderboard after this question",
       "timings": "Timings"
     },
     "deleteQuestion": "Delete question",

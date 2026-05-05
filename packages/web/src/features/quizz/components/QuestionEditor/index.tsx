@@ -44,6 +44,8 @@ const QuestionAnswerEditor = () => {
   }
 }
 
+import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
+
 const QuestionEditor = () => {
   const { currentQuestion, updateQuestion, currentIndex } = useQuizzEditor()
 
@@ -89,8 +91,6 @@ const QuestionEditor = () => {
           <SlideEditor 
             elements={currentQuestion.elements || []} 
             onChange={(elements) => updateQuestion(currentIndex, { elements })} 
-            background={currentQuestion.background}
-            backgroundOpacity={currentQuestion.backgroundOpacity}
           />
         </div>
 
@@ -100,7 +100,6 @@ const QuestionEditor = () => {
           )}
           <div className="flex-1 pointer-events-none flex flex-col"></div>
           <div className="pointer-events-auto"><QuestionAnswerEditor /></div>
-          <div className="pointer-events-auto"><QuestionEditorSlideToolbar /></div>
         </div>
       </main>
       <QuestionEditorConfig />

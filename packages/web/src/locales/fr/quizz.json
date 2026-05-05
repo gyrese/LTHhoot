@@ -24,6 +24,8 @@
       "opacityHint": "Baissez l'opacité pour assombrir l'image",
       "questionDisplay": "Affichage de la question",
       "questionDisplayHint": "Délai avant l'apparition des réponses",
+      "showLeaderboard": "Leaderboard",
+      "showLeaderboardHint": "Afficher le classement après cette question",
       "timings": "Durées"
     },
     "deleteQuestion": "Supprimer la question",
@@ -64,6 +66,7 @@
   },
   "quizzSaved": "Quizz enregistré avec succès",
   "quizzUpdated": "Quizz mis à jour avec succès",
+  "quizzExported": "Quizz exporté avec succès",
   "slideAudio": "Audio",
   "slideBackground": "Fond",
   "bgColor": "Couleur",

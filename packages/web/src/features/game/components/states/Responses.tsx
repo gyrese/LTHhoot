@@ -196,11 +196,13 @@ const McqResult = ({
   responses,
   solutions,
   percentages,
+  revealed,
 }: {
   answers: string[]
   responses: Record<number, number>
   solutions: number[]
   percentages: Record<string, string>
+  revealed: boolean
 }) => (
   <>
     <div
@@ -230,7 +232,7 @@ const McqResult = ({
           index={key}
           className={clsx(ANSWERS_COLORS[key])}
           icon={ANSWERS_ICONS[key]}
-          correct={solutions.includes(key)}
+          correct={revealed ? solutions.includes(key) : undefined}
         >
           {answer}
         </AnswerButton>
@@ -245,10 +247,12 @@ const TrueFalseResult = ({
   responses,
   solutions,
   percentages,
+  revealed,
 }: {
   responses: Record<number, number>
   solutions: number[]
   percentages: Record<string, string>
+  revealed: boolean
 }) => {
   const { t } = useTranslation()
   const labels = [t("game:false"), t("game:true")]
@@ -280,7 +284,7 @@ const TrueFalseResult = ({
             index={key}
             className={clsx(colors[key])}
             icon={ANSWERS_ICONS[key]}
-            correct={solutions.includes(key)}
+            correct={revealed ? solutions.includes(key) : undefined}
           >
             {label}
           </AnswerButton>
@@ -374,6 +378,7 @@ const Responses = ({
   const answers = rawAnswers ?? []
   const solutions = rawSolutions ?? []
   const [percentages, setPercentages] = useState<Record<string, string>>({})
+  const [revealed, setRevealed] = useState(false)
   const [sfxResults] = useSound(SFX.RESULTS_SOUND, { volume: 0.2 })
   const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, { volume: 0.2 })
 
@@ -383,8 +388,11 @@ const Responses = ({
     setPercentages(calculatePercentages(responses))
     playMusic()
 
+    const revealTimer = setTimeout(() => setRevealed(true), 1500)
+
     return () => {
       stopMusic()
+      clearTimeout(revealTimer)
     }
   }, [])
 
@@ -401,6 +409,7 @@ const Responses = ({
             responses={responses}
             solutions={solutions}
             percentages={percentages}
+            revealed={revealed}
           />
         )}
 
@@ -409,6 +418,7 @@ const Responses = ({
             responses={responses}
             solutions={solutions}
             percentages={percentages}
+            revealed={revealed}
           />
         )}
 

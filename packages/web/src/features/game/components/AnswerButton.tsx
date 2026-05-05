@@ -35,10 +35,10 @@ const AnswerButton = ({
   return (
     <button
       className={clsx(
-        "shadow-inset anim-pop-in flex items-center rounded px-4 py-6 transition-transform duration-150",
-        "hover:scale-[1.02] active:scale-95",
+        "shadow-inset anim-pop-in flex items-center rounded px-4 py-6",
+        "transition-[opacity,filter] duration-700 hover:scale-[1.02] active:scale-95",
         correct === true && "anim-glow",
-        correct === false && "opacity-65 grayscale-[40%]",
+        correct === false && "opacity-40 grayscale",
         iconOnly ? "justify-center" : "gap-3 text-left",
         className,
       )}

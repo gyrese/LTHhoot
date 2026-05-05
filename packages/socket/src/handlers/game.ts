@@ -23,6 +23,22 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   socket.on(EVENTS.MANAGER.RECONNECT, ({ gameId }) => {
+    // Socket authentifié manager (peut venir d'un autre appareil = télécommande)
+    if (Manager.isLogged(socket)) {
+      const game = registry.getGameById(gameId)
+
+      if (game) {
+        game.reconnectRemote(socket)
+
+        return
+      }
+
+      socket.emit(EVENTS.GAME.RESET, "game.expired")
+
+      return
+    }
+
+    // Reconnexion standard par clientId (même navigateur)
     const game = registry.getManagerGame(gameId, socket.handshake.auth.clientId)
 
     if (game) {
@@ -110,6 +126,14 @@ return
 
   socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, ({ gameId }) =>
     withGame(gameId, socket, (game) => game.showLeaderboard()),
+  )
+
+  socket.on(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, ({ gameId, data }) =>
+    withGame(gameId, socket, (game) => game.validateOpenAnswer(data.text)),
+  )
+
+  socket.on(EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS, ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.finalizeOpenAnswers()),
   )
 
   socket.on("disconnect", () => {

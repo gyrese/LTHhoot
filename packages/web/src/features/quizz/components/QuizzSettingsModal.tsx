@@ -59,12 +59,15 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
       const res = await fetch("/upload", { method: "POST", body: formData })
 
       if (!res.ok) {
-        throw new Error("Upload failed")
+        const errorData = await res.json().catch(() => ({}))
+        console.error("Upload failed with status:", res.status, errorData)
+        throw new Error(errorData.error || "Upload failed")
       }
 
       const data = (await res.json()) as { url: string }
       setLocalImage(data.url)
-    } catch {
+    } catch (error) {
+      console.error("Image upload error:", error)
       toast.error(t("errors:upload.failed"))
     } finally {
       setUploading(false)

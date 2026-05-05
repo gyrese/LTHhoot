@@ -8,14 +8,14 @@ import {
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
 import { useNavigate } from "@tanstack/react-router"
-import { Settings } from "lucide-react"
+import { Download, Settings } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+import { downloadJson, exportQuizzWithMedia } from "@rahoot/web/features/quizz/utils/export"
 
 const QuizzEditorHeader = () => {
   const {
-    quizzId,
     subject,
     description,
     folder,
@@ -23,43 +23,35 @@ const QuizzEditorHeader = () => {
     salonImage,
     listingImage,
     questions,
+    saveQuizz,
+    isDirty,
+    lastSaved,
   } = useQuizzEditor()
-  const { socket } = useSocket()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [showSettings, setShowSettings] = useState(false)
 
-  const handleSave = () => {
-    const payload = {
-      subject,
-      description: description || undefined,
-      folder: folder || undefined,
-      tags: tags.length ? tags : undefined,
-      salonImage: salonImage || undefined,
-      listingImage: listingImage || undefined,
-      questions,
-    }
-
-    if (quizzId) {
-      socket?.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
-    } else {
-      socket?.emit(EVENTS.QUIZZ.SAVE, payload)
+  const handleExport = async () => {
+    const loadingToast = toast.loading(t("manager:quizz.exporting", "Exportation en cours..."))
+    try {
+      const payload = {
+        subject,
+        description: description || undefined,
+        folder: folder || undefined,
+        tags: tags.length ? tags : undefined,
+        salonImage: salonImage || undefined,
+        listingImage: listingImage || undefined,
+        questions,
+      }
+      
+      const fullQuizz = await exportQuizzWithMedia(payload)
+      downloadJson(fullQuizz, subject || "quizz-export")
+      toast.success(t("quizz:quizzExported"), { id: loadingToast })
+    } catch (error) {
+      console.error("Export failed:", error)
+      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), { id: loadingToast })
     }
   }
-
-  useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, () => {
-    toast.success(t("quizz:quizzSaved"))
-    navigate({ to: "/manager/config" })
-  })
-
-  useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, () => {
-    toast.success(t("quizz:quizzUpdated"))
-    navigate({ to: "/manager/config" })
-  })
-
-  useEvent(EVENTS.QUIZZ.ERROR, (message) => {
-    toast.error(t(message))
-  })
 
   return (
     <>
@@ -76,6 +68,19 @@ const QuizzEditorHeader = () => {
             <span className="max-w-64 truncate text-xl font-black">{subject || t("quizz:titleQuizzPlaceholder")}</span>
             <Settings className="size-6 shrink-0 text-gray-500" />
           </Button>
+
+          {lastSaved && (
+            <div className="flex flex-col text-xs text-gray-400">
+              <span className="font-semibold uppercase tracking-wider">
+                {isDirty ? t("quizz:unsavedChanges", "Modifications non enregistrées") : t("quizz:allChangesSaved", "Toutes les modifications sont enregistrées")}
+              </span>
+              <span>
+                {t("quizz:lastSavedAt", "Dernier enregistrement à {{time}}", {
+                  time: lastSaved.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" }),
+                })}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -86,7 +91,15 @@ const QuizzEditorHeader = () => {
           >
             {t("common:exit")}
           </Button>
-          <Button size="sm" className="bg-primary px-6" onClick={handleSave}>
+          <Button
+            size="sm"
+            className="bg-blue-50 font-bold text-blue-600 shadow-none border-2 border-transparent hover:border-blue-100"
+            onClick={handleExport}
+          >
+            <Download className="mr-2 size-4" />
+            {t("common:export")}
+          </Button>
+          <Button size="sm" className="bg-primary px-6" onClick={() => saveQuizz({ navigate: true })}>
             {t("common:save")}
           </Button>
         </div>

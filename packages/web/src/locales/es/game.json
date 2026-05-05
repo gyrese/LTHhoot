@@ -35,4 +35,11 @@
   "dropPinPlace": "Colocar pin",
   "dropPinReplace": "Reemplazar pin",
   "dropPinCancel": "Cancelar"
+,
+  "openAnswers": {
+    "responses": "respuestas",
+    "players": "jugadores",
+    "clickToValidate": "Haz clic en una respuesta para validarla",
+    "noAnswer": "Sin respuesta"
+  }
 }

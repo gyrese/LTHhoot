@@ -1,4 +1,5 @@
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import useScreenSize from "@rahoot/web/hooks/useScreenSize"
@@ -11,6 +12,8 @@ import useSound from "use-sound"
 type Props = {
   data: ManagerStatusDataMap["FINISHED"]
 }
+
+const WINNING_ANIMATION_STATES = ["waving"] as const
 
 const usePodiumAnimation = (topLength: number) => {
   const [apparition, setApparition] = useState(0)
@@ -128,10 +131,11 @@ const PodiumPlace = ({
                   isFirst ? "border-yellow-400" : rank === 2 ? "border-slate-300" : "border-amber-600",
                 )}
               >
-                <img
-                  alt={player.username}
-                  className="h-full w-full object-cover"
-                  src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar || player.username}`}
+                <GameAvatar
+                  seed={player.avatar || player.username}
+                  animated
+                  animationStates={WINNING_ANIMATION_STATES}
+                  className="h-full w-full"
                 />
               </motion.div>
               {isFirst && apparition >= 4 && (

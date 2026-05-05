@@ -15,6 +15,7 @@ import {
 } from "@rahoot/common/types/game/status"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
+import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
 import { checkAnswer, timeToPoint } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
@@ -52,6 +53,8 @@ export class RoundManager {
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
   private questionsHistory: QuestionResult[] = []
+  private pendingOpenQuestion: Question | null = null
+  private pendingOpenCorrectAnswers: string[] = []
 
   constructor(opts: RoundManagerOptions) {
     this.opts = opts
@@ -137,7 +140,7 @@ export class RoundManager {
           elements: question.elements,
           audio: question.audio,
           cooldown: question.cooldown,
-          pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
+          pinImage: undefined,
         })
 
         await sleep(question.cooldown)
@@ -210,6 +213,20 @@ export class RoundManager {
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
       })
 
+      // Send solution to manager only
+      this.opts.send(this.opts.getManagerId(), STATUS.SHOW_QUESTION, {
+        question: question.question,
+        type: question.type,
+        media: question.media,
+        background: question.background,
+        backgroundOpacity: question.backgroundOpacity,
+        elements: question.elements,
+        audio: question.audio,
+        cooldown: question.cooldown,
+        pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
+        ...this.getQuestionSolutionData(question),
+      })
+
       await sleep(question.cooldown)
 
       if (!this.started) {
@@ -242,10 +259,16 @@ export class RoundManager {
             return {}
 
           case "date":
-            return { minYear: question.minYear, maxYear: question.maxYear }
+            return { 
+              minYear: question.minYear ?? (question.correctYear - 30), 
+              maxYear: question.maxYear ?? (question.correctYear + 30) 
+            }
 
           case "slider":
-            return { min: question.min, max: question.max }
+            return { 
+              min: question.min ?? 0, 
+              max: question.max ?? 100 
+            }
 
           case "puzzle":
             return { items: question.items }
@@ -263,16 +286,83 @@ export class RoundManager {
         ...selectAnswerExtra,
       })
 
+      // Send solution to manager only
+      this.opts.send(this.opts.getManagerId(), STATUS.SELECT_ANSWER, {
+        ...selectAnswerBase,
+        ...selectAnswerExtra,
+        ...this.getQuestionSolutionData(question),
+      })
+
       await this.opts.cooldown.start(question.time)
 
       if (!this.started) {
         return
       }
 
-      this.showResults(question)
+      if (question.type === "open") {
+        this.showOpenAnswers(question)
+      } else {
+        this.showResults(question)
+      }
     } finally {
       this.questionInProgress = false
     }
+  }
+
+  private showOpenAnswers(question: Question): void {
+    this.pendingOpenQuestion = question
+
+    if (question.type === "open" && this.pendingOpenCorrectAnswers.length === 0) {
+      this.pendingOpenCorrectAnswers = [...question.correctAnswers]
+    }
+
+    const answers = buildOpenAnswersList(this.playersAnswers, this.opts.players.getAll(), this.pendingOpenCorrectAnswers)
+
+    const baseData = {
+      question: question.question,
+      answers,
+      totalPlayers: this.opts.players.count(),
+    }
+
+    this.opts.broadcast(STATUS.SHOW_OPEN_ANSWERS, baseData)
+
+    this.opts.send(this.opts.getManagerId(), STATUS.SHOW_OPEN_ANSWERS, {
+      ...baseData,
+      correctAnswers: this.pendingOpenCorrectAnswers,
+    })
+  }
+
+  validateOpenAnswer(text: string): void {
+    if (!this.pendingOpenQuestion) {
+      return
+    }
+
+    const normalized = text.trim().toLowerCase()
+    const alreadyCorrect = this.pendingOpenCorrectAnswers.some(
+      (ca) => ca.trim().toLowerCase() === normalized,
+    )
+
+    if (alreadyCorrect) {
+      return
+    }
+
+    this.pendingOpenCorrectAnswers.push(text.trim())
+    this.showOpenAnswers(this.pendingOpenQuestion)
+  }
+
+  finalizeOpenAnswers(): void {
+    if (!this.pendingOpenQuestion || this.pendingOpenQuestion.type !== "open") {
+      return
+    }
+
+    const question = {
+      ...this.pendingOpenQuestion,
+      correctAnswers: this.pendingOpenCorrectAnswers,
+    }
+
+    this.pendingOpenQuestion = null
+    this.pendingOpenCorrectAnswers = []
+    this.showResults(question)
   }
 
   private showResults(question: Question): void {
@@ -486,6 +576,7 @@ export class RoundManager {
   }
 
   showLeaderboard(): void {
+    const question = this.opts.quizz.questions[this.currentQuestion]
     const isLastRound =
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 
@@ -510,6 +601,7 @@ export class RoundManager {
       this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, {
         subject: this.opts.quizz.subject,
         top,
+        totalPlayers: this.leaderboard.length,
       })
 
       this.leaderboard.forEach((player, index) => {
@@ -517,8 +609,18 @@ export class RoundManager {
           subject: this.opts.quizz.subject,
           top,
           rank: index + 1,
+          totalPlayers: this.leaderboard.length,
         })
       })
+
+      return
+    }
+
+    // Si showLeaderboard n'est pas activé sur cette question, on passe directement
+    if (!question?.showLeaderboard) {
+      this.tempOldLeaderboard = null
+      this.currentQuestion += 1
+      void this.newQuestion()
 
       return
     }
@@ -538,8 +640,37 @@ export class RoundManager {
       oldLeaderboard: oldLeaderboard.slice(0, 5),
       leaderboard: this.leaderboard.slice(0, 5),
       roundLeaderboard: roundLeaderboard.slice(0, 5),
+      totalPlayers: this.leaderboard.length,
     })
 
     this.tempOldLeaderboard = null
+  }
+
+  private getQuestionSolutionData(question: Question) {
+    switch (question.type) {
+      case "mcq":
+        return { solutions: question.solutions }
+
+      case "true_false":
+        return { solutions: [question.solution] }
+
+      case "open":
+        return { correctAnswers: question.correctAnswers }
+
+      case "date":
+        return { correctYear: question.correctYear }
+
+      case "slider":
+        return { correctValue: question.correctValue }
+
+      case "puzzle":
+        return { items: question.items }
+
+      case "drop_pin":
+        return { zones: question.zones }
+
+      default:
+        return {}
+    }
   }
 }

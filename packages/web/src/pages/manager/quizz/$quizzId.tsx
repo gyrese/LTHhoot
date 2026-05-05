@@ -12,6 +12,8 @@ import { QuizzEditorProvider } from "@rahoot/web/features/quizz/contexts/quizz-e
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 
+import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
+
 const QuizzEditPage = () => {
   const { quizzId } = Route.useParams()
   const { socket } = useSocket()
@@ -23,8 +25,7 @@ const QuizzEditPage = () => {
     socket?.emit(EVENTS.QUIZZ.GET, quizzId)
     const timer = setTimeout(() => setLoadError(true), 8000)
 
-    
-return () => clearTimeout(timer)
+    return () => clearTimeout(timer)
   }, [socket, quizzId])
 
   useEvent(EVENTS.QUIZZ.DATA, (data) => {
@@ -57,8 +58,24 @@ return () => clearTimeout(timer)
 
   return (
     <QuizzEditorProvider initialData={quizz}>
-      <div className="relative flex h-svh flex-col bg-gray-50">
+      <div className="relative flex h-svh flex-col bg-gray-100">
         <QuizzEditorHeader />
+        
+        {/* Barre secondaire unifiée (Slides | Toolbar | Config) */}
+        <div className="z-30 flex h-14 shrink-0 items-center bg-white border-b border-gray-200">
+          <div className="flex w-72 shrink-0 items-center px-6 border-r border-gray-200 h-full">
+            <span className="text-sm font-bold uppercase tracking-wider text-gray-400">Diapositives</span>
+          </div>
+          
+          <div className="flex flex-1 items-center justify-center bg-gray-50/50 h-full">
+            <SlideToolbar />
+          </div>
+
+          <div className="flex w-68 shrink-0 items-center px-6 border-l border-gray-200 h-full">
+            <span className="text-sm font-bold uppercase tracking-wider text-gray-400">Paramètres</span>
+          </div>
+        </div>
+
         <div className="flex flex-1 overflow-hidden">
           <QuizzEditorSidebar />
           <QuestionEditor />

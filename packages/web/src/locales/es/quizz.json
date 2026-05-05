@@ -24,6 +24,8 @@
       "opacityHint": "Baja la opacidad para oscurecer la imagen",
       "questionDisplay": "Visualización de la pregunta",
       "questionDisplayHint": "Duración antes de que aparezcan las respuestas",
+      "showLeaderboard": "Leaderboard",
+      "showLeaderboardHint": "Mostrar la clasificación después de esta pregunta",
       "timings": "Tiempos"
     },
     "deleteQuestion": "Eliminar pregunta",

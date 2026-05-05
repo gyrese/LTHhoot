@@ -6,9 +6,10 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { useNavigate } from "@tanstack/react-router"
-import { Check, Plus, Search, SquarePen, Trash2, Upload, X } from "lucide-react"
+import { Check, Download, Plus, Search, SquarePen, Trash2, Upload, X } from "lucide-react"
 import { type ChangeEvent, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
+import { downloadJson, exportQuizzWithMedia } from "@rahoot/web/features/quizz/utils/export"
 import toast from "react-hot-toast"
 import clsx from "clsx"
 
@@ -39,6 +40,18 @@ const QuizzPanel = ({
     toast.error(t(message))
   })
 
+  useEvent(EVENTS.QUIZZ.DATA, async (data) => {
+    const loadingToast = toast.loading(t("manager:quizz.exporting", "Exportation en cours..."))
+    try {
+      const fullQuizz = await exportQuizzWithMedia(data)
+      downloadJson(fullQuizz, data.subject)
+      toast.success(t("manager:quizz.exported"), { id: loadingToast })
+    } catch (error) {
+      console.error("Export failed:", error)
+      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), { id: loadingToast })
+    }
+  })
+
   const handleDelete = (id: string) => () => {
     socket?.emit(EVENTS.QUIZZ.DELETE, id)
     if (selectedQuizz === id) setSelectedQuizz(null)
@@ -53,12 +66,18 @@ const QuizzPanel = ({
       try {
         const data = JSON.parse(event.target?.result as string)
         socket?.emit(EVENTS.QUIZZ.SAVE, data)
+        toast.success(t("manager:quizz.imported"))
       } catch {
         toast.error("Invalid JSON file")
       }
     }
     reader.readAsText(file)
     e.target.value = ""
+  }
+
+  const handleExport = (id: string) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    socket?.emit(EVENTS.QUIZZ.GET, id)
   }
 
   const filtered = useMemo(
@@ -173,14 +192,23 @@ const QuizzPanel = ({
                         })
                       }}
                       className="rounded-lg bg-black/50 p-1.5 text-white backdrop-blur-sm hover:bg-black/70"
+                      title={t("common:edit")}
                     >
                       <SquarePen className="size-3.5" />
+                    </button>
+                    <button
+                      onClick={handleExport(q.id)}
+                      className="rounded-lg bg-black/50 p-1.5 text-blue-400 backdrop-blur-sm hover:bg-black/70"
+                      title={t("common:export")}
+                    >
+                      <Download className="size-3.5" />
                     </button>
                     <AlertDialog
                       trigger={
                         <button
                           onClick={(e) => e.stopPropagation()}
                           className="rounded-lg bg-black/50 p-1.5 text-red-400 backdrop-blur-sm hover:bg-black/70"
+                          title={t("common:delete")}
                         >
                           <Trash2 className="size-3.5" />
                         </button>

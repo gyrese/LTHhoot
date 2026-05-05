@@ -48,12 +48,14 @@ export interface ServerToClientEvents {
     total: number
   }) => void
   [EVENTS.GAME.PLAYER_ANSWER]: (_count: number) => void
+  [EVENTS.GAME.NEW_PLAYER]: (_player: { id: string; username: string; avatar?: string }) => void
+  [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
 
   // Player events
   [EVENTS.PLAYER.SUCCESS_RECONNECT]: (_data: {
     gameId: string
     status: { name: Status; data: StatusDataMap[Status] }
-    player: { username: string; points: number }
+    player: { username: string; points: number; avatar?: string }
     currentQuestion: GameUpdateQuestion
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
@@ -106,6 +108,10 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
   [EVENTS.MANAGER.LOGOUT]: () => void
+  [EVENTS.MANAGER.VALIDATE_OPEN_ANSWER]: (
+    _message: MessageWithoutStatus<{ text: string }>,
+  ) => void
+  [EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS]: (_message: MessageGameId) => void
 
   // Quizz actions
   [EVENTS.QUIZZ.GET]: (_id: string) => void
@@ -117,7 +123,7 @@ export interface ClientToServerEvents {
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void
   [EVENTS.PLAYER.LOGIN]: (
-    _message: MessageWithoutStatus<{ username: string }>,
+    _message: MessageWithoutStatus<{ username: string; avatar?: string }>,
   ) => void
   [EVENTS.PLAYER.RECONNECT]: (_message: { gameId: string }) => void
   [EVENTS.PLAYER.SELECTED_ANSWER]: (

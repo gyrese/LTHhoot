@@ -24,6 +24,8 @@
       "opacityHint": "Verringern Sie die Deckkraft, um das Bild abzudunkeln",
       "questionDisplay": "Frageanzeige",
       "questionDisplayHint": "Dauer bevor Antworten erscheinen",
+      "showLeaderboard": "Leaderboard",
+      "showLeaderboardHint": "Rangliste nach dieser Frage anzeigen",
       "timings": "Zeiten"
     },
     "deleteQuestion": "Frage löschen",

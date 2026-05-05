@@ -15,6 +15,7 @@ export const STATUS = {
   SELECT_ANSWER: "SELECT_ANSWER",
   SHOW_RESULT: "SHOW_RESULT",
   SHOW_RESPONSES: "SHOW_RESPONSES",
+  SHOW_OPEN_ANSWERS: "SHOW_OPEN_ANSWERS",
   SHOW_LEADERBOARD: "SHOW_LEADERBOARD",
   FINISHED: "FINISHED",
   WAIT: "WAIT",
@@ -62,12 +63,34 @@ export type CommonStatusDataMap = {
     rank: number
     aheadOfMe: string | null
   }
+  SHOW_OPEN_ANSWERS: {
+    question: string
+    answers: Array<{ text: string; playerName: string; isCorrect: boolean }>
+    totalPlayers: number
+    correctAnswers?: string[]
+  }
   WAIT: { text: string }
-  FINISHED: { subject: string; top: Player[]; rank?: number }
+  FINISHED: { subject: string; top: Player[]; rank?: number; totalPlayers?: number }
 }
 
 type ManagerExtraStatus = {
   SHOW_ROOM: { text: string; inviteCode?: string; salonImage?: string }
+  SHOW_QUESTION: {
+    solutions?: number[]
+    correctYear?: number
+    correctValue?: number
+    correctAnswers?: string[]
+    items?: string[]
+    zones?: DropPinZone[]
+  }
+  SELECT_ANSWER: {
+    solutions?: number[]
+    correctYear?: number
+    correctValue?: number
+    correctAnswers?: string[]
+    items?: string[]
+    zones?: DropPinZone[]
+  }
   SHOW_RESPONSES: {
     question: string
     type: QuestionType
@@ -88,6 +111,7 @@ type ManagerExtraStatus = {
     oldLeaderboard: Player[]
     leaderboard: Player[]
     roundLeaderboard: (Player & { roundPoints: number })[]
+    totalPlayers: number
   }
 }
 

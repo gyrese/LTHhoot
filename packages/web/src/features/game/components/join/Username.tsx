@@ -1,44 +1,36 @@
 import { EVENTS } from "@rahoot/common/constants"
 import { STATUS } from "@rahoot/common/types/game/status"
-import Button from "@rahoot/web/components/Button"
-import Card from "@rahoot/web/components/Card"
-import Input from "@rahoot/web/components/Input"
+import logo from "@rahoot/web/assets/logo.png"
+import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import {
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
-
+import { PETDEX_AVATARS } from "@rahoot/web/features/game/utils/avatars"
 import { useNavigate } from "@tanstack/react-router"
-import { RefreshCcw } from "lucide-react"
-import { type KeyboardEvent, useEffect, useState } from "react"
+import { AnimatePresence, motion } from "motion/react"
+import { type KeyboardEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { v4 as uuid } from "uuid"
+import { User, ArrowRight, RefreshCcw } from "lucide-react"
 
-const AVATAR_API = "https://api.dicebear.com/7.x/pixel-art/svg?seed="
+const WELCOME_ANIMATION_STATES = ["idle", "waving", "waiting"] as const
+const PICKER_ANIMATION_STATES = ["idle", "waving", "waiting"] as const
 
 const Username = () => {
   const { socket } = useSocket()
   const { gameId, login, setStatus } = usePlayerStore()
   const navigate = useNavigate()
   const [username, setUsername] = useState("")
-  const [avatarSeed, setAvatarSeed] = useState("")
-  const [isManualAvatar, setIsManualAvatar] = useState(false)
+  const [avatarSeed, setAvatarSeed] = useState(() => {
+    const idx = Math.floor(Math.random() * PETDEX_AVATARS.length)
+    return PETDEX_AVATARS[idx]?.seed ?? "boba"
+  })
+  const [isPetPickerOpen, setIsPetPickerOpen] = useState(false)
   const { t } = useTranslation()
 
-  useEffect(() => {
-    if (!isManualAvatar) {
-      setAvatarSeed(username || "default")
-    }
-  }, [username, isManualAvatar])
-
-  const randomizeAvatar = () => {
-    setIsManualAvatar(true)
-    setAvatarSeed(uuid())
-  }
-
   const handleLogin = () => {
-    if (!gameId) {
+    if (!username.trim() || !gameId) {
       return
     }
 
@@ -54,42 +46,183 @@ const Username = () => {
     }
   }
 
-  useEvent(EVENTS.GAME.SUCCESS_JOIN, (gameId) => {
+  const randomizeAvatar = () => {
+    const idx = Math.floor(Math.random() * PETDEX_AVATARS.length)
+    setAvatarSeed(PETDEX_AVATARS[idx]?.seed ?? "boba")
+  }
+
+  useEvent(EVENTS.GAME.SUCCESS_JOIN, (joinedGameId) => {
     setStatus(STATUS.WAIT, { text: "game:waitingForPlayers" })
     login(username, avatarSeed)
-
-    navigate({ to: "/party/$gameId", params: { gameId } })
+    navigate({ to: "/party/$gameId", params: { gameId: joinedGameId } })
   })
 
   return (
-    <Card className="flex flex-col items-center">
-      <div className="relative mb-6">
-        <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-slate-100 shadow-lg">
-          <img
-            alt="Avatar"
-            className="h-full w-full object-cover"
-            src={`${AVATAR_API}${avatarSeed}`}
-          />
-        </div>
-        <button
-          className="absolute -right-2 -top-2 rounded-full bg-white p-2 text-slate-600 shadow-md transition-transform hover:scale-110 active:scale-95"
-          onClick={randomizeAvatar}
-          type="button"
-        >
-          <RefreshCcw size={20} />
-        </button>
-      </div>
+    <div className="flex w-full flex-1 flex-col items-center justify-center p-4">
+      {/* Logo Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
+        className="mb-8"
+      >
+        <img src={logo} alt="LTNHOOT" className="h-40 md:h-56 drop-shadow-[0_0_30px_rgba(255,153,0,0.5)]" />
+      </motion.div>
 
-      <Input
-        className="text-center"
-        onChange={(e) => setUsername(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={t("game:usernamePlaceholder")}
-      />
-      <Button className="mt-4 w-full" onClick={handleLogin}>
-        {t("common:submit")}
-      </Button>
-    </Card>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", damping: 20, stiffness: 100 }}
+        className="relative w-full max-w-md"
+      >
+        {/* Glow effect background */}
+        <div className="absolute -inset-4 rounded-[2.5rem] bg-primary/20 blur-3xl" />
+
+        <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-black/40 p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="flex flex-col items-center gap-8">
+            {/* Avatar Section */}
+            <div className="relative">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="group relative cursor-pointer"
+                onClick={() => setIsPetPickerOpen(true)}
+              >
+                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-primary to-orange-300 opacity-50 blur-lg transition-opacity group-hover:opacity-80" />
+                <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 p-2 shadow-inner backdrop-blur-md">
+                  <GameAvatar
+                    seed={avatarSeed}
+                    animated
+                    idleBounce={false}
+                    animationStates={WELCOME_ANIMATION_STATES}
+                    className="h-full w-full rounded-full"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    randomizeAvatar()
+                  }}
+                  className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:rotate-180 active:scale-90"
+                >
+                  <RefreshCcw size={18} />
+                </button>
+              </motion.div>
+
+              <button
+                type="button"
+                onClick={() => setIsPetPickerOpen(true)}
+                className="mt-4 w-full rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20"
+              >
+                {t("common:changeAvatar", "Changer l'avatar")}
+              </button>
+            </div>
+
+            {/* Input Section */}
+            <div className="flex w-full flex-col gap-6">
+              <div className="relative flex flex-col gap-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-white/50">
+                  {t("game:yourPseudo", "Ton Pseudo")}
+                </label>
+                <div className="group relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 transition-colors group-focus-within:text-primary">
+                    <User size={20} />
+                  </div>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t("game:usernamePlaceholder")}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-lg font-bold text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98, y: 0 }}
+                onClick={handleLogin}
+                disabled={!username.trim()}
+                className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-primary py-5 text-lg font-black uppercase tracking-wider text-black shadow-[0_0_40px_rgba(255,153,0,0.3)] transition-all hover:shadow-[0_0_60px_rgba(255,153,0,0.5)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+              >
+                <span>{t("common:submit")}</span>
+                <ArrowRight
+                  size={22}
+                  className="transition-transform group-hover:translate-x-1"
+                />
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Pet Picker Modal */}
+      <AnimatePresence>
+        {isPetPickerOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPetPickerOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/20 bg-zinc-900 p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                  {t("game:chooseAvatar", "Choisir ton compagnon")}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsPetPickerOpen(false)}
+                  className="rounded-xl bg-white/5 p-2 text-white/60 hover:bg-white/10 hover:text-white"
+                >
+                  Fermer
+                </button>
+              </div>
+
+              <div className="custom-scrollbar mt-6 grid max-h-[60vh] grid-cols-3 gap-4 overflow-y-auto pr-2 sm:grid-cols-4 md:grid-cols-5">
+                {PETDEX_AVATARS.map((pet) => (
+                  <motion.button
+                    key={pet.seed}
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setAvatarSeed(pet.seed)
+                      setIsPetPickerOpen(false)
+                    }}
+                    className={`group relative flex aspect-square flex-col items-center justify-center rounded-2xl border-2 transition-all ${
+                      avatarSeed === pet.seed
+                        ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(255,153,0,0.2)]"
+                        : "border-white/5 bg-white/5 hover:border-white/20"
+                    }`}
+                  >
+                    <GameAvatar
+                      seed={pet.seed}
+                      animated
+                      idleBounce={false}
+                      animationStates={PICKER_ANIMATION_STATES}
+                      className="h-16 w-16 sm:h-20 sm:w-20"
+                    />
+                    <span className="mt-1 text-[10px] font-bold uppercase text-white/40 group-hover:text-white/80">
+                      {pet.label}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

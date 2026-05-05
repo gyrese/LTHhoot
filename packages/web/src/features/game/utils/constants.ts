@@ -1,6 +1,8 @@
 import { EVENTS } from "@rahoot/common/constants"
 import Answers from "@rahoot/web/features/game/components/states/Answers"
 import Leaderboard from "@rahoot/web/features/game/components/states/Leaderboard"
+import OpenAnswersManager from "@rahoot/web/features/game/components/states/OpenAnswersManager"
+import OpenAnswersReveal from "@rahoot/web/features/game/components/states/OpenAnswersReveal"
 import PlayerFinished from "@rahoot/web/features/game/components/states/PlayerFinished"
 import Podium from "@rahoot/web/features/game/components/states/Podium"
 import Prepared from "@rahoot/web/features/game/components/states/Prepared"
@@ -45,6 +47,7 @@ export const GAME_STATE_COMPONENTS = {
   [STATUS.SHOW_RESULT]: Result,
   [STATUS.SHOW_PREPARED]: Prepared,
   [STATUS.FINISHED]: PlayerFinished,
+  [STATUS.SHOW_OPEN_ANSWERS]: OpenAnswersReveal,
 }
 
 export const GAME_STATE_COMPONENTS_MANAGER = {
@@ -53,6 +56,7 @@ export const GAME_STATE_COMPONENTS_MANAGER = {
   [STATUS.SHOW_RESPONSES]: Responses,
   [STATUS.SHOW_LEADERBOARD]: Leaderboard,
   [STATUS.FINISHED]: Podium,
+  [STATUS.SHOW_OPEN_ANSWERS]: OpenAnswersManager,
 }
 
 export const SFX = {
@@ -74,6 +78,7 @@ export const SFX = {
 export const MANAGER_SKIP_EVENTS = {
   [STATUS.SHOW_ROOM]: EVENTS.MANAGER.START_GAME,
   [STATUS.SELECT_ANSWER]: EVENTS.MANAGER.ABORT_QUIZ,
+  [STATUS.SHOW_OPEN_ANSWERS]: EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS,
   [STATUS.SHOW_RESPONSES]: EVENTS.MANAGER.SHOW_LEADERBOARD,
   [STATUS.SHOW_LEADERBOARD]: EVENTS.MANAGER.NEXT_QUESTION,
 } as const satisfies Partial<
@@ -94,6 +99,7 @@ export const MANAGER_SKIP_BTN = {
   [STATUS.SHOW_QUESTION]: null,
   [STATUS.SELECT_ANSWER]: "common:skip",
   [STATUS.SHOW_RESULT]: null,
+  [STATUS.SHOW_OPEN_ANSWERS]: "common:next",
   [STATUS.SHOW_RESPONSES]: "common:next",
   [STATUS.SHOW_LEADERBOARD]: "common:next",
   [STATUS.FINISHED]: "common:exit",

@@ -35,4 +35,11 @@
   "dropPinPlace": "Nadel setzen",
   "dropPinReplace": "Nadel ersetzen",
   "dropPinCancel": "Abbrechen"
+,
+  "openAnswers": {
+    "responses": "Antworten",
+    "players": "Spieler",
+    "clickToValidate": "Klicke eine Antwort zum Bestätigen",
+    "noAnswer": "Keine Antwort"
+  }
 }

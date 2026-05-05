@@ -11,6 +11,7 @@ type SlideCanvasProps = {
   readOnly?: boolean
   background?: SlideBackground
   backgroundOpacity?: number
+  onContextMenuEvent?: (e: MouseEvent, isElement: boolean) => void
 }
 
 const SlideCanvas = ({
@@ -21,6 +22,7 @@ const SlideCanvas = ({
   readOnly = false,
   background,
   backgroundOpacity,
+  onContextMenuEvent,
 }: SlideCanvasProps) => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
@@ -133,9 +135,17 @@ return el
   const offsetX = (size.width - 1920 * scale) / 2
   const offsetY = (size.height - 1080 * scale) / 2
 
+  const hasBackground = !!background
   const bgImage = useSimpleImage(background?.type === "image" ? background.value : slideBg)
   const bgColor = background?.type === "color" ? background.value : undefined
   const bgOpacity = backgroundOpacity ?? (background ? 1 : 0.5)
+
+  const [editingId, setEditingId] = useState<string | undefined>()
+
+  const handleTextChange = (id: string, text: string) => {
+    const newElements = elements.map((el) => (el.id === id ? { ...el, text } : el))
+    onChange(newElements)
+  }
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -143,24 +153,47 @@ return el
         <Stage
           width={size.width}
           height={size.height}
-          onMouseDown={checkDeselect}
+          onMouseDown={(e) => {
+            checkDeselect(e)
+            if (e.target === e.target.getStage() || (e.target.id() !== editingId)) {
+              setEditingId(undefined)
+            }
+          }}
           onTouchStart={checkDeselect}
+          onContextMenu={(e) => {
+            e.evt.preventDefault()
+            const clickedOnEmpty = e.target === e.target.getStage()
+            if (!clickedOnEmpty && e.target.id()) {
+              onSelect(e.target.id())
+            } else if (clickedOnEmpty) {
+              onSelect(undefined)
+            }
+            if (onContextMenuEvent) {
+              onContextMenuEvent(e.evt, !clickedOnEmpty)
+            }
+          }}
           ref={stageRef}
         >
           <Layer x={offsetX} y={offsetY} scaleX={scale} scaleY={scale}>
-            <Rect width={1920} height={1080} fill="#000000" />
-            {bgColor ? (
-              <Rect width={1920} height={1080} fill={bgColor} opacity={bgOpacity} />
-            ) : (
-              <KonvaImage
-                image={bgImage || undefined}
-                width={1920}
-                height={1080}
-                opacity={bgOpacity}
-              />
+            {hasBackground && (
+              <>
+                <Rect width={1920} height={1080} fill="#000000" />
+                {bgColor ? (
+                  <Rect width={1920} height={1080} fill={bgColor} opacity={bgOpacity} />
+                ) : (
+                  <KonvaImage
+                    image={bgImage || undefined}
+                    width={1920}
+                    height={1080}
+                    opacity={bgOpacity}
+                  />
+                )}
+              </>
             )}
             {elements.map((el) => {
               if (el.type === "text") {
+                const isEditing = editingId === el.id
+
                 return (
                   <Text
                     key={el.id}
@@ -170,16 +203,23 @@ return el
                     width={el.width}
                     height={el.height}
                     rotation={el.rotation}
-                    text={el.text}
+                    text={isEditing ? "" : el.text}
                     fontSize={el.fontSize}
                     fontFamily={el.fontFamily}
                     fill={el.fill || "#000"}
                     align={el.align}
-                    draggable
-                    onClick={() => onSelect(el.id)}
+                    draggable={!isEditing}
+                    onClick={() => {
+                      if (selectedId === el.id) {
+                        setEditingId(el.id)
+                      }
+                      onSelect(el.id)
+                    }}
+                    onDblClick={() => setEditingId(el.id)}
                     onTap={() => onSelect(el.id)}
                     onDragEnd={(e) => handleDragEnd(e, el.id)}
                     onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                    visible={!isEditing}
                   />
                 )
               }
@@ -239,6 +279,42 @@ return el
             <Transformer ref={transformerRef} />
           </Layer>
         </Stage>
+      )}
+
+      {/* Text Editing Overlay */}
+      {!readOnly && editingId && (
+        (() => {
+          const el = elements.find((e) => e.id === editingId)
+          if (!el || el.type !== "text") return null
+          
+          return (
+            <textarea
+              autoFocus
+              className="absolute z-50 bg-transparent border-none p-0 m-0 outline-none resize-none overflow-hidden"
+              value={el.text}
+              onChange={(e) => handleTextChange(el.id, e.target.value)}
+              onBlur={() => setEditingId(undefined)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  setEditingId(undefined)
+                }
+              }}
+              style={{
+                left: offsetX + el.x * scale,
+                top: offsetY + el.y * scale,
+                width: el.width * scale,
+                height: (el.height || 100) * scale,
+                fontSize: el.fontSize * scale,
+                fontFamily: el.fontFamily || "Arial",
+                color: el.fill || "#000",
+                textAlign: el.align as any,
+                transform: `rotate(${el.rotation}deg)`,
+                transformOrigin: "top left",
+                lineHeight: 1.2,
+              }}
+            />
+          )
+        })()
       )}
 
       {readOnly &&

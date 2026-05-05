@@ -1,4 +1,5 @@
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import Fire from "@rahoot/web/features/game/components/icons/Fire"
 import { AnimatePresence, motion, useSpring, useTransform } from "motion/react"
 import { useEffect, useState } from "react"
@@ -7,6 +8,10 @@ import { useTranslation } from "react-i18next"
 type Props = {
   data: ManagerStatusDataMap["SHOW_LEADERBOARD"]
 }
+
+const WINNING_ANIMATION_STATES = ["waving"] as const
+const WAITING_ANIMATION_STATES = ["waiting"] as const
+const FAILED_ANIMATION_STATES = ["failed"] as const
 
 const AnimatedPoints = ({ from, to }: { from: number; to: number }) => {
   const spring = useSpring(from, { stiffness: 1000, damping: 30 })
@@ -43,7 +48,7 @@ const StreakBadge = ({ streak }: { streak: number }) => (
 )
 
 const Leaderboard = ({
-  data: { oldLeaderboard, leaderboard, roundLeaderboard },
+  data: { oldLeaderboard, leaderboard, roundLeaderboard, totalPlayers },
 }: Props) => {
   const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
   const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
@@ -80,6 +85,12 @@ const Leaderboard = ({
             const oldPlayer = oldLeaderboard.find((p) => p.id === id)
             const oldPoints = oldPlayer?.points ?? 0
             const finalPoints = leaderboard.find((p) => p.id === id)?.points ?? 0
+            const displayRank = index + 1
+            const animationStates = displayRank <= 3
+              ? WINNING_ANIMATION_STATES
+              : totalPlayers > 1 && displayRank === totalPlayers
+                ? FAILED_ANIMATION_STATES
+                : WAITING_ANIMATION_STATES
 
             return (
               <motion.div
@@ -94,16 +105,13 @@ const Leaderboard = ({
                 className="bg-primary/90 flex w-full items-center justify-between rounded-xl p-4 text-3xl font-bold text-white shadow-2xl backdrop-blur-sm"
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-8 text-2xl opacity-50">#{index + 1}</span>
-                  <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-white/50 bg-white/10">
-                    <img
-                      alt={username}
-                      className="h-full w-full object-cover"
-                      src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${
-                        player.avatar || username
-                      }`}
-                    />
-                  </div>
+                  <span className="w-8 text-2xl opacity-50">#{displayRank}</span>
+                  <GameAvatar
+                    seed={player.avatar || username}
+                    animated
+                    animationStates={animationStates}
+                    className="h-12 w-12 rounded-full border-2 border-white/50"
+                  />
                   <span className="drop-shadow-md">
                     {username}
                     <StreakBadge streak={streak} />

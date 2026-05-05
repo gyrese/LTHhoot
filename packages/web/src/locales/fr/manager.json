@@ -13,7 +13,9 @@
     "pleaseCreate": "Veuillez d'abord créer un quizz",
     "pleaseSelect": "Veuillez sélectionner un quizz",
     "search": "Rechercher un quizz...",
-    "startGame": "Démarrer la partie"
+    "startGame": "Démarrer la partie",
+    "exported": "Quizz exporté avec succès",
+    "imported": "Quizz importé avec succès"
   },
   "result": {
     "delete": "Supprimer le résultat",

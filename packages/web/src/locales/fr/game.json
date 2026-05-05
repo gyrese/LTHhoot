@@ -36,4 +36,11 @@
   "dropPinPlace": "Placer l'épingle",
   "dropPinReplace": "Replacer l'épingle",
   "dropPinCancel": "Annuler"
+,
+  "openAnswers": {
+    "responses": "réponses",
+    "players": "joueurs",
+    "clickToValidate": "Clique sur une réponse pour la valider",
+    "noAnswer": "Sans réponse"
+  }
 }

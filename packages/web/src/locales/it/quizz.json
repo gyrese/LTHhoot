@@ -24,6 +24,8 @@
       "opacityHint": "Abbassa l'opacità per scurire l'immagine",
       "questionDisplay": "Visualizzazione domanda",
       "questionDisplayHint": "Durata prima che appaiano le risposte",
+      "showLeaderboard": "Leaderboard",
+      "showLeaderboardHint": "Mostra la classifica dopo questa domanda",
       "timings": "Tempi"
     },
     "deleteQuestion": "Elimina domanda",

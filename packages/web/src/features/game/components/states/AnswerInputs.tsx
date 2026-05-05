@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import clsx from "clsx"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,8 @@ const shuffleIndices = (length: number): number[] => {
   return arr
 }
 
+import { Reorder, useDragControls } from "motion/react"
+
 // ── Puzzle ────────────────────────────────────────────────────────────────────
 
 export const PuzzleAnswer = ({
@@ -27,32 +30,7 @@ export const PuzzleAnswer = ({
 }) => {
   const [order, setOrder] = useState<number[]>(() => shuffleIndices(items.length))
   const [submitted, setSubmitted] = useState(false)
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
-  const [overIdx, setOverIdx] = useState<number | null>(null)
   const { t } = useTranslation()
-
-  const swap = (a: number, b: number) => {
-    setOrder((prev) => {
-      const next = [...prev]
-      const tmp = next[a]
-      next[a] = next[b]
-      next[b] = tmp
-      return next
-    })
-  }
-
-  const handleDrop = (targetIdx: number) => {
-    if (dragIdx !== null && dragIdx !== targetIdx) {
-      setOrder((prev) => {
-        const next = [...prev]
-        const [moved] = next.splice(dragIdx, 1)
-        next.splice(targetIdx, 0, moved)
-        return next
-      })
-    }
-    setDragIdx(null)
-    setOverIdx(null)
-  }
 
   const handleSubmit = () => {
     if (!submitted) {
@@ -63,62 +41,50 @@ export const PuzzleAnswer = ({
 
   return (
     <div className="mx-auto mb-4 w-full max-w-lg px-2">
-      <div className="mb-4 flex flex-col gap-2">
-        {order.map((itemIdx, position) => {
-          const isDragging = dragIdx === position
-          const isOver = overIdx === position && dragIdx !== position
-
-          return (
-            <div
-              key={itemIdx}
-              draggable={!submitted}
-              onDragStart={() => { setDragIdx(position); setOverIdx(null) }}
-              onDragOver={(e) => { e.preventDefault(); setOverIdx(position) }}
-              onDragLeave={() => setOverIdx(null)}
-              onDrop={() => handleDrop(position)}
-              onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
-              style={{
-                opacity: isDragging ? 0.4 : 1,
-                transition: "opacity 0.15s, background-color 0.2s",
-                animationDelay: `${position * 0.07}s`,
-              }}
-              className={`anim-rise flex cursor-grab items-center gap-3 rounded-xl px-4 py-3 backdrop-blur-sm active:cursor-grabbing ${
-                isOver
-                  ? "bg-yellow-400/30 ring-2 ring-yellow-400 scale-[1.02]"
-                  : "bg-white/15 hover:bg-white/20"
-              }`}
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
-                {position + 1}
-              </span>
-              <span className="flex-1 font-semibold text-white">{items[itemIdx]}</span>
-              <div className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => swap(position, position - 1)}
-                  disabled={position === 0 || submitted}
-                  className="flex h-5 w-5 items-center justify-center text-white/70 hover:text-white disabled:opacity-20"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => swap(position, position + 1)}
-                  disabled={position === order.length - 1 || submitted}
-                  className="flex h-5 w-5 items-center justify-center text-white/70 hover:text-white disabled:opacity-20"
-                >
-                  ▼
-                </button>
-              </div>
+      <Reorder.Group
+        axis="y"
+        values={order}
+        onReorder={!submitted ? setOrder : () => {}}
+        className="mb-4 flex flex-col gap-3"
+      >
+        {order.map((itemIdx, position) => (
+          <Reorder.Item
+            key={itemIdx}
+            value={itemIdx}
+            dragListener={!submitted}
+            className={clsx(
+              "relative flex items-center gap-4 rounded-2xl px-5 py-4 backdrop-blur-md shadow-lg transition-colors active:scale-[0.98] touch-none",
+              submitted ? "bg-white/5 opacity-60" : "bg-white/15 hover:bg-white/20 border border-white/10"
+            )}
+            whileDrag={{ 
+              scale: 1.05, 
+              backgroundColor: "rgba(255, 255, 255, 0.25)",
+              boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3)",
+              zIndex: 50
+            }}
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-black text-primary border border-primary/30">
+              {position + 1}
             </div>
-          )
-        })}
-      </div>
+            <span className="flex-1 text-lg font-bold text-white tracking-tight">
+              {items[itemIdx]}
+            </span>
+            {!submitted && (
+              <div className="flex flex-col items-center gap-1 opacity-40">
+                <div className="h-1 w-6 rounded-full bg-white/50" />
+                <div className="h-1 w-6 rounded-full bg-white/50" />
+                <div className="h-1 w-6 rounded-full bg-white/50" />
+              </div>
+            )}
+          </Reorder.Item>
+        ))}
+      </Reorder.Group>
+
       <button
         type="button"
         disabled={submitted}
         onClick={handleSubmit}
-        className="w-full rounded-xl bg-yellow-500 px-8 py-3 font-bold text-white transition-transform hover:bg-yellow-600 hover:scale-[1.02] active:scale-95 disabled:opacity-40 enabled:anim-glow"
+        className="w-full rounded-2xl bg-yellow-500 py-4 text-xl font-black uppercase tracking-wider text-white shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:bg-yellow-600 hover:scale-[1.02] active:scale-95 disabled:opacity-40"
       >
         {submitted ? t("game:answerSent") : t("common:submit")}
       </button>

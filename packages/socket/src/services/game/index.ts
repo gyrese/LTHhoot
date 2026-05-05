@@ -84,6 +84,15 @@ class Game {
       },
     })
 
+    this.lastBroadcastStatus = {
+      name: STATUS.SHOW_ROOM,
+      data: {
+        text: "game:waitingForPlayers",
+        inviteCode: this.inviteCode,
+        salonImage: quizz.salonImage || quizz.listingImage,
+      },
+    }
+
     socket.join(this.gameId)
     socket.emit(EVENTS.MANAGER.GAME_CREATED, {
       gameId: this.gameId,
@@ -158,6 +167,32 @@ class Game {
     this.reconnectPlayer(socket)
   }
 
+  // Reconnexion depuis un appareil tiers authentifié (télécommande)
+  reconnectRemote(socket: Socket) {
+    socket.join(this.gameId)
+    this._manager.id = socket.id
+    this._manager.connected = true
+
+    const status = this.managerStatus ??
+      this.lastBroadcastStatus ?? {
+        name: STATUS.SHOW_ROOM,
+        data: {
+          text: "game:waitingForPlayers",
+          inviteCode: this.inviteCode,
+        },
+      }
+
+    socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
+      gameId: this.gameId,
+      currentQuestion: this.round.getReconnectInfo(),
+      status,
+      players: this.playerManager.getAll(),
+    })
+
+    registry.reactivateGame(this.gameId)
+    console.log(`Remote control connected to game ${this.inviteCode}`)
+  }
+
   private reconnectManager(socket: Socket) {
     if (this._manager.connected) {
       socket.emit(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
@@ -171,8 +206,11 @@ class Game {
 
     const status = this.managerStatus ??
       this.lastBroadcastStatus ?? {
-        name: STATUS.WAIT,
-        data: { text: "game:waitingForPlayers" },
+        name: STATUS.SHOW_ROOM,
+        data: {
+          text: "game:waitingForPlayers",
+          inviteCode: this.inviteCode,
+        },
       }
 
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
@@ -223,7 +261,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
-      player: { username: player.username, points: player.points },
+      player: { username: player.username, avatar: player.avatar, points: player.points },
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -243,6 +281,7 @@ class Game {
 
     if (player) {
       this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
     }
 
@@ -286,6 +325,14 @@ class Game {
 
   showLeaderboard() {
     this.round.showLeaderboard()
+  }
+
+  validateOpenAnswer(text: string) {
+    this.round.validateOpenAnswer(text)
+  }
+
+  finalizeOpenAnswers() {
+    this.round.finalizeOpenAnswers()
   }
 }
 

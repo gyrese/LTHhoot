@@ -22,10 +22,17 @@ const randomUUID = (): string => {
 }
 import {
   createContext,
+  useCallback,
   useContext,
+  useEffect,
   useState,
   type PropsWithChildren,
 } from "react"
+import { useSocket, useEvent } from "@rahoot/web/features/game/contexts/socket-context"
+import { EVENTS } from "@rahoot/common/constants"
+import toast from "react-hot-toast"
+import { useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 export type QuestionWithId = Question & { id: string }
 
@@ -37,6 +44,7 @@ export type QuestionUpdate = {
   backgroundOpacity?: number
   elements?: SlideElement[] | undefined
   audio?: string | undefined
+  showLeaderboard?: boolean
   cooldown?: number
   time?: number
   answers?: string[]
@@ -79,6 +87,11 @@ type QuizzEditorContextType = {
   reorderQuestions: (_from: number, _to: number) => void
   updateQuestion: (_index: number, _updates: QuestionUpdate) => void
   changeQuestionType: (_index: number, _type: QuestionType) => void
+  selectedId: string | undefined
+  setSelectedId: (_id: string | undefined) => void
+  saveQuizz: (_options?: { silent?: boolean; navigate?: boolean }) => void
+  isDirty: boolean
+  lastSaved: Date | null
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -101,7 +114,7 @@ const toQuestionWithId = (q: Question): QuestionWithId => ({
 const buildDefaultForType = (
   base: Pick<
     QuestionWithId,
-    "id" | "question" | "media" | "background" | "backgroundOpacity" | "elements" | "audio" | "cooldown" | "time"
+    "id" | "question" | "media" | "background" | "backgroundOpacity" | "elements" | "audio" | "showLeaderboard" | "cooldown" | "time"
   >,
   type: QuestionType,
 ): QuestionWithId => {
@@ -142,10 +155,14 @@ type QuizzEditorProviderProps = PropsWithChildren<{
   initialData?: QuizzWithId
 }>
 
+
 export const QuizzEditorProvider = ({
   children,
   initialData,
 }: QuizzEditorProviderProps) => {
+  const { socket } = useSocket()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
   const [subject, setSubject] = useState(initialData?.subject ?? "Untitled Quizz")
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [folder, setFolder] = useState(initialData?.folder ?? "")
@@ -156,16 +173,37 @@ export const QuizzEditorProvider = ({
     initialData ? initialData.questions.map(toQuestionWithId) : [defaultQuestion()],
   )
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | undefined>()
+  const [quizzId, setQuizzId] = useState<string | null>(initialData?.id ?? null)
+  const [isDirty, setIsDirty] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+
   const currentQuestion = questions[currentIndex]
+
+  const markDirty = () => setIsDirty(true)
+
+  const wrappedSetSubject = (val: string) => { setSubject(val); markDirty() }
+  const wrappedSetDescription = (val: string) => { setDescription(val); markDirty() }
+  const wrappedSetFolder = (val: string) => { setFolder(val); markDirty() }
+  const wrappedSetTags = (val: string[]) => { setTags(val); markDirty() }
+  const wrappedSetSalonImage = (val?: string) => { setSalonImage(val); markDirty() }
+  const wrappedSetListingImage = (val?: string) => { setListingImage(val); markDirty() }
+
+  const handleSetCurrentIndex = (index: number) => {
+    setCurrentIndex(index)
+    setSelectedId(undefined)
+  }
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
-    setCurrentIndex(questions.length)
+    handleSetCurrentIndex(questions.length)
+    markDirty()
   }
 
   const removeQuestion = (index: number) => {
     setQuestions((prev) => prev.filter((_, i) => i !== index))
-    setCurrentIndex((prev) => Math.max(0, prev >= index ? prev - 1 : prev))
+    handleSetCurrentIndex(Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex))
+    markDirty()
   }
 
   const reorderQuestions = (from: number, to: number) => {
@@ -176,13 +214,15 @@ export const QuizzEditorProvider = ({
 
       return next
     })
-    setCurrentIndex(to)
+    handleSetCurrentIndex(to)
+    markDirty()
   }
 
   const updateQuestion = (index: number, updates: QuestionUpdate) => {
     setQuestions((prev) =>
       prev.map((q, i) => (i === index ? ({ ...q, ...updates } as QuestionWithId) : q)),
     )
+    markDirty()
   }
 
   const changeQuestionType = (index: number, type: QuestionType) => {
@@ -200,6 +240,7 @@ export const QuizzEditorProvider = ({
           backgroundOpacity: q.backgroundOpacity,
           elements: q.elements,
           audio: q.audio,
+          showLeaderboard: q.showLeaderboard,
           cooldown: q.cooldown,
           time: q.time,
         }
@@ -207,33 +248,103 @@ export const QuizzEditorProvider = ({
         return buildDefaultForType(base, type)
       }),
     )
+    markDirty()
   }
+
+  const [pendingNavigation, setPendingNavigation] = useState(false)
+
+  const saveQuizz = useCallback((options?: { silent?: boolean; navigate?: boolean }) => {
+    if (!socket) return
+
+    const payload = {
+      subject,
+      description: description || undefined,
+      folder: folder || undefined,
+      tags: tags.length ? tags : undefined,
+      salonImage: salonImage || undefined,
+      listingImage: listingImage || undefined,
+      questions,
+    }
+
+    if (options?.navigate) {
+      setPendingNavigation(true)
+    }
+
+    if (quizzId) {
+      socket.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
+    } else {
+      socket.emit(EVENTS.QUIZZ.SAVE, payload)
+    }
+
+    if (!options?.silent) {
+      toast.loading(t("quizz:saving"), { id: "quizz-save" })
+    }
+  }, [socket, subject, description, folder, tags, salonImage, listingImage, questions, quizzId, t])
+
+  useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id }) => {
+    setQuizzId(id)
+    setIsDirty(false)
+    setLastSaved(new Date())
+    toast.success(t("quizz:quizzSaved"), { id: "quizz-save" })
+    if (pendingNavigation) {
+      navigate({ to: "/manager/config" })
+    }
+  })
+
+  useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, () => {
+    setIsDirty(false)
+    setLastSaved(new Date())
+    toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
+    if (pendingNavigation) {
+      navigate({ to: "/manager/config" })
+    }
+  })
+
+  useEvent(EVENTS.QUIZZ.ERROR, (message) => {
+    toast.error(t(message), { id: "quizz-save" })
+    setPendingNavigation(false)
+  })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isDirty) {
+        saveQuizz({ silent: true })
+      }
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [isDirty, saveQuizz])
 
   return (
     <QuizzEditorContext.Provider
       value={{
-        quizzId: initialData?.id ?? null,
+        quizzId,
         subject,
         description,
         folder,
         tags,
         salonImage,
         listingImage,
-        setSubject,
-        setDescription,
-        setFolder,
-        setTags,
-        setSalonImage,
-        setListingImage,
+        setSubject: wrappedSetSubject,
+        setDescription: wrappedSetDescription,
+        setFolder: wrappedSetFolder,
+        setTags: wrappedSetTags,
+        setSalonImage: wrappedSetSalonImage,
+        setListingImage: wrappedSetListingImage,
         questions,
         currentIndex,
         currentQuestion,
-        setCurrentIndex,
+        setCurrentIndex: handleSetCurrentIndex,
         addQuestion,
         removeQuestion,
         reorderQuestions,
         updateQuestion,
         changeQuestionType,
+        selectedId,
+        setSelectedId,
+        saveQuizz,
+        isDirty,
+        lastSaved,
       }}
     >
       {children}

@@ -1,6 +1,7 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Player } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import {
   useEvent,
   useSocket,
@@ -14,6 +15,8 @@ import { useTranslation } from "react-i18next"
 type Props = {
   data: ManagerStatusDataMap["SHOW_ROOM"]
 }
+
+const WAITING_ANIMATION_STATES = ["waiting"] as const
 
 const Room = ({ data }: Props) => {
   const { text, inviteCode } = data
@@ -114,13 +117,13 @@ const Room = ({ data }: Props) => {
                 className="bg-primary flex items-center gap-3 rounded-md px-4 py-2 font-bold text-white shadow-lg"
                 onClick={handleKick(player.id)}
               >
-                <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-white/50 bg-white/20">
-                  <img
-                    alt={player.username}
-                    className="h-full w-full object-cover"
-                    src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar || player.username}`}
-                  />
-                </div>
+                <GameAvatar
+                  seed={player.avatar || player.username}
+                  animated
+                  animationStates={WAITING_ANIMATION_STATES}
+                  className="h-11 w-11 rounded-full border-2 border-white/50"
+                  style={{ animationDelay: `${(playerList.indexOf(player) % 6) * 0.2}s` }}
+                />
                 <span className="cursor-pointer text-2xl drop-shadow-sm hover:line-through">
                   {player.username}
                 </span>

@@ -98,6 +98,7 @@ type BaseQuestion = {
   backgroundOpacity?: number
   elements?: SlideElement[]
   audio?: string
+  showLeaderboard?: boolean
   cooldown: number
   time: number
 }

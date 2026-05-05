@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&family=Raleway:wght@300;400;700&family=PT+Sans:wght@400;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;700&family=Playfair+Display:wght@400;700&family=Ubuntu:wght@400;700&family=Poppins:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Libre+Baskerville:wght@400;700&family=Bitter:wght@400;700&family=Fjalla+One&family=Anton&family=Josefin+Sans:wght@300;400;700&family=Lobster&family=Pacifico&family=Dancing+Script:wght@400;700&family=Satisfy&family=Courgette&family=Bree+Serif&family=Archivo+Narrow&family=Arvo:wght@400;700&family=Exo:wght@400;700&family=Asap:wght@400;700&family=Indie+Flower&family=Shadows+Into+Light&family=Coming+Soon&family=Fredoka+One&family=Comfortaa:wght@400;700&family=Caveat:wght@400;700&family=Amatic+SC:wght@400;700&family=Permanent+Marker&family=Orbitron:wght@400;700&display=swap');
 
 @theme {
   --color-primary: #ff9900;
@@ -487,6 +488,16 @@ button:not(:disabled),
   }
 }
 
+/* Avatar idle bounce (Kahoot-like) */
+.anim-avatar-idle {
+  animation: avatarIdle 1.8s ease-in-out infinite;
+}
+
+@keyframes avatarIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45%, 55% { transform: translateY(-8px) scale(1.06); }
+}
+
 @keyframes dotBounce {
   0%,
   80%,
@@ -498,4 +509,29 @@ button:not(:disabled),
     transform: scale(1);
     opacity: 1;
   }
+}
+/* ── Custom Scrollbar (Premium look) ────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox fallback */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
 }

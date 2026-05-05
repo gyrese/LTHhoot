@@ -6,20 +6,15 @@ const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
-import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
-import {
-  ANSWERS_COLORS,
-  ANSWERS_ICONS,
-  SFX,
-} from "@rahoot/web/features/game/utils/constants"
+import { SFX } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
@@ -94,14 +89,44 @@ const Answers = ({
     }
   }, [playMusic])
 
-  useEvent(EVENTS.GAME.COOLDOWN, (sec) => setCooldown(sec))
+  const audioCtxRef = useRef<AudioContext | null>(null)
+
+  function playTick(urgent: boolean) {
+    try {
+      audioCtxRef.current ||= new AudioContext()
+
+      const ctx = audioCtxRef.current
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = urgent ? 1100 : 880
+      gain.gain.setValueAtTime(0.25, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.08)
+    } catch {
+      // AudioContext non supporté
+    }
+  }
+
+  useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
+    setCooldown(sec)
+
+    if (isPlayer && sec <= 5 && sec > 0) {
+      playTick(sec <= 3)
+    }
+  })
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setTotalAnswer(count)
     sfxPop()
   })
 
   let bgStyle: CSSProperties = {
-    background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
+    backgroundImage: "url(/bg-salon.png)",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
   }
 
   if (background?.type === "image") {
@@ -188,29 +213,30 @@ const Answers = ({
           <OpenAnswerPlaceholder />
         )}
         {isPlayer && !answered && type === "mcq" && answers && (
-          <McqAnswers answers={answers} iconOnly onAnswer={(k) => emit({ answerId: k })} />
+          <McqAnswers key={question} answers={answers} iconOnly onAnswer={(k) => emit({ answerId: k })} />
         )}
         {isPlayer && !answered && type === "true_false" && (
-          <TrueFalseAnswers onAnswer={(k) => emit({ answerId: k })} />
+          <TrueFalseAnswers key={question} onAnswer={(k) => emit({ answerId: k })} />
         )}
         {isPlayer && !answered && type === "open" && (
-          <OpenAnswer onTextAnswer={(text) => emit({ textAnswer: text })} />
+          <OpenAnswer key={question} onTextAnswer={(text) => emit({ textAnswer: text })} />
         )}
         {isPlayer && !answered && type === "date" && (
-          <DateAnswer minYear={minYear} maxYear={maxYear} onNumberAnswer={(n) => emit({ numberAnswer: n })} />
+          <DateAnswer key={question} minYear={minYear} maxYear={maxYear} onNumberAnswer={(n) => emit({ numberAnswer: n })} />
         )}
         {isPlayer && !answered && type === "slider" && (
           <SliderAnswer
+            key={question}
             min={min ?? 0}
             max={max ?? 100}
             onNumberAnswer={(n) => emit({ numberAnswer: n })}
           />
         )}
         {isPlayer && !answered && type === "puzzle" && items && (
-          <PuzzleAnswer items={items} onOrderAnswer={(order) => emit({ orderAnswer: order })} />
+          <PuzzleAnswer key={question} items={items} onOrderAnswer={(order) => emit({ orderAnswer: order })} />
         )}
         {isPlayer && !answered && type === "drop_pin" && pinImage && (
-          <DropPinAnswer pinImage={pinImage} onTextAnswer={(text) => emit({ textAnswer: text })} />
+          <DropPinAnswer key={question} pinImage={pinImage} onTextAnswer={(text) => emit({ textAnswer: text })} />
         )}
 
         {isPlayer && answered && (

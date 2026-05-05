@@ -11,6 +11,8 @@ export const EVENTS = {
     UPDATE_QUESTION: "game:updateQuestion",
     PLAYER_ANSWER: "game:playerAnswer",
     CREATE: "game:create",
+    NEW_PLAYER: "game:newPlayer",
+    REMOVE_PLAYER: "game:removePlayer",
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",
@@ -39,6 +41,8 @@ export const EVENTS = {
     GET_CONFIG: "manager:getConfig",
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
+    VALIDATE_OPEN_ANSWER: "manager:validateOpenAnswer",
+    FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
   },
   QUIZZ: {
     GET: "quizz:get",

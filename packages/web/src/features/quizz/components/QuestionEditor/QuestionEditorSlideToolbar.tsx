@@ -5,7 +5,7 @@ import { useState, useRef, type MouseEvent } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-const BackgroundButton = () => {
+export const BackgroundButton = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -107,7 +107,7 @@ const BackgroundButton = () => {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-76 rounded-xl bg-white p-3 shadow-xl border border-gray-100">
+        <div className="absolute top-full left-0 z-50 mt-2 w-76 rounded-xl bg-white p-3 shadow-xl border border-gray-100">
           <div className="mb-3 flex gap-1">
             <button type="button" onClick={() => setTab("color")}
               className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "color" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}>
@@ -186,7 +186,7 @@ const BackgroundButton = () => {
   )
 }
 
-const AudioButton = () => {
+export const AudioButton = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -225,7 +225,7 @@ const AudioButton = () => {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-xl bg-white p-3 shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-2 w-72 rounded-xl bg-white p-3 shadow-lg border border-gray-100">
           <p className="mb-2 text-xs font-semibold text-gray-500">
             {t("quizz:slideUrlLabel")}
           </p>

@@ -71,6 +71,7 @@ const baseQuestionValidator = z.object({
   backgroundOpacity: z.number().min(0).max(1).optional(),
   elements: z.array(slideElementValidator).optional(),
   audio: z.string().optional(),
+  showLeaderboard: z.boolean().optional(),
   cooldown: z.number().int().min(3).max(15),
   time: z.number().int().min(5).max(120),
 })
@@ -145,6 +146,7 @@ const titleValidator = z.object({
   backgroundOpacity: z.number().min(0).max(1).optional(),
   elements: z.array(slideElementValidator).optional(),
   audio: z.string().optional(),
+  showLeaderboard: z.boolean().optional(),
   cooldown: z.number().int().min(3).max(15),
   time: z.number().int().min(5).max(120),
 })

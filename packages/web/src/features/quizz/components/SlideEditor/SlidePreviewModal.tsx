@@ -63,8 +63,6 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           selectedId={undefined}
           onSelect={() => {}}
           readOnly={true}
-          background={background}
-          backgroundOpacity={backgroundOpacity}
         />
       </div>
 

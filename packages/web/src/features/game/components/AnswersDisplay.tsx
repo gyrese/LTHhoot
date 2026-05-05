@@ -13,12 +13,16 @@ export const McqAnswers = ({
   onAnswer: (_key: number) => void
   iconOnly?: boolean
 }) => (
-  <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 px-2">
+  <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2">
     {answers.map((answer, key) => (
       <AnswerButton
         key={key}
         index={key}
-        className={clsx(ANSWERS_COLORS[key])}
+        className={clsx(
+          ANSWERS_COLORS[key],
+          /* surface tactile minimum 64px en mode icône seule */
+          iconOnly && "min-h-16",
+        )}
         icon={ANSWERS_ICONS[key]}
         iconOnly={iconOnly}
         onClick={() => onAnswer(key)}

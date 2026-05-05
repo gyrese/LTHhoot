@@ -2,6 +2,7 @@ import { EVENTS } from "@rahoot/common/constants"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
 import background from "@rahoot/web/assets/background.png"
 import Loader from "@rahoot/web/components/Loader"
+import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import {
   useEvent,
   useSocket,
@@ -9,6 +10,7 @@ import {
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { MANAGER_SKIP_BTN } from "@rahoot/web/features/game/utils/constants"
+import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
 import clsx from "clsx"
 import { type PropsWithChildren, useEffect, useState } from "react"
 import toast from "react-hot-toast"
@@ -51,7 +53,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   return (
     <section
       className="relative flex h-dvh flex-col overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)" }}
+      style={{ backgroundImage: "url(/bg-salon.png)", backgroundSize: "cover", backgroundPosition: "center" }}
     >
       {/* Fond garage uniquement sur l'écran d'attente */}
       {isRoomScreen && (
@@ -99,10 +101,26 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
             {/* Barre joueur en bas (overlay) */}
             {!manager && (
-              <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between bg-black/50 px-4 py-2 backdrop-blur-sm">
-                <p className="font-bold text-white">{player?.username}</p>
-                <div className="rounded-lg bg-white/20 px-3 py-1 text-sm font-bold text-white">
-                  {player?.points}
+              <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center gap-3 bg-black/60 px-3 py-2.5 backdrop-blur-md">
+                {/* Avatar */}
+                {player?.avatar && (
+                  <GameAvatar
+                    seed={player.avatar}
+                    animated
+                    className="h-10 w-10 shrink-0 rounded-full border-2 border-primary"
+                  />
+                )}
+                {/* Pseudo */}
+                <p className="flex-1 truncate text-sm font-bold text-white">
+                  {player?.username}
+                </p>
+                {/* Points */}
+                <div className="anim-pop-in shrink-0 rounded-lg bg-primary/20 px-3 py-1 text-sm font-black text-primary ring-1 ring-primary/40">
+                  <AnimatedPoints 
+                    to={player?.points ?? 0} 
+                    className="mr-1"
+                  /> 
+                  pts
                 </div>
               </div>
             )}

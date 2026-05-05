@@ -3,6 +3,8 @@
   "confirm": "Confirmer",
   "connecting": "Connexion...",
   "delete": "Supprimer",
+  "edit": "Modifier",
+  "export": "Exporter",
   "exit": "Quitter",
   "language": {
     "de": "Allemand",
