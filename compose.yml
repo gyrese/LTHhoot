@@ -1,9 +1,10 @@
 services:
   ltnhoot:
     image: gyrese/lthoot:latest
+    container_name: ltnhoot
     restart: unless-stopped
-    ports:
-      - "3030:3000"
+    networks:
+      - nginx-proxy-network
     volumes:
       - ./config:/app/config
       - ./packages/web/public/pets:/app/web/pets
@@ -13,3 +14,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+networks:
+  nginx-proxy-network:
+    external: true
