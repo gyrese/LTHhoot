@@ -26,7 +26,6 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 
 COPY --from=builder /app/packages/web/dist /app/web
-COPY --from=builder /app/packages/web/public/pets /app/web/pets
 COPY --from=builder /app/packages/socket/dist/index.cjs /app/socket/index.cjs
 
 WORKDIR /app/socket
