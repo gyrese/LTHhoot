@@ -33,8 +33,17 @@ const REMOTE_FALLBACK_AVATARS: readonly PetdexAvatar[] = [
   },
 ] as const
 
-export const PETDEX_AVATARS: readonly PetdexAvatar[] =
-  LOCAL_PETDEX_AVATARS.length > 0 ? LOCAL_PETDEX_AVATARS : REMOTE_FALLBACK_AVATARS
+const CDN_BASE = "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/curated"
+
+const withCdnFallback = (avatars: readonly PetdexAvatar[]): readonly PetdexAvatar[] =>
+  avatars.map((a) => ({
+    ...a,
+    remoteSpritesheetUrl: a.remoteSpritesheetUrl ?? `${CDN_BASE}/${a.seed}/spritesheet.webp`,
+  }))
+
+export const PETDEX_AVATARS: readonly PetdexAvatar[] = withCdnFallback(
+  LOCAL_PETDEX_AVATARS.length > 0 ? LOCAL_PETDEX_AVATARS : REMOTE_FALLBACK_AVATARS,
+)
 
 export const AVATAR_SEEDS = PETDEX_AVATARS.map((a) => a.seed) as readonly string[]
 export type AvatarSeed = (typeof AVATAR_SEEDS)[number]
