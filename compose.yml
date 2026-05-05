@@ -6,6 +6,7 @@ services:
       - "3000:3000"
     volumes:
       - ./config:/app/config
+      - ./packages/web/public/pets:/app/web/pets
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
       interval: 30s
