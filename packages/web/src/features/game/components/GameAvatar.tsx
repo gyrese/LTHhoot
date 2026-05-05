@@ -57,9 +57,11 @@ const GameAvatar = ({
   const [sourceUrl, setSourceUrl] = useState<string | null>(
     pet ? pet.spritesheetUrl : null,
   )
+  const [spriteFailed, setSpriteFailed] = useState(false)
 
   useEffect(() => {
     setSourceUrl(pet ? pet.spritesheetUrl : null)
+    setSpriteFailed(false)
   }, [pet])
 
   useEffect(() => {
@@ -78,6 +80,8 @@ const GameAvatar = ({
       if (stopped) return
       if (pet.remoteSpritesheetUrl && sourceUrl !== pet.remoteSpritesheetUrl) {
         setSourceUrl(pet.remoteSpritesheetUrl)
+      } else {
+        setSpriteFailed(true)
       }
     }
 
@@ -124,7 +128,7 @@ const GameAvatar = ({
         const loopFrame = Math.floor((now - start) / frameMs) % totalFrames
 
         let currentFrame = loopFrame
-        let activeRow = PETDEX_STATES.idle.row
+        let activeRow: number = PETDEX_STATES.idle.row
         let activeFrame = 0
 
         for (const state of frameSequence) {
@@ -152,20 +156,17 @@ const GameAvatar = ({
     }
   }, [animated, dpr, frameSequence, pet, sourceUrl])
 
-  if (pet) {
+  if (pet && !spriteFailed) {
     return (
       <span
         role="img"
         aria-label={pet.label}
         className={clsx(
           "shrink-0 overflow-hidden",
-          // Keep the idle bounce on top of the sprite animation.
           animated && idleBounce && "anim-avatar-idle",
           className,
         )}
-        style={{
-          ...style,
-        }}
+        style={{ ...style }}
       >
         <canvas
           ref={canvasRef}
