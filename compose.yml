@@ -3,7 +3,7 @@ services:
     image: gyrese/lthoot:latest
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3030:3000"
     volumes:
       - ./config:/app/config
       - ./packages/web/public/pets:/app/web/pets
