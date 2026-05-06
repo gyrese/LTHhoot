@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1777978045778,
+  "lastScanned": 1778069712783,
   "projectRoot": "c:\\ai\\testrahoot",
   "techStack": {
     "languages": [
@@ -26,7 +26,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "cd c:/ai/testrahoot && npx tsc -p packages/web/tsconfig.json --noEmit 2>&1 | head -10",
+    "buildCommand": "cd /c/ai/testrahoot/packages/web && npx tsc --noEmit 2>&1",
     "testCommand": null,
     "lintCommand": "pnpm lint",
     "devCommand": "pnpm dev",
@@ -60,7 +60,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1777978045706,
+      "lastAccessed": 1778069712726,
       "keyFiles": [
         "game.json"
       ]
@@ -69,7 +69,7 @@
       "path": "docker",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1777978045709,
+      "lastAccessed": 1778069712729,
       "keyFiles": [
         "nginx.conf",
         "supervisord.conf"
@@ -79,14 +79,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1777978045724,
+      "lastAccessed": 1778069712743,
       "keyFiles": []
     },
     "save": {
       "path": "save",
       "purpose": null,
       "fileCount": 14,
-      "lastAccessed": 1777978045725,
+      "lastAccessed": 1778069712744,
       "keyFiles": [
         "agent.md",
         "audit.md",
@@ -99,7 +99,7 @@
       "path": "tasks",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1777978045726,
+      "lastAccessed": 1778069712745,
       "keyFiles": [
         "petdex-sync.ps1",
         "TODO0405.md"
@@ -109,7 +109,7 @@
       "path": "temp-skill",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1777978045727,
+      "lastAccessed": 1778069712745,
       "keyFiles": [
         "CLAUDE.md",
         "LICENSE",
@@ -121,7 +121,7 @@
       "path": "temp-skill\\docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1777978045731,
+      "lastAccessed": 1778069712749,
       "keyFiles": [
         "三个 data-scripts-templates 的区别.md"
       ]
@@ -130,26 +130,26 @@
   "hotPaths": [
     {
       "path": "packages\\web\\src\\features\\quizz\\components\\SlideEditor\\SlideCanvas.tsx",
-      "accessCount": 36,
-      "lastAccessed": 1778051956566,
+      "accessCount": 42,
+      "lastAccessed": 1778070533807,
       "type": "file"
     },
     {
       "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
-      "accessCount": 31,
-      "lastAccessed": 1778069459307,
+      "accessCount": 33,
+      "lastAccessed": 1778069842495,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Answers.tsx",
-      "accessCount": 29,
-      "lastAccessed": 1778069440742,
+      "accessCount": 33,
+      "lastAccessed": 1778071357683,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
-      "accessCount": 22,
-      "lastAccessed": 1778069530004,
+      "accessCount": 23,
+      "lastAccessed": 1778069718674,
       "type": "file"
     },
     {
@@ -184,14 +184,20 @@
     },
     {
       "path": "packages\\web\\src\\features\\game\\utils\\constants.ts",
-      "accessCount": 11,
-      "lastAccessed": 1777979923624,
+      "accessCount": 12,
+      "lastAccessed": 1778070316864,
       "type": "file"
     },
     {
       "path": "Dockerfile",
       "accessCount": 11,
       "lastAccessed": 1778010160184,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Leaderboard.tsx",
+      "accessCount": 11,
+      "lastAccessed": 1778070522357,
       "type": "file"
     },
     {
@@ -204,6 +210,12 @@
       "path": "packages\\web\\src\\features\\game\\components\\states\\Room.tsx",
       "accessCount": 10,
       "lastAccessed": 1778044781637,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1778071345688,
       "type": "file"
     },
     {
@@ -228,12 +240,6 @@
       "path": "compose.yml",
       "accessCount": 9,
       "lastAccessed": 1778012101723,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Leaderboard.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1777900612214,
       "type": "file"
     },
     {
@@ -279,15 +285,9 @@
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1778069440573,
-      "type": "file"
-    },
-    {
       "path": "packages/web/src",
-      "accessCount": 4,
-      "lastAccessed": 1777644870413,
+      "accessCount": 5,
+      "lastAccessed": 1778069765089,
       "type": "directory"
     },
     {
@@ -313,6 +313,12 @@
       "accessCount": 4,
       "lastAccessed": 1778045134668,
       "type": "file"
+    },
+    {
+      "path": "packages/web/src/features/game",
+      "accessCount": 4,
+      "lastAccessed": 1778070312342,
+      "type": "directory"
     },
     {
       "path": "packages\\web\\src\\features\\game\\stores\\player.tsx",
@@ -348,12 +354,6 @@
       "path": "packages/socket/src",
       "accessCount": 2,
       "lastAccessed": 1777644415102,
-      "type": "directory"
-    },
-    {
-      "path": "packages/web/src/features/game",
-      "accessCount": 2,
-      "lastAccessed": 1777807830427,
       "type": "directory"
     },
     {

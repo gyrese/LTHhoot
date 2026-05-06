@@ -67,6 +67,34 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
         }
         break
       }
+      
+      case "bringForward": {
+        if (selectedId && selectedElement) {
+          const idx = elements.findIndex(e => e.id === selectedId)
+          if (idx < elements.length - 1) {
+            const newElements = [...elements]
+            const temp = newElements[idx]
+            newElements[idx] = newElements[idx + 1]
+            newElements[idx + 1] = temp
+            onChange(newElements)
+          }
+        }
+        break
+      }
+
+      case "sendBackward": {
+        if (selectedId && selectedElement) {
+          const idx = elements.findIndex(e => e.id === selectedId)
+          if (idx > 0) {
+            const newElements = [...elements]
+            const temp = newElements[idx]
+            newElements[idx] = newElements[idx - 1]
+            newElements[idx - 1] = temp
+            onChange(newElements)
+          }
+        }
+        break
+      }
 
       case "setAsBackground": {
         if (selectedType === "image" && selectedElement && "url" in selectedElement) {

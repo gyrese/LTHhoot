@@ -94,6 +94,7 @@ class Game {
     }
 
     socket.join(this.gameId)
+    socket.join(`manager-${this.gameId}`)
     socket.emit(EVENTS.MANAGER.GAME_CREATED, {
       gameId: this.gameId,
       inviteCode: this.inviteCode,
@@ -134,11 +135,11 @@ class Game {
 
     if (this._manager.id === target) {
       this.managerStatus = statusData
+      this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, statusData)
     } else {
       this.playerStatus.set(target, statusData)
+      this.io.to(target).emit(EVENTS.GAME.STATUS, statusData)
     }
-
-    this.io.to(target).emit(EVENTS.GAME.STATUS, statusData)
   }
 
   // Player actions
@@ -170,6 +171,7 @@ class Game {
   // Reconnexion depuis un appareil tiers authentifié (télécommande)
   reconnectRemote(socket: Socket) {
     socket.join(this.gameId)
+    socket.join(`manager-${this.gameId}`)
     this._manager.id = socket.id
     this._manager.connected = true
 
@@ -201,6 +203,7 @@ class Game {
     }
 
     socket.join(this.gameId)
+    socket.join(`manager-${this.gameId}`)
     this._manager.id = socket.id
     this._manager.connected = true
 

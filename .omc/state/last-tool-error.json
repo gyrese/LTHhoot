@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd c:/ai/testrahoot && python3 -c \\\"\\nimport urllib.request, json, re\\n\\n# Lire les seeds depuis petdex-local.ts\\nwith open('packages/web/src/features/game/utils/petdex-local.ts', encoding...",
-  "error": "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 27, in <module>\r\n    print(f'\\n\\u2705 OK ({len(ok)}): {ok}')\r\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\encodings\\cp1252.py\", line 19, in encode\r\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\r\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2705' in position 2: character maps to <undefined>\r\nTotal...",
-  "timestamp": "2026-05-05T17:37:04.548Z",
-  "retry_count": 1
-}

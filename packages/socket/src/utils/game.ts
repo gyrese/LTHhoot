@@ -111,6 +111,7 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
       )
 
     case "drop_pin": {
+      if (question.type !== "drop_pin") return false
       if (!answer.textAnswer) return false
       const parts = answer.textAnswer.split(":")
       if (parts.length !== 2) return false
@@ -118,8 +119,18 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
       const py = parseFloat(parts[1])
       if (isNaN(px) || isNaN(py)) return false
       
-      // All valid pin placements get points based on distance
-      return true
+      const correctZones = question.zones.filter(z => z.isCorrect)
+      if (correctZones.length === 0) return true
+
+      // Seuil de proximité : 20% de la diagonale (environ 28 unités sur 100)
+      const PROXIMITY_THRESHOLD = 20 
+
+      return correctZones.some(z => {
+        // Calcul de la distance au centre de la zone
+        // (Les zones font 5x5 dans l'éditeur actuel, x/y est le point cliqué)
+        const distance = Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
+        return distance <= PROXIMITY_THRESHOLD
+      })
     }
 
     default:

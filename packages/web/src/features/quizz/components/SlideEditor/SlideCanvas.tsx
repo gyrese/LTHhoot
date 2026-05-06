@@ -354,12 +354,7 @@ const SlideCanvas = ({
             <Layer scaleX={scale} scaleY={scale}>
               {!noBackground && (
                 <>
-                  {/* Fond par défaut : dark base + salon à 50% */}
-                  <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
-                  <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
-
-                  {/* Fond personnalisé par-dessus */}
-                  {hasBackground && (
+                  {hasBackground ? (
                     <>
                       <Rect width={CANVAS_W} height={CANVAS_H} fill="#000000" />
                       {bgColor ? (
@@ -367,6 +362,12 @@ const SlideCanvas = ({
                       ) : (
                         <KonvaImage image={bgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={bgOpacity} />
                       )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Fond par défaut : dark base + salon à 50% */}
+                      <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
+                      <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
                     </>
                   )}
                 </>

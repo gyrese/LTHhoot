@@ -15,7 +15,6 @@ import { useTranslation } from "react-i18next"
 import { User, ArrowRight, RefreshCcw } from "lucide-react"
 
 const WELCOME_ANIMATION_STATES = ["idle", "waving", "waiting"] as const
-const PICKER_ANIMATION_STATES = ["idle", "waving", "waiting"] as const
 
 const Username = () => {
   const { socket } = useSocket()
@@ -26,7 +25,6 @@ const Username = () => {
     const idx = Math.floor(Math.random() * PETDEX_AVATARS.length)
     return PETDEX_AVATARS[idx]?.seed ?? "boba"
   })
-  const [isPetPickerOpen, setIsPetPickerOpen] = useState(false)
   const { t } = useTranslation()
 
   const handleLogin = () => {
@@ -82,13 +80,8 @@ const Username = () => {
           <div className="flex flex-col items-center gap-8">
             {/* Avatar Section */}
             <div className="relative">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative cursor-pointer"
-                onClick={() => setIsPetPickerOpen(true)}
-              >
-                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-primary to-orange-300 opacity-50 blur-lg transition-opacity group-hover:opacity-80" />
+              <div className="relative">
+                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-primary to-orange-300 opacity-50 blur-lg" />
                 <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 p-2 shadow-inner backdrop-blur-md">
                   <GameAvatar
                     seed={avatarSeed}
@@ -108,15 +101,7 @@ const Username = () => {
                 >
                   <RefreshCcw size={18} />
                 </button>
-              </motion.div>
-
-              <button
-                type="button"
-                onClick={() => setIsPetPickerOpen(true)}
-                className="mt-4 w-full rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20"
-              >
-                {t("common:changeAvatar", "Changer l'avatar")}
-              </button>
+              </div>
             </div>
 
             {/* Input Section */}
@@ -159,69 +144,6 @@ const Username = () => {
         </div>
       </motion.div>
 
-      {/* Pet Picker Modal */}
-      <AnimatePresence>
-        {isPetPickerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsPetPickerOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/20 bg-zinc-900 p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                  {t("game:chooseAvatar", "Choisir ton compagnon")}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsPetPickerOpen(false)}
-                  className="rounded-xl bg-white/5 p-2 text-white/60 hover:bg-white/10 hover:text-white"
-                >
-                  Fermer
-                </button>
-              </div>
-
-              <div className="custom-scrollbar mt-6 grid max-h-[60vh] grid-cols-3 gap-4 overflow-y-auto pr-2 sm:grid-cols-4 md:grid-cols-5">
-                {PETDEX_AVATARS.map((pet) => (
-                  <motion.button
-                    key={pet.seed}
-                    whileHover={{ scale: 1.05, y: -4 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setAvatarSeed(pet.seed)
-                      setIsPetPickerOpen(false)
-                    }}
-                    className={`group relative flex aspect-square flex-col items-center justify-center rounded-2xl border-2 transition-all ${
-                      avatarSeed === pet.seed
-                        ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(255,153,0,0.2)]"
-                        : "border-white/5 bg-white/5 hover:border-white/20"
-                    }`}
-                  >
-                    <GameAvatar
-                      seed={pet.seed}
-                      animated
-                      idleBounce={false}
-                      animationStates={PICKER_ANIMATION_STATES}
-                      className="h-16 w-16 sm:h-20 sm:w-20"
-                    />
-                    <span className="mt-1 text-[10px] font-bold uppercase text-white/40 group-hover:text-white/80">
-                      {pet.label}
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

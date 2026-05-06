@@ -148,7 +148,7 @@ export class RoundManager {
           pinImage: undefined,
         })
 
-        await sleep(question.cooldown)
+        await this.opts.cooldown.start(question.cooldown)
 
         if (!this.started) {
           return
@@ -200,7 +200,7 @@ export class RoundManager {
         type: question.type,
       })
 
-      await sleep(4)
+      await this.opts.cooldown.start(4)
 
       if (!this.started) {
         return
@@ -232,7 +232,7 @@ export class RoundManager {
         ...this.getQuestionSolutionData(question),
       })
 
-      await sleep(question.cooldown)
+      await this.opts.cooldown.start(question.cooldown)
 
       if (!this.started) {
         return
@@ -408,20 +408,28 @@ export class RoundManager {
           const parts = playerAnswer.textAnswer.split(":")
           const px = parseFloat(parts[0])
           const py = parseFloat(parts[1])
-          const z = question.zones?.[0]
+          const correctZones = question.zones?.filter(z => z.isCorrect) || []
 
-          if (z && !isNaN(px) && !isNaN(py)) {
-            const distance = Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
-            const maxDistance = 141.42 // Diagonal of 100x100 square
+          if (correctZones.length > 0 && !isNaN(px) && !isNaN(py)) {
+            // Trouver la distance à la zone correcte la plus proche
+            const distances = correctZones.map(z => 
+              Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
+            )
+            const minDistance = Math.min(...distances)
             
-            // Accuracy scales from 0.1 (farthest) to 1.0 (exact match)
-            const accuracy = Math.max(0.1, 1 - (distance / maxDistance))
+            // On utilise le même seuil que dans checkAnswer (20%)
+            const threshold = 20
+            
+            // Accuracy scales linearly from 1.0 (exact) to 0.1 (at threshold)
+            // If distance is very small (inside the 5x5 visual zone), we keep it near 1.0
+            const accuracy = Math.max(0.1, 1 - (minDistance / threshold))
+            
             points = Math.round(playerAnswer.points * accuracy)
-            points = Math.max(1, points) // Minimum 1 point just for answering
+            points = Math.max(1, points)
           } else {
             points = 1
           }
-          playerAnswer.points = points // Update answer record with final points
+          playerAnswer.points = points
         }
 
         player.points += points
@@ -455,6 +463,7 @@ export class RoundManager {
       background: question.background,
       backgroundOpacity: question.backgroundOpacity,
       elements: question.elements,
+      audio: question.audio,
     }
 
     const responsesExtra = (() => {

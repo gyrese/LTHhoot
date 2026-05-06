@@ -1,6 +1,7 @@
 import { EVENTS, MEDIA_TYPES } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
+import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import {
   DateAnswer,
   McqAnswers,
@@ -31,10 +32,6 @@ type Props = {
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
-
-const DEFAULT_BG: CSSProperties = {
-  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
-}
 
 const Answers = ({
   data: { question, type, answers, media, background, backgroundOpacity, elements, audio, time, totalPlayer, min, max, minYear, maxYear, items, pinImage },
@@ -124,14 +121,6 @@ const Answers = ({
     sfxPop()
   })
 
-  let bgStyle: CSSProperties = DEFAULT_BG
-
-  if (background?.type === "image") {
-    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
-  } else if (background?.type === "color") {
-    bgStyle = { backgroundColor: background.value }
-  }
-
   const isPlayer = player !== null
 
   const progress = time > 0 ? (cooldown / time) * 100 : 0
@@ -146,11 +135,30 @@ const Answers = ({
 
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
-      <div className="absolute inset-0 bg-black" />
-      <div
-        className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
-      />
+      {background && background.value ? (
+        <>
+          <div className="absolute inset-0 bg-black" />
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundColor: background.type === "color" ? background.value : undefined,
+              backgroundImage: background.type === "image" ? `url(${background.value})` : undefined,
+              opacity: backgroundOpacity ?? 1
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[#0f172a]" />
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(/bg-salon.png)`,
+              opacity: 0.5
+            }}
+          />
+        </>
+      )}
 
       {/* Barre de progression du temps */}
       <div className="absolute top-0 left-0 right-0 z-20 h-2 bg-white/10">
@@ -173,7 +181,7 @@ const Answers = ({
         </div>
       )}
 
-      {audio && <audio ref={slideAudioRef} src={audio} autoPlay loop hidden />}
+      {audio && <AudioEmbed ref={slideAudioRef} audio={audio} />}
 
       <div className="relative z-10 px-4 pt-4">
         <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">

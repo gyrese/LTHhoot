@@ -7,7 +7,10 @@ import {
   Scissors,
   ClipboardPaste,
   Trash2,
+  ArrowUpToLine,
   ArrowDownToLine,
+  ArrowUp,
+  ArrowDown,
   Crop,
   Maximize,
   Sun,
@@ -15,7 +18,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useEffect, useRef } from "react"
 
-export type ContextMenuAction = "addText" | "addShape" | "addImage" | "addYoutube" | "copy" | "cut" | "paste" | "delete" | "bringToFront" | "sendToBack" | "setAsBackground" | "crop" | "opacity"
+export type ContextMenuAction = "addText" | "addShape" | "addImage" | "addYoutube" | "copy" | "cut" | "paste" | "delete" | "bringToFront" | "sendToBack" | "bringForward" | "sendBackward" | "setAsBackground" | "crop" | "opacity"
 
 type ContextMenuProps = {
   x: number
@@ -88,7 +91,14 @@ const SlideContextMenu = ({ x, y, hasSelection, selectedType, canPaste, onClose,
             <ArrowUpToLine className="size-4" /> Premier plan
           </button>
           <button onClick={() => handleAction("sendToBack")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
-            <ArrowDownToLine className="size-4" /> Arrière-plan
+            <ArrowDownToLine className="size-4" /> Dernier plan
+          </button>
+          <div className="h-px bg-gray-200 my-1 mx-2" />
+          <button onClick={() => handleAction("bringForward")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+            <ArrowUp className="size-4" /> Avancer
+          </button>
+          <button onClick={() => handleAction("sendBackward")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+            <ArrowDown className="size-4" /> Reculer
           </button>
           
           {selectedType === "image" && (

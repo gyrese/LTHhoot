@@ -10,6 +10,8 @@ import clsx from "clsx"
 import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import { MANAGER_SKIP_BTN, MANAGER_SKIP_EVENTS, isKeyOf } from "@rahoot/web/features/game/utils/constants"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,6 +114,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const [activeTab, setActiveTab] = useState<RemoteTab>("jeu")
   const [kickTargetId, setKickTargetId] = useState<string | null>(null)
   const [actionPending, setActionPending] = useState(false)
+  const { t } = useTranslation()
 
   // Réinitialise le compteur à chaque nouvelle phase de réponse
   useEffect(() => {
@@ -233,11 +236,15 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     if (!socket || !status || actionPending) return
     setActionPending(true)
 
-    switch (status.name) {
+    const { name } = status
+
+    // Actions spécifiques basées sur le statut
+    switch (name) {
       case STATUS.SHOW_ROOM:
         socket.emit(EVENTS.MANAGER.START_GAME, { gameId })
         break
       case STATUS.SELECT_ANSWER:
+        // Sur SELECT_ANSWER, le bouton principal est souvent "Passer" (Abort)
         socket.emit(EVENTS.MANAGER.ABORT_QUIZ, { gameId })
         break
       case STATUS.SHOW_OPEN_ANSWERS:
@@ -253,7 +260,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         navigate({ to: "/manager/config" })
         break
       default:
-        setActionPending(false)
+        // Fallback sur les événements de skip génériques
+        if (isKeyOf(MANAGER_SKIP_EVENTS, name)) {
+          socket.emit(MANAGER_SKIP_EVENTS[name], { gameId })
+        } else {
+          setActionPending(false)
+        }
     }
   }, [socket, status, actionPending, gameId, navigate])
 
@@ -284,7 +296,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
 
 
-  const primaryAction = getPrimaryAction(status, players.length)
+  const primaryAction = getPrimaryAction(status, players.length, t)
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
 
@@ -495,10 +507,12 @@ function GamePanel({
   timer: number | null
   maxTime: number
 }) {
+  const { t } = useTranslation()
+
   if (!status) {
     return (
       <div className="flex h-48 items-center justify-center">
-        <p className="text-sm text-white/30">En attente du jeu...</p>
+        <p className="text-sm text-white/30">{t("game:waitingForGame")}</p>
       </div>
     )
   }
@@ -507,11 +521,11 @@ function GamePanel({
     case STATUS.SHOW_ROOM:
       return <RoomPanel data={status.data} players={players} />
     case STATUS.SHOW_START:
-      return <StartPanel data={status.data} />
+      return <StartPanel data={status.data} t={t} />
     case STATUS.SHOW_PREPARED:
-      return <PreparedPanel data={status.data} />
+      return <PreparedPanel data={status.data} t={t} />
     case STATUS.SHOW_QUESTION:
-      return <QuestionPanel data={status.data} />
+      return <QuestionPanel data={status.data} t={t} />
     case STATUS.SELECT_ANSWER:
       return <SelectAnswerPanel data={status.data} answerCount={answerCount} players={players} timer={timer} maxTime={maxTime} />
 
@@ -524,13 +538,7 @@ function GamePanel({
     case STATUS.FINISHED:
       return <FinishedPanel data={status.data} />
     case STATUS.WAIT:
-      return (
-        <div className="flex h-48 items-center justify-center">
-          <p className="animate-pulse text-sm text-white/40">
-            {String(status.data.text ?? "Attente...")}
-          </p>
-        </div>
-      )
+      return <WaitPanel data={status.data} t={t} />
     default:
       return null
   }
@@ -748,7 +756,7 @@ function RoomPanel({ data, players }: { data: Record<string, unknown>; players: 
 
 // ─── SHOW_START ───────────────────────────────────────────────────────────────
 
-function StartPanel({ data }: { data: Record<string, unknown> }) {
+function StartPanel({ data, t }: { data: Record<string, unknown>; t: (key: string) => string }) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center gap-4 p-8">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-500/30 bg-orange-500/15">
@@ -758,7 +766,7 @@ function StartPanel({ data }: { data: Record<string, unknown> }) {
       </div>
       <div className="text-center">
         <h2 className="text-2xl font-black text-white">{String(data.subject ?? "Quiz")}</h2>
-        <p className="mt-1 text-sm text-white/40">Démarrage dans {String(data.time ?? 3)}s</p>
+        <p className="mt-1 text-sm text-white/40">{t("game:startIn")} {String(data.time ?? 3)}s</p>
       </div>
     </div>
   )
@@ -766,24 +774,24 @@ function StartPanel({ data }: { data: Record<string, unknown> }) {
 
 // ─── SHOW_PREPARED ────────────────────────────────────────────────────────────
 
-function PreparedPanel({ data }: { data: Record<string, unknown> }) {
+function PreparedPanel({ data, t }: { data: Record<string, unknown>; t: (key: string) => string }) {
   const type = String(data.type ?? "mcq")
   const qNumber = Number(data.questionNumber ?? 1)
 
   return (
     <div className="flex min-h-48 flex-col items-center justify-center gap-4 p-8">
-      <p className="text-xs uppercase tracking-widest text-white/30">Question {qNumber}</p>
+      <p className="text-xs uppercase tracking-widest text-white/30">{t("game:question")} {qNumber}</p>
       <span className="rounded-full border border-orange-500/30 bg-orange-500/15 px-5 py-2 text-sm font-semibold text-orange-300">
         {QUESTION_TYPE_LABELS[type] ?? type}
       </span>
-      <p className="animate-pulse text-sm text-white/25">Préparation en cours...</p>
+      <p className="animate-pulse text-sm text-white/25">{t("game:preparation")}...</p>
     </div>
   )
 }
 
 // ─── SHOW_QUESTION ────────────────────────────────────────────────────────────
 
-function QuestionPanel({ data }: { data: Record<string, unknown> }) {
+function QuestionPanel({ data, t }: { data: Record<string, unknown>; t: (key: string) => string }) {
   const question = String(data.question ?? "")
   const type = String(data.type ?? "mcq")
   const cooldown = Number(data.cooldown ?? 0)
@@ -795,7 +803,7 @@ function QuestionPanel({ data }: { data: Record<string, unknown> }) {
           <span className="rounded-full border border-orange-500/30 bg-orange-500/15 px-3 py-0.5 text-xs font-semibold text-orange-300">
             {QUESTION_TYPE_LABELS[type] ?? type}
           </span>
-          <span className="text-xs text-white/25">Temps de lecture</span>
+          <span className="text-xs text-white/25">{t("game:readingTime")}</span>
         </div>
         <p className="line-clamp-5 text-base font-semibold leading-relaxed text-white">{question}</p>
       </div>
@@ -804,8 +812,23 @@ function QuestionPanel({ data }: { data: Record<string, unknown> }) {
 
       <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-5 py-3.5 backdrop-blur-sm">
         <div className="h-2 w-2 animate-pulse rounded-full bg-orange-400" />
-        <p className="text-sm text-white/50">{cooldown}s · Lecture par les joueurs</p>
+        <p className="text-sm text-white/50">{cooldown}s · {t("game:readingByPlayers")}</p>
       </div>
+    </div>
+  )
+}
+
+// ─── WAIT ────────────────────────────────────────────────────────────────────
+
+function WaitPanel({ data, t }: { data: Record<string, unknown>; t: (key: string) => string }) {
+  return (
+    <div className="flex min-h-48 flex-col items-center justify-center gap-4 p-8">
+      <div className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full border border-white/10 bg-white/5">
+        <div className="h-2 w-2 rounded-full bg-orange-500" />
+      </div>
+      <p className="text-center text-sm font-medium text-white/40">
+        {String(data.text ?? t("game:waiting"))}
+      </p>
     </div>
   )
 }
@@ -1468,28 +1491,38 @@ function KickModal({
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-function getPrimaryAction(status: GameStatus, playerCount: number): PrimaryAction | null {
+function getPrimaryAction(status: GameStatus, playerCount: number, t: (key: string) => string): PrimaryAction | null {
   if (!status) return null
-  switch (status.name) {
-    case STATUS.SHOW_ROOM:
-      return {
-        label: playerCount > 0 ? "▶  Lancer le quiz" : "En attente de joueurs...",
-        disabled: playerCount === 0,
-        variant: "orange",
-      }
-    case STATUS.SELECT_ANSWER:
-      return { label: "⏭  Couper le timer", disabled: false, variant: "red" }
+  const { name } = status
 
-    case STATUS.SHOW_OPEN_ANSWERS:
-      return { label: "Valider et continuer →", disabled: false, variant: "orange" }
-
-    case STATUS.SHOW_RESPONSES:
-      return { label: "Classement  →", disabled: false, variant: "orange" }
-    case STATUS.SHOW_LEADERBOARD:
-      return { label: "Question suivante  →", disabled: false, variant: "orange" }
-    case STATUS.FINISHED:
-      return { label: "Terminer", disabled: false, variant: "ghost" }
-    default:
-      return null
+  // État initial : Salle d'attente
+  if (name === STATUS.SHOW_ROOM) {
+    return {
+      label: playerCount > 0 ? t("game:startGame") : t("game:waitingForPlayers"),
+      disabled: playerCount === 0,
+      variant: "orange",
+    }
   }
+
+  // Vérification des boutons de skip configurés dans les constantes
+  const skipKey = isKeyOf(MANAGER_SKIP_BTN, name) ? MANAGER_SKIP_BTN[name] : null
+  
+  if (skipKey) {
+    return {
+      label: t(skipKey),
+      disabled: false,
+      variant: name === STATUS.SELECT_ANSWER ? "red" : "orange",
+    }
+  }
+
+  // État final : Terminé
+  if (name === STATUS.FINISHED) {
+    return {
+      label: t("common:exit"),
+      disabled: false,
+      variant: "ghost",
+    }
+  }
+
+  return null
 }

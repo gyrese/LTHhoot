@@ -109,6 +109,7 @@ type ManagerExtraStatus = {
     background?: SlideBackground
     backgroundOpacity?: number
     elements?: SlideElement[]
+    audio?: string
   }
   SHOW_LEADERBOARD: {
     oldLeaderboard: Player[]

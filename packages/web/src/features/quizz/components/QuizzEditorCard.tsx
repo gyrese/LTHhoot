@@ -83,23 +83,35 @@ const SlideElementPreview = ({ el }: { el: SlideElement }) => {
 
 const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
   const bg = question.background
-  let bgStyle: CSSProperties = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
-
-  if (bg?.type === "image") {
-    bgStyle = { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
-  } else if (bg?.type === "color") {
-    bgStyle = { backgroundColor: bg.value }
-  }
+  const hasBg = bg && bg.value
+  const bgOpacity = question.backgroundOpacity ?? 1
 
   return (
     <div className="relative w-full overflow-hidden rounded-sm bg-black" style={{ aspectRatio: "16/9", containerType: "size" }}>
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-        style={{ 
-          ...bgStyle,
-          opacity: question.backgroundOpacity ?? 1 
-        }} 
-      />
+      {hasBg ? (
+        <>
+          <div className="absolute inset-0 bg-black" />
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
+            style={{ 
+              backgroundColor: bg.type === "color" ? bg.value : undefined,
+              backgroundImage: bg.type === "image" ? `url(${bg.value})` : undefined,
+              opacity: bgOpacity 
+            }} 
+          />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[#0f172a]" />
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
+            style={{ 
+              backgroundImage: `url(/bg-salon.png)`,
+              opacity: 0.5 
+            }} 
+          />
+        </>
+      )}
 
       {question.elements?.map((el) => (
         <SlideElementPreview key={el.id} el={el} />
@@ -142,9 +154,10 @@ type Props = {
   onClick: () => void
   onDelete: () => void
   onDuplicate: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
 }
 
-const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete, onDuplicate }: Props) => {
+const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete, onDuplicate, onContextMenu }: Props) => {
   const { t } = useTranslation()
   const Asset = TYPE_ASSETS[question.type]
   const isImage = typeof Asset === "string"
@@ -152,6 +165,7 @@ const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDele
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       className={twMerge(
         clsx(
           "group relative cursor-pointer rounded-sm border-2 border-gray-200 bg-white overflow-hidden",

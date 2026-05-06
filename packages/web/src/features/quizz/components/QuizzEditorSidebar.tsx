@@ -9,8 +9,9 @@ import QuizzEditorCard from "@rahoot/web/features/quizz/components/QuizzEditorCa
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
 import { Plus } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import SidebarContextMenu, { type SidebarAction } from "@rahoot/web/features/quizz/components/QuizzEditorSidebar/SidebarContextMenu"
 
 const QuizzEditorSidebar = () => {
   const {
@@ -23,6 +24,7 @@ const QuizzEditorSidebar = () => {
     duplicateQuestion,
   } = useQuizzEditor()
   const { t } = useTranslation()
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; index: number; show: boolean } | null>(null)
 
   const isDragging = useRef(false)
 
@@ -51,6 +53,36 @@ const QuizzEditorSidebar = () => {
     }
 
     reorderQuestions(result.source.index, result.destination.index)
+  }
+
+  const handleContextMenu = (index: number) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY, index, show: true })
+  }
+
+  const handleSidebarAction = (action: SidebarAction, index: number) => {
+    switch (action) {
+      case "add":
+        addQuestion()
+        // Wait for state update then select it? addQuestion usually handles selection
+        break
+      case "duplicate":
+        duplicateQuestion(index)
+        break
+      case "delete":
+        removeQuestion(index)
+        break
+      case "moveUp":
+        if (index > 0) reorderQuestions(index, index - 1)
+        break
+      case "moveDown":
+        if (index < questions.length - 1) reorderQuestions(index, index + 1)
+        break
+      case "changeBackground":
+        setCurrentIndex(index)
+        // This will show the background settings in the right sidebar
+        break
+    }
   }
 
   return (
@@ -85,6 +117,7 @@ const QuizzEditorSidebar = () => {
                         onClick={handleSlideClick(index)}
                         onDelete={handleDelete(index)}
                         onDuplicate={handleDuplicate(index)}
+                        onContextMenu={handleContextMenu(index)}
                       />
                     </div>
                   )}
@@ -103,6 +136,19 @@ const QuizzEditorSidebar = () => {
         <Plus className="size-6" />
         {t("quizz:addQuestion")}
       </Button>
+
+      {contextMenu?.show && (
+        <SidebarContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          index={contextMenu.index}
+          canDelete={questions.length > 1}
+          canMoveUp={contextMenu.index > 0}
+          canMoveDown={contextMenu.index < questions.length - 1}
+          onClose={() => setContextMenu(null)}
+          onAction={handleSidebarAction}
+        />
+      )}
     </aside>
   )
 }

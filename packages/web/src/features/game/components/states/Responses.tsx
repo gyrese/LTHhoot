@@ -16,10 +16,6 @@ import useSound from "use-sound"
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
 
-const DEFAULT_BG: CSSProperties = {
-  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
-}
-
 type Props = {
   data: ManagerStatusDataMap["SHOW_RESPONSES"]
 }
@@ -421,21 +417,32 @@ const Responses = ({
     }
   }, [])
 
-  let bgStyle: CSSProperties = DEFAULT_BG
-
-  if (background?.type === "image") {
-    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
-  } else if (background?.type === "color") {
-    bgStyle = { backgroundColor: background.value }
-  }
-
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
-      <div className="absolute inset-0 bg-black" />
-      <div
-        className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
-      />
+      {background && background.value ? (
+        <>
+          <div className="absolute inset-0 bg-black" />
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundColor: background.type === "color" ? background.value : undefined,
+              backgroundImage: background.type === "image" ? `url(${background.value})` : undefined,
+              opacity: backgroundOpacity ?? 1
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[#0f172a]" />
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(/bg-salon.png)`,
+              opacity: 0.5
+            }}
+          />
+        </>
+      )}
 
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
@@ -449,6 +456,7 @@ const Responses = ({
           />
         </div>
       )}
+
 
       <div className="relative z-10 mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
         <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">

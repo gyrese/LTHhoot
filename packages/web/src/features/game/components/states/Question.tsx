@@ -53,8 +53,6 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
         </div>
       )}
 
-      {audio && <audio src={audio} autoPlay loop hidden />}
-
       {type !== "title" && (
         <div className="relative z-10 px-4 pt-4">
           <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">

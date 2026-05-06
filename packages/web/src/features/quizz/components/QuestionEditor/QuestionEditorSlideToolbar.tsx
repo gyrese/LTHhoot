@@ -1,5 +1,6 @@
 import type { SlideBackground } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { parseAudio, extractYoutubeId, mmssToSeconds, secondsToMmss } from "@rahoot/web/features/game/utils/audio"
 import { Image, Music, X } from "lucide-react"
 import { useState, useRef, type MouseEvent } from "react"
 import toast from "react-hot-toast"
@@ -190,10 +191,51 @@ export const AudioButton = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [input, setInput] = useState(currentQuestion.audio ?? "")
+  const [tab, setTab] = useState<"file" | "youtube">("file")
+  const [fileInput, setFileInput] = useState("")
+  const [ytUrl, setYtUrl] = useState("")
+  const [ytStart, setYtStart] = useState("00:00")
+  const [ytEnd, setYtEnd] = useState("")
 
-  const handleSave = () => {
-    updateQuestion(currentIndex, { audio: input || undefined })
+  const openPanel = () => {
+    const { audio } = currentQuestion
+
+    if (audio?.startsWith("yt:")) {
+      const src = parseAudio(audio)
+
+      if (src.type === "youtube") {
+        setTab("youtube")
+        setYtUrl(`https://www.youtube.com/watch?v=${src.videoId}`)
+        setYtStart(src.start > 0 ? secondsToMmss(src.start) : "00:00")
+        setYtEnd(src.end > 0 ? secondsToMmss(src.end) : "")
+      }
+    } else {
+      setTab("file")
+      setFileInput(audio ?? "")
+      setYtUrl("")
+      setYtStart("00:00")
+      setYtEnd("")
+    }
+
+    setOpen((o) => !o)
+  }
+
+  const handleSaveFile = () => {
+    updateQuestion(currentIndex, { audio: fileInput.trim() || undefined })
+    setOpen(false)
+  }
+
+  const handleSaveYoutube = () => {
+    const videoId = extractYoutubeId(ytUrl.trim())
+
+    if (!videoId) {
+      return
+    }
+
+    const start = mmssToSeconds(ytStart || "00:00")
+    const end = ytEnd.trim() ? mmssToSeconds(ytEnd) : 0
+
+    updateQuestion(currentIndex, { audio: `yt:${videoId}:${start}:${end}` })
     setOpen(false)
   }
 
@@ -206,10 +248,7 @@ export const AudioButton = () => {
     <div className="relative">
       <button
         type="button"
-        onClick={() => {
-          setInput(currentQuestion.audio ?? "")
-          setOpen((o) => !o)
-        }}
+        onClick={openPanel}
         className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-sm font-semibold text-gray-700 shadow hover:bg-white"
       >
         <Music className="size-4" />
@@ -225,35 +264,87 @@ export const AudioButton = () => {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-2 w-72 rounded-xl bg-white p-3 shadow-lg border border-gray-100">
-          <p className="mb-2 text-xs font-semibold text-gray-500">
-            {t("quizz:slideUrlLabel")}
-          </p>
-          <input
-            autoFocus
-            type="url"
-            className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-yellow-400"
-            placeholder="https://..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSave()}
-          />
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
-            >
-              {t("common:cancel")}
+        <div className="absolute top-full left-0 z-50 mt-2 w-80 rounded-xl bg-white p-3 shadow-lg border border-gray-100">
+          {/* Onglets */}
+          <div className="mb-3 flex gap-1">
+            <button type="button" onClick={() => setTab("file")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "file" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+              URL audio
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600"
-            >
-              {t("common:save")}
+            <button type="button" onClick={() => setTab("youtube")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "youtube" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+              YouTube
             </button>
           </div>
+
+          {tab === "file" ? (
+            <>
+              <p className="mb-2 text-xs font-semibold text-gray-500">{t("quizz:slideUrlLabel")}</p>
+              <input
+                autoFocus
+                type="url"
+                className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-yellow-400"
+                placeholder="https://..."
+                value={fileInput}
+                onChange={(e) => setFileInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveFile()}
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                  {t("common:cancel")}
+                </button>
+                <button type="button" onClick={handleSaveFile}
+                  className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600">
+                  {t("common:save")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-2 text-xs font-semibold text-gray-500">URL YouTube</p>
+              <input
+                autoFocus
+                type="url"
+                className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400"
+                placeholder="https://youtube.com/watch?v=..."
+                value={ytUrl}
+                onChange={(e) => setYtUrl(e.target.value)}
+              />
+              <div className="mt-2 flex gap-2">
+                <div className="flex-1">
+                  <p className="mb-1 text-xs text-gray-400">Début</p>
+                  <input
+                    type="text"
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400 font-mono"
+                    placeholder="00:00"
+                    value={ytStart}
+                    onChange={(e) => setYtStart(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="mb-1 text-xs text-gray-400">Fin (optionnel)</p>
+                  <input
+                    type="text"
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400 font-mono"
+                    placeholder="mm:ss"
+                    value={ytEnd}
+                    onChange={(e) => setYtEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                  {t("common:cancel")}
+                </button>
+                <button type="button" onClick={handleSaveYoutube} disabled={!extractYoutubeId(ytUrl.trim())}
+                  className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-40">
+                  {t("common:save")}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
