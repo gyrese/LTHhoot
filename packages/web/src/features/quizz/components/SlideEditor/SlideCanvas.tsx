@@ -1,5 +1,6 @@
 import { type SlideElement, type SlideBackground } from "@rahoot/common/types/game"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
+import defaultBg from "@rahoot/web/assets/background.png"
 import React, { useRef, useState, useEffect } from "react"
 import { createImageElement, createTextElement } from "@rahoot/web/features/quizz/utils/element-factory"
 import { Stage, Layer, Text, Rect, Transformer, Group, Image as KonvaImage } from "react-konva"
@@ -121,6 +122,7 @@ const SlideCanvas = ({
   const bgImage = useSimpleImage(background?.type === "image" ? background.value : slideBg)
   const bgColor = background?.type === "color" ? background.value : undefined
   const bgOpacity = backgroundOpacity ?? (background ? 1 : 0.5)
+  const defaultBgImage = useSimpleImage(defaultBg)
 
   const [editingId, setEditingId] = useState<string | undefined>()
 
@@ -349,14 +351,8 @@ const SlideCanvas = ({
             ref={stageRef}
           >
             <Layer scaleX={scale} scaleY={scale}>
-              {/* Fond par défaut : dégradé bleu nuit identique au jeu */}
-              <Rect
-                width={CANVAS_W}
-                height={CANVAS_H}
-                fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-                fillLinearGradientEndPoint={{ x: 0, y: CANVAS_H }}
-                fillLinearGradientColorStops={[0, "#0f172a", 1, "#1e1b4b"]}
-              />
+              {/* Fond par défaut : image salon identique au jeu */}
+              <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} />
 
               {/* Fond personnalisé par-dessus */}
               {hasBackground && (
