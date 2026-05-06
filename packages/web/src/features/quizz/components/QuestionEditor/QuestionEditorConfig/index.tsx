@@ -3,7 +3,7 @@ import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEdi
 import ConfigSection from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection"
 import QuestionEditorTypeSelector from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTypeSelector"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { Clock, Contrast, Timer, Layers, Trophy, Trash2, ChevronUp, ChevronDown } from "lucide-react"
+import { Clock, Contrast, Timer, Layers, Trophy, Trash2, ChevronUp, ChevronDown, Video, Volume2, Repeat, Settings, Play } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
@@ -11,8 +11,15 @@ const QuestionEditorConfig = () => {
   const { currentQuestion, currentIndex, updateQuestion, selectedId, setSelectedId } = useQuizzEditor()
   const { t } = useTranslation()
 
-  const handleUpdateQuestion = (key: string) => (value: string | number) => {
+  const handleUpdateQuestion = (key: string) => (value: string | number | boolean) => {
     updateQuestion(currentIndex, { [key]: value })
+  }
+
+  const handleUpdateElement = (id: string, updates: any) => {
+    const elements = (currentQuestion.elements || []).map(el => 
+      el.id === id ? { ...el, ...updates } : el
+    )
+    updateQuestion(currentIndex, { elements })
   }
 
   const handleDeleteLayer = (id: string) => (e: React.MouseEvent) => {
@@ -38,6 +45,8 @@ const QuestionEditorConfig = () => {
   }
 
   const isTitle = currentQuestion.type === "title"
+  const selectedElement = currentQuestion.elements?.find(el => el.id === selectedId)
+  const isYoutube = selectedElement?.type === "youtube"
 
   return (
     <aside className="z-10 flex w-68 shrink-0 flex-col gap-6 overflow-auto bg-white border-l border-gray-200 px-4 pb-4">
@@ -132,6 +141,80 @@ const QuestionEditorConfig = () => {
           </ConfigField>
         )}
       </ConfigSection>
+
+      {isYoutube && selectedElement && selectedElement.type === "youtube" && (
+        <ConfigSection title="Configuration YouTube" defaultOpen={true}>
+          <div className="flex flex-col gap-4">
+            {/* Autoplay & Mute */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { autoplay: !selectedElement.autoplay })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                  selectedElement.autoplay ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                <Play className="size-3.5" /> Autoplay
+              </button>
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { mute: !selectedElement.mute })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                  selectedElement.mute ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                <Volume2 className="size-3.5" /> Muet
+              </button>
+            </div>
+
+            {/* Loop & Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { loop: !selectedElement.loop })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                  selectedElement.loop ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                <Repeat className="size-3.5" /> Boucle
+              </button>
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { controls: !selectedElement.controls })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                  selectedElement.controls ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                <Settings className="size-3.5" /> Contrôles
+              </button>
+            </div>
+
+            <div className="h-px bg-gray-100 my-1" />
+
+            {/* Start & End Time */}
+            <div className="flex flex-col gap-3">
+              <ConfigField>
+                <ConfigField.Label icon={<Clock className="size-4" />} label="Début (sec)" />
+                <ConfigNumberInput
+                  value={selectedElement.startTime || 0}
+                  min={0}
+                  onChange={(val) => handleUpdateElement(selectedId!, { startTime: val })}
+                />
+              </ConfigField>
+
+              <ConfigField>
+                <ConfigField.Label icon={<Clock className="size-4" />} label="Fin (sec)" />
+                <ConfigNumberInput
+                  value={selectedElement.endTime || 0}
+                  min={0}
+                  onChange={(val) => handleUpdateElement(selectedId!, { endTime: val })}
+                />
+                <ConfigField.Description>0 pour désactiver</ConfigField.Description>
+              </ConfigField>
+            </div>
+          </div>
+        </ConfigSection>
+      )}
 
       <ConfigSection title={t("quizz:question.config.layersTitle")} defaultOpen={true}>
         <div className="flex flex-col gap-1.5">
