@@ -100,14 +100,13 @@ const Leaderboard = ({
 
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
-          <SlideCanvas 
-            elements={elements} 
-            onChange={noopChange} 
-            selectedId={undefined} 
-            onSelect={noopSelect} 
-            background={background}
-            backgroundOpacity={backgroundOpacity}
-            readOnly 
+          <SlideCanvas
+            elements={elements.filter((el) => el.type !== "youtube")}
+            onChange={noopChange}
+            selectedId={undefined}
+            onSelect={noopSelect}
+            readOnly
+            noBackground
           />
         </div>
       )}

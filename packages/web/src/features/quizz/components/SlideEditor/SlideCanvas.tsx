@@ -12,6 +12,7 @@ type SlideCanvasProps = {
   selectedId?: string
   onSelect: (_id: string | undefined) => void
   readOnly?: boolean
+  noBackground?: boolean
   background?: SlideBackground
   backgroundOpacity?: number
   onContextMenuEvent?: (_e: MouseEvent, _isElement: boolean) => void
@@ -26,6 +27,7 @@ const SlideCanvas = ({
   selectedId,
   onSelect,
   readOnly = false,
+  noBackground = false,
   background,
   backgroundOpacity,
   onContextMenuEvent,
@@ -350,18 +352,22 @@ const SlideCanvas = ({
             ref={stageRef}
           >
             <Layer scaleX={scale} scaleY={scale}>
-              {/* Fond par défaut : dark base + salon à 50% */}
-              <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
-              <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
-
-              {/* Fond personnalisé par-dessus */}
-              {hasBackground && (
+              {!noBackground && (
                 <>
-                  <Rect width={CANVAS_W} height={CANVAS_H} fill="#000000" />
-                  {bgColor ? (
-                    <Rect width={CANVAS_W} height={CANVAS_H} fill={bgColor} opacity={bgOpacity} />
-                  ) : (
-                    <KonvaImage image={bgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={bgOpacity} />
+                  {/* Fond par défaut : dark base + salon à 50% */}
+                  <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
+                  <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
+
+                  {/* Fond personnalisé par-dessus */}
+                  {hasBackground && (
+                    <>
+                      <Rect width={CANVAS_W} height={CANVAS_H} fill="#000000" />
+                      {bgColor ? (
+                        <Rect width={CANVAS_W} height={CANVAS_H} fill={bgColor} opacity={bgOpacity} />
+                      ) : (
+                        <KonvaImage image={bgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={bgOpacity} />
+                      )}
+                    </>
                   )}
                 </>
               )}
