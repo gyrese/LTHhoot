@@ -54,7 +54,82 @@ const QuestionEditorConfig = () => {
         <QuestionEditorTypeSelector />
       </ConfigSection>
 
+      {isYoutube && (
+        <ConfigSection title="📺 CONFIGURATION YOUTUBE" defaultOpen={true}>
+          <div className="flex flex-col gap-4 p-2 border-2 border-red-100 rounded-xl bg-red-50/30">
+            {/* Autoplay & Mute */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { autoplay: !selectedElement!.autoplay })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase transition-all shadow-sm",
+                  selectedElement!.autoplay ? "bg-red-500 border-red-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Play className="size-3" /> Autoplay
+              </button>
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { mute: !selectedElement!.mute })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase transition-all shadow-sm",
+                  selectedElement!.mute ? "bg-red-500 border-red-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Volume2 className="size-3" /> Muet
+              </button>
+            </div>
+
+            {/* Loop & Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { loop: !selectedElement!.loop })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase transition-all shadow-sm",
+                  selectedElement!.loop ? "bg-red-500 border-red-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Repeat className="size-3" /> Boucle
+              </button>
+              <button
+                onClick={() => handleUpdateElement(selectedId!, { controls: !selectedElement!.controls })}
+                className={clsx(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase transition-all shadow-sm",
+                  selectedElement!.controls ? "bg-red-500 border-red-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Settings className="size-3" /> Contrôles
+              </button>
+            </div>
+
+            <div className="h-px bg-red-100 my-1" />
+
+            {/* Start & End Time */}
+            <div className="flex flex-col gap-3">
+              <ConfigField>
+                <ConfigField.Label icon={<Clock className="size-4" />} label="Début (sec)" />
+                <ConfigNumberInput
+                  value={(selectedElement as any).startTime || 0}
+                  min={0}
+                  onChange={(val) => handleUpdateElement(selectedId!, { startTime: val })}
+                />
+              </ConfigField>
+
+              <ConfigField>
+                <ConfigField.Label icon={<Clock className="size-4" />} label="Fin (sec)" />
+                <ConfigNumberInput
+                  value={(selectedElement as any).endTime || 0}
+                  min={0}
+                  onChange={(val) => handleUpdateElement(selectedId!, { endTime: val })}
+                />
+                <ConfigField.Description>0 pour désactiver</ConfigField.Description>
+              </ConfigField>
+            </div>
+          </div>
+        </ConfigSection>
+      )}
+
       <ConfigSection title={t("quizz:question.config.propertiesTitle")} defaultOpen={false}>
+
         <ConfigField>
           <ConfigField.Label
             icon={<Contrast className="size-4" />}
@@ -141,80 +216,6 @@ const QuestionEditorConfig = () => {
           </ConfigField>
         )}
       </ConfigSection>
-
-      {isYoutube && selectedElement && selectedElement.type === "youtube" && (
-        <ConfigSection title="Configuration YouTube" defaultOpen={true}>
-          <div className="flex flex-col gap-4">
-            {/* Autoplay & Mute */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => handleUpdateElement(selectedId!, { autoplay: !selectedElement.autoplay })}
-                className={clsx(
-                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
-                  selectedElement.autoplay ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <Play className="size-3.5" /> Autoplay
-              </button>
-              <button
-                onClick={() => handleUpdateElement(selectedId!, { mute: !selectedElement.mute })}
-                className={clsx(
-                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
-                  selectedElement.mute ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <Volume2 className="size-3.5" /> Muet
-              </button>
-            </div>
-
-            {/* Loop & Controls */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => handleUpdateElement(selectedId!, { loop: !selectedElement.loop })}
-                className={clsx(
-                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
-                  selectedElement.loop ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <Repeat className="size-3.5" /> Boucle
-              </button>
-              <button
-                onClick={() => handleUpdateElement(selectedId!, { controls: !selectedElement.controls })}
-                className={clsx(
-                  "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
-                  selectedElement.controls ? "bg-primary/10 border-primary text-primary" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <Settings className="size-3.5" /> Contrôles
-              </button>
-            </div>
-
-            <div className="h-px bg-gray-100 my-1" />
-
-            {/* Start & End Time */}
-            <div className="flex flex-col gap-3">
-              <ConfigField>
-                <ConfigField.Label icon={<Clock className="size-4" />} label="Début (sec)" />
-                <ConfigNumberInput
-                  value={selectedElement.startTime || 0}
-                  min={0}
-                  onChange={(val) => handleUpdateElement(selectedId!, { startTime: val })}
-                />
-              </ConfigField>
-
-              <ConfigField>
-                <ConfigField.Label icon={<Clock className="size-4" />} label="Fin (sec)" />
-                <ConfigNumberInput
-                  value={selectedElement.endTime || 0}
-                  min={0}
-                  onChange={(val) => handleUpdateElement(selectedId!, { endTime: val })}
-                />
-                <ConfigField.Description>0 pour désactiver</ConfigField.Description>
-              </ConfigField>
-            </div>
-          </div>
-        </ConfigSection>
-      )}
 
       <ConfigSection title={t("quizz:question.config.layersTitle")} defaultOpen={true}>
         <div className="flex flex-col gap-1.5">

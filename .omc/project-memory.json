@@ -136,20 +136,20 @@
     },
     {
       "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
-      "accessCount": 30,
-      "lastAccessed": 1777991359152,
+      "accessCount": 31,
+      "lastAccessed": 1778069459307,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Answers.tsx",
-      "accessCount": 28,
-      "lastAccessed": 1777973591135,
+      "accessCount": 29,
+      "lastAccessed": 1778069440742,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
-      "accessCount": 20,
-      "lastAccessed": 1778051369187,
+      "accessCount": 22,
+      "lastAccessed": 1778069530004,
       "type": "file"
     },
     {
@@ -279,6 +279,12 @@
       "type": "file"
     },
     {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1778069440573,
+      "type": "file"
+    },
+    {
       "path": "packages/web/src",
       "accessCount": 4,
       "lastAccessed": 1777644870413,
@@ -306,12 +312,6 @@
       "path": "packages\\web\\src\\pages\\(auth)\\index.tsx",
       "accessCount": 4,
       "lastAccessed": 1778045134668,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1778051104362,
       "type": "file"
     },
     {
