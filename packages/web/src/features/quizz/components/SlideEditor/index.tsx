@@ -13,9 +13,12 @@ type SlideEditorProps = {
 }
 
 const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: SlideEditorProps) => {
-  const { selectedId, setSelectedId } = useQuizzEditor()
+  const { currentQuestion, updateQuestion, currentIndex, selectedId, setSelectedId } = useQuizzEditor()
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; show: boolean } | null>(null)
   const [copiedElement, setCopiedElement] = useState<SlideElement | null>(null)
+
+  const selectedElement = elements.find(e => e.id === selectedId)
+  const selectedType = selectedElement?.type
 
   const handleContextMenuAction = (action: ContextMenuAction) => {
     switch (action) {
@@ -47,8 +50,45 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
 
       case "delete": {
         onChange(elements.filter((e) => e.id !== selectedId))
-
         setSelectedId(undefined)
+        break
+      }
+
+      case "bringToFront": {
+        if (selectedId && selectedElement) {
+          onChange([...elements.filter(e => e.id !== selectedId), selectedElement])
+        }
+        break
+      }
+
+      case "sendToBack": {
+        if (selectedId && selectedElement) {
+          onChange([selectedElement, ...elements.filter(e => e.id !== selectedId)])
+        }
+        break
+      }
+
+      case "setAsBackground": {
+        if (selectedType === "image" && selectedElement && "url" in selectedElement) {
+          updateQuestion(currentIndex, { 
+            background: { type: "image", value: selectedElement.url },
+            elements: elements.filter(e => e.id !== selectedId)
+          })
+          setSelectedId(undefined)
+        }
+        break
+      }
+
+      case "opacity": {
+        if (selectedElement) {
+          const newOpacity = ((selectedElement.opacity || 1) <= 0.5) ? 1 : 0.5
+          onChange(elements.map(e => e.id === selectedId ? { ...e, opacity: newOpacity } : e))
+        }
+        break
+      }
+
+      case "crop": {
+        alert("Action Recadrer à implémenter")
         break
       }
 
@@ -78,6 +118,7 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
           x={contextMenu.x}
           y={contextMenu.y}
           hasSelection={Boolean(selectedId)}
+          selectedType={selectedType}
           canPaste={Boolean(copiedElement)}
           onClose={() => setContextMenu(null)}
           onAction={handleContextMenuAction}

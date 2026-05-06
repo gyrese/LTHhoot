@@ -7,24 +7,27 @@ import {
   Scissors,
   ClipboardPaste,
   Trash2,
-  ArrowUpToLine,
   ArrowDownToLine,
+  Crop,
+  Maximize,
+  Sun,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useEffect, useRef } from "react"
 
-export type ContextMenuAction = "addText" | "addShape" | "addImage" | "addYoutube" | "copy" | "cut" | "paste" | "delete" | "bringToFront" | "sendToBack"
+export type ContextMenuAction = "addText" | "addShape" | "addImage" | "addYoutube" | "copy" | "cut" | "paste" | "delete" | "bringToFront" | "sendToBack" | "setAsBackground" | "crop" | "opacity"
 
 type ContextMenuProps = {
   x: number
   y: number
   hasSelection: boolean
+  selectedType?: string
   canPaste: boolean
   onClose: () => void
   onAction: (action: ContextMenuAction) => void
 }
 
-const SlideContextMenu = ({ x, y, hasSelection, canPaste, onClose, onAction }: ContextMenuProps) => {
+const SlideContextMenu = ({ x, y, hasSelection, selectedType, canPaste, onClose, onAction }: ContextMenuProps) => {
   const { t } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -87,6 +90,21 @@ const SlideContextMenu = ({ x, y, hasSelection, canPaste, onClose, onAction }: C
           <button onClick={() => handleAction("sendToBack")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
             <ArrowDownToLine className="size-4" /> Arrière-plan
           </button>
+          
+          {selectedType === "image" && (
+            <>
+              <div className="h-px bg-gray-200 my-1 mx-2" />
+              <button onClick={() => handleAction("setAsBackground")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+                <Maximize className="size-4" /> Mettre en fond
+              </button>
+              <button onClick={() => handleAction("crop")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+                <Crop className="size-4" /> Recadrer
+              </button>
+              <button onClick={() => handleAction("opacity")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+                <Sun className="size-4" /> Opacité
+              </button>
+            </>
+          )}
           <div className="h-px bg-gray-200 my-1 mx-2" />
           <button onClick={() => handleAction("delete")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-red-50 text-red-600 transition-colors text-left">
             <Trash2 className="size-4" /> Supprimer
