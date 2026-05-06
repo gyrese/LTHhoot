@@ -35,7 +35,10 @@ const PlayerAuthPage = () => {
 import { z } from "zod"
 
 const searchSchema = z.object({
-  pin: z.string().nullish(),
+  pin: z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((v) => (v === null || v === undefined ? v : String(v))),
 })
 
 export const Route = createFileRoute("/(auth)/")({

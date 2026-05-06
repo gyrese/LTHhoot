@@ -23,6 +23,7 @@ const Room = ({ data }: Props) => {
   const { gameId } = useManagerStore()
   const { socket } = useSocket()
   const webUrl = window.location.origin
+  const joinUrl = inviteCode ? `${webUrl}/?pin=${inviteCode}` : webUrl
   const { players } = useManagerStore()
   const [playerList, setPlayerList] = useState<Player[]>(players)
   const [totalPlayers, setTotalPlayers] = useState(0)
@@ -85,7 +86,7 @@ const Room = ({ data }: Props) => {
             {inviteCode && (
               <QRCodeSVG
                 size={144}
-                value={webUrl}
+                value={joinUrl}
               />
             )}
           </div>
