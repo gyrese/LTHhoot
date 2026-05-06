@@ -1,0 +1,6 @@
+{
+  "id": "scorpion",
+  "displayName": "Scorpion",
+  "description": "A tiny Codex pet version of Scorpion from Mortal Kombat 11.",
+  "spritesheetPath": "spritesheet.webp"
+}

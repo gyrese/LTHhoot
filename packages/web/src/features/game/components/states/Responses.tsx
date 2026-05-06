@@ -1,5 +1,6 @@
-import type { DropPinZone } from "@rahoot/common/types/game"
+import type { DropPinZone, SlideElement } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import {
   ANSWERS_COLORS,
@@ -8,9 +9,16 @@ import {
 } from "@rahoot/web/features/game/utils/constants"
 import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
+
+const noopChange = (_els: SlideElement[]) => undefined
+const noopSelect = (_id: string | undefined) => undefined
+
+const DEFAULT_BG: CSSProperties = {
+  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
+}
 
 type Props = {
   data: ManagerStatusDataMap["SHOW_RESPONSES"]
@@ -373,7 +381,24 @@ const DropPinResult = ({ pinImage, zones }: { pinImage: string; zones: DropPinZo
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const Responses = ({
-  data: { question, type, answers: rawAnswers, responses, solutions: rawSolutions, correctAnswers, correctYear, correctValue, min, max, items, pinImage, zones },
+  data: {
+    question,
+    type,
+    responses,
+    solutions: rawSolutions,
+    correctAnswers,
+    correctYear,
+    correctValue,
+    min,
+    max,
+    answers: rawAnswers,
+    items,
+    pinImage,
+    zones,
+    background,
+    backgroundOpacity,
+    elements,
+  },
 }: Props) => {
   const answers = rawAnswers ?? []
   const solutions = rawSolutions ?? []
@@ -396,9 +421,29 @@ const Responses = ({
     }
   }, [])
 
+  let bgStyle: CSSProperties = DEFAULT_BG
+
+  if (background?.type === "image") {
+    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+  } else if (background?.type === "color") {
+    bgStyle = { backgroundColor: background.value }
+  }
+
   return (
-    <div className="flex flex-1 flex-col justify-between">
-      <div className="mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
+    <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
+      <div className="absolute inset-0 bg-black" />
+      <div
+        className="absolute inset-0"
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
+      />
+
+      {elements && elements.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none">
+          <SlideCanvas elements={elements} onChange={noopChange} selectedId={undefined} onSelect={noopSelect} readOnly />
+        </div>
+      )}
+
+      <div className="relative z-10 mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
         <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
           {question}
         </h2>

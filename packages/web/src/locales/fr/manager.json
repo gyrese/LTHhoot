@@ -37,11 +37,19 @@
       "points": "Points"
     },
     "playerCount": "{{count}} joueur(s)",
-    "timeLimitSuffix": "s limite"
+    "timeLimitSuffix": "s limite",
+    "exportCSV": "Exporter en CSV"
   },
   "tabs": {
     "play": "Jouer",
     "quizz": "Quizz",
     "results": "Résultats"
+  },
+  "sidebar": {
+    "folders": "Dossiers",
+    "all": "Tous",
+    "newFolderPlaceholder": "Nom du dossier",
+    "deleteFolder": "Supprimer le dossier",
+    "newFolder": "Nouveau dossier"
   }
 }

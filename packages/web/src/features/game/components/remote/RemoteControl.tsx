@@ -105,6 +105,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const [questionStates, setQuestionStates] = useState<QuestionStates>(null)
   const [answerCount, setAnswerCount] = useState(0)
   const [inviteCode, setInviteCode] = useState("")
+  const [timer, setTimer] = useState<number | null>(null)
+  const [maxTime, setMaxTime] = useState(0)
 
   // UI
   const [activeTab, setActiveTab] = useState<RemoteTab>("jeu")
@@ -113,9 +115,16 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   // Réinitialise le compteur à chaque nouvelle phase de réponse
   useEffect(() => {
-    if (status?.name === STATUS.SELECT_ANSWER) setAnswerCount(0)
+    if (status?.name === STATUS.SELECT_ANSWER) {
+      setAnswerCount(0)
+      const t = Number(status.data.time) || 0
+      setMaxTime(t)
+      setTimer(t)
+    } else {
+      setTimer(null)
+    }
     setActionPending(false)
-  }, [status?.name])
+  }, [status?.name, status?.data])
 
   // Extrait le code invitation depuis SHOW_ROOM
   useEffect(() => {
@@ -174,6 +183,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setAnswerCount(count)
+  })
+
+  useEvent(EVENTS.GAME.COOLDOWN, (timeLeft: number) => {
+    setTimer(timeLeft)
   })
 
   useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total }) => {
@@ -244,6 +257,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     }
   }, [socket, status, actionPending, gameId, navigate])
 
+  const handleStartDemo = useCallback(() => {
+    if (!socket || actionPending) return
+    setActionPending(true)
+    socket.emit(EVENTS.MANAGER.START_DEMO, { gameId })
+  }, [socket, actionPending, gameId])
+
   const handleValidateOpenAnswer = useCallback(
     (text: string) => {
       if (!socket) {
@@ -262,6 +281,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   }, [socket, gameId])
 
   // ── Calcul de l'action principale ─────────────────────────────────────────
+
+
 
   const primaryAction = getPrimaryAction(status, players.length)
 
@@ -299,7 +320,15 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       {/* Contenu principal */}
       <main className="relative z-10 flex-1 overflow-y-auto">
         {activeTab === "jeu" ? (
-          <GamePanel status={status} answerCount={answerCount} players={players} onValidateOpenAnswer={handleValidateOpenAnswer} />
+          <GamePanel 
+            status={status} 
+            answerCount={answerCount} 
+            players={players} 
+            onValidateOpenAnswer={handleValidateOpenAnswer} 
+            questionStates={questionStates}
+            timer={timer}
+            maxTime={maxTime}
+          />
         ) : (
           <PlayersPanel
             players={players}
@@ -320,8 +349,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         setActiveTab={setActiveTab}
         primaryAction={primaryAction}
         onPrimary={handlePrimary}
+        onStartDemo={handleStartDemo}
         isPending={actionPending}
         playerCount={players.length}
+        statusName={status?.name}
       />
 
       {/* Modal expulsion */}
@@ -454,12 +485,15 @@ function RemoteHeader({
 // ─── Panneau de jeu (switch par état) ────────────────────────────────────────
 
 function GamePanel({
-  status, answerCount, players, onValidateOpenAnswer,
+  status, answerCount, players, onValidateOpenAnswer, questionStates, timer, maxTime,
 }: {
   status: GameStatus
   answerCount: number
   players: Player[]
   onValidateOpenAnswer: (_text: string) => void
+  questionStates: QuestionStates | null
+  timer: number | null
+  maxTime: number
 }) {
   if (!status) {
     return (
@@ -479,10 +513,10 @@ function GamePanel({
     case STATUS.SHOW_QUESTION:
       return <QuestionPanel data={status.data} />
     case STATUS.SELECT_ANSWER:
-      return <SelectAnswerPanel data={status.data} answerCount={answerCount} players={players} />
+      return <SelectAnswerPanel data={status.data} answerCount={answerCount} players={players} timer={timer} maxTime={maxTime} />
 
     case STATUS.SHOW_OPEN_ANSWERS:
-      return <OpenAnswersManagerPanel data={status.data} onValidate={onValidateOpenAnswer} />
+      return <OpenAnswersManagerPanel data={status.data} onValidate={onValidateOpenAnswer} questionStates={questionStates} timer={timer} maxTime={maxTime} />
     case STATUS.SHOW_RESPONSES:
       return <ResponsesPanel data={status.data} />
     case STATUS.SHOW_LEADERBOARD:
@@ -505,10 +539,13 @@ function GamePanel({
 // ─── SHOW_OPEN_ANSWERS (manager) ──────────────────────────────────────────────
 
 function OpenAnswersManagerPanel({
-  data, onValidate,
+  data, onValidate, questionStates, timer, maxTime
 }: {
   data: Record<string, unknown>
   onValidate: (_text: string) => void
+  questionStates: QuestionStates | null
+  timer: number | null
+  maxTime: number
 }) {
   type AnswerEntry = { text: string; playerName: string; isCorrect: boolean }
   const question = String(data.question ?? "")
@@ -533,7 +570,34 @@ function OpenAnswersManagerPanel({
       <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 backdrop-blur-sm">
         <p className="mb-0.5 text-xs font-semibold text-orange-300/70">Réponse libre</p>
         <p className="text-sm font-semibold text-white">{question}</p>
+        {questionStates && (
+          <p className="mt-2 text-sm font-medium text-blue-100/80">Question {questionStates.current} / {questionStates.total}</p>
+        )}
       </div>
+
+      {/* Timer Progress Bar */}
+      {timer !== null && maxTime > 0 && (
+        <div className="mt-1 rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Temps restant</span>
+            <span className={clsx(
+              "text-sm font-black tabular-nums px-2 py-0.5 rounded",
+              timer <= 5 ? "bg-red-500 text-white animate-pulse" : "text-blue-100"
+            )}>
+              {timer}s
+            </span>
+          </div>
+          <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden border border-white/10">
+            <div 
+              className={clsx(
+                "h-full transition-all duration-1000 ease-linear",
+                timer > maxTime * 0.5 ? "bg-green-400" : timer > maxTime * 0.2 ? "bg-orange-400" : "bg-red-500"
+              )}
+              style={{ width: `${(timer / maxTime) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {correctAnswers.length > 0 && (
         <div className="flex flex-wrap gap-2 rounded-2xl border border-green-500/20 bg-green-500/5 p-3">
@@ -749,16 +813,17 @@ function QuestionPanel({ data }: { data: Record<string, unknown> }) {
 // ─── SELECT_ANSWER ────────────────────────────────────────────────────────────
 
 function SelectAnswerPanel({
-  data, answerCount, players,
+  data, answerCount, players, timer, maxTime
 }: {
   data: Record<string, unknown>
   answerCount: number
   players: Player[]
+  timer: number | null
+  maxTime: number
 }) {
   const total = Number(data.totalPlayer ?? players.length)
   const question = String(data.question ?? "")
   const type = String(data.type ?? "mcq")
-  const timeLimit = Number(data.time ?? 30)
 
   const progress = total > 0 ? answerCount / total : 0
   const R = 52
@@ -773,6 +838,30 @@ function SelectAnswerPanel({
         <p className="mb-1 text-xs font-semibold text-orange-300/70">{QUESTION_TYPE_LABELS[type] ?? type}</p>
         <p className="line-clamp-2 text-sm font-semibold text-white">{question}</p>
       </div>
+
+      {/* Timer Progress Bar */}
+      {timer !== null && maxTime > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Temps restant</span>
+            <span className={clsx(
+              "text-sm font-black tabular-nums px-2 py-0.5 rounded",
+              timer <= 5 ? "bg-red-500 text-white animate-pulse" : "text-blue-100"
+            )}>
+              {timer}s
+            </span>
+          </div>
+          <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden border border-white/10">
+            <div 
+              className={clsx(
+                "h-full transition-all duration-1000 ease-linear",
+                timer > maxTime * 0.5 ? "bg-green-400" : timer > maxTime * 0.2 ? "bg-orange-400" : "bg-red-500"
+              )}
+              style={{ width: `${(timer / maxTime) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <SolutionDisplay data={data} />
 
@@ -802,7 +891,6 @@ function SelectAnswerPanel({
           <p className={clsx("font-semibold", allAnswered ? "text-green-400" : "text-white")}>
             {allAnswered ? "Tout le monde a répondu !" : `${answerCount} réponse${answerCount !== 1 ? "s" : ""} reçue${answerCount !== 1 ? "s" : ""}`}
           </p>
-          <p className="mt-0.5 text-xs text-white/30">Temps imparti : {timeLimit}s</p>
         </div>
       </div>
 
@@ -1257,14 +1345,16 @@ function PlayersPanel({
 // ─── Barre inférieure ─────────────────────────────────────────────────────────
 
 function BottomBar({
-  activeTab, setActiveTab, primaryAction, onPrimary, isPending, playerCount,
+  activeTab, setActiveTab, primaryAction, onPrimary, onStartDemo, isPending, playerCount, statusName,
 }: {
   activeTab: RemoteTab
   setActiveTab: (t: RemoteTab) => void
   primaryAction: PrimaryAction | null
   onPrimary: () => void
+  onStartDemo: () => void
   isPending: boolean
   playerCount: number
+  statusName?: Status
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-black/70 px-4 pb-6 pt-3 backdrop-blur-xl">
@@ -1299,23 +1389,34 @@ function BottomBar({
         </button>
 
         {/* Action principale */}
-        {primaryAction && (
-          <button
-            onClick={onPrimary}
-            disabled={primaryAction.disabled || isPending}
-            className={clsx(
-              "h-12 flex-1 rounded-2xl text-sm font-black tracking-wide transition-all active:scale-95",
-              isPending && "cursor-not-allowed opacity-50",
-              !isPending && !primaryAction.disabled && "shadow-lg",
-              primaryAction.variant === "orange" && !primaryAction.disabled && "bg-orange-500 text-white shadow-orange-500/30 hover:bg-orange-400",
-              primaryAction.variant === "red" && !primaryAction.disabled && "bg-red-500 text-white shadow-red-500/25 hover:bg-red-400",
-              primaryAction.variant === "ghost" && !primaryAction.disabled && "bg-white/85 text-gray-900 hover:bg-white",
-              primaryAction.disabled && "cursor-not-allowed bg-white/8 text-white/25",
-            )}
-          >
-            {isPending ? "..." : primaryAction.label}
-          </button>
-        )}
+        <div className="flex flex-1 gap-2">
+          {statusName === STATUS.SHOW_ROOM && (
+            <button
+              onClick={onStartDemo}
+              disabled={isPending}
+              className="h-12 flex-1 rounded-2xl bg-white/10 text-sm font-bold text-white transition-all hover:bg-white/15 active:scale-95 disabled:opacity-50"
+            >
+              Mode Démo
+            </button>
+          )}
+          {primaryAction && (
+            <button
+              onClick={onPrimary}
+              disabled={primaryAction.disabled || isPending}
+              className={clsx(
+                "h-12 flex-1 rounded-2xl text-sm font-black tracking-wide transition-all active:scale-95",
+                isPending && "cursor-not-allowed opacity-50",
+                !isPending && !primaryAction.disabled && "shadow-lg",
+                primaryAction.variant === "orange" && !primaryAction.disabled && "bg-orange-500 text-white shadow-orange-500/30 hover:bg-orange-400",
+                primaryAction.variant === "red" && !primaryAction.disabled && "bg-red-500 text-white shadow-red-500/25 hover:bg-red-400",
+                primaryAction.variant === "ghost" && !primaryAction.disabled && "bg-white/85 text-gray-900 hover:bg-white",
+                primaryAction.disabled && "cursor-not-allowed bg-white/8 text-white/25",
+              )}
+            >
+              {isPending ? "..." : primaryAction.label}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

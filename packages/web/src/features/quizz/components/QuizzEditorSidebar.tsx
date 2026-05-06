@@ -20,6 +20,7 @@ const QuizzEditorSidebar = () => {
     addQuestion,
     removeQuestion,
     reorderQuestions,
+    duplicateQuestion,
   } = useQuizzEditor()
   const { t } = useTranslation()
 
@@ -33,6 +34,10 @@ const QuizzEditorSidebar = () => {
 
   const handleDelete = (index: number) => () => {
     removeQuestion(index)
+  }
+
+  const handleDuplicate = (index: number) => () => {
+    duplicateQuestion(index)
   }
 
   const handleDragEnd = (result: DropResult) => {
@@ -79,6 +84,7 @@ const QuizzEditorSidebar = () => {
                         canDelete={questions.length > 1}
                         onClick={handleSlideClick(index)}
                         onDelete={handleDelete(index)}
+                        onDuplicate={handleDuplicate(index)}
                       />
                     </div>
                   )}

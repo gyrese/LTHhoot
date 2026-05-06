@@ -3,15 +3,38 @@ import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEdi
 import ConfigSection from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection"
 import QuestionEditorTypeSelector from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTypeSelector"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { Clock, Contrast, Timer, Layers, Trophy } from "lucide-react"
+import { Clock, Contrast, Timer, Layers, Trophy, Trash2, ChevronUp, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import clsx from "clsx"
 
 const QuestionEditorConfig = () => {
-  const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
+  const { currentQuestion, currentIndex, updateQuestion, selectedId, setSelectedId } = useQuizzEditor()
   const { t } = useTranslation()
 
   const handleUpdateQuestion = (key: string) => (value: string | number) => {
     updateQuestion(currentIndex, { [key]: value })
+  }
+
+  const handleDeleteLayer = (id: string) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const elements = (currentQuestion.elements || []).filter((el) => el.id !== id)
+    updateQuestion(currentIndex, { elements })
+    if (selectedId === id) setSelectedId(undefined)
+  }
+
+  const handleMoveLayer = (id: string, direction: "up" | "down") => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const elements = [...(currentQuestion.elements || [])]
+    const index = elements.findIndex((el) => el.id === id)
+    if (index === -1) return
+
+    if (direction === "up" && index < elements.length - 1) {
+      [elements[index], elements[index + 1]] = [elements[index + 1], elements[index]]
+    } else if (direction === "down" && index > 0) {
+      [elements[index], elements[index - 1]] = [elements[index - 1], elements[index]]
+    }
+
+    updateQuestion(currentIndex, { elements })
   }
 
   const isTitle = currentQuestion.type === "title"
@@ -22,7 +45,7 @@ const QuestionEditorConfig = () => {
         <QuestionEditorTypeSelector />
       </ConfigSection>
 
-      <ConfigSection title="Propriétés" defaultOpen={false}>
+      <ConfigSection title={t("quizz:question.config.propertiesTitle")} defaultOpen={false}>
         <ConfigField>
           <ConfigField.Label
             icon={<Contrast className="size-4" />}
@@ -110,19 +133,54 @@ const QuestionEditorConfig = () => {
         )}
       </ConfigSection>
 
-      <ConfigSection title="Calques" defaultOpen={false}>
+      <ConfigSection title={t("quizz:question.config.layersTitle")} defaultOpen={true}>
         <div className="flex flex-col gap-1.5">
-          {[...(currentQuestion?.elements || [])].reverse().map((el, i) => (
-            <div key={el.id} className="text-xs p-2 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-2 overflow-hidden">
-                <span className="font-medium capitalize text-gray-700">{el.type}</span>
-                {el.type === "text" && <span className="text-gray-500 truncate">"{el.text}"</span>}
+          {[...(currentQuestion?.elements || [])].reverse().map((el, i, arr) => {
+            const isSelected = selectedId === el.id
+            const originalIndex = arr.length - 1 - i
+            
+            return (
+              <div 
+                key={el.id} 
+                onClick={() => setSelectedId(el.id)}
+                className={clsx(
+                  "text-[11px] p-2 rounded-md border flex items-center justify-between shadow-sm cursor-pointer transition-all",
+                  isSelected ? "bg-primary/5 border-primary ring-1 ring-primary/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                )}
+              >
+                <div className="flex items-center gap-2 overflow-hidden flex-1">
+                  <div className={clsx("size-1.5 rounded-full", isSelected ? "bg-primary" : "bg-gray-300")} />
+                  <span className="font-bold capitalize text-gray-700 shrink-0">{el.type}</span>
+                  {el.type === "text" && <span className="text-gray-500 truncate italic">"{el.text}"</span>}
+                </div>
+                
+                <div className="flex items-center gap-0.5 ml-2">
+                  <button 
+                    onClick={handleMoveLayer(el.id, "up")}
+                    disabled={originalIndex === arr.length - 1}
+                    className="p-1 text-gray-400 hover:text-primary hover:bg-white rounded disabled:opacity-20"
+                  >
+                    <ChevronUp className="size-3.5" />
+                  </button>
+                  <button 
+                    onClick={handleMoveLayer(el.id, "down")}
+                    disabled={originalIndex === 0}
+                    className="p-1 text-gray-400 hover:text-primary hover:bg-white rounded disabled:opacity-20"
+                  >
+                    <ChevronDown className="size-3.5" />
+                  </button>
+                  <button 
+                    onClick={handleDeleteLayer(el.id)}
+                    className="ml-1 p-1 text-gray-400 hover:text-red-500 hover:bg-white rounded"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
               </div>
-              <span className="text-gray-400 shrink-0 text-[10px]">z-index: {currentQuestion.elements!.length - i - 1}</span>
-            </div>
-          ))}
+            )
+          })}
           {(!currentQuestion?.elements || currentQuestion.elements.length === 0) && (
-            <p className="text-xs text-gray-400 italic text-center py-4">Aucun calque</p>
+            <p className="text-xs text-gray-400 italic text-center py-4">{t("quizz:question.config.noLayers")}</p>
           )}
         </div>
       </ConfigSection>

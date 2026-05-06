@@ -1,0 +1,6 @@
+{
+  "id": "cartman",
+  "displayName": "Cartman",
+  "description": "A compact South Park cutout-style Cartman digital pet with character-specific reactions and movement.",
+  "spritesheetPath": "spritesheet.webp"
+}

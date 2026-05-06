@@ -35,8 +35,9 @@
   "dropPinHint": "Clique sur l'image pour placer ton épingle",
   "dropPinPlace": "Placer l'épingle",
   "dropPinReplace": "Replacer l'épingle",
-  "dropPinCancel": "Annuler"
-,
+  "dropPinCancel": "Annuler",
+  "totalScore": "Score Total",
+  "getReady": "Préparez-vous",
   "openAnswers": {
     "responses": "réponses",
     "players": "joueurs",

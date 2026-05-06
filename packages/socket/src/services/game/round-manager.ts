@@ -55,6 +55,7 @@ export class RoundManager {
   private questionsHistory: QuestionResult[] = []
   private pendingOpenQuestion: Question | null = null
   private pendingOpenCorrectAnswers: string[] = []
+  private demoMode = false
 
   constructor(opts: RoundManagerOptions) {
     this.opts = opts
@@ -62,6 +63,10 @@ export class RoundManager {
 
   isStarted(): boolean {
     return this.started
+  }
+
+  setDemoMode(enabled: boolean) {
+    this.demoMode = enabled
   }
 
   private getNonTitleCount() {
@@ -88,7 +93,7 @@ export class RoundManager {
       return
     }
 
-    if (this.opts.players.count() === 0) {
+    if (this.opts.players.count() === 0 && !this.demoMode) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.noPlayersConnected")
 
       return
@@ -447,6 +452,9 @@ export class RoundManager {
       type: question.type,
       responses: totalType,
       media: question.media,
+      background: question.background,
+      backgroundOpacity: question.backgroundOpacity,
+      elements: question.elements,
     }
 
     const responsesExtra = (() => {
@@ -641,6 +649,9 @@ export class RoundManager {
       leaderboard: this.leaderboard.slice(0, 5),
       roundLeaderboard: roundLeaderboard.slice(0, 5),
       totalPlayers: this.leaderboard.length,
+      background: question?.background,
+      backgroundOpacity: question?.backgroundOpacity,
+      elements: question?.elements,
     })
 
     this.tempOldLeaderboard = null

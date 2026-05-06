@@ -26,7 +26,10 @@
       "questionDisplayHint": "Dauer bevor Antworten erscheinen",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Rangliste nach dieser Frage anzeigen",
-      "timings": "Zeiten"
+      "timings": "Zeiten",
+      "propertiesTitle": "Eigenschaften",
+      "layersTitle": "Ebenen",
+      "noLayers": "Keine Ebenen"
     },
     "deleteQuestion": "Frage löschen",
     "deleteQuestionConfirm": "Möchtest du diese Frage wirklich löschen?",
@@ -76,6 +79,9 @@
   "uploadImage": "Bild hochladen",
   "slideOverlay": "Overlay-Bild",
   "slideUrlLabel": "Medien-URL",
+  "uploadFromPC": "📁 Vom PC importieren (Bild / GIF)",
+  "uploading": "Hochladen…",
+  "or": "oder",
   "sliderCorrect": "Richtiger Wert",
   "sliderMax": "Max",
   "sliderMin": "Min",

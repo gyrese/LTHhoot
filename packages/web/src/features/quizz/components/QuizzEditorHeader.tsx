@@ -13,6 +13,7 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 import { downloadJson, exportQuizzWithMedia } from "@rahoot/web/features/quizz/utils/export"
+import clsx from "clsx"
 
 const QuizzEditorHeader = () => {
   const {
@@ -25,6 +26,7 @@ const QuizzEditorHeader = () => {
     questions,
     saveQuizz,
     isDirty,
+    isSaving,
     lastSaved,
   } = useQuizzEditor()
   const navigate = useNavigate()
@@ -71,14 +73,20 @@ const QuizzEditorHeader = () => {
 
           {lastSaved && (
             <div className="flex flex-col text-xs text-gray-400">
-              <span className="font-semibold uppercase tracking-wider">
-                {isDirty ? t("quizz:unsavedChanges", "Modifications non enregistrées") : t("quizz:allChangesSaved", "Toutes les modifications sont enregistrées")}
+              <span className={clsx("font-semibold uppercase tracking-wider", isSaving && "animate-pulse text-blue-500")}>
+                {isSaving 
+                  ? t("quizz:saving", "Sauvegarde...") 
+                  : isDirty 
+                    ? t("quizz:unsavedChanges", "Modifications non enregistrées") 
+                    : t("quizz:allChangesSaved", "Toutes les modifications sont enregistrées")}
               </span>
-              <span>
-                {t("quizz:lastSavedAt", "Dernier enregistrement à {{time}}", {
-                  time: lastSaved.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" }),
-                })}
-              </span>
+              {!isSaving && (
+                <span>
+                  {t("quizz:lastSavedAt", "Dernier enregistrement à {{time}}", {
+                    time: lastSaved.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" }),
+                  })}
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -9,6 +9,7 @@
   },
   "joinInstruction": "Únete al juego en",
   "leaderboard": "Clasificación",
+  "roundRanking": "Clasificación de la ronda",
   "openAnswerPlaceholder": "Escribe tu respuesta...",
   "pinPlaceholder": "Código PIN",
   "playersJoined": "Jugadores conectados: ",
@@ -34,8 +35,9 @@
   "dropPinHint": "Haz clic en la imagen para colocar tu pin",
   "dropPinPlace": "Colocar pin",
   "dropPinReplace": "Reemplazar pin",
-  "dropPinCancel": "Cancelar"
-,
+  "dropPinCancel": "Cancelar",
+  "totalScore": "Puntuación total",
+  "getReady": "Prepárate",
   "openAnswers": {
     "responses": "respuestas",
     "players": "jugadores",

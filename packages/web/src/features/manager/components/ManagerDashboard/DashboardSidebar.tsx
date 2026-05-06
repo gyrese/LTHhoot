@@ -128,12 +128,12 @@ const DashboardSidebar = ({
           <div>
             <div className="mb-2 flex items-center justify-between px-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
-                Dossiers
+                {t("manager:sidebar.folders")}
               </p>
               <button
                 onClick={() => setCreatingFolder(true)}
                 className="rounded p-0.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                title="Nouveau dossier"
+                title={t("manager:sidebar.newFolder")}
               >
                 <Plus className="size-3.5" />
               </button>
@@ -153,7 +153,7 @@ const DashboardSidebar = ({
                       setNewFolderName("")
                     }
                   }}
-                  placeholder="Nom du dossier"
+                  placeholder={t("manager:sidebar.newFolderPlaceholder")}
                   className="min-w-0 flex-1 rounded-lg bg-white/10 px-2 py-1 text-xs text-white placeholder-white/30 outline-none focus:bg-white/15"
                 />
                 <button
@@ -189,7 +189,7 @@ const DashboardSidebar = ({
               >
                 <span className="flex items-center gap-2">
                   <FolderOpen className="size-3.5" />
-                  Tous
+                  {t("manager:sidebar.all")}
                 </span>
                 <span className="rounded-full bg-white/10 px-1.5 text-xs">
                   {quizz.length}
@@ -225,7 +225,7 @@ const DashboardSidebar = ({
                     <button
                       onClick={() => handleDeleteFolder(folder)}
                       className="hidden shrink-0 rounded p-0.5 text-white/30 hover:text-red-400 group-hover:block"
-                      title="Supprimer le dossier"
+                      title={t("manager:sidebar.deleteFolder")}
                     >
                       <Trash2 className="size-3" />
                     </button>

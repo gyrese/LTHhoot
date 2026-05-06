@@ -105,6 +105,10 @@ return
     withGame(gameId, socket, (game) => game.start(socket)),
   )
 
+  socket.on(EVENTS.MANAGER.START_DEMO, ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.startDemo(socket)),
+  )
+
   socket.on(EVENTS.PLAYER.SELECTED_ANSWER, ({ gameId, data }) =>
     withGame(gameId, socket, (game) =>
       game.selectAnswer(socket, {

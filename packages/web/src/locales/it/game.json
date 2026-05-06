@@ -9,6 +9,7 @@
   },
   "joinInstruction": "Unisciti al gioco su",
   "leaderboard": "Classifica",
+  "roundRanking": "Classifica del round",
   "openAnswerPlaceholder": "Scrivi la tua risposta...",
   "pinPlaceholder": "Codice PIN",
   "playersJoined": "Giocatori connessi: ",
@@ -34,8 +35,9 @@
   "dropPinHint": "Clicca sull'immagine per posizionare il tuo pin",
   "dropPinPlace": "Posiziona pin",
   "dropPinReplace": "Sostituisci pin",
-  "dropPinCancel": "Annulla"
-,
+  "dropPinCancel": "Annulla",
+  "totalScore": "Punteggio totale",
+  "getReady": "Preparati",
   "openAnswers": {
     "responses": "risposte",
     "players": "giocatori",

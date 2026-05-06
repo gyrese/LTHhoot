@@ -1,0 +1,6 @@
+{
+  "id": "clippy",
+  "displayName": "Clippy",
+  "description": "A compact faux-3D animated paperclip desktop assistant pet with expressive eyes.",
+  "spritesheetPath": "spritesheet.webp"
+}

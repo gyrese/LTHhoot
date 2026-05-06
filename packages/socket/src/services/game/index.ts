@@ -303,6 +303,11 @@ class Game {
     await this.round.start(socket)
   }
 
+  async startDemo(socket: Socket) {
+    this.round.setDemoMode(true)
+    await this.round.start(socket)
+  }
+
   selectAnswer(
     socket: Socket,
     payload: {

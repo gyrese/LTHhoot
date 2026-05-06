@@ -1,10 +1,15 @@
 import { EVENTS, MEDIA_TYPES } from "@rahoot/common/constants"
-import { DropPinAnswer, PuzzleAnswer } from "@rahoot/web/features/game/components/states/AnswerInputs"
-import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
-
-const noopChange = (_els: SlideElement[]) => undefined
-const noopSelect = (_id: string | undefined) => undefined
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
+import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
+import {
+  DateAnswer,
+  McqAnswers,
+  OpenAnswer,
+  OpenAnswerPlaceholder,
+  SliderAnswer,
+  TrueFalseAnswers,
+} from "@rahoot/web/features/game/components/AnswersDisplay"
+import { DropPinAnswer, PuzzleAnswer } from "@rahoot/web/features/game/components/states/AnswerInputs"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
@@ -18,22 +23,18 @@ import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
+const noopChange = (_els: SlideElement[]) => undefined
+const noopSelect = (_id: string | undefined) => undefined
+
 type Props = {
   data: CommonStatusDataMap["SELECT_ANSWER"]
 }
 
-// ── MCQ ──────────────────────────────────────────────────────────────────────
-
-import {
-  DateAnswer,
-  McqAnswers,
-  OpenAnswer,
-  OpenAnswerPlaceholder,
-  SliderAnswer,
-  TrueFalseAnswers,
-} from "@rahoot/web/features/game/components/AnswersDisplay"
-
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+
+const DEFAULT_BG: CSSProperties = {
+  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
+}
 
 const Answers = ({
   data: { question, type, answers, media, background, backgroundOpacity, elements, audio, time, totalPlayer, min, max, minYear, maxYear, items, pinImage },
@@ -123,11 +124,7 @@ const Answers = ({
     sfxPop()
   })
 
-  let bgStyle: CSSProperties = {
-    backgroundImage: "url(/bg-salon.png)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }
+  let bgStyle: CSSProperties = DEFAULT_BG
 
   if (background?.type === "image") {
     bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }

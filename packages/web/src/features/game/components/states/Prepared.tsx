@@ -48,7 +48,7 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
               transition={{ delay: 0.2 }}
               className="text-lg font-black uppercase tracking-[0.3em] text-white/50"
             >
-              Préparez-vous
+              {t("game:getReady")}
             </motion.span>
             <h2 className="text-6xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] md:text-8xl">
               {t("game:questionPrefix")}

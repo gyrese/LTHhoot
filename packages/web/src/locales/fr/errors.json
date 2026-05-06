@@ -10,6 +10,7 @@
     "managerAlreadyConnected": "Un manager est déjà connecté",
     "managerDisconnected": "Le manager s'est déconnecté",
     "noPlayersConnected": "Aucun joueur connecté",
+    "noQuestions": "Le quizz ne contient aucune question",
     "notFound": "Partie introuvable",
     "playerAlreadyConnected": "Ce joueur est déjà connecté"
   },

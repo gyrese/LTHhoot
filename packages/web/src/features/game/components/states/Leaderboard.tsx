@@ -1,9 +1,18 @@
+import type { SlideElement } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import Fire from "@rahoot/web/features/game/components/icons/Fire"
 import { AnimatePresence, motion, useSpring, useTransform } from "motion/react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
+
+const noopChange = (_els: SlideElement[]) => undefined
+const noopSelect = (_id: string | undefined) => undefined
+
+const DEFAULT_BG: CSSProperties = {
+  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
+}
 
 type Props = {
   data: ManagerStatusDataMap["SHOW_LEADERBOARD"]
@@ -48,7 +57,7 @@ const StreakBadge = ({ streak }: { streak: number }) => (
 )
 
 const Leaderboard = ({
-  data: { oldLeaderboard, leaderboard, roundLeaderboard, totalPlayers },
+  data: { oldLeaderboard, leaderboard, roundLeaderboard, totalPlayers, background, backgroundOpacity, elements },
 }: Props) => {
   const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
   const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
@@ -73,8 +82,29 @@ const Leaderboard = ({
     }
   }, [roundLeaderboard, leaderboard])
 
+  let bgStyle: CSSProperties = DEFAULT_BG
+
+  if (background?.type === "image") {
+    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+  } else if (background?.type === "color") {
+    bgStyle = { backgroundColor: background.value }
+  }
+
   return (
-    <section className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
+    <section className="relative flex flex-1 flex-col justify-center overflow-hidden">
+      <div className="absolute inset-0 bg-black" />
+      <div
+        className="absolute inset-0"
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
+      />
+
+      {elements && elements.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none">
+          <SlideCanvas elements={elements} onChange={noopChange} selectedId={undefined} onSelect={noopSelect} readOnly />
+        </div>
+      )}
+
+      <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
       <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
         {phase === "round" ? t("game:roundRanking") : t("game:leaderboard")}
       </h2>
@@ -146,6 +176,7 @@ const Leaderboard = ({
             )
           })}
         </AnimatePresence>
+      </div>
       </div>
     </section>
   )

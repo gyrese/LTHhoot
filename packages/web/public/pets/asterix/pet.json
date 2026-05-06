@@ -1,0 +1,6 @@
+{
+  "id": "asterix",
+  "displayName": "Asterix",
+  "description": "A tiny Gaulish adventurer companion for Codex.",
+  "spritesheetPath": "spritesheet.webp"
+}

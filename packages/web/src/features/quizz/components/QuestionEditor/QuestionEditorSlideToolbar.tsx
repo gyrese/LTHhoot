@@ -140,12 +140,12 @@ export const BackgroundButton = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full rounded border-2 border-dashed border-gray-300 py-3 text-xs text-gray-500 hover:border-yellow-400 hover:text-yellow-600 disabled:opacity-50"
               >
-                {uploading ? "Importation…" : "📁 Importer depuis le PC (image / GIF)"}
+                {uploading ? t("quizz:uploading") : t("quizz:uploadFromPC")}
               </button>
 
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
                 <div className="flex-1 border-t border-gray-200" />
-                ou
+                {t("quizz:or")}
                 <div className="flex-1 border-t border-gray-200" />
               </div>
 

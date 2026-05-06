@@ -106,12 +106,18 @@ type ManagerExtraStatus = {
     items?: string[]
     pinImage?: string
     zones?: DropPinZone[]
+    background?: SlideBackground
+    backgroundOpacity?: number
+    elements?: SlideElement[]
   }
   SHOW_LEADERBOARD: {
     oldLeaderboard: Player[]
     leaderboard: Player[]
     roundLeaderboard: (Player & { roundPoints: number })[]
     totalPlayers: number
+    background?: SlideBackground
+    backgroundOpacity?: number
+    elements?: SlideElement[]
   }
 }
 

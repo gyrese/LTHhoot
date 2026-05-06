@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd c:/ai/testrahoot/packages/web && npx eslint src/features/game/contexts/socket-context.tsx 2>&1\",\"description\":\"Voir toutes les erreurs ESLint dans socket-context.tsx\"}",
-  "error": "Exit code 1\n\nC:\\ai\\testrahoot\\packages\\web\\src\\features\\game\\contexts\\socket-context.tsx\n  152:5   warning  Unused eslint-disable directive (no problems were reported from 'consistent-return')\n  153:18  error    Expected { after 'if' condition                                                                        curly\n  159:5   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')\n  162:5   error    Arrow function expected no return value...",
-  "timestamp": "2026-04-26T16:09:36.593Z",
+  "tool_input_preview": "{\"command\":\"git add packages/web/src/components/QuestionMedia.tsx && git commit -m \\\"$(cat <<'EOF'\\nFix: lire les vidéos YouTube via iframe embed au lieu de <video>\\n\\nLes URL YouTube ne fonctionnent ...",
+  "error": "Exit code 128\nwarning: could not open directory 'packages/web/packages/web/src/components/': No such file or directory\nfatal: pathspec 'packages/web/src/components/QuestionMedia.tsx' did not match any files",
+  "timestamp": "2026-05-03T10:56:45.648Z",
   "retry_count": 1
 }

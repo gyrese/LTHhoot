@@ -4,3 +4,8 @@
 .secrets
 release.json
 web2
+.omc
+save
+tasks
+*.log
+.DS_Store

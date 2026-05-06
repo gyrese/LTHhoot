@@ -9,6 +9,7 @@
   },
   "joinInstruction": "Tritt dem Spiel bei auf",
   "leaderboard": "Bestenliste",
+  "roundRanking": "Rundenrangliste",
   "openAnswerPlaceholder": "Tippe deine Antwort...",
   "pinPlaceholder": "PIN-Code",
   "playersJoined": "Verbundene Spieler: ",
@@ -34,8 +35,9 @@
   "dropPinHint": "Klicke auf das Bild, um deine Nadel zu setzen",
   "dropPinPlace": "Nadel setzen",
   "dropPinReplace": "Nadel ersetzen",
-  "dropPinCancel": "Abbrechen"
-,
+  "dropPinCancel": "Abbrechen",
+  "totalScore": "Gesamtpunktzahl",
+  "getReady": "Mach dich bereit",
   "openAnswers": {
     "responses": "Antworten",
     "players": "Spieler",

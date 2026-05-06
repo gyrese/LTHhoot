@@ -85,12 +85,14 @@ type QuizzEditorContextType = {
   addQuestion: () => void
   removeQuestion: (_index: number) => void
   reorderQuestions: (_from: number, _to: number) => void
+  duplicateQuestion: (_index: number) => void
   updateQuestion: (_index: number, _updates: QuestionUpdate) => void
   changeQuestionType: (_index: number, _type: QuestionType) => void
   selectedId: string | undefined
   setSelectedId: (_id: string | undefined) => void
   saveQuizz: (_options?: { silent?: boolean; navigate?: boolean }) => void
   isDirty: boolean
+  isSaving: boolean
   lastSaved: Date | null
 }
 
@@ -176,6 +178,7 @@ export const QuizzEditorProvider = ({
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [quizzId, setQuizzId] = useState<string | null>(initialData?.id ?? null)
   const [isDirty, setIsDirty] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
   const currentQuestion = questions[currentIndex]
@@ -215,6 +218,17 @@ export const QuizzEditorProvider = ({
       return next
     })
     handleSetCurrentIndex(to)
+    markDirty()
+  }
+
+  const duplicateQuestion = (index: number) => {
+    setQuestions((prev) => {
+      const next = [...prev]
+      const duplicated = { ...next[index], id: randomUUID() }
+      next.splice(index + 1, 0, duplicated)
+      return next
+    })
+    handleSetCurrentIndex(index + 1)
     markDirty()
   }
 
@@ -270,6 +284,8 @@ export const QuizzEditorProvider = ({
       setPendingNavigation(true)
     }
 
+    setIsSaving(true)
+
     if (quizzId) {
       socket.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
     } else {
@@ -284,6 +300,7 @@ export const QuizzEditorProvider = ({
   useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id }) => {
     setQuizzId(id)
     setIsDirty(false)
+    setIsSaving(false)
     setLastSaved(new Date())
     toast.success(t("quizz:quizzSaved"), { id: "quizz-save" })
     if (pendingNavigation) {
@@ -293,6 +310,7 @@ export const QuizzEditorProvider = ({
 
   useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, () => {
     setIsDirty(false)
+    setIsSaving(false)
     setLastSaved(new Date())
     toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
     if (pendingNavigation) {
@@ -303,6 +321,7 @@ export const QuizzEditorProvider = ({
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
     toast.error(t(message), { id: "quizz-save" })
     setPendingNavigation(false)
+    setIsSaving(false)
   })
 
   useEffect(() => {
@@ -310,7 +329,7 @@ export const QuizzEditorProvider = ({
       if (isDirty) {
         saveQuizz({ silent: true })
       }
-    }, 60000)
+    }, 10000)
 
     return () => clearInterval(interval)
   }, [isDirty, saveQuizz])
@@ -338,12 +357,14 @@ export const QuizzEditorProvider = ({
         addQuestion,
         removeQuestion,
         reorderQuestions,
+        duplicateQuestion,
         updateQuestion,
         changeQuestionType,
         selectedId,
         setSelectedId,
         saveQuizz,
         isDirty,
+        isSaving,
         lastSaved,
       }}
     >

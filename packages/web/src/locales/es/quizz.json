@@ -26,7 +26,10 @@
       "questionDisplayHint": "Duración antes de que aparezcan las respuestas",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Mostrar la clasificación después de esta pregunta",
-      "timings": "Tiempos"
+      "timings": "Tiempos",
+      "propertiesTitle": "Propiedades",
+      "layersTitle": "Capas",
+      "noLayers": "Sin capas"
     },
     "deleteQuestion": "Eliminar pregunta",
     "deleteQuestionConfirm": "¿Estás seguro de que quieres eliminar esta pregunta?",
@@ -76,6 +79,9 @@
   "uploadImage": "Subir imagen",
   "slideOverlay": "Imagen superpuesta",
   "slideUrlLabel": "URL del medio",
+  "uploadFromPC": "📁 Importar desde el PC (imagen / GIF)",
+  "uploading": "Subiendo…",
+  "or": "o",
   "sliderCorrect": "Valor correcto",
   "sliderMax": "Máx",
   "sliderMin": "Mín",

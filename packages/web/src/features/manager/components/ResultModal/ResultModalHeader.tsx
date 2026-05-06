@@ -1,5 +1,6 @@
 import { useResultModal } from "@rahoot/web/features/manager/contexts/result-modal-context"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { downloadGameResultCSV } from "@rahoot/web/features/manager/utils/csv"
+import { ChevronLeft, ChevronRight, Download, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 const ResultModalHeader = () => {
@@ -31,6 +32,13 @@ const ResultModalHeader = () => {
           className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
         >
           <ChevronRight className="size-5" />
+        </button>
+        <button
+          onClick={() => downloadGameResultCSV(result)}
+          title={t("manager:result.exportCSV")}
+          className="ml-2 rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors"
+        >
+          <Download className="size-5" />
         </button>
         <button
           onClick={onClose}

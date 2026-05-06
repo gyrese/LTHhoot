@@ -9,6 +9,7 @@
   },
   "joinInstruction": "Join the game at",
   "leaderboard": "Leaderboard",
+  "roundRanking": "Round ranking",
   "openAnswerPlaceholder": "Type your answer...",
   "pinPlaceholder": "PIN Code",
   "playersJoined": "Players Joined: ",
@@ -34,8 +35,9 @@
   "dropPinHint": "Click on the image to place your pin",
   "dropPinPlace": "Place pin",
   "dropPinReplace": "Replace pin",
-  "dropPinCancel": "Cancel"
-,
+  "dropPinCancel": "Cancel",
+  "totalScore": "Total Score",
+  "getReady": "Get ready",
   "openAnswers": {
     "responses": "responses",
     "players": "players",

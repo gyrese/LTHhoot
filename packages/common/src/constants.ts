@@ -43,6 +43,7 @@ export const EVENTS = {
     UNAUTHORIZED: "manager:unauthorized",
     VALIDATE_OPEN_ANSWER: "manager:validateOpenAnswer",
     FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
+    START_DEMO: "manager:startDemo",
   },
   QUIZZ: {
     GET: "quizz:get",

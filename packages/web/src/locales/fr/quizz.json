@@ -26,7 +26,10 @@
       "questionDisplayHint": "Délai avant l'apparition des réponses",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Afficher le classement après cette question",
-      "timings": "Durées"
+      "timings": "Durées",
+      "propertiesTitle": "Propriétés",
+      "layersTitle": "Calques",
+      "noLayers": "Aucun calque"
     },
     "deleteQuestion": "Supprimer la question",
     "deleteQuestionConfirm": "Êtes-vous sûr de vouloir supprimer cette question ?",
@@ -77,6 +80,9 @@
   "uploadImage": "Importer une image",
   "slideOverlay": "Image superposée",
   "slideUrlLabel": "URL du média",
+  "uploadFromPC": "📁 Importer depuis le PC (image / GIF)",
+  "uploading": "Importation…",
+  "or": "ou",
   "sliderCorrect": "Valeur correcte",
   "sliderMax": "Max",
   "sliderMin": "Min",

@@ -26,7 +26,10 @@
       "questionDisplayHint": "Durata prima che appaiano le risposte",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Mostra la classifica dopo questa domanda",
-      "timings": "Tempi"
+      "timings": "Tempi",
+      "propertiesTitle": "Proprietà",
+      "layersTitle": "Livelli",
+      "noLayers": "Nessun livello"
     },
     "deleteQuestion": "Elimina domanda",
     "deleteQuestionConfirm": "Sei sicuro di voler eliminare questa domanda?",
@@ -76,6 +79,9 @@
   "uploadImage": "Carica immagine",
   "slideOverlay": "Immagine sovrapposta",
   "slideUrlLabel": "URL del media",
+  "uploadFromPC": "📁 Importa dal PC (immagine / GIF)",
+  "uploading": "Caricamento…",
+  "or": "o",
   "sliderCorrect": "Valore corretto",
   "sliderMax": "Max",
   "sliderMin": "Min",

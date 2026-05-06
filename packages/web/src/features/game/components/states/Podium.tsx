@@ -259,12 +259,6 @@ const Podium = ({ data: { subject, top } }: Props) => {
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shine {
-          0% { left: -100%; }
-          100% { left: 100%; }
-        }
-      `}} />
     </div>
   )
 }
