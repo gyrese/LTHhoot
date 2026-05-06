@@ -1,6 +1,5 @@
 import { type SlideElement, type SlideBackground } from "@rahoot/common/types/game"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
-import defaultBg from "@rahoot/web/assets/background.png"
 import React, { useRef, useState, useEffect } from "react"
 import { createImageElement, createTextElement } from "@rahoot/web/features/quizz/utils/element-factory"
 import { Stage, Layer, Text, Rect, Transformer, Group, Image as KonvaImage } from "react-konva"
@@ -122,7 +121,7 @@ const SlideCanvas = ({
   const bgImage = useSimpleImage(background?.type === "image" ? background.value : slideBg)
   const bgColor = background?.type === "color" ? background.value : undefined
   const bgOpacity = backgroundOpacity ?? (background ? 1 : 0.5)
-  const defaultBgImage = useSimpleImage(defaultBg)
+  const defaultBgImage = useSimpleImage("/bg-salon.png")
 
   const [editingId, setEditingId] = useState<string | undefined>()
 
