@@ -6,7 +6,6 @@ import openImg from "@rahoot/web/assets/game/types/open.png"
 import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
 import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
-import slideBg from "@rahoot/web/assets/slide-bg.png"
 import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
@@ -14,6 +13,7 @@ import clsx from "clsx"
 import {
   Presentation,
   Trash2,
+  Copy,
 } from "lucide-react"
 import { type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
@@ -83,7 +83,7 @@ const SlideElementPreview = ({ el }: { el: SlideElement }) => {
 
 const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
   const bg = question.background
-  let bgStyle: CSSProperties = { backgroundImage: `url(${slideBg})`, backgroundSize: "cover", backgroundPosition: "center" }
+  let bgStyle: CSSProperties = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
 
   if (bg?.type === "image") {
     bgStyle = { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -141,9 +141,10 @@ type Props = {
   canDelete: boolean
   onClick: () => void
   onDelete: () => void
+  onDuplicate: () => void
 }
 
-const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete }: Props) => {
+const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete, onDuplicate }: Props) => {
   const { t } = useTranslation()
   const Asset = TYPE_ASSETS[question.type]
   const isImage = typeof Asset === "string"
@@ -176,20 +177,33 @@ const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDele
       <SlideThumbnail question={question} />
 
       {canDelete && (
-        <AlertDialog
-          trigger={
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="absolute top-1 right-1 z-10 hidden rounded-sm bg-white/80 p-0.5 text-gray-500 group-hover:block hover:bg-red-50 hover:text-red-500"
-            >
-              <Trash2 className="size-3" />
-            </button>
-          }
-          title={t("quizz:question.deleteQuestion")}
-          description={t("quizz:question.deleteQuestionConfirm")}
-          confirmLabel={t("common:delete")}
-          onConfirm={onDelete}
-        />
+        <div className="absolute top-1 right-1 z-10 hidden flex-col gap-1 group-hover:flex">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDuplicate()
+            }}
+            className="rounded-sm bg-white/80 p-0.5 text-gray-500 hover:bg-blue-50 hover:text-blue-500"
+            title={t("quizz:question.duplicateQuestion")}
+          >
+            <Copy className="size-3" />
+          </button>
+          
+          <AlertDialog
+            trigger={
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-sm bg-white/80 p-0.5 text-gray-500 hover:bg-red-50 hover:text-red-500"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            }
+            title={t("quizz:question.deleteQuestion")}
+            description={t("quizz:question.deleteQuestionConfirm")}
+            confirmLabel={t("common:delete")}
+            onConfirm={onDelete}
+          />
+        </div>
       )}
     </div>
   )

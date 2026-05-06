@@ -350,8 +350,9 @@ const SlideCanvas = ({
             ref={stageRef}
           >
             <Layer scaleX={scale} scaleY={scale}>
-              {/* Fond par défaut : image salon identique au jeu */}
-              <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} />
+              {/* Fond par défaut : dark base + salon à 50% */}
+              <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
+              <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
 
               {/* Fond personnalisé par-dessus */}
               {hasBackground && (
