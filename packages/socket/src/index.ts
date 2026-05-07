@@ -118,7 +118,39 @@ const io: Server = new ServerIO(httpServer, {
   maxHttpBufferSize: 1e8,
   cors: {
     origin: process.env.ALLOWED_ORIGIN ?? "*",
+    methods: ["GET", "POST"],
+    credentials: true,
   },
+  // Hardening pour réseaux instables (mobile)
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  connectTimeout: 45000,
+  allowEIO3: false,
+})
+
+// Logging détaillé Engine.IO pour le debug proxy/WebSocket
+io.engine.on("connection_error", (err) => {
+  console.error(
+    `[ENGINE_ERR] code=${err.code} message=${err.message} req_url=${err.req.url}`,
+  )
+
+  if (err.context) {
+    console.error(`[ENGINE_ERR_CTX] ${JSON.stringify(err.context)}`)
+  }
+})
+
+io.engine.on("connection", (engineSocket) => {
+  console.log(
+    `[ENGINE] Nouvelle connexion: sid=${engineSocket.id} transport=${engineSocket.transport.name} ip=${engineSocket.remoteAddress}`,
+  )
+
+  engineSocket.on("upgrade", (transport) => {
+    console.log(`[ENGINE] Upgrade transport: sid=${engineSocket.id} to=${transport.name}`)
+  })
+
+  engineSocket.on("close", (reason) => {
+    console.log(`[ENGINE] Connexion fermée: sid=${engineSocket.id} raison=${reason}`)
+  })
 })
 
 Config.init()
@@ -134,9 +166,14 @@ const socketHandlers: SocketHandler[] = [
 ]
 
 io.on("connection", (socket) => {
+  const transport = socket.conn.transport.name
   console.log(
-    `A user connected: socketId: ${socket.id}, clientId: ${socket.handshake.auth.clientId}`,
+    `[IO] Client connecté: socketId=${socket.id} clientId=${socket.handshake.auth.clientId} transport=${transport}`,
   )
+
+  socket.on("error", (err) => {
+    console.error(`[IO_ERR] socketId=${socket.id}: ${err.message}`)
+  })
 
   socketHandlers.forEach((handler) => {
     handler({ io, socket })

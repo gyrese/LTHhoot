@@ -72,6 +72,12 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        randomizationFactor: 0.5,
+        timeout: 20000,
+        transports: ["polling", "websocket"],
+        upgrade: true,
+        rememberUpgrade: true,
         auth: {
           clientId,
         },
@@ -80,10 +86,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       setSocket(socketClient)
 
       socketClient.on("connect", () => {
+        const transport = socketClient?.io.engine.transport.name
         console.log(
-          `[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)}`,
+          `[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)} transport=${transport}`,
         )
         setIsConnected(true)
+      })
+
+      // Détecter les upgrades de transport
+      socketClient.io.engine.on("upgrade", (transport) => {
+        console.log(`[SOCKET] Transport upgraded to ${transport.name}`)
       })
 
       socketClient.on("disconnect", (reason) => {
