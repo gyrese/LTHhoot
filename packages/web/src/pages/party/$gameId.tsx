@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next"
 
 const PlayerGamePage = () => {
   const navigate = useNavigate()
-  const { socket } = useSocket()
+  const { socket, isReconnecting } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
   const { status, setPlayer, setGameId, setStatus, reset } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -44,7 +44,16 @@ const PlayerGamePage = () => {
     }
   })
 
+  // useSocket déplacé en haut
+
   useEvent(EVENTS.GAME.RESET, (message) => {
+    if (isReconnecting) {
+      console.log(`[DEBUG] Ignored GAME.RESET during reconnect (msg: ${message})`)
+
+      return
+    }
+
+    console.log(`[DEBUG] Processing GAME.RESET (msg: ${message})`)
     navigate({ to: "/", search: { pin: undefined } })
     reset()
     setQuestionStates(null)

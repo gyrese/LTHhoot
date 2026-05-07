@@ -50,7 +50,8 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
       setPlayers: (players) => set({ players }),
 
       reset: () => {
-        console.log("[STORE] Manager reset")
+        const stack = new Error().stack
+        console.warn(`[STORE] Manager reset called! Stack:`, stack)
         set(initialState)
       },
     }),

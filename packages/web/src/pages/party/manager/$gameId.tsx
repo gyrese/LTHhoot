@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next"
 const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
-  const { socket } = useSocket()
+  const { socket, isReconnecting } = useSocket()
   const { gameId, status, setGameId, setStatus, setPlayers, reset } =
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -47,7 +47,16 @@ const ManagerGamePage = () => {
     },
   )
 
+  // useSocket déplacé en haut
+
   useEvent(EVENTS.GAME.RESET, (message) => {
+    if (isReconnecting) {
+      console.log(`[DEBUG] Ignored MANAGER GAME.RESET during reconnect (msg: ${message})`)
+
+      return
+    }
+
+    console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
     navigate({ to: "/manager/config" })
     reset()
     setQuestionStates(null)

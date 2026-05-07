@@ -63,7 +63,8 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
       setStatus: (name, data) => set({ status: createStatus(name, data) }),
 
       reset: () => {
-        console.log("[STORE] Player reset")
+        const stack = new Error().stack
+        console.warn(`[STORE] Player reset called! Stack:`, stack)
         set(initialState)
       },
     }),
