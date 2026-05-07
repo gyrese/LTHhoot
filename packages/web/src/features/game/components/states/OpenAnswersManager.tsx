@@ -6,7 +6,7 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import clsx from "clsx"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 type Props = {
@@ -20,6 +20,12 @@ const OpenAnswersManager = ({
   const { gameId } = useManagerStore()
   const { t } = useTranslation()
   const [validating, setValidating] = useState<string | null>(null)
+
+  useEffect(() => {
+    console.log("[MOUNT] OpenAnswersManager")
+
+    return () => console.log("[UNMOUNT] OpenAnswersManager")
+  }, [])
   const answered = answers.length
   const noAnswer = totalPlayers - answered
 
@@ -33,7 +39,7 @@ const OpenAnswersManager = ({
     }
 
     setValidating(text)
-    socket.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, { gameId, data: { text } })
+    socket?.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, { gameId, data: { text } })
   }
 
   const unique = Array.from(

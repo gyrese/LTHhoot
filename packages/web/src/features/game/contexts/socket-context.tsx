@@ -85,17 +85,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
       setSocket(socketClient)
 
+      // Détecter les upgrades de transport (uniquement quand l'engine est prêt)
+      socketClient.io.on("open", () => {
+        console.log("[SOCKET] Manager open (transport ready)")
+        socketClient?.io?.engine?.on?.("upgrade", (transport: any) => {
+          console.log(`[SOCKET] Transport upgraded to ${transport.name}`)
+        })
+      })
+
       socketClient.on("connect", () => {
-        const transport = socketClient?.io.engine.transport.name
+        const transport = socketClient?.io?.engine?.transport?.name
         console.log(
           `[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)} transport=${transport}`,
         )
         setIsConnected(true)
-      })
-
-      // Détecter les upgrades de transport
-      socketClient.io.engine.on("upgrade", (transport) => {
-        console.log(`[SOCKET] Transport upgraded to ${transport.name}`)
       })
 
       socketClient.on("disconnect", (reason) => {
@@ -103,6 +106,18 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           `[SOCKET] Déconnecté socket=${socketClient?.id} raison=${reason}`,
         )
         setIsConnected(false)
+      })
+
+      socketClient.io.on("reconnect_attempt", (attempt) => {
+        console.log(`[SOCKET] Tentative de reconnexion #${attempt}`)
+      })
+
+      socketClient.io.on("reconnect_error", (err) => {
+        console.error(`[SOCKET] Erreur de reconnexion: ${err.message}`)
+      })
+
+      socketClient.io.on("reconnect_failed", () => {
+        console.error("[SOCKET] Échec définitif de la reconnexion")
       })
 
       socketClient.on("connect_error", (err) => {
@@ -114,23 +129,29 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // eslint-disable-next-line consistent-return
     return () => {
-      socketClient?.disconnect()
+      if (socketClient) {
+        console.log("[SOCKET] Nettoyage socketClient (unmount)")
+        socketClient.disconnect()
+      }
     }
-  }, [clientId])
+  }, [clientId, socket])
 
   const connect = useCallback(() => {
+    console.log("[SOCKET] Action: connect")
     if (socket && !socket.connected) {
       socket.connect()
     }
   }, [socket])
 
   const disconnect = useCallback(() => {
+    console.log("[SOCKET] Action: disconnect")
     if (socket && socket.connected) {
       socket.disconnect()
     }
   }, [socket])
 
   const reconnect = useCallback(() => {
+    console.log("[SOCKET] Action: reconnect")
     if (socket) {
       socket.disconnect()
       socket.connect()
@@ -148,7 +169,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnect,
       }}
     >
-      {children}
+      {/* On ne rend les enfants que lorsque le socket est instancié pour éviter useEvent(null) */}
+      {socket ? children : null}
     </SocketContext.Provider>
   )
 }
@@ -167,7 +189,10 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
   })
 
   useEffect(() => {
+    console.log(`[EVENT] Mount hook for event: ${event}`)
     if (!socket) {
+      console.warn(`[EVENT] Skip attach ${event}: socket is null`)
+
       return () => {}
     }
 
@@ -175,10 +200,12 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
       ;(callbackRef.current as (..._a: unknown[]) => void)(...args)
     }
 
+    console.log(`[EVENT] Attach listener: ${event}`)
     socket.on(event, stableHandler as any)
 
     return () => {
-      socket.off(event, stableHandler as any)
+      console.log(`[EVENT] Detach listener: ${event}`)
+      socket?.off?.(event, stableHandler as any)
     }
   }, [socket, event])
 }

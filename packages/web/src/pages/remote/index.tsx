@@ -42,7 +42,7 @@ const RemoteIndexPage = () => {
 
     setError("")
     setIsLoading(true)
-    socket.emit(EVENTS.PLAYER.JOIN, code)
+    socket?.emit(EVENTS.PLAYER.JOIN, code)
   }
 
   return (

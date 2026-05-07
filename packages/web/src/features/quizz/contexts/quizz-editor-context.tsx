@@ -193,6 +193,12 @@ export const QuizzEditorProvider = ({
   const { socket } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  useEffect(() => {
+    console.log("[MOUNT] QuizzEditorProvider")
+
+    return () => console.log("[UNMOUNT] QuizzEditorProvider")
+  }, [])
   const [subject, setSubject] = useState(
     initialData?.subject ?? "Untitled Quizz",
   )
@@ -349,9 +355,9 @@ export const QuizzEditorProvider = ({
       setIsSaving(true)
 
       if (quizzId) {
-        socket.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
+        socket?.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
       } else {
-        socket.emit(EVENTS.QUIZZ.SAVE, payload)
+        socket?.emit(EVENTS.QUIZZ.SAVE, payload)
       }
 
       if (!options?.silent) {

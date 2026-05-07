@@ -32,6 +32,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const navigate = useNavigate()
   const { socket, isConnected } = useSocket()
 
+  useEffect(() => {
+    console.log("[MOUNT] RemoteControl")
+
+    return () => console.log("[UNMOUNT] RemoteControl")
+  }, [])
+
   const [password, setPassword] = useState(
     () => sessionStorage.getItem("rc_pwd") ?? "",
   )
@@ -166,8 +172,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       return
     }
 
-    socket.emit(EVENTS.MANAGER.AUTH, password)
-    socket.emit(EVENTS.MANAGER.RECONNECT, { gameId })
+    socket?.emit(EVENTS.MANAGER.AUTH, password)
+    socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
   })
 
   const handleAuth = useCallback(() => {
@@ -178,8 +184,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     setAuthError("")
     setIsAuthLoading(true)
     sessionStorage.setItem("rc_pwd", password)
-    socket.emit(EVENTS.MANAGER.AUTH, password)
-    socket.emit(EVENTS.MANAGER.RECONNECT, { gameId })
+    socket?.emit(EVENTS.MANAGER.AUTH, password)
+    socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
 
     if (authTimeoutRef.current) {
       clearTimeout(authTimeoutRef.current)
@@ -202,27 +208,27 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
     switch (name) {
       case STATUS.SHOW_ROOM:
-        socket.emit(EVENTS.MANAGER.START_GAME, { gameId })
+        socket?.emit(EVENTS.MANAGER.START_GAME, { gameId })
 
         break
 
       case STATUS.SELECT_ANSWER:
-        socket.emit(EVENTS.MANAGER.ABORT_QUIZ, { gameId })
+        socket?.emit(EVENTS.MANAGER.ABORT_QUIZ, { gameId })
 
         break
 
       case STATUS.SHOW_OPEN_ANSWERS:
-        socket.emit(EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS, { gameId })
+        socket?.emit(EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS, { gameId })
 
         break
 
       case STATUS.SHOW_RESPONSES:
-        socket.emit(EVENTS.MANAGER.SHOW_LEADERBOARD, { gameId })
+        socket?.emit(EVENTS.MANAGER.SHOW_LEADERBOARD, { gameId })
 
         break
 
       case STATUS.SHOW_LEADERBOARD:
-        socket.emit(EVENTS.MANAGER.NEXT_QUESTION, { gameId })
+        socket?.emit(EVENTS.MANAGER.NEXT_QUESTION, { gameId })
 
         break
 
@@ -233,7 +239,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
       default:
         if (isKeyOf(MANAGER_SKIP_EVENTS, name)) {
-          socket.emit(MANAGER_SKIP_EVENTS[name], { gameId })
+          socket?.emit(MANAGER_SKIP_EVENTS[name], { gameId })
         } else {
           setActionPending(false)
         }
@@ -246,7 +252,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     }
 
     setActionPending(true)
-    socket.emit(EVENTS.MANAGER.START_DEMO, { gameId })
+    socket?.emit(EVENTS.MANAGER.START_DEMO, { gameId })
   }, [socket, actionPending, gameId])
 
   const handleValidateOpenAnswer = useCallback(
@@ -255,7 +261,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         return
       }
 
-      socket.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, {
+      socket?.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, {
         gameId,
         data: { text },
       })
@@ -269,7 +275,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         return
       }
 
-      socket.emit(EVENTS.MANAGER.KICK_PLAYER, { gameId, playerId })
+      socket?.emit(EVENTS.MANAGER.KICK_PLAYER, { gameId, playerId })
       setKickTargetId(null)
     },
     [socket, gameId],
