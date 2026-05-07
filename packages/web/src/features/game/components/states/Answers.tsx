@@ -204,7 +204,11 @@ const Answers = ({
       {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements}
+            elements={
+              isPlayer
+                ? elements.filter((el) => el.type !== "youtube")
+                : elements
+            }
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
@@ -228,9 +232,11 @@ const Answers = ({
         {(!elements || elements.length === 0) && (
           <QuestionMedia
             media={
-              type === "drop_pin" && pinImage && !isPlayer
-                ? { type: "image", url: pinImage }
-                : media
+              isPlayer && media?.type === "video"
+                ? undefined // On cache la vidéo pour les joueurs
+                : type === "drop_pin" && pinImage && !isPlayer
+                  ? { type: "image", url: pinImage }
+                  : media
             }
             alt={question}
           />

@@ -58,7 +58,7 @@ const Question = ({
       {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements}
+            elements={elements.filter((el) => el.type !== "youtube")}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
@@ -83,8 +83,8 @@ const Question = ({
           {(!elements || elements.length === 0) && (
             <QuestionMedia
               media={
-                type === "drop_pin" && pinImage
-                  ? { type: "image", url: pinImage }
+                (media?.type === "video" || (type === "drop_pin" && pinImage))
+                  ? undefined // On cache la vidéo en phase question
                   : media
               }
               alt={question}

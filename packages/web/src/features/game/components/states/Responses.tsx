@@ -494,7 +494,7 @@ const Responses = ({
       {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements}
+            elements={elements.filter((el) => el.type !== "youtube")}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
