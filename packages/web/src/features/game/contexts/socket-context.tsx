@@ -72,12 +72,12 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
+        reconnectionDelayMax: 8000, // Un peu plus lent pour le polling
         randomizationFactor: 0.5,
         timeout: 20000,
-        transports: ["polling", "websocket"],
-        upgrade: true,
-        rememberUpgrade: true,
+        transports: ["polling"],
+        upgrade: false,
+        rememberUpgrade: false,
         auth: {
           clientId,
         },
@@ -85,25 +85,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
       setSocket(socketClient)
 
-      // Détecter les upgrades de transport (uniquement quand l'engine est prêt)
-      socketClient.io.on("open", () => {
-        console.log("[SOCKET] Manager open (transport ready)")
-        socketClient?.io?.engine?.on?.("upgrade", (transport: any) => {
-          console.log(`[SOCKET] Transport upgraded to ${transport.name}`)
-        })
-      })
-
       socketClient.on("connect", () => {
         const transport = socketClient?.io?.engine?.transport?.name
         console.log(
-          `[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)} transport=${transport}`,
+          `[SOCKET] Connecté (POLLING) socket=${socketClient?.id} transport=${transport}`,
         )
         setIsConnected(true)
       })
 
       socketClient.on("disconnect", (reason) => {
         console.log(
-          `[SOCKET] Déconnecté socket=${socketClient?.id} raison=${reason}`,
+          `[SOCKET] Déconnecté (POLLING) raison=${reason}`,
         )
         setIsConnected(false)
       })
@@ -197,6 +189,9 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
     }
 
     const stableHandler = (...args: Parameters<ServerToClientEvents[E]>) => {
+      if (event.includes("SUCCESS_RECONNECT")) {
+        console.log(`[RESYNC] Réussite de la resynchronisation métier: ${event}`)
+      }
       ;(callbackRef.current as (..._a: unknown[]) => void)(...args)
     }
 

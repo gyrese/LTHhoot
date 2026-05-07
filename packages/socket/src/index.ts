@@ -121,6 +121,9 @@ const io: Server = new ServerIO(httpServer, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // STRATÉGIE POLLING-ONLY (Stabilité maximale avant prod)
+  transports: ["polling"],
+  allowUpgrades: false,
   // Hardening pour réseaux instables (mobile)
   pingTimeout: 60000,
   pingInterval: 25000,
@@ -128,34 +131,26 @@ const io: Server = new ServerIO(httpServer, {
   allowEIO3: false,
 })
 
-// Logging détaillé Engine.IO pour le debug proxy/WebSocket
+// Logging Engine.IO (Focus Polling)
 io.engine.on("connection_error", (err) => {
   console.error(
-    `[ENGINE_ERR] code=${err.code} message=${err.message} req_url=${err.req.url}`,
+    `[POLLING_ERR] code=${err.code} message=${err.message} req_url=${err.req.url}`,
   )
-
-  if (err.context) {
-    console.error(`[ENGINE_ERR_CTX] ${JSON.stringify(err.context)}`)
-  }
 })
 
 io.engine.on("connection", (engineSocket) => {
   console.log(
-    `[ENGINE] Nouvelle connexion: sid=${engineSocket.id} transport=${engineSocket.transport.name} ip=${engineSocket.remoteAddress}`,
+    `[POLLING] Connexion active: sid=${engineSocket.id} transport=${engineSocket.transport.name} ip=${engineSocket.remoteAddress}`,
   )
 
-  engineSocket.on("upgrade", (transport) => {
-    console.log(`[ENGINE] Upgrade transport: sid=${engineSocket.id} to=${transport.name}`)
-  })
-
   engineSocket.on("close", (reason) => {
-    console.log(`[ENGINE] Connexion fermée: sid=${engineSocket.id} raison=${reason}`)
+    console.log(`[POLLING] Connexion close: sid=${engineSocket.id} raison=${reason}`)
   })
 })
 
 Config.init()
 
-console.log(`Socket server running on port ${WS_PORT}`)
+console.log(`Socket server running on port ${WS_PORT} (POLLING ONLY MODE)`)
 httpServer.listen(WS_PORT, "0.0.0.0")
 
 const socketHandlers: SocketHandler[] = [
