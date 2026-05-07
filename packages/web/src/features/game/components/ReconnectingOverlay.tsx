@@ -2,7 +2,7 @@ import React from "react"
 
 const ReconnectingOverlay = () => {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 backdrop-blur-xl">
       <div className="relative">
         {/* Cercles d'animation */}
         <div className="h-20 w-20 animate-spin rounded-full border-4 border-orange-500/20 border-t-orange-500" />

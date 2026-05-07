@@ -74,6 +74,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const managerStore = useManagerStore()
 
   useEffect(() => {
+    const currentStatus = playerStore.status?.name || managerStore.status?.name || "NONE"
+    console.log(`[UI_TRACE_v1k8qp] isReconnecting=${isReconnecting} isConnected=${isConnected} currentStatus=${currentStatus} overlayVisible=${isReconnecting}`)
+  }, [isReconnecting, isConnected, playerStore.status?.name, managerStore.status?.name])
+
+  useEffect(() => {
     if (socket) {
       return
     }
@@ -218,8 +223,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnect,
       }}
     >
-      {isReconnecting && <ReconnectingOverlay />}
-      {socket ? children : null}
+      {isReconnecting && (
+        <ReconnectingOverlay key="global-reconnect-overlay" />
+      )}
+      <div 
+        style={{ display: isReconnecting ? "none" : "block", height: "100%" }}
+        id="app-content-root"
+      >
+        {socket ? children : null}
+      </div>
     </SocketContext.Provider>
   )
 }
