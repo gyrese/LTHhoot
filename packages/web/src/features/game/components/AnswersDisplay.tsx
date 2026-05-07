@@ -23,7 +23,7 @@ export const McqAnswers = ({
         index={key}
         className={clsx(
           ANSWERS_COLORS[key],
-          /* surface tactile minimum 64px en mode icône seule */
+          /* Surface tactile minimum 64px en mode icône seule */
           iconOnly && "min-h-16",
         )}
         icon={ANSWERS_ICONS[key]}

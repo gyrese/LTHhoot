@@ -7,17 +7,16 @@ import {
   Clock,
   Contrast,
   Timer,
-  Layers,
   Trophy,
   Trash2,
   ChevronUp,
   ChevronDown,
-  Video,
   Volume2,
   Repeat,
   Settings,
   Play,
 } from "lucide-react"
+import React from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
@@ -49,7 +48,8 @@ const QuestionEditorConfig = () => {
       (el) => el.id !== id,
     )
     updateQuestion(currentIndex, { elements })
-    if (selectedId === id) setSelectedId(undefined)
+
+    if (selectedId === id) {setSelectedId(undefined)}
   }
 
   const handleMoveLayer =
@@ -57,7 +57,8 @@ const QuestionEditorConfig = () => {
       e.stopPropagation()
       const elements = [...(currentQuestion.elements || [])]
       const index = elements.findIndex((el) => el.id === id)
-      if (index === -1) return
+
+      if (index === -1) {return}
 
       if (direction === "up" && index < elements.length - 1) {
         ;[elements[index], elements[index + 1]] = [
@@ -279,7 +280,7 @@ const QuestionEditorConfig = () => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={!!currentQuestion.showLeaderboard}
+                aria-checked={Boolean(currentQuestion.showLeaderboard)}
                 onClick={() =>
                   updateQuestion(currentIndex, {
                     showLeaderboard: !currentQuestion.showLeaderboard,

@@ -3,8 +3,7 @@ import {
   getPetdexAvatar,
 } from "@rahoot/web/features/game/utils/avatars"
 import clsx from "clsx"
-import type React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 type Props = {
   seed: string
@@ -12,7 +11,7 @@ type Props = {
   animated?: boolean
   idleBounce?: boolean
   animationStates?: readonly PetdexStateId[]
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
 const PETDEX_GRID = { cols: 8, rows: 9 }
@@ -65,18 +64,23 @@ const GameAvatar = ({
   }, [pet])
 
   useEffect(() => {
-    if (!pet) return
-    if (!sourceUrl) return
+    if (!pet || !sourceUrl) {
+      return undefined
+    }
 
     const canvas = canvasRef.current
-    if (!canvas) return
+
+    if (!canvas) {
+      return undefined
+    }
 
     let raf = 0
     let stopped = false
     const img = new Image()
 
     img.onerror = () => {
-      if (stopped) return
+      if (stopped) {return}
+
       if (pet.remoteSpritesheetUrl && sourceUrl !== pet.remoteSpritesheetUrl) {
         setSourceUrl(pet.remoteSpritesheetUrl)
       } else {
@@ -85,7 +89,8 @@ const GameAvatar = ({
     }
 
     img.onload = () => {
-      if (stopped) return
+      if (stopped) {return}
+
       const frameW = Math.floor(img.width / PETDEX_GRID.cols)
       const frameH = Math.floor(img.height / PETDEX_GRID.rows)
 
@@ -94,7 +99,9 @@ const GameAvatar = ({
       canvas.height = Math.max(1, Math.floor(frameH * dpr))
 
       const ctx = canvas.getContext("2d")
-      if (!ctx) return
+
+      if (!ctx) {return}
+
       ctx.imageSmoothingEnabled = false
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
@@ -115,6 +122,7 @@ const GameAvatar = ({
 
       if (!animated) {
         drawFrame(PETDEX_STATES.idle.row, 0)
+
         return
       }
 
@@ -126,7 +134,8 @@ const GameAvatar = ({
       )
 
       const tick = (now: number) => {
-        if (stopped) return
+        if (stopped) {return}
+
         const loopFrame = Math.floor((now - start) / frameMs) % totalFrames
 
         let currentFrame = loopFrame
@@ -137,6 +146,7 @@ const GameAvatar = ({
           if (currentFrame < state.frames) {
             activeRow = state.row
             activeFrame = currentFrame
+
             break
           }
 
@@ -154,7 +164,8 @@ const GameAvatar = ({
 
     return () => {
       stopped = true
-      if (raf) cancelAnimationFrame(raf)
+
+      if (raf) {cancelAnimationFrame(raf)}
     }
   }, [animated, dpr, frameSequence, pet, sourceUrl])
 

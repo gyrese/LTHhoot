@@ -5,13 +5,11 @@ import QuestionEditorDropPin from "@rahoot/web/features/quizz/components/Questio
 import QuestionEditorOpen from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorOpen"
 import QuestionEditorPuzzle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorPuzzle"
 import QuestionEditorSlider from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorSlider"
-import QuestionEditorSlideToolbar from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorSlideToolbar"
 import QuestionEditorTitle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTitle"
 import QuestionEditorTrueFalse from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTrueFalse"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 
 import SlideEditor from "@rahoot/web/features/quizz/components/SlideEditor"
-import type { CSSProperties } from "react"
 
 const QuestionAnswerEditor = () => {
   const { currentQuestion } = useQuizzEditor()

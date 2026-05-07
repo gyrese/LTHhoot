@@ -45,11 +45,13 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
     typeof totalPlayers === "number" &&
     totalPlayers > 1 &&
     rank === totalPlayers
-  const animationStates = isTopThree
-    ? WINNING_ANIMATION_STATES
-    : isLastPlace
-      ? FAILED_ANIMATION_STATES
-      : WAITING_ANIMATION_STATES
+  let animationStates: typeof WINNING_ANIMATION_STATES | typeof FAILED_ANIMATION_STATES | typeof WAITING_ANIMATION_STATES = WAITING_ANIMATION_STATES
+
+  if (isTopThree) {
+    animationStates = WINNING_ANIMATION_STATES
+  } else if (isLastPlace) {
+    animationStates = FAILED_ANIMATION_STATES
+  }
 
   return (
     <div className="relative flex h-full flex-1 flex-col items-center justify-center gap-5 px-5">

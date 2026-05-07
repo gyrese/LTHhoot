@@ -15,8 +15,7 @@ import {
   Maximize,
   Sun,
 } from "lucide-react"
-import { useTranslation } from "react-i18next"
-import { useEffect, useRef } from "react"
+import React, { type CSSProperties, useEffect, useRef } from "react"
 
 export type ContextMenuAction =
   | "addText"
@@ -42,7 +41,7 @@ type ContextMenuProps = {
   selectedType?: string
   canPaste: boolean
   onClose: () => void
-  onAction: (action: ContextMenuAction) => void
+  onAction: (_action: ContextMenuAction) => void
 }
 
 const SlideContextMenu = ({
@@ -54,20 +53,21 @@ const SlideContextMenu = ({
   onClose,
   onAction,
 }: ContextMenuProps) => {
-  const { t } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       // Don't close if clicking exactly where we opened the context menu (prevents immediate close on right click)
-      if (e.button === 2) return
+      if (e.button === 2) {return}
 
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => {
+
+    
+return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [onClose])
@@ -82,7 +82,7 @@ const SlideContextMenu = ({
   }
 
   // Ensure menu stays within window bounds (rough estimation)
-  const menuStyle: React.CSSProperties = {
+  const menuStyle: CSSProperties = {
     top: Math.min(y, window.innerHeight - 300),
     left: Math.min(x, window.innerWidth - 200),
   }

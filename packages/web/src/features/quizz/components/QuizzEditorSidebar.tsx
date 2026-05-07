@@ -9,7 +9,7 @@ import QuizzEditorCard from "@rahoot/web/features/quizz/components/QuizzEditorCa
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
 import { Plus } from "lucide-react"
-import { useRef, useState } from "react"
+import { type MouseEvent, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SidebarContextMenu, {
   type SidebarAction,
@@ -62,7 +62,7 @@ const QuizzEditorSidebar = () => {
     reorderQuestions(result.source.index, result.destination.index)
   }
 
-  const handleContextMenu = (index: number) => (e: React.MouseEvent) => {
+  const handleContextMenu = (index: number) => (e: MouseEvent) => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY, index, show: true })
   }
@@ -71,22 +71,33 @@ const QuizzEditorSidebar = () => {
     switch (action) {
       case "add":
         addQuestion()
+
         // Wait for state update then select it? addQuestion usually handles selection
         break
+
       case "duplicate":
         duplicateQuestion(index)
+
         break
+
       case "delete":
         removeQuestion(index)
+
         break
+
       case "moveUp":
-        if (index > 0) reorderQuestions(index, index - 1)
+        if (index > 0) {reorderQuestions(index, index - 1)}
+
         break
+
       case "moveDown":
-        if (index < questions.length - 1) reorderQuestions(index, index + 1)
+        if (index < questions.length - 1) {reorderQuestions(index, index + 1)}
+
         break
+
       case "changeBackground":
         setCurrentIndex(index)
+
         // This will show the background settings in the right sidebar
         break
     }

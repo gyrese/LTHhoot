@@ -8,13 +8,15 @@ import {
 import ResultModal from "@rahoot/web/features/manager/components/ResultModal"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
-import { useCallback, useState, useMemo } from "react"
+import React, { useCallback, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 const formatDate = (iso: string) => {
   const d = new Date(iso)
-  return `${d.toLocaleDateString(undefined, {
+
+  
+return `${d.toLocaleDateString(undefined, {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -30,16 +32,16 @@ const ResultsPanel = () => {
   const [page, setPage] = useState(1)
   const itemsPerPage = 10
 
-  const filteredResults = useMemo(() => {
-    return results.filter((r) =>
+  const filteredResults = useMemo(() => results.filter((r) =>
       r.subject.toLowerCase().includes(search.toLowerCase()),
-    )
-  }, [results, search])
+    ), [results, search])
 
   const totalPages = Math.ceil(filteredResults.length / itemsPerPage)
   const paginatedResults = useMemo(() => {
     const start = (page - 1) * itemsPerPage
-    return filteredResults.slice(start, start + itemsPerPage)
+
+    
+return filteredResults.slice(start, start + itemsPerPage)
   }, [filteredResults, page])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -2,7 +2,7 @@ import type { DropPinQuestion, DropPinZone } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
 import { Crosshair, ImagePlus, MapPin, Trash2, UploadCloud } from "lucide-react"
-import { useRef, useState } from "react"
+import React, { useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -14,19 +14,21 @@ const QuestionEditorDropPin = () => {
   const q = currentQuestion as DropPinWithId
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
   const [uploading, setUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
   const handleFileUpload = async (file: File) => {
     setUploading(true)
+
     try {
       const formData = new FormData()
       formData.append("image", file)
       const res = await fetch("/upload", { method: "POST", body: formData })
+
       if (!res.ok) {
         throw new Error("Upload failed")
       }
+
       const data = (await res.json()) as { url: string }
       updateQuestion(currentIndex, { pinImage: data.url, zones: [] })
     } catch {
@@ -43,7 +45,7 @@ const QuestionEditorDropPin = () => {
   ) => {
     e.preventDefault()
 
-    if (!imgRef.current) return
+    if (!imgRef.current) {return}
 
     // Support both mouse and touch events
     const clientX =
@@ -69,7 +71,9 @@ const QuestionEditorDropPin = () => {
 
     if (isNaN(xPct) || isNaN(yPct)) {
       toast.error("Erreur: Impossible de calculer la position.")
-      return
+
+      
+return
     }
 
     const newZone: DropPinZone = {
@@ -112,7 +116,8 @@ const QuestionEditorDropPin = () => {
             e.preventDefault()
             setIsDragging(false)
             const file = e.dataTransfer.files?.[0]
-            if (file) void handleFileUpload(file)
+
+            if (file) {void handleFileUpload(file)}
           }}
         >
           <input
@@ -122,9 +127,11 @@ const QuestionEditorDropPin = () => {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
+
               if (file) {
                 void handleFileUpload(file)
               }
+
               e.target.value = ""
             }}
           />
@@ -192,9 +199,11 @@ const QuestionEditorDropPin = () => {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
+
               if (file) {
                 void handleFileUpload(file)
               }
+
               e.target.value = ""
             }}
           />
@@ -230,7 +239,8 @@ const QuestionEditorDropPin = () => {
                   style={{
                     left: `${pin.x}%`,
                     top: `${pin.y}%`,
-                    transform: "translate(-50%, -100%)", // Align pin tip exactly on coordinate
+                    // Align pin tip exactly on coordinate
+                    transform: "translate(-50%, -100%)",
                   }}
                 >
                   <div className="animate-in zoom-in-50 relative origin-bottom duration-300">

@@ -27,14 +27,21 @@ const RemoteIndexPage = () => {
 
   const handleSubmit = () => {
     const code = inviteCode.trim().toUpperCase()
+
     if (code.length < 3) {
       setError("Entrez le code d'invitation affiché sur l'écran principal.")
-      return
+
+      
+return
     }
+
     if (!socket) {
       setError("Connexion au serveur en cours...")
-      return
+
+      
+return
     }
+
     setError("")
     setIsLoading(true)
     socket.emit(EVENTS.PLAYER.JOIN, code)

@@ -81,7 +81,7 @@ const Leaderboard = ({
 
     const timer2 = setTimeout(() => {
       setPhase("total")
-      setDisplayedPlayers(leaderboard)
+      setDisplayedPlayers(leaderboard as typeof roundLeaderboard)
     }, 4000)
 
     return () => {
@@ -136,12 +136,16 @@ const Leaderboard = ({
               const finalPoints =
                 leaderboard.find((p) => p.id === id)?.points ?? 0
               const displayRank = index + 1
-              const animationStates =
-                displayRank <= 3
-                  ? WINNING_ANIMATION_STATES
-                  : totalPlayers > 1 && displayRank === totalPlayers
-                    ? FAILED_ANIMATION_STATES
-                    : WAITING_ANIMATION_STATES
+              let animationStates:
+                | typeof WINNING_ANIMATION_STATES
+                | typeof WAITING_ANIMATION_STATES
+                | typeof FAILED_ANIMATION_STATES = WAITING_ANIMATION_STATES
+
+              if (displayRank <= 3) {
+                animationStates = WINNING_ANIMATION_STATES
+              } else if (totalPlayers > 1 && displayRank === totalPlayers) {
+                animationStates = FAILED_ANIMATION_STATES
+              }
 
               return (
                 <motion.div
@@ -172,7 +176,7 @@ const Leaderboard = ({
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {phase === "round" ? (
+                    {phase === "round" && (
                       <motion.span
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -180,7 +184,8 @@ const Leaderboard = ({
                       >
                         +{roundPoints}
                       </motion.span>
-                    ) : phase === "adding" ? (
+                    )}
+                    {phase === "adding" && (
                       <div className="flex flex-col items-end">
                         <AnimatedPoints from={oldPoints} to={finalPoints} />
                         <motion.span
@@ -191,7 +196,8 @@ const Leaderboard = ({
                           +{roundPoints}
                         </motion.span>
                       </div>
-                    ) : (
+                    )}
+                    {phase === "total" && (
                       <span className="drop-shadow-md">{finalPoints}</span>
                     )}
                   </div>

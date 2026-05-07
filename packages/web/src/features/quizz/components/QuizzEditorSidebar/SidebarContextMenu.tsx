@@ -1,6 +1,6 @@
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Palette } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { useEffect, useRef } from "react"
+import { type CSSProperties, useEffect, useRef } from "react"
 
 export type SidebarAction =
   | "add"
@@ -18,7 +18,7 @@ type SidebarContextMenuProps = {
   canMoveUp: boolean
   canMoveDown: boolean
   onClose: () => void
-  onAction: (action: SidebarAction, index: number) => void
+  onAction: (_action: SidebarAction, _index: number) => void
 }
 
 const SidebarContextMenu = ({
@@ -36,13 +36,16 @@ const SidebarContextMenu = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (e.button === 2) return
+      if (e.button === 2) {return}
+
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => {
+
+    
+return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [onClose])
@@ -52,7 +55,7 @@ const SidebarContextMenu = ({
     onClose()
   }
 
-  const menuStyle: React.CSSProperties = {
+  const menuStyle: CSSProperties = {
     top: Math.min(y, window.innerHeight - 250),
     left: Math.min(x, window.innerWidth - 200),
   }

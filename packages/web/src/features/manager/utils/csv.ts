@@ -5,7 +5,7 @@ export const downloadGameResultCSV = (result: GameResult) => {
 
   // Add question headers
   result.questions.forEach((q, i) => {
-    headers.push(`Q${i + 1}: ${q.question.replace(/"/g, '""')}`)
+    headers.push(`Q${i + 1}: ${q.question.replace(/"/gu, '""')}`)
   })
 
   const rows = result.players.map((player) => {
@@ -23,7 +23,7 @@ export const downloadGameResultCSV = (result: GameResult) => {
       row.push(pAnswer ? pAnswer.points.toString() : "0")
     })
 
-    return row.map((val) => `"${val.replace(/"/g, '""')}"`).join(",")
+    return row.map((val) => `"${val.replace(/"/gu, '""')}"`).join(",")
   })
 
   const csvContent = [headers.join(","), ...rows].join("\n")
@@ -34,7 +34,7 @@ export const downloadGameResultCSV = (result: GameResult) => {
   link.setAttribute("href", url)
   link.setAttribute(
     "download",
-    `results_${result.subject.replace(/\s+/g, "_")}_${new Date(result.date).getTime()}.csv`,
+    `results_${result.subject.replace(/\s+/gu, "_")}_${new Date(result.date).getTime()}.csv`,
   )
   link.style.visibility = "hidden"
   document.body.appendChild(link)

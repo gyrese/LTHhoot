@@ -22,7 +22,6 @@ const SlideEditor = ({
   backgroundOpacity,
 }: SlideEditorProps) => {
   const {
-    currentQuestion,
     updateQuestion,
     currentIndex,
     selectedId,
@@ -69,6 +68,7 @@ const SlideEditor = ({
       case "delete": {
         onChange(elements.filter((e) => e.id !== selectedId))
         setSelectedId(undefined)
+
         break
       }
 
@@ -79,6 +79,7 @@ const SlideEditor = ({
             selectedElement,
           ])
         }
+
         break
       }
 
@@ -89,12 +90,14 @@ const SlideEditor = ({
             ...elements.filter((e) => e.id !== selectedId),
           ])
         }
+
         break
       }
 
       case "bringForward": {
         if (selectedId && selectedElement) {
           const idx = elements.findIndex((e) => e.id === selectedId)
+
           if (idx < elements.length - 1) {
             const newElements = [...elements]
             const temp = newElements[idx]
@@ -103,12 +106,14 @@ const SlideEditor = ({
             onChange(newElements)
           }
         }
+
         break
       }
 
       case "sendBackward": {
         if (selectedId && selectedElement) {
           const idx = elements.findIndex((e) => e.id === selectedId)
+
           if (idx > 0) {
             const newElements = [...elements]
             const temp = newElements[idx]
@@ -117,6 +122,7 @@ const SlideEditor = ({
             onChange(newElements)
           }
         }
+
         break
       }
 
@@ -132,6 +138,7 @@ const SlideEditor = ({
           })
           setSelectedId(undefined)
         }
+
         break
       }
 
@@ -144,11 +151,13 @@ const SlideEditor = ({
             ),
           )
         }
+
         break
       }
 
       case "crop": {
-        alert("Action Recadrer à implémenter")
+        console.warn("Action Recadrer à implémenter")
+
         break
       }
 

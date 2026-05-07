@@ -68,15 +68,18 @@ const SlideCanvas = ({
         })
       }
     })
-    if (outerRef.current) observer.observe(outerRef.current)
-    return () => observer.disconnect()
+
+    if (outerRef.current) {observer.observe(outerRef.current)}
+    
+return () => observer.disconnect()
   }, [])
 
   const scale = canvasSize.width / CANVAS_W
 
   const checkDeselect = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const clickedOnEmpty = e.target === e.target.getStage()
-    if (clickedOnEmpty) onSelect(undefined)
+
+    if (clickedOnEmpty) {onSelect(undefined)}
   }
 
   useEffect(() => {
@@ -117,7 +120,8 @@ const SlideCanvas = ({
     node.scaleY(1)
     onChange(
       elements.map((el) => {
-        if (el.id !== id) return el
+        if (el.id !== id) {return el}
+
         if (el.type === "text") {
           return {
             ...el,
@@ -129,7 +133,9 @@ const SlideCanvas = ({
             rotation: node.rotation(),
           }
         }
-        return {
+
+        
+return {
           ...el,
           x: node.x(),
           y: node.y(),
@@ -141,7 +147,7 @@ const SlideCanvas = ({
     )
   }
 
-  const hasBackground = !!background
+  const hasBackground = Boolean(background)
   const bgImage = useSimpleImage(
     background?.type === "image" ? background.value : slideBg,
   )
@@ -384,6 +390,7 @@ const SlideCanvas = ({
             height={canvasSize.height}
             onMouseDown={(e) => {
               checkDeselect(e)
+
               if (
                 e.target === e.target.getStage() ||
                 e.target.id() !== editingId
@@ -395,9 +402,11 @@ const SlideCanvas = ({
             onContextMenu={(e) => {
               e.evt.preventDefault()
               const clickedOnEmpty = e.target === e.target.getStage()
-              if (!clickedOnEmpty && e.target.id()) onSelect(e.target.id())
-              else if (clickedOnEmpty) onSelect(undefined)
-              if (onContextMenuEvent) onContextMenuEvent(e.evt, !clickedOnEmpty)
+
+              if (!clickedOnEmpty && e.target.id()) {onSelect(e.target.id())}
+              else if (clickedOnEmpty) {onSelect(undefined)}
+
+              if (onContextMenuEvent) {onContextMenuEvent(e.evt, !clickedOnEmpty)}
             }}
             ref={stageRef}
           >
@@ -441,7 +450,9 @@ const SlideCanvas = ({
               {elements.map((el) => {
                 if (el.type === "text") {
                   const isEditing = editingId === el.id
-                  return (
+
+                  
+return (
                     <Text
                       key={el.id}
                       id={el.id}
@@ -458,7 +469,8 @@ const SlideCanvas = ({
                       draggable={!isEditing}
                       visible={!isEditing}
                       onClick={() => {
-                        if (selectedId === el.id) setEditingId(el.id)
+                        if (selectedId === el.id) {setEditingId(el.id)}
+
                         onSelect(el.id)
                       }}
                       onDblClick={() => setEditingId(el.id)}
@@ -525,8 +537,10 @@ const SlideCanvas = ({
             editingId &&
             (() => {
               const el = elements.find((e) => e.id === editingId)
-              if (!el || el.type !== "text") return null
-              return (
+
+              if (!el || el.type !== "text") {return null}
+              
+return (
                 <textarea
                   autoFocus
                   className="absolute z-50 m-0 resize-none overflow-hidden border-none bg-transparent p-0 outline-none"
@@ -535,7 +549,7 @@ const SlideCanvas = ({
                   onBlur={() => setEditingId(undefined)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey)
-                      setEditingId(undefined)
+                      {setEditingId(undefined)}
                   }}
                   style={{
                     left: el.x * scale,
@@ -579,10 +593,14 @@ const SlideCanvas = ({
                   rel: "0",
                   playsinline: "1",
                 })
-                if (el.loop) params.set("playlist", el.videoId)
-                if (el.startTime) params.set("start", String(el.startTime))
-                if (el.endTime) params.set("end", String(el.endTime))
-                return (
+
+                if (el.loop) {params.set("playlist", el.videoId)}
+
+                if (el.startTime) {params.set("start", String(el.startTime))}
+
+                if (el.endTime) {params.set("end", String(el.endTime))}
+                
+return (
                   <iframe
                     key={el.id}
                     src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
@@ -616,7 +634,9 @@ const useSimpleImage = (url: string) => {
     img.crossOrigin = "Anonymous"
     img.onload = () => setImage(img)
   }, [url])
-  return image
+
+  
+return image
 }
 
 const CanvasImageElement = ({
@@ -631,7 +651,9 @@ const CanvasImageElement = ({
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
 }) => {
   const image = useSimpleImage(el.url)
-  return (
+
+  
+return (
     <KonvaImage
       id={el.id}
       image={image || undefined}
@@ -664,7 +686,9 @@ const CanvasYoutubeElement = ({
   const image = useSimpleImage(
     `https://img.youtube.com/vi/${el.videoId}/hqdefault.jpg`,
   )
-  return (
+
+  
+return (
     <Group
       id={el.id}
       x={el.x}

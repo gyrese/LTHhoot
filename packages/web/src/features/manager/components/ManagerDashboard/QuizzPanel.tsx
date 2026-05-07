@@ -16,7 +16,7 @@ import {
   Upload,
   X,
 } from "lucide-react"
-import { type ChangeEvent, useMemo, useRef } from "react"
+import React, { type ChangeEvent, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import {
   downloadJson,
@@ -27,11 +27,11 @@ import clsx from "clsx"
 
 type Props = {
   search: string
-  setSearch: (s: string) => void
+  setSearch: (_s: string) => void
   activeFolder: string | null
   activeTag: string | null
   selectedQuizz: string | null
-  setSelectedQuizz: (id: string | null) => void
+  setSelectedQuizz: (_id: string | null) => void
 }
 
 const QuizzPanel = ({
@@ -56,6 +56,7 @@ const QuizzPanel = ({
     const loadingToast = toast.loading(
       t("manager:quizz.exporting", "Exportation en cours..."),
     )
+
     try {
       const fullQuizz = await exportQuizzWithMedia(data)
       downloadJson(fullQuizz, data.subject)
@@ -70,13 +71,17 @@ const QuizzPanel = ({
 
   const handleDelete = (id: string) => () => {
     socket?.emit(EVENTS.QUIZZ.DELETE, id)
-    if (selectedQuizz === id) setSelectedQuizz(null)
+
+    if (selectedQuizz === id) {setSelectedQuizz(null)}
+
     toast.success(t("manager:quizz.deleted"))
   }
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+
+    if (!file) {return}
+
     const reader = new FileReader()
     reader.onload = (event) => {
       try {
@@ -100,10 +105,13 @@ const QuizzPanel = ({
     () =>
       quizz.filter((q) => {
         if (search && !q.subject.toLowerCase().includes(search.toLowerCase()))
-          return false
-        if (activeFolder && q.folder !== activeFolder) return false
-        if (activeTag && !(q.tags ?? []).includes(activeTag)) return false
-        return true
+          {return false}
+
+        if (activeFolder && q.folder !== activeFolder) {return false}
+
+        if (activeTag && !(q.tags ?? []).includes(activeTag)) {return false}
+        
+return true
       }),
     [quizz, search, activeFolder, activeTag],
   )
@@ -166,7 +174,9 @@ const QuizzPanel = ({
           <div className="grid grid-cols-[repeat(auto-fill,minmax(155px,1fr))] content-start gap-3">
             {filtered.map((q) => {
               const isSelected = selectedQuizz === q.id
-              return (
+
+              
+return (
                 <div
                   key={q.id}
                   draggable

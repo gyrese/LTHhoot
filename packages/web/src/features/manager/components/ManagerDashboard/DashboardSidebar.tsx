@@ -16,12 +16,12 @@ const FOLDERS_KEY = "rahoot:folders"
 
 type Props = {
   activeFolder: string | null
-  setActiveFolder: (f: string | null) => void
+  setActiveFolder: (_f: string | null) => void
   activeTag: string | null
-  setActiveTag: (t: string | null) => void
+  setActiveTag: (_t: string | null) => void
   view: "quizz" | "results"
-  setView: (v: "quizz" | "results") => void
-  onMoveToFolder: (quizzId: string, folder: string | null) => void
+  setView: (_v: "quizz" | "results") => void
+  onMoveToFolder: (_quizzId: string, _folder: string | null) => void
 }
 
 const DashboardSidebar = ({
@@ -70,9 +70,11 @@ const DashboardSidebar = ({
   const handleDrop = (e: DragEvent, folder: string | null) => {
     e.preventDefault()
     const quizzId = e.dataTransfer.getData("quizzId")
+
     if (quizzId) {
       onMoveToFolder(quizzId, folder)
     }
+
     setDragOverFolder(null)
   }
 
@@ -84,9 +86,11 @@ const DashboardSidebar = ({
 
   const handleCreateFolder = () => {
     const name = newFolderName.trim()
+
     if (name && !allFolders.includes(name)) {
       setUserFolders((prev) => [...prev, name])
     }
+
     setNewFolderName("")
     setCreatingFolder(false)
   }
@@ -94,9 +98,14 @@ const DashboardSidebar = ({
   const handleDeleteFolder = (folder: string) => {
     quizz
       .filter((q) => q.folder === folder)
-      .forEach((q) => onMoveToFolder(q.id, null))
+      .forEach((q) => {
+        onMoveToFolder(q.id, null)
+      })
     setUserFolders((prev) => prev.filter((f) => f !== folder))
-    if (activeFolder === folder) setActiveFolder(null)
+
+    if (activeFolder === folder) {
+      setActiveFolder(null)
+    }
   }
 
   return (
@@ -159,7 +168,10 @@ const DashboardSidebar = ({
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreateFolder()
+                    if (e.key === "Enter") {
+                      handleCreateFolder()
+                    }
+
                     if (e.key === "Escape") {
                       setCreatingFolder(false)
                       setNewFolderName("")
@@ -195,11 +207,14 @@ const DashboardSidebar = ({
                 onDrop={(e) => handleDrop(e, null)}
                 className={clsx(
                   "flex items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                  dragOverFolder === "root"
-                    ? "bg-orange-500/30 ring-1 ring-orange-400"
-                    : activeFolder === null
-                      ? "bg-white/20 font-semibold text-white"
-                      : "text-white/60 hover:bg-white/10 hover:text-white",
+                  dragOverFolder === "root" &&
+                    "bg-orange-500/30 ring-1 ring-orange-400",
+                  dragOverFolder !== "root" &&
+                    activeFolder === null &&
+                    "bg-white/20 font-semibold text-white",
+                  dragOverFolder !== "root" &&
+                    activeFolder !== null &&
+                    "text-white/60 hover:bg-white/10 hover:text-white",
                 )}
               >
                 <span className="flex items-center gap-2">
@@ -213,6 +228,7 @@ const DashboardSidebar = ({
 
               {allFolders.map((folder) => {
                 const count = quizz.filter((q) => q.folder === folder).length
+
                 return (
                   <div key={folder} className="group flex items-center gap-1">
                     <button
@@ -224,11 +240,14 @@ const DashboardSidebar = ({
                       onDrop={(e) => handleDrop(e, folder)}
                       className={clsx(
                         "flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                        dragOverFolder === folder
-                          ? "bg-orange-500/30 ring-1 ring-orange-400"
-                          : activeFolder === folder
-                            ? "bg-white/20 font-semibold text-white"
-                            : "text-white/60 hover:bg-white/10 hover:text-white",
+                        dragOverFolder === folder &&
+                          "bg-orange-500/30 ring-1 ring-orange-400",
+                        dragOverFolder !== folder &&
+                          activeFolder === folder &&
+                          "bg-white/20 font-semibold text-white",
+                        dragOverFolder !== folder &&
+                          activeFolder !== folder &&
+                          "text-white/60 hover:bg-white/10 hover:text-white",
                       )}
                     >
                       <span className="flex min-w-0 items-center gap-2">
