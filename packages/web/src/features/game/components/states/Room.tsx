@@ -78,7 +78,7 @@ const Room = ({ data }: Props) => {
 
             <div className="game-pin-in flex flex-col justify-center rounded-md bg-white px-6 py-4 text-center md:rounded-l-none md:text-left">
               <p className="text-2xl font-bold">{t("game:gamePinLabel")}</p>
-              <p className="text-6xl font-extrabold">{inviteCode}</p>
+              <p id="game-pin" className="text-6xl font-extrabold">{inviteCode}</p>
             </div>
           </div>
 

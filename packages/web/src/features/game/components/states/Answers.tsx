@@ -183,7 +183,7 @@ const Answers = ({
 
       {audio && <AudioEmbed ref={slideAudioRef} audio={audio} />}
 
-      <div className="relative z-10 px-4 pt-4">
+      <div id="question-container" className="relative z-10 px-4 pt-4">
         <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
           <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
             {question}
@@ -207,7 +207,7 @@ const Answers = ({
             )}
           >
             <span className="translate-y-1 text-sm">{t("game:hud.time")}</span>
-            <span key={cooldown} className="anim-pop-in tabular-nums">{cooldown}</span>
+            <span id="timer" key={cooldown} className="anim-pop-in tabular-nums">{cooldown}</span>
           </div>
           <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
             <span className="translate-y-1 text-sm">{t("game:hud.answers")}</span>

@@ -115,6 +115,7 @@ const Username = () => {
                     <User size={20} />
                   </div>
                   <input
+                    id="nickname"
                     autoFocus
                     type="text"
                     value={username}
@@ -127,6 +128,7 @@ const Username = () => {
               </div>
 
               <motion.button
+                id="username-submit"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98, y: 0 }}
                 onClick={handleLogin}

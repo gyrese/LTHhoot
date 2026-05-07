@@ -82,6 +82,7 @@ const Room = () => {
                   <Hash size={20} />
                 </div>
                 <input
+                  id="pin-input"
                   autoFocus
                   type="text"
                   value={invitation}
@@ -93,6 +94,7 @@ const Room = () => {
               </div>
 
               <motion.button
+                id="join-button"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98, y: 0 }}
                 onClick={handleJoin}

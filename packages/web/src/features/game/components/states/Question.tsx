@@ -43,7 +43,7 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
       {elements && elements.length > 0 && (
         <div className="absolute inset-0 pointer-events-none">
           <SlideCanvas
-            elements={elements.filter((el) => el.type !== "youtube")}
+            elements={elements}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
@@ -54,7 +54,7 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
       )}
 
       {type !== "title" && (
-        <div className="relative z-10 px-4 pt-4">
+        <div id="question-container" className="relative z-10 px-4 pt-4">
           <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
             <h2 className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
               {question}

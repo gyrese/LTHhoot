@@ -69,7 +69,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
       <div className="z-10 flex w-full flex-1 flex-col">
         {!isConnected && !statusName ? (
-          <div className="flex h-full w-full flex-1 flex-col items-center justify-center">
+          <div id="connection-status" className="flex h-full w-full flex-1 flex-col items-center justify-center">
             <Loader className="h-30" />
             <h1 className="text-4xl font-bold text-white">{t("common:connecting")}</h1>
           </div>
@@ -84,6 +84,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
               )}
               {manager && next && (
                 <button
+                  id="start-round"
                   onClick={handleNext}
                   disabled={isDisabled}
                   className={clsx(
