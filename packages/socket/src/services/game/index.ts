@@ -247,13 +247,17 @@ class Game {
       return
     }
 
-    if (player.connected) {
-      socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
-
-      return
-    }
-
     const oldSocketId = player.id
+    const newSocketId = socket.id
+
+    if (player.connected && oldSocketId !== newSocketId) {
+      console.log(`[TAKEOVER] Session takeover: ${player.username} (${oldSocketId} -> ${newSocketId})`)
+      const oldSocket = this.io.sockets.sockets.get(oldSocketId)
+      if (oldSocket) {
+        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        oldSocket.disconnect(true)
+      }
+    }
 
     // Annuler le timer de grâce s'il est en cours
     const timer = this.disconnectTimers.get(oldSocketId)
