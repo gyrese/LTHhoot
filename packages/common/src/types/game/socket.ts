@@ -61,6 +61,7 @@ export interface ServerToClientEvents {
     status: { name: Status; data: StatusDataMap[Status] }
     player: { username: string; points: number; avatar?: string }
     currentQuestion: GameUpdateQuestion
+    timer?: number
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
 
@@ -70,6 +71,7 @@ export interface ServerToClientEvents {
     status: { name: Status; data: StatusDataMap[Status] }
     players: Player[]
     currentQuestion: GameUpdateQuestion
+    timer?: number
   }) => void
   [EVENTS.MANAGER.CONFIG]: (_config: ManagerConfig) => void
   [EVENTS.QUIZZ.DATA]: (_quizz: QuizzWithId) => void

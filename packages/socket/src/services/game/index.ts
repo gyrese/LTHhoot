@@ -193,6 +193,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
+      timer: this.cooldown.getTimeRemaining(),
       players: this.playerManager.getAll(),
     })
 
@@ -225,6 +226,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
+      timer: this.cooldown.getTimeRemaining(),
       players: this.playerManager.getAll(),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
@@ -296,6 +298,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
+      timer: this.cooldown.getTimeRemaining(),
       player: {
         username: player.username,
         avatar: player.avatar,

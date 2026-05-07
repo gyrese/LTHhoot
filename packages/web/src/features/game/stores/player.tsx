@@ -25,7 +25,11 @@ type PlayerStore<T> = {
   updatePoints: (_points: number) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
-
+  hydrate: (_data: {
+    gameId: string
+    player: PlayerState
+    status: { name: keyof T; data: T[keyof T] }
+  }) => void
   reset: () => void
 }
 
@@ -61,6 +65,14 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
         })),
 
       setStatus: (name, data) => set({ status: createStatus(name, data) }),
+      hydrate: (data) => {
+        console.log(`[STORE] Player hydrate gameId=${data.gameId}`)
+        set({
+          gameId: data.gameId,
+          player: data.player,
+          status: createStatus(data.status.name, data.status.data),
+        })
+      },
 
       reset: () => {
         const stack = new Error().stack

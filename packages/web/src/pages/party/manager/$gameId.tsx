@@ -39,11 +39,20 @@ const ManagerGamePage = () => {
 
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
-    ({ gameId, status, players, currentQuestion }) => {
-      setGameId(gameId)
-      setStatus(status.name, status.data)
-      setPlayers(players)
-      setQuestionStates(currentQuestion)
+    (data) => {
+      console.log(`[RECONNECT_MANAGER] Succès → gameId=${data.gameId} players=${data.players.length} status=${data.status.name} timer=${data.timer}`)
+      
+      // Hydratation atomique du store manager
+      useManagerStore.getState().hydrate({
+        gameId: data.gameId,
+        status: data.status as any,
+        players: data.players,
+      })
+      setQuestionStates(data.currentQuestion)
+
+      if (data.timer && data.timer > 0) {
+        useQuestionStore.getState().setCooldown(data.timer)
+      }
     },
   )
 

@@ -34,6 +34,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     setQuestionStates({ current, total })
   })
 
+  const { setCooldown } = useQuestionStore()
+  useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
+    setCooldown(sec)
+  })
+
   useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
     toast.error(t(message))
     setIsDisabled(false)

@@ -22,7 +22,11 @@ type ManagerStore<T> = {
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   resetStatus: () => void
   setPlayers: (_players: Player[]) => void
-
+  hydrate: (_data: {
+    gameId: string
+    status: { name: keyof T; data: T[keyof T] }
+    players: Player[]
+  }) => void
   reset: () => void
 }
 
@@ -48,6 +52,14 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
       resetStatus: () => set({ status: null }),
 
       setPlayers: (players) => set({ players }),
+      hydrate: (data) => {
+        console.log(`[STORE] Manager hydrate gameId=${data.gameId}`)
+        set({
+          gameId: data.gameId,
+          status: createStatus(data.status.name, data.status.data),
+          players: data.players,
+        })
+      },
 
       reset: () => {
         const stack = new Error().stack

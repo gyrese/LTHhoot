@@ -58,9 +58,10 @@ const Answers = ({
 }: Props) => {
   const { socket } = useSocket()
   const { player, gameId } = usePlayerStore()
+  const { cooldown: storeCooldown } = useQuestionStore()
   const [answered, setAnswered] = useState(false)
 
-  const [cooldown, setCooldown] = useState(time)
+  const [cooldown, setCooldown] = useState(() => storeCooldown ?? time)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const { t } = useTranslation()
   const slideAudioRef = useRef<HTMLAudioElement>(null)

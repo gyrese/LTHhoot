@@ -27,14 +27,22 @@ const PlayerGamePage = () => {
 
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,
-    ({ gameId, status, player, currentQuestion }) => {
+    (data) => {
       console.log(
-        `[RECONNECT] Succès → gameId=${gameId} joueur=${player.username} status=${status.name}`,
+        `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer}`,
       )
-      setGameId(gameId)
-      setStatus(status.name, status.data)
-      setPlayer(player)
-      setQuestionStates(currentQuestion)
+      // On utilise hydrate pour un remplacement atomique de l'état
+      usePlayerStore.getState().hydrate({
+        gameId: data.gameId,
+        player: data.player,
+        status: data.status as any,
+      })
+      setQuestionStates(data.currentQuestion)
+
+      // Si un timer est en cours, on l'injecte dans le store pour resync immédiate
+      if (data.timer && data.timer > 0) {
+        useQuestionStore.getState().setCooldown(data.timer)
+      }
     },
   )
 
