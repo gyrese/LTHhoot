@@ -27,12 +27,13 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {onClose()}
+      if (e.key === "Escape") {
+        onClose()
+      }
     }
     window.addEventListener("keydown", onKey)
 
-    
-return () => window.removeEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
 
   const {
@@ -171,7 +172,10 @@ return () => window.removeEventListener("keydown", onKey)
           )}
           {type === "drop_pin" && pinImage && (
             <div className="pointer-events-none scale-90 opacity-80">
-              <DropPinAnswer pinImage={pinImage} onTextAnswer={() => undefined} />
+              <DropPinAnswer
+                pinImage={pinImage}
+                onTextAnswer={() => undefined}
+              />
             </div>
           )}
         </div>

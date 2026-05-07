@@ -1,4 +1,9 @@
-import { type MouseEvent, type TouchEvent, type PointerEvent, useState } from "react"
+import {
+  type MouseEvent,
+  type TouchEvent,
+  type PointerEvent,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
@@ -110,10 +115,10 @@ export const DropPinAnswer = ({
   const [submitted, setSubmitted] = useState(false)
   const { t } = useTranslation()
 
-  const handleImgClick = (
-    e: MouseEvent | TouchEvent | PointerEvent,
-  ) => {
-    if (submitted) {return}
+  const handleImgClick = (e: MouseEvent | TouchEvent | PointerEvent) => {
+    if (submitted) {
+      return
+    }
 
     e.preventDefault()
 

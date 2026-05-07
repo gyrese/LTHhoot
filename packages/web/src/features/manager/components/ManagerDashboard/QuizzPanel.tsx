@@ -72,7 +72,9 @@ const QuizzPanel = ({
   const handleDelete = (id: string) => () => {
     socket?.emit(EVENTS.QUIZZ.DELETE, id)
 
-    if (selectedQuizz === id) {setSelectedQuizz(null)}
+    if (selectedQuizz === id) {
+      setSelectedQuizz(null)
+    }
 
     toast.success(t("manager:quizz.deleted"))
   }
@@ -80,7 +82,9 @@ const QuizzPanel = ({
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
 
-    if (!file) {return}
+    if (!file) {
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = (event) => {
@@ -104,14 +108,19 @@ const QuizzPanel = ({
   const filtered = useMemo(
     () =>
       quizz.filter((q) => {
-        if (search && !q.subject.toLowerCase().includes(search.toLowerCase()))
-          {return false}
+        if (search && !q.subject.toLowerCase().includes(search.toLowerCase())) {
+          return false
+        }
 
-        if (activeFolder && q.folder !== activeFolder) {return false}
+        if (activeFolder && q.folder !== activeFolder) {
+          return false
+        }
 
-        if (activeTag && !(q.tags ?? []).includes(activeTag)) {return false}
-        
-return true
+        if (activeTag && !(q.tags ?? []).includes(activeTag)) {
+          return false
+        }
+
+        return true
       }),
     [quizz, search, activeFolder, activeTag],
   )
@@ -175,8 +184,7 @@ return true
             {filtered.map((q) => {
               const isSelected = selectedQuizz === q.id
 
-              
-return (
+              return (
                 <div
                   key={q.id}
                   draggable

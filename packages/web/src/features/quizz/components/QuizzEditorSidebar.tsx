@@ -86,12 +86,16 @@ const QuizzEditorSidebar = () => {
         break
 
       case "moveUp":
-        if (index > 0) {reorderQuestions(index, index - 1)}
+        if (index > 0) {
+          reorderQuestions(index, index - 1)
+        }
 
         break
 
       case "moveDown":
-        if (index < questions.length - 1) {reorderQuestions(index, index + 1)}
+        if (index < questions.length - 1) {
+          reorderQuestions(index, index + 1)
+        }
 
         break
 

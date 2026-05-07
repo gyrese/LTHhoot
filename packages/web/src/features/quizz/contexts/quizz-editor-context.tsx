@@ -283,8 +283,7 @@ export const QuizzEditorProvider = ({
       const duplicated = { ...next[index], id: randomUUID() }
       next.splice(index + 1, 0, duplicated)
 
-      
-return next
+      return next
     })
     handleSetCurrentIndex(index + 1)
     markDirty()
@@ -329,7 +328,9 @@ return next
 
   const saveQuizz = useCallback(
     (options?: { silent?: boolean; navigate?: boolean }) => {
-      if (!socket) {return}
+      if (!socket) {
+        return
+      }
 
       const payload = {
         subject,

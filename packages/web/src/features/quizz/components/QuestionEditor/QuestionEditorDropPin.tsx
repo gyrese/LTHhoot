@@ -45,7 +45,9 @@ const QuestionEditorDropPin = () => {
   ) => {
     e.preventDefault()
 
-    if (!imgRef.current) {return}
+    if (!imgRef.current) {
+      return
+    }
 
     // Support both mouse and touch events
     const clientX =
@@ -72,8 +74,7 @@ const QuestionEditorDropPin = () => {
     if (isNaN(xPct) || isNaN(yPct)) {
       toast.error("Erreur: Impossible de calculer la position.")
 
-      
-return
+      return
     }
 
     const newZone: DropPinZone = {
@@ -117,7 +118,9 @@ return
             setIsDragging(false)
             const file = e.dataTransfer.files?.[0]
 
-            if (file) {void handleFileUpload(file)}
+            if (file) {
+              void handleFileUpload(file)
+            }
           }}
         >
           <input

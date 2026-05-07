@@ -58,7 +58,9 @@ const SlideContextMenu = ({
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       // Don't close if clicking exactly where we opened the context menu (prevents immediate close on right click)
-      if (e.button === 2) {return}
+      if (e.button === 2) {
+        return
+      }
 
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
@@ -66,8 +68,7 @@ const SlideContextMenu = ({
     }
     document.addEventListener("mousedown", handleClickOutside)
 
-    
-return () => {
+    return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [onClose])

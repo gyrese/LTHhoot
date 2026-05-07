@@ -10,15 +10,20 @@ const parseYoutubeId = (url: string): string | null => {
   try {
     const u = new URL(url)
 
-    if (u.hostname === "youtu.be") {return u.pathname.slice(1) || null}
+    if (u.hostname === "youtu.be") {
+      return u.pathname.slice(1) || null
+    }
 
-    if (u.hostname.includes("youtube.com")) {return u.searchParams.get("v")}
+    if (u.hostname.includes("youtube.com")) {
+      return u.searchParams.get("v")
+    }
   } catch {
-    if (/^[\w-]{11}$/u.test(url)) {return url}
+    if (/^[\w-]{11}$/u.test(url)) {
+      return url
+    }
   }
 
-  
-return null
+  return null
 }
 
 const QuestionMedia = ({ media, alt = "" }: Props) => {
@@ -54,8 +59,7 @@ const QuestionMedia = ({ media, alt = "" }: Props) => {
       )
     }
 
-    
-return (
+    return (
       <video
         className="m-4 mb-2 aspect-video max-h-60 w-auto rounded-md px-4 sm:max-h-100"
         src={media.url}

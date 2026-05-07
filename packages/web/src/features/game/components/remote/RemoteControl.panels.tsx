@@ -340,7 +340,9 @@ function TimerBar({ timer, maxTime }: { timer: number; maxTime: number }) {
         <span
           className={clsx(
             "rounded px-2 py-0.5 text-sm font-black tabular-nums",
-            timer <= 5 ? "animate-pulse bg-red-500 text-white" : "text-blue-100",
+            timer <= 5
+              ? "animate-pulse bg-red-500 text-white"
+              : "text-blue-100",
           )}
         >
           {timer}s

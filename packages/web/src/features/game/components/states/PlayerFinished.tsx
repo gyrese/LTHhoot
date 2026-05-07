@@ -45,7 +45,10 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
     typeof totalPlayers === "number" &&
     totalPlayers > 1 &&
     rank === totalPlayers
-  let animationStates: typeof WINNING_ANIMATION_STATES | typeof FAILED_ANIMATION_STATES | typeof WAITING_ANIMATION_STATES = WAITING_ANIMATION_STATES
+  let animationStates:
+    | typeof WINNING_ANIMATION_STATES
+    | typeof FAILED_ANIMATION_STATES
+    | typeof WAITING_ANIMATION_STATES = WAITING_ANIMATION_STATES
 
   if (isTopThree) {
     animationStates = WINNING_ANIMATION_STATES

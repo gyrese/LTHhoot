@@ -36,7 +36,9 @@ const SidebarContextMenu = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (e.button === 2) {return}
+      if (e.button === 2) {
+        return
+      }
 
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
@@ -44,8 +46,7 @@ const SidebarContextMenu = ({
     }
     document.addEventListener("mousedown", handleClickOutside)
 
-    
-return () => {
+    return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [onClose])

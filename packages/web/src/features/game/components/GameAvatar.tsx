@@ -79,7 +79,9 @@ const GameAvatar = ({
     const img = new Image()
 
     img.onerror = () => {
-      if (stopped) {return}
+      if (stopped) {
+        return
+      }
 
       if (pet.remoteSpritesheetUrl && sourceUrl !== pet.remoteSpritesheetUrl) {
         setSourceUrl(pet.remoteSpritesheetUrl)
@@ -89,7 +91,9 @@ const GameAvatar = ({
     }
 
     img.onload = () => {
-      if (stopped) {return}
+      if (stopped) {
+        return
+      }
 
       const frameW = Math.floor(img.width / PETDEX_GRID.cols)
       const frameH = Math.floor(img.height / PETDEX_GRID.rows)
@@ -100,7 +104,9 @@ const GameAvatar = ({
 
       const ctx = canvas.getContext("2d")
 
-      if (!ctx) {return}
+      if (!ctx) {
+        return
+      }
 
       ctx.imageSmoothingEnabled = false
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -134,7 +140,9 @@ const GameAvatar = ({
       )
 
       const tick = (now: number) => {
-        if (stopped) {return}
+        if (stopped) {
+          return
+        }
 
         const loopFrame = Math.floor((now - start) / frameMs) % totalFrames
 
@@ -165,7 +173,9 @@ const GameAvatar = ({
     return () => {
       stopped = true
 
-      if (raf) {cancelAnimationFrame(raf)}
+      if (raf) {
+        cancelAnimationFrame(raf)
+      }
     }
   }, [animated, dpr, frameSequence, pet, sourceUrl])
 

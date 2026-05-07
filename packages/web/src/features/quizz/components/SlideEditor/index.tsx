@@ -21,12 +21,8 @@ const SlideEditor = ({
   background,
   backgroundOpacity,
 }: SlideEditorProps) => {
-  const {
-    updateQuestion,
-    currentIndex,
-    selectedId,
-    setSelectedId,
-  } = useQuizzEditor()
+  const { updateQuestion, currentIndex, selectedId, setSelectedId } =
+    useQuizzEditor()
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number

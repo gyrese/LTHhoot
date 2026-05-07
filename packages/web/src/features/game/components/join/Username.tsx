@@ -24,8 +24,7 @@ const Username = () => {
   const [avatarSeed, setAvatarSeed] = useState(() => {
     const idx = Math.floor(Math.random() * PETDEX_AVATARS.length)
 
-    
-return PETDEX_AVATARS[idx]?.seed ?? "boba"
+    return PETDEX_AVATARS[idx]?.seed ?? "boba"
   })
   const { t } = useTranslation()
 

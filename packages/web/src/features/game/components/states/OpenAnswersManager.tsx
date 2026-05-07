@@ -28,7 +28,9 @@ const OpenAnswersManager = ({
   })
 
   const handleValidate = (text: string) => {
-    if (!gameId || !socket) {return}
+    if (!gameId || !socket) {
+      return
+    }
 
     setValidating(text)
     socket.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, { gameId, data: { text } })

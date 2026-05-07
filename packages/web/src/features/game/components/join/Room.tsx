@@ -20,7 +20,9 @@ const Room = () => {
   const { t } = useTranslation()
 
   const handleJoin = () => {
-    if (!invitation.trim()) {return}
+    if (!invitation.trim()) {
+      return
+    }
 
     socket?.emit(EVENTS.PLAYER.JOIN, invitation)
   }

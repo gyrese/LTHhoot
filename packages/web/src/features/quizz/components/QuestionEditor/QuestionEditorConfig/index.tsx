@@ -49,7 +49,9 @@ const QuestionEditorConfig = () => {
     )
     updateQuestion(currentIndex, { elements })
 
-    if (selectedId === id) {setSelectedId(undefined)}
+    if (selectedId === id) {
+      setSelectedId(undefined)
+    }
   }
 
   const handleMoveLayer =
@@ -58,7 +60,9 @@ const QuestionEditorConfig = () => {
       const elements = [...(currentQuestion.elements || [])]
       const index = elements.findIndex((el) => el.id === id)
 
-      if (index === -1) {return}
+      if (index === -1) {
+        return
+      }
 
       if (direction === "up" && index < elements.length - 1) {
         ;[elements[index], elements[index + 1]] = [
