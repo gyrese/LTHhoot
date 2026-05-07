@@ -283,20 +283,21 @@ class Game {
 
     // Restore status : utiliser le statut joueur spécifique en priorité,
     // sinon le dernier statut broadcasté à tous.
-    // Si la partie est en cours mais lastBroadcastStatus est encore SHOW_ROOM
-    // (joueur reconnecté avant le démarrage), utiliser WAIT pour éviter l'état lobby.
+    // Les statuts SHOW_ROOM et SHOW_LEADERBOARD sont réservés au manager :
+    // un joueur qui reconnecte dans ces phases doit voir WAIT.
+    const MANAGER_ONLY_STATUSES: Status[] = [STATUS.SHOW_ROOM, STATUS.SHOW_LEADERBOARD]
     const playerSpecific = this.playerStatus.get(oldSocketId)
     const liveStatus = (() => {
       const last = this.lastBroadcastStatus
 
-      if (this.started && (!last || last.name === STATUS.SHOW_ROOM)) {
+      if (!last || MANAGER_ONLY_STATUSES.includes(last.name)) {
         return {
           name: STATUS.WAIT,
-          data: { text: "game:waitingForAnswers" },
+          data: { text: this.started ? "game:waitingForAnswers" : "game:waitingForPlayers" },
         } as const
       }
 
-      return last ?? { name: STATUS.WAIT, data: { text: "game:waitingForPlayers" } }
+      return last
     })()
     const status = playerSpecific ?? liveStatus
 
