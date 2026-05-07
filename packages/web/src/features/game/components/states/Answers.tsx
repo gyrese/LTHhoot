@@ -235,7 +235,7 @@ const Answers = ({
         />
       </div>
 
-      <div className={`relative${isPlayer ? "pb-12" : ""}`}>
+      <div className={clsx("relative", isPlayer && "pb-12")}>
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
           <div
             className={clsx(
