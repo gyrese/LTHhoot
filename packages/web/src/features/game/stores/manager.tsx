@@ -5,6 +5,7 @@ import {
   createStatus,
   type Status,
 } from "@rahoot/web/features/game/utils/createStatus"
+import { persist } from "zustand/middleware"
 import { create } from "zustand"
 
 type ManagerStore<T> = {
@@ -33,18 +34,28 @@ const initialState = {
   players: [],
 }
 
-export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
-  ...initialState,
+export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setConfig: (config) => set({ config }),
+      setConfig: (config) => set({ config }),
 
-  setGameId: (gameId) => set({ gameId }),
-  setSalonImage: (salonImage) => set({ salonImage }),
+      setGameId: (gameId) => set({ gameId }),
+      setSalonImage: (salonImage) => set({ salonImage }),
 
-  setStatus: (name, data) => set({ status: createStatus(name, data) }),
-  resetStatus: () => set({ status: null }),
+      setStatus: (name, data) => set({ status: createStatus(name, data) }),
+      resetStatus: () => set({ status: null }),
 
-  setPlayers: (players) => set({ players }),
+      setPlayers: (players) => set({ players }),
 
-  reset: () => set(initialState),
-}))
+      reset: () => {
+        console.log("[STORE] Manager reset")
+        set(initialState)
+      },
+    }),
+    {
+      name: "rahoot-manager-storage",
+    },
+  ),
+)

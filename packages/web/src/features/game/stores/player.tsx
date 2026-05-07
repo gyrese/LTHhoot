@@ -3,6 +3,7 @@ import {
   createStatus,
   type Status,
 } from "@rahoot/web/features/game/utils/createStatus"
+import { persist } from "zustand/middleware"
 import { create } from "zustand"
 
 type PlayerState = {
@@ -20,7 +21,7 @@ type PlayerStore<T> = {
 
   setPlayer: (_state: PlayerState) => void
   login: (_username: string, _avatar?: string) => void
-  join: (_username: string, _avatar?: string) => void
+  join: (_gameId: string) => void
   updatePoints: (_points: number) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
@@ -34,30 +35,40 @@ const initialState = {
   status: null,
 }
 
-export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
-  ...initialState,
+export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setGameId: (gameId) => set({ gameId }),
+      setGameId: (gameId) => set({ gameId }),
 
-  setPlayer: (player: PlayerState) => set({ player }),
-  login: (username, avatar) =>
-    set((state) => ({
-      player: { ...state.player, username, avatar },
-    })),
+      setPlayer: (player: PlayerState) => set({ player }),
+      login: (username, avatar) =>
+        set((state) => ({
+          player: { ...state.player, username, avatar },
+        })),
 
-  join: (gameId) => {
-    set((state) => ({
-      gameId,
-      player: { ...state.player, points: 0 },
-    }))
-  },
+      join: (gameId) => {
+        set((state) => ({
+          gameId,
+          player: { ...state.player, points: 0 },
+        }))
+      },
 
-  updatePoints: (points) =>
-    set((state) => ({
-      player: { ...state.player, points },
-    })),
+      updatePoints: (points) =>
+        set((state) => ({
+          player: { ...state.player, points },
+        })),
 
-  setStatus: (name, data) => set({ status: createStatus(name, data) }),
+      setStatus: (name, data) => set({ status: createStatus(name, data) }),
 
-  reset: () => set(initialState),
-}))
+      reset: () => {
+        console.log("[STORE] Player reset")
+        set(initialState)
+      },
+    }),
+    {
+      name: "rahoot-player-storage",
+    },
+  ),
+)

@@ -15,12 +15,17 @@ import React, {
 } from "react"
 import { io, Socket } from "socket.io-client"
 import { v7 as uuid } from "uuid"
+import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
+import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
+import ReconnectingOverlay from "@rahoot/web/features/game/components/ReconnectingOverlay"
+import { EVENTS } from "@rahoot/common/constants"
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
 interface SocketContextValue {
   socket: TypedSocket | null
   isConnected: boolean
+  isReconnecting: boolean
   clientId: string
   connect: () => void
   disconnect: () => void
@@ -30,6 +35,7 @@ interface SocketContextValue {
 const SocketContext = createContext<SocketContextValue>({
   socket: null,
   isConnected: false,
+  isReconnecting: false,
   clientId: "",
   connect: () => {},
   disconnect: () => {},
@@ -56,7 +62,16 @@ const getClientId = (): string => {
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<TypedSocket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [isReconnecting, setIsReconnecting] = useState(() => {
+    const playerGameId = usePlayerStore.getState().gameId
+    const managerGameId = useManagerStore.getState().gameId
+
+    return !!(playerGameId || managerGameId)
+  })
   const [clientId] = useState<string>(() => getClientId())
+
+  const playerStore = usePlayerStore()
+  const managerStore = useManagerStore()
 
   useEffect(() => {
     if (socket) {
@@ -91,6 +106,24 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           `[SOCKET] Connecté (POLLING) socket=${socketClient?.id} transport=${transport}`,
         )
         setIsConnected(true)
+
+        // Tenter une reconnexion métier si on a une session
+        const playerGameId = usePlayerStore.getState().gameId
+        const managerGameId = useManagerStore.getState().gameId
+
+        if (playerGameId) {
+          console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
+          setIsReconnecting(true)
+          socketClient?.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
+        } else if (managerGameId) {
+          const pwd = sessionStorage.getItem("rc_pwd")
+          console.log(`[SESSION] Restauration session Manager: ${managerGameId} (auth=${!!pwd})`)
+          setIsReconnecting(true)
+          if (pwd) {
+            socketClient?.emit(EVENTS.MANAGER.AUTH, pwd)
+          }
+          socketClient?.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+        }
       })
 
       socketClient.on("disconnect", (reason) => {
@@ -98,6 +131,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           `[SOCKET] Déconnecté (POLLING) raison=${reason}`,
         )
         setIsConnected(false)
+        
+        // Si la déconnexion est involontaire, on passe en mode reconnect
+        if (reason !== "io client disconnect") {
+          setIsReconnecting(true)
+        }
       })
 
       socketClient.io.on("reconnect_attempt", (attempt) => {
@@ -150,18 +188,48 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [socket])
 
+  // Listeners globaux pour l'état isReconnecting
+  useEffect(() => {
+    if (!socket) return
+
+    const handleSuccess = () => {
+      console.log("[SESSION] Reconnexion métier réussie")
+      setIsReconnecting(false)
+    }
+
+    const handleError = (msg: string) => {
+      console.warn(`[SESSION] Échec reconnexion métier: ${msg}`)
+      setIsReconnecting(false)
+      // Si échec réel, on pourrait reset les stores ici, 
+      // mais on laisse les composants décider pour l'instant
+    }
+
+    socket.on(EVENTS.PLAYER.SUCCESS_RECONNECT, handleSuccess)
+    socket.on(EVENTS.MANAGER.SUCCESS_RECONNECT, handleSuccess)
+    socket.on(EVENTS.GAME.ERROR_MESSAGE, handleError)
+    socket.on(EVENTS.MANAGER.ERROR_MESSAGE, handleError)
+
+    return () => {
+      socket.off(EVENTS.PLAYER.SUCCESS_RECONNECT, handleSuccess)
+      socket.off(EVENTS.MANAGER.SUCCESS_RECONNECT, handleSuccess)
+      socket.off(EVENTS.GAME.ERROR_MESSAGE, handleError)
+      socket.off(EVENTS.MANAGER.ERROR_MESSAGE, handleError)
+    }
+  }, [socket])
+
   return (
     <SocketContext.Provider
       value={{
         socket,
         isConnected,
+        isReconnecting,
         clientId,
         connect,
         disconnect,
         reconnect,
       }}
     >
-      {/* On ne rend les enfants que lorsque le socket est instancié pour éviter useEvent(null) */}
+      {isReconnecting && <ReconnectingOverlay />}
       {socket ? children : null}
     </SocketContext.Provider>
   )

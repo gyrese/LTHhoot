@@ -72,17 +72,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       )}
 
       <div className="z-10 flex w-full flex-1 flex-col">
-        {!isConnected && !statusName ? (
-          <div
-            id="connection-status"
-            className="flex h-full w-full flex-1 flex-col items-center justify-center"
-          >
-            <Loader className="h-30" />
-            <h1 className="text-4xl font-bold text-white">
-              {t("common:connecting")}
-            </h1>
-          </div>
-        ) : (
+        {!isConnected && !statusName ? null : (
           <>
             {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
             <div className="pointer-events-none absolute top-3 right-3 left-3 z-20 flex items-start justify-between">

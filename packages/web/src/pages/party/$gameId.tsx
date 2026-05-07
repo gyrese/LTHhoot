@@ -22,12 +22,8 @@ const PlayerGamePage = () => {
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
 
-  useEvent("connect", () => {
-    if (gameIdParam) {
-      console.log(`[RECONNECT] Émission player:reconnect gameId=${gameIdParam}`)
-      socket?.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
-    }
-  })
+  // La reconnexion est maintenant gérée globalement par le SocketProvider
+  // pour assurer que l'overlay Reconnecting s'affiche correctement.
 
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,

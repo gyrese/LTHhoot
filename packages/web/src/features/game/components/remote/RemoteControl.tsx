@@ -167,14 +167,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     navigate({ to: "/manager/config" })
   })
 
-  useEvent("connect", () => {
-    if (!isAuthenticated || !socket || !password) {
-      return
-    }
-
-    socket?.emit(EVENTS.MANAGER.AUTH, password)
-    socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
-  })
+  // La reconnexion est gérée globalement par le SocketProvider
 
   const handleAuth = useCallback(() => {
     if (!socket || !password.trim()) {
