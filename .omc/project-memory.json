@@ -130,8 +130,8 @@
   "hotPaths": [
     {
       "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
-      "accessCount": 50,
-      "lastAccessed": 1778157620252,
+      "accessCount": 58,
+      "lastAccessed": 1778162292267,
       "type": "file"
     },
     {
@@ -142,26 +142,26 @@
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Answers.tsx",
-      "accessCount": 40,
-      "lastAccessed": 1778140404821,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
-      "accessCount": 29,
-      "lastAccessed": 1778138540976,
+      "accessCount": 42,
+      "lastAccessed": 1778162780241,
       "type": "file"
     },
     {
       "path": "packages\\socket\\src\\services\\game\\index.ts",
-      "accessCount": 28,
-      "lastAccessed": 1778158269484,
+      "accessCount": 32,
+      "lastAccessed": 1778160437866,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
+      "accessCount": 30,
+      "lastAccessed": 1778161817613,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\join\\Username.tsx",
-      "accessCount": 20,
-      "lastAccessed": 1778140180954,
+      "accessCount": 22,
+      "lastAccessed": 1778161963914,
       "type": "file"
     },
     {
@@ -184,8 +184,20 @@
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1778162157003,
+      "type": "file"
+    },
+    {
+      "path": "packages\\socket\\src\\handlers\\game.ts",
       "accessCount": 15,
-      "lastAccessed": 1778140195880,
+      "lastAccessed": 1778160452468,
+      "type": "file"
+    },
+    {
+      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
+      "accessCount": 15,
+      "lastAccessed": 1778160573007,
       "type": "file"
     },
     {
@@ -195,21 +207,9 @@
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\handlers\\game.ts",
-      "accessCount": 14,
-      "lastAccessed": 1778157334096,
-      "type": "file"
-    },
-    {
       "path": "packages\\web\\src\\features\\game\\utils\\constants.ts",
       "accessCount": 14,
       "lastAccessed": 1778158032530,
-      "type": "file"
-    },
-    {
-      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
-      "accessCount": 14,
-      "lastAccessed": 1778158352691,
       "type": "file"
     },
     {
@@ -220,8 +220,8 @@
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Wait.tsx",
-      "accessCount": 12,
-      "lastAccessed": 1777900547181,
+      "accessCount": 13,
+      "lastAccessed": 1778159440960,
       "type": "file"
     },
     {
@@ -243,15 +243,15 @@
       "type": "file"
     },
     {
-      "path": "compose.yml",
-      "accessCount": 9,
-      "lastAccessed": 1778012101723,
+      "path": "packages\\web\\src\\features\\game\\components\\join\\Room.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1778162102196,
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\game\\components\\join\\Room.tsx",
+      "path": "compose.yml",
       "accessCount": 9,
-      "lastAccessed": 1778138542225,
+      "lastAccessed": 1778012101723,
       "type": "file"
     },
     {
@@ -261,15 +261,15 @@
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\handlers\\manager.ts",
-      "accessCount": 6,
-      "lastAccessed": 1778138340110,
+      "path": "packages\\socket\\src\\utils\\game.ts",
+      "accessCount": 7,
+      "lastAccessed": 1778160533473,
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\utils\\game.ts",
+      "path": "packages\\socket\\src\\handlers\\manager.ts",
       "accessCount": 6,
-      "lastAccessed": 1778139806373,
+      "lastAccessed": 1778138340110,
       "type": "file"
     },
     {
@@ -282,6 +282,12 @@
       "path": "packages\\web\\src\\pages\\(auth)\\index.tsx",
       "accessCount": 6,
       "lastAccessed": 1778140380667,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\stores\\player.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1778160310720,
       "type": "file"
     },
     {
@@ -307,12 +313,6 @@
       "accessCount": 5,
       "lastAccessed": 1778069765089,
       "type": "directory"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\stores\\player.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1778138523283,
-      "type": "file"
     },
     {
       "path": "packages\\socket\\src",

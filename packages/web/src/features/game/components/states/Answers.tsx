@@ -225,14 +225,16 @@ const Answers = ({
       </div>
 
       <div className="relative mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <QuestionMedia
-          media={
-            type === "drop_pin" && pinImage && !isPlayer
-              ? { type: "image", url: pinImage }
-              : media
-          }
-          alt={question}
-        />
+        {(!elements || elements.length === 0) && (
+          <QuestionMedia
+            media={
+              type === "drop_pin" && pinImage && !isPlayer
+                ? { type: "image", url: pinImage }
+                : media
+            }
+            alt={question}
+          />
+        )}
       </div>
 
       <div className={clsx("relative", isPlayer && "pb-12")}>

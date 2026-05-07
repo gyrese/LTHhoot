@@ -80,14 +80,16 @@ const Question = ({
 
       <section className="relative mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center px-4">
         <div className="flex flex-1 flex-col items-center justify-center gap-5">
-          <QuestionMedia
-            media={
-              type === "drop_pin" && pinImage
-                ? { type: "image", url: pinImage }
-                : media
-            }
-            alt={question}
-          />
+          {(!elements || elements.length === 0) && (
+            <QuestionMedia
+              media={
+                type === "drop_pin" && pinImage
+                  ? { type: "image", url: pinImage }
+                  : media
+              }
+              alt={question}
+            />
+          )}
         </div>
         {type !== "title" && (
           <div
