@@ -30,7 +30,10 @@ class Game {
   private readonly round: RoundManager
   private readonly cooldown: CooldownTimer
 
-  private readonly disconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  private readonly disconnectTimers: Map<
+    string,
+    ReturnType<typeof setTimeout>
+  > = new Map()
 
   private lastBroadcastStatus: {
     name: Status
@@ -258,7 +261,9 @@ class Game {
     if (timer) {
       clearTimeout(timer)
       this.disconnectTimers.delete(oldSocketId)
-      console.log(`[RECONNECT] Timer de grâce annulé pour socket=${oldSocketId}`)
+      console.log(
+        `[RECONNECT] Timer de grâce annulé pour socket=${oldSocketId}`,
+      )
     }
 
     socket.join(this.gameId)
@@ -281,7 +286,11 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
-      player: { username: player.username, avatar: player.avatar, points: player.points },
+      player: {
+        username: player.username,
+        avatar: player.avatar,
+        points: player.points,
+      },
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -327,7 +336,9 @@ class Game {
     const player = this.playerManager.findById(socketId)
 
     if (!player) {
-      console.log(`[DISCONNECT] socket=${socketId} - joueur introuvable game=${this.inviteCode}`)
+      console.log(
+        `[DISCONNECT] socket=${socketId} - joueur introuvable game=${this.inviteCode}`,
+      )
 
       return
     }

@@ -13,7 +13,9 @@ type Props = {
   data: ManagerStatusDataMap["SHOW_OPEN_ANSWERS"]
 }
 
-const OpenAnswersManager = ({ data: { question, answers, totalPlayers, correctAnswers } }: Props) => {
+const OpenAnswersManager = ({
+  data: { question, answers, totalPlayers, correctAnswers },
+}: Props) => {
   const { socket } = useSocket()
   const { gameId } = useManagerStore()
   const { t } = useTranslation()
@@ -31,10 +33,12 @@ const OpenAnswersManager = ({ data: { question, answers, totalPlayers, correctAn
     socket.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, { gameId, data: { text } })
   }
 
-  const unique = Array.from(new Map(answers.map((a) => [a.text.trim().toLowerCase(), a])).values())
+  const unique = Array.from(
+    new Map(answers.map((a) => [a.text.trim().toLowerCase(), a])).values(),
+  )
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-4 px-4 py-5 overflow-y-auto pb-20">
+    <div className="flex flex-1 flex-col items-center gap-4 overflow-y-auto px-4 py-5 pb-20">
       <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl">
         {question}
       </h2>
@@ -42,21 +46,34 @@ const OpenAnswersManager = ({ data: { question, answers, totalPlayers, correctAn
       {correctAnswers && correctAnswers.length > 0 && (
         <div className="flex flex-wrap justify-center gap-2">
           {correctAnswers.map((ca) => (
-            <span key={ca} className="rounded-full bg-green-500/30 px-4 py-1 text-sm font-bold text-green-300 ring-1 ring-green-400/40">
+            <span
+              key={ca}
+              className="rounded-full bg-green-500/30 px-4 py-1 text-sm font-bold text-green-300 ring-1 ring-green-400/40"
+            >
               ✓ {ca}
             </span>
           ))}
         </div>
       )}
 
-      <p className="text-xs font-bold uppercase tracking-widest text-white/40">
-        {t("game:openAnswers.clickToValidate")} — {answered} / {totalPlayers} {t("game:openAnswers.players")}
+      <p className="text-xs font-bold tracking-widest text-white/40 uppercase">
+        {t("game:openAnswers.clickToValidate")} — {answered} / {totalPlayers}{" "}
+        {t("game:openAnswers.players")}
       </p>
 
       <div className="flex w-full max-w-5xl flex-wrap justify-center gap-3">
         {unique.map((answer) => {
-          const count = answers.filter((a) => a.text.trim().toLowerCase() === answer.text.trim().toLowerCase()).length
-          const players = answers.filter((a) => a.text.trim().toLowerCase() === answer.text.trim().toLowerCase()).map((a) => a.playerName)
+          const count = answers.filter(
+            (a) =>
+              a.text.trim().toLowerCase() === answer.text.trim().toLowerCase(),
+          ).length
+          const players = answers
+            .filter(
+              (a) =>
+                a.text.trim().toLowerCase() ===
+                answer.text.trim().toLowerCase(),
+            )
+            .map((a) => a.playerName)
 
           return (
             <button
@@ -67,17 +84,22 @@ const OpenAnswersManager = ({ data: { question, answers, totalPlayers, correctAn
                 "flex flex-col items-center gap-1 rounded-2xl px-6 py-4 text-center shadow-xl transition-all",
                 answer.isCorrect
                   ? "anim-pop-in cursor-default bg-green-500 ring-4 ring-green-300/60 drop-shadow-[0_0_16px_rgba(34,197,94,0.7)]"
-                  : "cursor-pointer bg-white/10 backdrop-blur-md ring-1 ring-white/20 hover:scale-105 hover:bg-white/20 active:scale-95",
+                  : "cursor-pointer bg-white/10 ring-1 ring-white/20 backdrop-blur-md hover:scale-105 hover:bg-white/20 active:scale-95",
                 validating === answer.text && "opacity-60",
               )}
             >
               <span className="text-xl font-black text-white">
-                {answer.isCorrect && "✓ "}{answer.text}
+                {answer.isCorrect && "✓ "}
+                {answer.text}
                 {count > 1 && (
-                  <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm">×{count}</span>
+                  <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-sm">
+                    ×{count}
+                  </span>
                 )}
               </span>
-              <span className="text-xs text-white/60">{players.join(", ")}</span>
+              <span className="text-xs text-white/60">
+                {players.join(", ")}
+              </span>
             </button>
           )
         })}

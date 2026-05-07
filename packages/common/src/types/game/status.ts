@@ -25,7 +25,11 @@ export type Status = (typeof STATUS)[keyof typeof STATUS]
 
 export type CommonStatusDataMap = {
   SHOW_START: { time: number; subject: string }
-  SHOW_PREPARED: { totalAnswers: number; questionNumber: number; type: QuestionType }
+  SHOW_PREPARED: {
+    totalAnswers: number
+    questionNumber: number
+    type: QuestionType
+  }
   SHOW_QUESTION: {
     question: string
     type: QuestionType
@@ -70,7 +74,12 @@ export type CommonStatusDataMap = {
     correctAnswers?: string[]
   }
   WAIT: { text: string }
-  FINISHED: { subject: string; top: Player[]; rank?: number; totalPlayers?: number }
+  FINISHED: {
+    subject: string
+    top: Player[]
+    rank?: number
+    totalPlayers?: number
+  }
 }
 
 type ManagerExtraStatus = {

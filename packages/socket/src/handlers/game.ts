@@ -54,8 +54,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     if (!Manager.isLogged(socket)) {
       socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
-      
-return
+      return
     }
 
     const quizzList = Config.quizz()
@@ -150,7 +149,9 @@ return
       registry.markGameAsEmpty(managerGame)
 
       if (!managerGame.started) {
-        console.log(`[DISCONNECT] Manager game=${managerGame.inviteCode} → reset (partie non démarrée)`)
+        console.log(
+          `[DISCONNECT] Manager game=${managerGame.inviteCode} → reset (partie non démarrée)`,
+        )
         managerGame.abortCooldown()
         io.to(managerGame.gameId).emit(
           EVENTS.GAME.RESET,
@@ -161,7 +162,9 @@ return
         return
       }
 
-      console.log(`[DISCONNECT] Manager game=${managerGame.inviteCode} → partie en cours, reconnexion possible`)
+      console.log(
+        `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie en cours, reconnexion possible`,
+      )
 
       return
     }

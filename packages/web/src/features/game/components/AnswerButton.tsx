@@ -49,21 +49,23 @@ const AnswerButton = ({
       {!iconOnly && (
         <p
           className={clsx(
-            "w-full flex-1 break-words font-black text-white transition-all duration-300 tracking-tight",
-            children && typeof children === "string" 
-              ? children.length > 50 
-                ? "text-base leading-tight md:text-lg" 
+            "w-full flex-1 font-black tracking-tight break-words text-white transition-all duration-300",
+            children && typeof children === "string"
+              ? children.length > 50
+                ? "text-base leading-tight md:text-lg"
                 : children.length > 25
                   ? "text-xl md:text-2xl"
                   : "text-3xl md:text-4xl"
-              : "text-3xl md:text-4xl"
+              : "text-3xl md:text-4xl",
           )}
           style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
         >
           {children}
         </p>
       )}
-      {!iconOnly && correct !== undefined && <CorrectIcon className="size-8 shrink-0 stroke-6 text-white drop-shadow-md" />}
+      {!iconOnly && correct !== undefined && (
+        <CorrectIcon className="size-8 shrink-0 stroke-6 text-white drop-shadow-md" />
+      )}
     </button>
   )
 }

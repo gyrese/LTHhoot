@@ -45,22 +45,39 @@ const ConfigSelectQuizz = () => {
             key={quizz.id}
             className={clsx(
               "flex w-full items-center justify-between rounded-md p-3 outline outline-gray-300",
-              quizz.listingImage && "h-32 bg-cover bg-center bg-no-repeat relative overflow-hidden"
+              quizz.listingImage &&
+                "relative h-32 overflow-hidden bg-cover bg-center bg-no-repeat",
             )}
-            style={quizz.listingImage ? { backgroundImage: `url(${quizz.listingImage})` } : undefined}
+            style={
+              quizz.listingImage
+                ? { backgroundImage: `url(${quizz.listingImage})` }
+                : undefined
+            }
             onClick={handleSelect(quizz.id)}
           >
-            {quizz.listingImage && <div className="absolute inset-0 bg-black/40" />}
-            
-            <span className={clsx("relative z-10 font-bold", quizz.listingImage ? "text-white drop-shadow-md text-xl" : "")}>
+            {quizz.listingImage && (
+              <div className="absolute inset-0 bg-black/40" />
+            )}
+
+            <span
+              className={clsx(
+                "relative z-10 font-bold",
+                quizz.listingImage ? "text-xl text-white drop-shadow-md" : "",
+              )}
+            >
               {quizz.subject}
             </span>
 
             <div
               className={clsx(
                 "relative z-10 size-5 rounded p-0.5 outline outline-offset-3",
-                quizz.listingImage ? "outline-white/50 bg-black/20" : "outline-gray-300",
-                selected === quizz.id && (quizz.listingImage ? "bg-primary border-primary/80 outline-primary" : "bg-primary border-primary/80"),
+                quizz.listingImage
+                  ? "bg-black/20 outline-white/50"
+                  : "outline-gray-300",
+                selected === quizz.id &&
+                  (quizz.listingImage
+                    ? "bg-primary border-primary/80 outline-primary"
+                    : "bg-primary border-primary/80"),
               )}
             >
               {selected === quizz.id && (

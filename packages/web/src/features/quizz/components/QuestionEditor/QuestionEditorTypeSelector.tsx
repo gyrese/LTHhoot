@@ -14,7 +14,11 @@ import { useTranslation } from "react-i18next"
 const TYPES: { type: QuestionType; icon?: any; img?: string; key: string }[] = [
   { type: "title", icon: Presentation, key: "quizz:questionType.title_slide" },
   { type: "mcq", img: mcqImg, key: "quizz:questionType.mcq" },
-  { type: "true_false", img: trueFalseImg, key: "quizz:questionType.true_false" },
+  {
+    type: "true_false",
+    img: trueFalseImg,
+    key: "quizz:questionType.true_false",
+  },
   { type: "open", img: openImg, key: "quizz:questionType.open" },
   { type: "date", img: dateImg, key: "quizz:questionType.date" },
   { type: "slider", img: sliderImg, key: "quizz:questionType.slider" },
@@ -36,13 +40,17 @@ const QuestionEditorTypeSelector = () => {
           className={clsx(
             "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition-all",
             currentQuestion.type === type
-              ? "bg-primary text-white shadow-lg scale-[1.02]"
-              : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200",
+              ? "bg-primary scale-[1.02] text-white shadow-lg"
+              : "border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100",
           )}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
             {img ? (
-              <img src={img} alt={type} className="h-full w-full object-contain" />
+              <img
+                src={img}
+                alt={type}
+                className="h-full w-full object-contain"
+              />
             ) : (
               <Icon className="size-5" />
             )}

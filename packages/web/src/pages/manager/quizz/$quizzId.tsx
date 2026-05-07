@@ -37,7 +37,9 @@ const QuizzEditPage = () => {
   if (loadError && !quizz) {
     return (
       <div className="flex h-svh flex-col items-center justify-center gap-4 bg-gray-50">
-        <p className="text-xl font-bold text-red-500">Quizz introuvable ou erreur de chargement.</p>
+        <p className="text-xl font-bold text-red-500">
+          Quizz introuvable ou erreur de chargement.
+        </p>
         <button
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           onClick={() => navigate({ to: "/manager/quizz" })}
@@ -60,19 +62,23 @@ const QuizzEditPage = () => {
     <QuizzEditorProvider initialData={quizz}>
       <div className="relative flex h-svh flex-col bg-gray-100">
         <QuizzEditorHeader />
-        
+
         {/* Barre secondaire unifiée (Slides | Toolbar | Config) */}
-        <div className="z-30 flex h-14 shrink-0 items-center bg-white border-b border-gray-200">
-          <div className="flex w-72 shrink-0 items-center px-6 border-r border-gray-200 h-full">
-            <span className="text-sm font-bold uppercase tracking-wider text-gray-400">Diapositives</span>
+        <div className="z-30 flex h-14 shrink-0 items-center border-b border-gray-200 bg-white">
+          <div className="flex h-full w-72 shrink-0 items-center border-r border-gray-200 px-6">
+            <span className="text-sm font-bold tracking-wider text-gray-400 uppercase">
+              Diapositives
+            </span>
           </div>
-          
-          <div className="flex flex-1 items-center justify-center bg-gray-50/50 h-full">
+
+          <div className="flex h-full flex-1 items-center justify-center bg-gray-50/50">
             <SlideToolbar />
           </div>
 
-          <div className="flex w-68 shrink-0 items-center px-6 border-l border-gray-200 h-full">
-            <span className="text-sm font-bold uppercase tracking-wider text-gray-400">Paramètres</span>
+          <div className="flex h-full w-68 shrink-0 items-center border-l border-gray-200 px-6">
+            <span className="text-sm font-bold tracking-wider text-gray-400 uppercase">
+              Paramètres
+            </span>
           </div>
         </div>
 

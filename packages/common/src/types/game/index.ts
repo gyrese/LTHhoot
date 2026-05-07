@@ -87,7 +87,15 @@ export type SlideBackground = {
 
 // ─── Types de questions ───────────────────────────────────────────────────────
 
-export type QuestionType = "mcq" | "true_false" | "open" | "date" | "slider" | "puzzle" | "drop_pin" | "title"
+export type QuestionType =
+  | "mcq"
+  | "true_false"
+  | "open"
+  | "date"
+  | "slider"
+  | "puzzle"
+  | "drop_pin"
+  | "title"
 
 type BaseQuestion = {
   question: string

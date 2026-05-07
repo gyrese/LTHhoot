@@ -2,7 +2,7 @@ const toBase64 = async (url: string): Promise<string> => {
   if (url.startsWith("data:")) {
     return url
   }
-  
+
   try {
     const response = await fetch(url)
     const blob = await response.blob()
@@ -35,7 +35,7 @@ export const exportQuizzWithMedia = async (quizz: any) => {
     if (question.media?.url) {
       question.media.url = await toBase64(question.media.url)
     }
-    
+
     // Background
     if (question.background?.type === "image" && question.background.value) {
       question.background.value = await toBase64(question.background.value)
@@ -65,7 +65,9 @@ export const exportQuizzWithMedia = async (quizz: any) => {
 }
 
 export const downloadJson = (data: any, filename: string) => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  })
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url

@@ -66,18 +66,18 @@ const Result = ({
       </h2>
 
       {/* Score Total Animé */}
-      <div 
+      <div
         className="anim-slide-up flex flex-col items-center gap-0"
         style={{ animationDelay: "0.4s" }}
       >
-        <span className="text-sm font-bold uppercase tracking-widest text-white/60">
+        <span className="text-sm font-bold tracking-widest text-white/60 uppercase">
           {t("game:totalScore", "Score Total")}
         </span>
-        <AnimatedPoints 
-          from={startPoints} 
-          to={myPoints} 
+        <AnimatedPoints
+          from={startPoints}
+          to={myPoints}
           delay={0.8}
-          className="text-5xl font-black text-white drop-shadow-lg" 
+          className="text-5xl font-black text-white drop-shadow-lg"
         />
       </div>
 
@@ -94,7 +94,7 @@ const Result = ({
       {/* Points gagnés — flottants vers le haut */}
       {correct && points > 0 && (
         <span
-          className="anim-float-up absolute top-1/2 rounded-xl bg-black/50 px-5 py-2 text-3xl font-black text-yellow-300 drop-shadow-lg ring-1 ring-yellow-300/30"
+          className="anim-float-up absolute top-1/2 rounded-xl bg-black/50 px-5 py-2 text-3xl font-black text-yellow-300 ring-1 ring-yellow-300/30 drop-shadow-lg"
           style={{ animationDelay: "0.6s" }}
         >
           +{points}

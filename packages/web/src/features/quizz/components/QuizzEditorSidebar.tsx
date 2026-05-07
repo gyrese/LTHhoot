@@ -11,7 +11,9 @@ import clsx from "clsx"
 import { Plus } from "lucide-react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import SidebarContextMenu, { type SidebarAction } from "@rahoot/web/features/quizz/components/QuizzEditorSidebar/SidebarContextMenu"
+import SidebarContextMenu, {
+  type SidebarAction,
+} from "@rahoot/web/features/quizz/components/QuizzEditorSidebar/SidebarContextMenu"
 
 const QuizzEditorSidebar = () => {
   const {
@@ -24,7 +26,12 @@ const QuizzEditorSidebar = () => {
     duplicateQuestion,
   } = useQuizzEditor()
   const { t } = useTranslation()
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; index: number; show: boolean } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    index: number
+    show: boolean
+  } | null>(null)
 
   const isDragging = useRef(false)
 
@@ -86,7 +93,7 @@ const QuizzEditorSidebar = () => {
   }
 
   return (
-    <aside className="z-10 flex w-72 shrink-0 flex-col gap-2 overflow-auto bg-white border-r border-gray-200 px-3 pb-3">
+    <aside className="z-10 flex w-72 shrink-0 flex-col gap-2 overflow-auto border-r border-gray-200 bg-white px-3 pb-3">
       <DragDropContext
         onDragStart={() => {
           isDragging.current = true

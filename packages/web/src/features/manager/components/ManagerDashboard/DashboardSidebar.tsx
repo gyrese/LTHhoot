@@ -1,5 +1,13 @@
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
-import { BarChart2, FolderOpen, LayoutGrid, Plus, Tag, Trash2, X } from "lucide-react"
+import {
+  BarChart2,
+  FolderOpen,
+  LayoutGrid,
+  Plus,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react"
 import { useMemo, useState, useEffect, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -27,7 +35,9 @@ const DashboardSidebar = ({
 }: Props) => {
   const { quizz, results } = useConfig()
   const { t } = useTranslation()
-  const [dragOverFolder, setDragOverFolder] = useState<string | "root" | null>(null)
+  const [dragOverFolder, setDragOverFolder] = useState<string | "root" | null>(
+    null,
+  )
   const [userFolders, setUserFolders] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(FOLDERS_KEY) ?? "[]")
@@ -82,13 +92,15 @@ const DashboardSidebar = ({
   }
 
   const handleDeleteFolder = (folder: string) => {
-    quizz.filter((q) => q.folder === folder).forEach((q) => onMoveToFolder(q.id, null))
+    quizz
+      .filter((q) => q.folder === folder)
+      .forEach((q) => onMoveToFolder(q.id, null))
     setUserFolders((prev) => prev.filter((f) => f !== folder))
     if (activeFolder === folder) setActiveFolder(null)
   }
 
   return (
-    <aside className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl bg-black/30 p-3 backdrop-blur-md border border-white/10">
+    <aside className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur-md">
       {/* Navigation */}
       <div className="flex flex-col gap-1">
         <button
@@ -127,7 +139,7 @@ const DashboardSidebar = ({
         <>
           <div>
             <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+              <p className="text-xs font-semibold tracking-wider text-white/40 uppercase">
                 {t("manager:sidebar.folders")}
               </p>
               <button
@@ -163,7 +175,10 @@ const DashboardSidebar = ({
                   <Plus className="size-3" />
                 </button>
                 <button
-                  onClick={() => { setCreatingFolder(false); setNewFolderName("") }}
+                  onClick={() => {
+                    setCreatingFolder(false)
+                    setNewFolderName("")
+                  }}
                   className="rounded p-1 text-white/40 hover:bg-white/10"
                 >
                   <X className="size-3" />
@@ -201,7 +216,9 @@ const DashboardSidebar = ({
                 return (
                   <div key={folder} className="group flex items-center gap-1">
                     <button
-                      onClick={() => setActiveFolder(activeFolder === folder ? null : folder)}
+                      onClick={() =>
+                        setActiveFolder(activeFolder === folder ? null : folder)
+                      }
                       onDragOver={(e) => handleDragOver(e, folder)}
                       onDragLeave={() => setDragOverFolder(null)}
                       onDrop={(e) => handleDrop(e, folder)}
@@ -224,7 +241,7 @@ const DashboardSidebar = ({
                     </button>
                     <button
                       onClick={() => handleDeleteFolder(folder)}
-                      className="hidden shrink-0 rounded p-0.5 text-white/30 hover:text-red-400 group-hover:block"
+                      className="hidden shrink-0 rounded p-0.5 text-white/30 group-hover:block hover:text-red-400"
                       title={t("manager:sidebar.deleteFolder")}
                     >
                       <Trash2 className="size-3" />
@@ -238,7 +255,7 @@ const DashboardSidebar = ({
           {/* Tags */}
           {tags.length > 0 && (
             <div>
-              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+              <p className="mb-2 px-1 text-xs font-semibold tracking-wider text-white/40 uppercase">
                 Tags
               </p>
               <div className="flex flex-wrap gap-1.5">

@@ -1,4 +1,9 @@
-import { type SlideElement, type TextElement, type ShapeElement, type YoutubeElement } from "@rahoot/common/types/game"
+import {
+  type SlideElement,
+  type TextElement,
+  type ShapeElement,
+  type YoutubeElement,
+} from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import {
   Type,
@@ -19,14 +24,27 @@ import {
 } from "lucide-react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { createTextElement, createShapeElement, createImageElement } from "@rahoot/web/features/quizz/utils/element-factory"
-import { BackgroundButton, AudioButton } from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorSlideToolbar"
+import {
+  createTextElement,
+  createShapeElement,
+  createImageElement,
+} from "@rahoot/web/features/quizz/utils/element-factory"
+import {
+  BackgroundButton,
+  AudioButton,
+} from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorSlideToolbar"
 import SlidePreviewModal from "@rahoot/web/features/quizz/components/SlideEditor/SlidePreviewModal"
 import YoutubePanel from "@rahoot/web/features/quizz/components/SlideEditor/YoutubePanel"
 import { AVAILABLE_FONTS } from "@rahoot/web/features/quizz/utils/fonts"
 
 const SlideToolbar = () => {
-  const { currentQuestion, currentIndex, updateQuestion, selectedId, setSelectedId } = useQuizzEditor()
+  const {
+    currentQuestion,
+    currentIndex,
+    updateQuestion,
+    selectedId,
+    setSelectedId,
+  } = useQuizzEditor()
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showPreview, setShowPreview] = useState(false)
@@ -130,7 +148,9 @@ const SlideToolbar = () => {
     }
 
     handleUpdateElements(
-      elements.map((el) => (el.id === selectedId ? ({ ...el, ...updates } as SlideElement) : el))
+      elements.map((el) =>
+        el.id === selectedId ? ({ ...el, ...updates } as SlideElement) : el,
+      ),
     )
   }
 
@@ -139,7 +159,10 @@ const SlideToolbar = () => {
       return
     }
 
-    handleUpdateElements([...elements.filter((e) => e.id !== selectedId), selectedElement])
+    handleUpdateElements([
+      ...elements.filter((e) => e.id !== selectedId),
+      selectedElement,
+    ])
   }
 
   const sendToBack = () => {
@@ -147,7 +170,10 @@ const SlideToolbar = () => {
       return
     }
 
-    handleUpdateElements([selectedElement, ...elements.filter((e) => e.id !== selectedId)])
+    handleUpdateElements([
+      selectedElement,
+      ...elements.filter((e) => e.id !== selectedId),
+    ])
   }
 
   const removeSelected = () => {
@@ -159,7 +185,7 @@ const SlideToolbar = () => {
     el.type === "text" || el.type === "shape"
 
   return (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1 shadow-sm">
+    <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 shadow-sm">
       <input
         ref={fileInputRef}
         type="file"
@@ -178,29 +204,43 @@ const SlideToolbar = () => {
 
       {/* Undo/Redo */}
       <div className="flex items-center gap-0.5">
-        <button className="p-1.5 hover:bg-gray-100 rounded text-gray-400 cursor-not-allowed" title="Annuler">
+        <button
+          className="cursor-not-allowed rounded p-1.5 text-gray-400 hover:bg-gray-100"
+          title="Annuler"
+        >
           <Undo2 className="size-4" />
         </button>
-        <button className="p-1.5 hover:bg-gray-100 rounded text-gray-400 cursor-not-allowed" title="Rétablir">
+        <button
+          className="cursor-not-allowed rounded p-1.5 text-gray-400 hover:bg-gray-100"
+          title="Rétablir"
+        >
           <Redo2 className="size-4" />
         </button>
       </div>
 
-      <div className="w-px h-6 bg-gray-200 mx-1.5" />
+      <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
       {/* Add tools */}
       <div className="flex items-center gap-0.5">
-        <button onClick={addText} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors" title={t("quizz:addText")}>
+        <button
+          onClick={addText}
+          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+          title={t("quizz:addText")}
+        >
           <Type className="size-4" />
         </button>
-        <button onClick={addShape} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors" title={t("quizz:addShape")}>
+        <button
+          onClick={addShape}
+          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+          title={t("quizz:addShape")}
+        >
           <Square className="size-4" />
         </button>
 
         {/* Upload image depuis fichier */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors"
+          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
           title={t("quizz:uploadImage")}
         >
           <Upload className="size-4" />
@@ -209,15 +249,18 @@ const SlideToolbar = () => {
         {/* Ajouter image par URL */}
         <div className="relative">
           <button
-            onClick={() => { setShowUrlInput(!showUrlInput); setUrlValue("") }}
-            className={`p-1.5 rounded-lg text-gray-700 transition-colors ${showUrlInput ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"}`}
+            onClick={() => {
+              setShowUrlInput(!showUrlInput)
+              setUrlValue("")
+            }}
+            className={`rounded-lg p-1.5 text-gray-700 transition-colors ${showUrlInput ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"}`}
             title={t("quizz:addImage")}
           >
             <Link className="size-4" />
           </button>
 
           {showUrlInput && (
-            <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1.5 min-w-72">
+            <div className="absolute top-full left-0 z-50 mt-1 flex min-w-72 gap-1.5 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
               <input
                 autoFocus
                 type="text"
@@ -233,18 +276,18 @@ const SlideToolbar = () => {
                   }
                 }}
                 placeholder="https://..."
-                className="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-400"
+                className="flex-1 rounded border border-gray-200 px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-400"
               />
               <button
                 onClick={addImageFromUrl}
                 disabled={!urlValue.trim()}
-                className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+                className="rounded bg-blue-600 p-1.5 text-white hover:bg-blue-700 disabled:opacity-40"
               >
                 <Check className="size-3.5" />
               </button>
               <button
                 onClick={() => setShowUrlInput(false)}
-                className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
+                className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
               >
                 <X className="size-3.5" />
               </button>
@@ -256,33 +299,36 @@ const SlideToolbar = () => {
         <div className="relative">
           <button
             onClick={() => setShowYoutubePanel(!showYoutubePanel)}
-            className={`p-1.5 rounded-lg text-gray-700 transition-colors ${showYoutubePanel ? "bg-red-50 text-red-600" : "hover:bg-gray-100"}`}
+            className={`rounded-lg p-1.5 text-gray-700 transition-colors ${showYoutubePanel ? "bg-red-50 text-red-600" : "hover:bg-gray-100"}`}
             title="YouTube"
           >
             <Play className="size-4" />
           </button>
 
           {showYoutubePanel && (
-            <div className="absolute top-full left-0 mt-1 z-50">
-              <YoutubePanel onAdd={handleYoutubeAdd} onClose={() => setShowYoutubePanel(false)} />
+            <div className="absolute top-full left-0 z-50 mt-1">
+              <YoutubePanel
+                onAdd={handleYoutubeAdd}
+                onClose={() => setShowYoutubePanel(false)}
+              />
             </div>
           )}
         </div>
       </div>
 
-      <div className="w-px h-6 bg-gray-200 mx-1.5" />
+      <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
       {/* Background & Audio */}
-      <div className="flex items-center gap-2 mr-1">
+      <div className="mr-1 flex items-center gap-2">
         <BackgroundButton />
         <AudioButton />
       </div>
 
-      <div className="w-px h-6 bg-gray-200 mx-1.5" />
+      <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
       <button
         onClick={() => setShowPreview(true)}
-        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors"
+        className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
         title="Aperçu"
       >
         <Expand className="size-4" />
@@ -291,63 +337,94 @@ const SlideToolbar = () => {
       {/* Outils élément sélectionné */}
       {selectedElement && (
         <>
-          <div className="w-px h-6 bg-gray-200 mx-1.5" />
+          <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
-          <div className="flex items-center gap-0.5 animate-in fade-in slide-in-from-left-2 duration-200">
+          <div className="animate-in fade-in slide-in-from-left-2 flex items-center gap-0.5 duration-200">
             {selectedElement.type === "text" && (
               <>
                 <input
                   type="text"
                   value={(selectedElement as TextElement).text}
                   onChange={(e) => updateSelected({ text: e.target.value })}
-                  className="bg-gray-100 border-none rounded px-2 py-1 text-xs w-32 outline-none focus:ring-1 focus:ring-primary/30"
+                  className="focus:ring-primary/30 w-32 rounded border-none bg-gray-100 px-2 py-1 text-xs outline-none focus:ring-1"
                   placeholder="Texte..."
                 />
 
-                <div className="flex items-center gap-1 border-r border-gray-100 pr-1 mr-1 ml-1">
+                <div className="mr-1 ml-1 flex items-center gap-1 border-r border-gray-100 pr-1">
                   <select
-                    value={(selectedElement as TextElement).fontFamily || "Arial"}
-                    onChange={(e) => updateSelected({ fontFamily: e.target.value })}
-                    className="bg-transparent border-none text-xs font-medium outline-none cursor-pointer hover:bg-gray-100 rounded px-1 py-1 max-w-[120px]"
+                    value={
+                      (selectedElement as TextElement).fontFamily || "Arial"
+                    }
+                    onChange={(e) =>
+                      updateSelected({ fontFamily: e.target.value })
+                    }
+                    className="max-w-[120px] cursor-pointer rounded border-none bg-transparent px-1 py-1 text-xs font-medium outline-none hover:bg-gray-100"
                   >
                     {AVAILABLE_FONTS.map((font) => (
-                      <option key={font} value={font} style={{ fontFamily: font }}>
+                      <option
+                        key={font}
+                        value={font}
+                        style={{ fontFamily: font }}
+                      >
                         {font}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex items-center gap-1 border-r border-gray-100 pr-1 mr-1">
+                <div className="mr-1 flex items-center gap-1 border-r border-gray-100 pr-1">
                   <button
-                    onClick={() => updateSelected({ fontSize: Math.max(8, ((selectedElement as TextElement).fontSize || 60) - 2) })}
-                    className="p-1 hover:bg-gray-100 rounded font-bold text-xs"
+                    onClick={() =>
+                      updateSelected({
+                        fontSize: Math.max(
+                          8,
+                          ((selectedElement as TextElement).fontSize || 60) - 2,
+                        ),
+                      })
+                    }
+                    className="rounded p-1 text-xs font-bold hover:bg-gray-100"
                   >
                     -
                   </button>
                   <input
                     type="number"
                     value={(selectedElement as TextElement).fontSize}
-                    onChange={(e) => updateSelected({ fontSize: Number(e.target.value) })}
-                    className="bg-transparent text-center text-xs w-10 font-medium outline-none"
+                    onChange={(e) =>
+                      updateSelected({ fontSize: Number(e.target.value) })
+                    }
+                    className="w-10 bg-transparent text-center text-xs font-medium outline-none"
                   />
                   <button
-                    onClick={() => updateSelected({ fontSize: Math.min(400, ((selectedElement as TextElement).fontSize || 60) + 2) })}
-                    className="p-1 hover:bg-gray-100 rounded font-bold text-xs"
+                    onClick={() =>
+                      updateSelected({
+                        fontSize: Math.min(
+                          400,
+                          ((selectedElement as TextElement).fontSize || 60) + 2,
+                        ),
+                      })
+                    }
+                    className="rounded p-1 text-xs font-bold hover:bg-gray-100"
                   >
                     +
                   </button>
                 </div>
 
                 <button
-                  onClick={() => updateSelected({ fontStyle: (selectedElement as TextElement).fontStyle === "bold" ? "normal" : "bold" })}
-                  className={`p-1.5 rounded hover:bg-gray-100 ${(selectedElement as TextElement).fontStyle === "bold" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
+                  onClick={() =>
+                    updateSelected({
+                      fontStyle:
+                        (selectedElement as TextElement).fontStyle === "bold"
+                          ? "normal"
+                          : "bold",
+                    })
+                  }
+                  className={`rounded p-1.5 hover:bg-gray-100 ${(selectedElement as TextElement).fontStyle === "bold" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
                 >
                   <Bold className="size-4" />
                 </button>
                 <button
                   onClick={() => updateSelected({ align: "center" })}
-                  className={`p-1.5 rounded hover:bg-gray-100 ${(selectedElement as TextElement).align === "center" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
+                  className={`rounded p-1.5 hover:bg-gray-100 ${(selectedElement as TextElement).align === "center" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
                 >
                   <AlignCenter className="size-4" />
                 </button>
@@ -355,29 +432,41 @@ const SlideToolbar = () => {
             )}
 
             {hasColor(selectedElement) && (
-              <div className="relative group mx-1">
+              <div className="group relative mx-1">
                 <div
-                  className="size-5 rounded border border-gray-300 cursor-pointer shadow-sm"
+                  className="size-5 cursor-pointer rounded border border-gray-300 shadow-sm"
                   style={{ backgroundColor: selectedElement.fill }}
                 />
                 <input
                   type="color"
                   value={selectedElement.fill}
                   onChange={(e) => updateSelected({ fill: e.target.value })}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
               </div>
             )}
 
-            <div className="w-px h-6 bg-gray-200 mx-1.5" />
+            <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
-            <button onClick={bringToFront} className="p-1.5 hover:bg-gray-100 rounded text-gray-600" title="Avancer">
+            <button
+              onClick={bringToFront}
+              className="rounded p-1.5 text-gray-600 hover:bg-gray-100"
+              title="Avancer"
+            >
               <BringToFront className="size-4" />
             </button>
-            <button onClick={sendToBack} className="p-1.5 hover:bg-gray-100 rounded text-gray-600" title="Reculer">
+            <button
+              onClick={sendToBack}
+              className="rounded p-1.5 text-gray-600 hover:bg-gray-100"
+              title="Reculer"
+            >
               <SendToBack className="size-4" />
             </button>
-            <button onClick={removeSelected} className="p-1.5 hover:bg-red-50 rounded text-red-500 ml-1" title="Supprimer">
+            <button
+              onClick={removeSelected}
+              className="ml-1 rounded p-1.5 text-red-500 hover:bg-red-50"
+              title="Supprimer"
+            >
               <Trash2 className="size-4" />
             </button>
           </div>
@@ -385,7 +474,10 @@ const SlideToolbar = () => {
       )}
 
       {showPreview && (
-        <SlidePreviewModal question={currentQuestion} onClose={() => setShowPreview(false)} />
+        <SlidePreviewModal
+          question={currentQuestion}
+          onClose={() => setShowPreview(false)}
+        />
       )}
     </div>
   )

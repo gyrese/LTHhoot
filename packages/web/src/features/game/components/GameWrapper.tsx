@@ -53,30 +53,39 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   return (
     <section
       className="relative flex h-dvh flex-col overflow-hidden"
-      style={{ backgroundImage: "url(/bg-salon.png)", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{
+        backgroundImage: "url(/bg-salon.png)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       {/* Fond garage uniquement sur l'écran d'attente */}
       {isRoomScreen && (
         <div
-          className="absolute inset-0 pointer-events-none select-none bg-cover bg-center bg-no-repeat opacity-65"
+          className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-65 select-none"
           style={{ backgroundImage: `url(${background})` }}
         />
       )}
       {/* Overlay sombre pendant les questions */}
       {!isRoomScreen && (
-        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-black/60" />
       )}
 
       <div className="z-10 flex w-full flex-1 flex-col">
         {!isConnected && !statusName ? (
-          <div id="connection-status" className="flex h-full w-full flex-1 flex-col items-center justify-center">
+          <div
+            id="connection-status"
+            className="flex h-full w-full flex-1 flex-col items-center justify-center"
+          >
             <Loader className="h-30" />
-            <h1 className="text-4xl font-bold text-white">{t("common:connecting")}</h1>
+            <h1 className="text-4xl font-bold text-white">
+              {t("common:connecting")}
+            </h1>
           </div>
         ) : (
           <>
             {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
-            <div className="absolute top-3 left-3 right-3 z-20 flex items-start justify-between pointer-events-none">
+            <div className="pointer-events-none absolute top-3 right-3 left-3 z-20 flex items-start justify-between">
               {questionStates && (
                 <div className="pointer-events-auto rounded-xl bg-black/50 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm">
                   {questionStates.current} / {questionStates.total}
@@ -88,7 +97,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   onClick={handleNext}
                   disabled={isDisabled}
                   className={clsx(
-                    "pointer-events-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/30 transition-colors",
+                    "pointer-events-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
                     isDisabled && "pointer-events-none opacity-50",
                   )}
                 >
@@ -102,13 +111,13 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
             {/* Barre joueur en bas (overlay) */}
             {!manager && (
-              <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center gap-3 bg-black/60 px-3 py-2.5 backdrop-blur-md">
+              <div className="absolute right-0 bottom-0 left-0 z-20 flex items-center gap-3 bg-black/60 px-3 py-2.5 backdrop-blur-md">
                 {/* Avatar */}
                 {player?.avatar && (
                   <GameAvatar
                     seed={player.avatar}
                     animated
-                    className="h-10 w-10 shrink-0 rounded-full border-2 border-primary"
+                    className="border-primary h-10 w-10 shrink-0 rounded-full border-2"
                   />
                 )}
                 {/* Pseudo */}
@@ -116,11 +125,8 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   {player?.username}
                 </p>
                 {/* Points */}
-                <div className="anim-pop-in shrink-0 rounded-lg bg-primary/20 px-3 py-1 text-sm font-black text-primary ring-1 ring-primary/40">
-                  <AnimatedPoints 
-                    to={player?.points ?? 0} 
-                    className="mr-1"
-                  /> 
+                <div className="anim-pop-in bg-primary/20 text-primary ring-primary/40 shrink-0 rounded-lg px-3 py-1 text-sm font-black ring-1">
+                  <AnimatedPoints to={player?.points ?? 0} className="mr-1" />
                   pts
                 </div>
               </div>

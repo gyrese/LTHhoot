@@ -6,10 +6,22 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { useNavigate } from "@tanstack/react-router"
-import { Check, Download, Plus, Search, SquarePen, Trash2, Upload, X } from "lucide-react"
+import {
+  Check,
+  Download,
+  Plus,
+  Search,
+  SquarePen,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react"
 import { type ChangeEvent, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { downloadJson, exportQuizzWithMedia } from "@rahoot/web/features/quizz/utils/export"
+import {
+  downloadJson,
+  exportQuizzWithMedia,
+} from "@rahoot/web/features/quizz/utils/export"
 import toast from "react-hot-toast"
 import clsx from "clsx"
 
@@ -41,14 +53,18 @@ const QuizzPanel = ({
   })
 
   useEvent(EVENTS.QUIZZ.DATA, async (data) => {
-    const loadingToast = toast.loading(t("manager:quizz.exporting", "Exportation en cours..."))
+    const loadingToast = toast.loading(
+      t("manager:quizz.exporting", "Exportation en cours..."),
+    )
     try {
       const fullQuizz = await exportQuizzWithMedia(data)
       downloadJson(fullQuizz, data.subject)
       toast.success(t("manager:quizz.exported"), { id: loadingToast })
     } catch (error) {
       console.error("Export failed:", error)
-      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), { id: loadingToast })
+      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), {
+        id: loadingToast,
+      })
     }
   })
 
@@ -93,14 +109,14 @@ const QuizzPanel = ({
   )
 
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl bg-black/30 p-4 backdrop-blur-md border border-white/10">
+    <div className="flex h-full flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md">
       {/* Toolbar */}
       <div className="flex shrink-0 items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
           <input
             type="text"
-            className="w-full rounded-xl bg-white/10 py-2 pl-9 pr-8 text-sm text-white placeholder-white/40 outline-none transition-colors focus:bg-white/15"
+            className="w-full rounded-xl bg-white/10 py-2 pr-8 pl-9 text-sm text-white placeholder-white/40 transition-colors outline-none focus:bg-white/15"
             placeholder={t("manager:quizz.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -147,7 +163,7 @@ const QuizzPanel = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(155px,1fr))] gap-3 content-start">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(155px,1fr))] content-start gap-3">
             {filtered.map((q) => {
               const isSelected = selectedQuizz === q.id
               return (
@@ -162,7 +178,7 @@ const QuizzPanel = ({
                   className={clsx(
                     "group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 transition-all duration-200",
                     isSelected
-                      ? "scale-[0.97] shadow-xl shadow-orange-500/40 ring-2 ring-orange-400 ring-offset-2 ring-offset-black/0"
+                      ? "scale-[0.97] shadow-xl ring-2 shadow-orange-500/40 ring-orange-400 ring-offset-2 ring-offset-black/0"
                       : "hover:scale-[1.03] hover:shadow-xl hover:shadow-black/40",
                   )}
                 >
@@ -222,8 +238,8 @@ const QuizzPanel = ({
                     />
                   </div>
 
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="line-clamp-2 text-sm font-bold leading-tight text-white drop-shadow-md">
+                  <div className="absolute right-0 bottom-0 left-0 p-3">
+                    <p className="line-clamp-2 text-sm leading-tight font-bold text-white drop-shadow-md">
                       {q.subject}
                     </p>
                     {q.folder && (

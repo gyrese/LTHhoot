@@ -6,15 +6,20 @@ interface LogoProps {
 }
 
 const Logo = ({ className }: LogoProps) => (
-  <div className={twMerge("flex items-center justify-center select-none", className)}>
-    <img 
-      src={logo} 
-      className="h-full w-auto object-contain" 
-      style={{ 
+  <div
+    className={twMerge(
+      "flex items-center justify-center select-none",
+      className,
+    )}
+  >
+    <img
+      src={logo}
+      className="h-full w-auto object-contain"
+      style={{
         maskImage: "radial-gradient(circle, white 55%, transparent 75%)",
-        WebkitMaskImage: "radial-gradient(circle, white 55%, transparent 75%)"
+        WebkitMaskImage: "radial-gradient(circle, white 55%, transparent 75%)",
       }}
-      alt="LTNHoot!" 
+      alt="LTNHoot!"
     />
   </div>
 )

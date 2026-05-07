@@ -57,7 +57,15 @@ const StreakBadge = ({ streak }: { streak: number }) => (
 )
 
 const Leaderboard = ({
-  data: { oldLeaderboard, leaderboard, roundLeaderboard, totalPlayers, background, backgroundOpacity, elements },
+  data: {
+    oldLeaderboard,
+    leaderboard,
+    roundLeaderboard,
+    totalPlayers,
+    background,
+    backgroundOpacity,
+    elements,
+  },
 }: Props) => {
   const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
   const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
@@ -85,7 +93,11 @@ const Leaderboard = ({
   let bgStyle: CSSProperties = DEFAULT_BG
 
   if (background?.type === "image") {
-    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+    bgStyle = {
+      backgroundImage: `url(${background.value})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    }
   } else if (background?.type === "color") {
     bgStyle = { backgroundColor: background.value }
   }
@@ -99,9 +111,9 @@ const Leaderboard = ({
       />
 
       {elements && elements.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements.filter((el) => el.type !== "youtube")}
+            elements={elements}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
@@ -112,78 +124,82 @@ const Leaderboard = ({
       )}
 
       <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
-      <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
-        {phase === "round" ? t("game:roundRanking") : t("game:leaderboard")}
-      </h2>
-      <div className="flex w-full flex-col gap-3">
-        <AnimatePresence mode="popLayout">
-          {displayedPlayers.map((player, index) => {
-            const { id, username, streak, roundPoints } = player
-            const oldPlayer = oldLeaderboard.find((p) => p.id === id)
-            const oldPoints = oldPlayer?.points ?? 0
-            const finalPoints = leaderboard.find((p) => p.id === id)?.points ?? 0
-            const displayRank = index + 1
-            const animationStates = displayRank <= 3
-              ? WINNING_ANIMATION_STATES
-              : totalPlayers > 1 && displayRank === totalPlayers
-                ? FAILED_ANIMATION_STATES
-                : WAITING_ANIMATION_STATES
+        <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
+          {phase === "round" ? t("game:roundRanking") : t("game:leaderboard")}
+        </h2>
+        <div className="flex w-full flex-col gap-3">
+          <AnimatePresence mode="popLayout">
+            {displayedPlayers.map((player, index) => {
+              const { id, username, streak, roundPoints } = player
+              const oldPlayer = oldLeaderboard.find((p) => p.id === id)
+              const oldPoints = oldPlayer?.points ?? 0
+              const finalPoints =
+                leaderboard.find((p) => p.id === id)?.points ?? 0
+              const displayRank = index + 1
+              const animationStates =
+                displayRank <= 3
+                  ? WINNING_ANIMATION_STATES
+                  : totalPlayers > 1 && displayRank === totalPlayers
+                    ? FAILED_ANIMATION_STATES
+                    : WAITING_ANIMATION_STATES
 
-            return (
-              <motion.div
-                key={id}
-                layout
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{
-                  layout: { type: "spring", stiffness: 350, damping: 25 },
-                }}
-                className="bg-primary/90 flex w-full items-center justify-between rounded-xl p-4 text-3xl font-bold text-white shadow-2xl backdrop-blur-sm"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="w-8 text-2xl opacity-50">#{displayRank}</span>
-                  <GameAvatar
-                    seed={player.avatar || username}
-                    animated
-                    animationStates={animationStates}
-                    className="h-12 w-12 rounded-full border-2 border-white/50"
-                  />
-                  <span className="drop-shadow-md">
-                    {username}
-                    <StreakBadge streak={streak} />
-                  </span>
-                </div>
+              return (
+                <motion.div
+                  key={id}
+                  layout
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 350, damping: 25 },
+                  }}
+                  className="bg-primary/90 flex w-full items-center justify-between rounded-xl p-4 text-3xl font-bold text-white shadow-2xl backdrop-blur-sm"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="w-8 text-2xl opacity-50">
+                      #{displayRank}
+                    </span>
+                    <GameAvatar
+                      seed={player.avatar || username}
+                      animated
+                      animationStates={animationStates}
+                      className="h-12 w-12 rounded-full border-2 border-white/50"
+                    />
+                    <span className="drop-shadow-md">
+                      {username}
+                      <StreakBadge streak={streak} />
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-4">
-                  {phase === "round" ? (
-                    <motion.span
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="text-yellow-300"
-                    >
-                      +{roundPoints}
-                    </motion.span>
-                  ) : phase === "adding" ? (
-                    <div className="flex flex-col items-end">
-                      <AnimatedPoints from={oldPoints} to={finalPoints} />
+                  <div className="flex items-center gap-4">
+                    {phase === "round" ? (
                       <motion.span
-                        initial={{ y: 0, opacity: 1 }}
-                        animate={{ y: -20, opacity: 0 }}
-                        className="text-sm text-yellow-300"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="text-yellow-300"
                       >
                         +{roundPoints}
                       </motion.span>
-                    </div>
-                  ) : (
-                    <span className="drop-shadow-md">{finalPoints}</span>
-                  )}
-                </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-      </div>
+                    ) : phase === "adding" ? (
+                      <div className="flex flex-col items-end">
+                        <AnimatedPoints from={oldPoints} to={finalPoints} />
+                        <motion.span
+                          initial={{ y: 0, opacity: 1 }}
+                          animate={{ y: -20, opacity: 0 }}
+                          className="text-sm text-yellow-300"
+                        >
+                          +{roundPoints}
+                        </motion.span>
+                      </div>
+                    ) : (
+                      <span className="drop-shadow-md">{finalPoints}</span>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </div>
       </div>
     </section>
   )

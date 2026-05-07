@@ -52,16 +52,16 @@ const ManagerDashboard = ({ data }: Props) => {
         className="relative flex h-dvh flex-col overflow-hidden bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${background})` }}
       >
-        <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-black/55" />
 
         {/* Header */}
-        <header className="relative z-10 flex h-20 shrink-0 items-center justify-between px-5 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <header className="relative z-10 flex h-20 shrink-0 items-center justify-between border-b border-white/10 bg-black/30 px-5 backdrop-blur-md">
           <Logo className="h-16" />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <button
               onClick={handleLogout}
-              className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+              className="rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
               title={t("manager:logout")}
             >
               <LogOut className="size-4" />
@@ -97,7 +97,7 @@ const ManagerDashboard = ({ data }: Props) => {
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 px-5 bg-black/30 backdrop-blur-md border-t border-white/10">
+        <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
           <p className="truncate text-sm text-white/50">
             {selectedName ? (
               <span className="font-semibold text-white">{selectedName}</span>
@@ -111,7 +111,7 @@ const ManagerDashboard = ({ data }: Props) => {
             className={clsx(
               "flex shrink-0 items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all",
               selectedQuizz
-                ? "bg-orange-500 hover:bg-orange-400 shadow-lg shadow-orange-500/30 hover:scale-105"
+                ? "bg-orange-500 shadow-lg shadow-orange-500/30 hover:scale-105 hover:bg-orange-400"
                 : "cursor-not-allowed bg-white/10 text-white/30",
             )}
           >

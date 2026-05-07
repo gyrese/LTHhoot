@@ -27,7 +27,7 @@ const OpenResult = ({ correctAnswers }: { correctAnswers: string[] }) => {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 px-4">
-      <p className="text-sm font-bold uppercase tracking-widest text-white/50">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
         {t("game:correctAnswer")}
       </p>
       <div className="flex flex-wrap justify-center gap-3">
@@ -69,7 +69,8 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
       }
 
       const range = Math.round(300 * Math.pow(1 - progress, 2.5))
-      const offset = range > 0 ? Math.round((Math.random() - 0.5) * range * 2) : 0
+      const offset =
+        range > 0 ? Math.round((Math.random() - 0.5) * range * 2) : 0
       setDisplayed(correctYear + offset)
 
       const delay = 30 + 200 * Math.pow(progress, 2)
@@ -78,19 +79,21 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
 
     timerRef.current = setTimeout(tick, 80)
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [correctYear])
 
   const month = new Date().toLocaleString("fr-FR", { month: "long" })
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4">
-      <p className="text-sm font-bold uppercase tracking-widest text-white/50">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
         {t("game:correctAnswer")}
       </p>
       <div className="w-full overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="bg-red-500 px-6 py-4 text-center">
-          <span className="text-sm font-bold uppercase tracking-widest text-white/80">
+          <span className="text-sm font-bold tracking-widest text-white/80 uppercase">
             {month}
           </span>
         </div>
@@ -101,7 +104,10 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
           {Array.from({ length: 28 }, (_, i) => (
             <span
               key={i}
-              className={clsx("rounded py-0.5 text-gray-500", i + 1 === 15 && "bg-red-500 font-bold text-white")}
+              className={clsx(
+                "rounded py-0.5 text-gray-500",
+                i + 1 === 15 && "bg-red-500 font-bold text-white",
+              )}
             >
               {i + 1}
             </span>
@@ -109,7 +115,10 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
         </div>
         <div className="flex items-center justify-center bg-gray-50 py-6">
           <span
-            className={clsx("font-black tabular-nums transition-colors duration-500", locked ? "text-green-500" : "text-gray-800")}
+            className={clsx(
+              "font-black tabular-nums transition-colors duration-500",
+              locked ? "text-green-500" : "text-gray-800",
+            )}
             style={{ fontSize: "clamp(3.5rem, 12vw, 7rem)", lineHeight: 1 }}
           >
             {displayed}
@@ -122,7 +131,15 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
 
 // ── Slider (animation vers la bonne valeur) ───────────────────────────────────
 
-const SliderResult = ({ correctValue, min = 0, max = 100 }: { correctValue: number; min?: number; max?: number }) => {
+const SliderResult = ({
+  correctValue,
+  min = 0,
+  max = 100,
+}: {
+  correctValue: number
+  min?: number
+  max?: number
+}) => {
   const { t } = useTranslation()
   const [displayed, setDisplayed] = useState(min)
   const [locked, setLocked] = useState(false)
@@ -155,20 +172,25 @@ const SliderResult = ({ correctValue, min = 0, max = 100 }: { correctValue: numb
 
     timerRef.current = setTimeout(tick, 100)
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [correctValue, min, max])
 
   const percent = Math.round(((displayed - min) / (max - min)) * 100)
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 px-4">
-      <p className="text-sm font-bold uppercase tracking-widest text-white/50">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
         {t("game:correctAnswer")}
       </p>
       <div className="w-full rounded-3xl bg-white/10 p-8 backdrop-blur-md">
         <div className="mb-8 text-center">
           <span
-            className={clsx("font-black tabular-nums transition-colors duration-500", locked ? "text-green-400" : "text-white")}
+            className={clsx(
+              "font-black tabular-nums transition-colors duration-500",
+              locked ? "text-green-400" : "text-white",
+            )}
             style={{ fontSize: "clamp(3rem, 10vw, 6rem)", lineHeight: 1 }}
           >
             {displayed}
@@ -176,11 +198,17 @@ const SliderResult = ({ correctValue, min = 0, max = 100 }: { correctValue: numb
         </div>
         <div className="relative h-5 rounded-full bg-white/20">
           <div
-            className={clsx("absolute h-full rounded-full transition-colors duration-500", locked ? "bg-green-400" : "bg-primary")}
+            className={clsx(
+              "absolute h-full rounded-full transition-colors duration-500",
+              locked ? "bg-green-400" : "bg-primary",
+            )}
             style={{ width: `${percent}%` }}
           />
           <div
-            className={clsx("absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-lg transition-colors duration-500", locked ? "bg-green-400" : "bg-primary")}
+            className={clsx(
+              "absolute top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-lg transition-colors duration-500",
+              locked ? "bg-green-400" : "bg-primary",
+            )}
             style={{ left: `${percent}%` }}
           />
         </div>
@@ -217,7 +245,7 @@ const McqResult = ({
         <div
           key={key}
           className={clsx(
-            "anim-bar-grow flex flex-col justify-end self-end overflow-hidden rounded-md origin-bottom",
+            "anim-bar-grow flex origin-bottom flex-col justify-end self-end overflow-hidden rounded-md",
             ANSWERS_COLORS[key],
           )}
           style={{ height: percentages[key], animationDelay: `${key * 0.1}s` }}
@@ -269,10 +297,13 @@ const TrueFalseResult = ({
           <div
             key={key}
             className={clsx(
-              "anim-bar-grow flex flex-col justify-end self-end overflow-hidden rounded-md origin-bottom",
+              "anim-bar-grow flex origin-bottom flex-col justify-end self-end overflow-hidden rounded-md",
               colors[key],
             )}
-            style={{ height: percentages[key], animationDelay: `${key * 0.1}s` }}
+            style={{
+              height: percentages[key],
+              animationDelay: `${key * 0.1}s`,
+            }}
           >
             <span className="w-full bg-black/10 text-center text-lg font-bold text-white drop-shadow-md">
               {responses[key] || 0}
@@ -305,7 +336,7 @@ const PuzzleResult = ({ items }: { items: string[] }) => {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 px-4">
-      <p className="text-sm font-bold uppercase tracking-widest text-white/50">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
         {t("game:correctOrder")}
       </p>
       <div className="flex w-full flex-col gap-2">
@@ -328,12 +359,18 @@ const PuzzleResult = ({ items }: { items: string[] }) => {
 
 // ── Drop Pin ──────────────────────────────────────────────────────────────────
 
-const DropPinResult = ({ pinImage, zones }: { pinImage: string; zones: DropPinZone[] }) => {
+const DropPinResult = ({
+  pinImage,
+  zones,
+}: {
+  pinImage: string
+  zones: DropPinZone[]
+}) => {
   const { t } = useTranslation()
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-4">
-      <p className="text-sm font-bold uppercase tracking-widest text-white/50">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
         {t("game:correctZones")}
       </p>
       <div className="relative w-full overflow-hidden rounded-2xl">
@@ -341,28 +378,28 @@ const DropPinResult = ({ pinImage, zones }: { pinImage: string; zones: DropPinZo
         {zones.map((zone) => (
           <div
             key={zone.id}
-            className="absolute z-20 pointer-events-none"
+            className="pointer-events-none absolute z-20"
             style={{
               left: `${zone.x}%`,
               top: `${zone.y}%`,
-              transform: 'translate(-50%, -50%)',
+              transform: "translate(-50%, -50%)",
             }}
           >
-            <div className="relative flex flex-col items-center justify-center animate-in zoom-in-50 duration-500">
+            <div className="animate-in zoom-in-50 relative flex flex-col items-center justify-center duration-500">
               {/* Pulsing ring */}
-              <div className="absolute inset-0 bg-green-500/50 rounded-full animate-ping scale-150" />
-              
+              <div className="absolute inset-0 scale-150 animate-ping rounded-full bg-green-500/50" />
+
               {/* Physical Target */}
-              <div className="relative w-12 h-12 rounded-full border-[5px] border-green-500 bg-green-500/20 flex items-center justify-center shadow-[0_0_25px_rgba(34,197,94,0.8)] backdrop-blur-md">
-                <div className="w-4 h-4 bg-green-500 rounded-full shadow-md" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full border-[5px] border-green-500 bg-green-500/20 shadow-[0_0_25px_rgba(34,197,94,0.8)] backdrop-blur-md">
+                <div className="h-4 w-4 rounded-full bg-green-500 shadow-md" />
                 {/* Crosshairs */}
                 <div className="absolute top-0 bottom-0 left-1/2 w-0.5 -translate-x-1/2 bg-green-500/50" />
-                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-green-500/50" />
+                <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 bg-green-500/50" />
               </div>
-              
+
               {/* Tooltip */}
               {zone.label && (
-                <div className="absolute top-full mt-3 bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-green-500/30 text-sm font-bold text-green-400 whitespace-nowrap shadow-2xl">
+                <div className="absolute top-full mt-3 rounded-xl border border-green-500/30 bg-black/80 px-4 py-2 text-sm font-bold whitespace-nowrap text-green-400 shadow-2xl backdrop-blur-xl">
                   {zone.label}
                 </div>
               )}
@@ -401,7 +438,9 @@ const Responses = ({
   const [percentages, setPercentages] = useState<Record<string, string>>({})
   const [revealed, setRevealed] = useState(false)
   const [sfxResults] = useSound(SFX.RESULTS_SOUND, { volume: 0.2 })
-  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, { volume: 0.2 })
+  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
+    volume: 0.2,
+  })
 
   useEffect(() => {
     stopMusic()
@@ -425,9 +464,13 @@ const Responses = ({
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundColor: background.type === "color" ? background.value : undefined,
-              backgroundImage: background.type === "image" ? `url(${background.value})` : undefined,
-              opacity: backgroundOpacity ?? 1
+              backgroundColor:
+                background.type === "color" ? background.value : undefined,
+              backgroundImage:
+                background.type === "image"
+                  ? `url(${background.value})`
+                  : undefined,
+              opacity: backgroundOpacity ?? 1,
             }}
           />
         </>
@@ -438,16 +481,16 @@ const Responses = ({
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: `url(/bg-salon.png)`,
-              opacity: 0.5
+              opacity: 0.5,
             }}
           />
         </>
       )}
 
       {elements && elements.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements.filter((el) => el.type !== "youtube")}
+            elements={elements}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
@@ -456,7 +499,6 @@ const Responses = ({
           />
         </div>
       )}
-
 
       <div className="relative z-10 mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
         <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">

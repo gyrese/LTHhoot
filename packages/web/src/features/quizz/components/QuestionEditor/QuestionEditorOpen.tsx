@@ -1,5 +1,8 @@
 import type { OpenQuestion } from "@rahoot/common/types/game"
-import { useQuizzEditor, type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import {
+  useQuizzEditor,
+  type QuestionWithId,
+} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -70,9 +73,7 @@ const QuestionEditorOpen = () => {
           </div>
         ))}
       </div>
-      <p className="px-1 text-xs text-white/70">
-        {t("quizz:openAnswerHint")}
-      </p>
+      <p className="px-1 text-xs text-white/70">{t("quizz:openAnswerHint")}</p>
     </div>
   )
 }

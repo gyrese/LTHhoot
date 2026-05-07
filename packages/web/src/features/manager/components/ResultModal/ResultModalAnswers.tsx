@@ -1,5 +1,8 @@
 import { MEDIA_TYPES } from "@rahoot/common/constants"
-import type { QuestionMedia, TrueFalseQuestion } from "@rahoot/common/types/game"
+import type {
+  QuestionMedia,
+  TrueFalseQuestion,
+} from "@rahoot/common/types/game"
 import {
   ANSWERS_COLORS,
   ANSWERS_ICONS,
@@ -65,7 +68,8 @@ const ResultModalAnswers = () => {
     rows = [
       ...questionResult.answers.map((label, ai) => ({
         label,
-        count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai).length,
+        count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai)
+          .length,
         isCorrect: questionResult.solutions.includes(ai),
         color: ANSWERS_COLORS[ai % 4],
         Icon: ANSWERS_ICONS[ai % 4],
@@ -83,7 +87,8 @@ const ResultModalAnswers = () => {
     rows = [
       ...(["Faux", "Vrai"] as const).map((label, ai) => ({
         label,
-        count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai).length,
+        count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai)
+          .length,
         isCorrect: tf.solution === ai,
         color: ANSWERS_COLORS[ai % 4],
         Icon: ANSWERS_ICONS[ai % 4],
@@ -98,7 +103,11 @@ const ResultModalAnswers = () => {
     ]
   } else {
     const answeredRows = questionResult.playerAnswers
-      .filter((pa) => (pa.textAnswer !== null && pa.textAnswer !== undefined) || (pa.numberAnswer !== null && pa.numberAnswer !== undefined))
+      .filter(
+        (pa) =>
+          (pa.textAnswer !== null && pa.textAnswer !== undefined) ||
+          (pa.numberAnswer !== null && pa.numberAnswer !== undefined),
+      )
       .map((pa) => ({
         label: pa.textAnswer ?? String(pa.numberAnswer),
         count: 1,

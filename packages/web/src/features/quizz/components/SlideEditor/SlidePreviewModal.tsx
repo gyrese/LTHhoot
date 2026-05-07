@@ -10,7 +10,10 @@ import {
   SliderAnswer,
   TrueFalseAnswers,
 } from "@rahoot/web/features/game/components/AnswersDisplay"
-import { PuzzleAnswer, DropPinAnswer } from "@rahoot/web/features/game/components/states/AnswerInputs"
+import {
+  PuzzleAnswer,
+  DropPinAnswer,
+} from "@rahoot/web/features/game/components/states/AnswerInputs"
 import { useTranslation } from "react-i18next"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
 
@@ -30,7 +33,21 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
     return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
 
-  const { type, background, backgroundOpacity, elements, question: title, media, answers, min, max, minYear, maxYear, items, pinImage } = question
+  const {
+    type,
+    background,
+    backgroundOpacity,
+    elements,
+    question: title,
+    media,
+    answers,
+    min,
+    max,
+    minYear,
+    maxYear,
+    items,
+    pinImage,
+  } = question
 
   let bgStyle: CSSProperties = {
     backgroundImage: `url(${slideBg})`,
@@ -39,7 +56,11 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
   }
 
   if (background?.type === "image") {
-    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+    bgStyle = {
+      backgroundImage: `url(${background.value})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    }
   } else if (background?.type === "color") {
     bgStyle = { backgroundColor: background.value }
   }
@@ -51,12 +72,12 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
     >
       {/* Background */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
       />
 
       {/* Slide Elements (Konva) */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0">
         <SlideCanvas
           elements={elements || []}
           onChange={() => {}}
@@ -68,8 +89,11 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
 
       {/* Header (Question Title) */}
       {type !== "title" && (
-        <div className="relative z-10 px-4 pt-4" onClick={(e) => e.stopPropagation()}>
-          <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md border border-white/10 shadow-2xl">
+        <div
+          className="relative z-10 px-4 pt-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mx-auto max-w-7xl rounded-2xl border border-white/10 bg-black/50 px-6 py-4 shadow-2xl backdrop-blur-md">
             <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
               {title}
             </h2>
@@ -78,25 +102,36 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       )}
 
       {/* Media Section */}
-      <div 
-        className="relative mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5 z-0"
+      <div
+        className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <QuestionMedia 
-          media={type === "drop_pin" && pinImage ? { type: "image", url: pinImage } : media} 
-          alt={title} 
+        <QuestionMedia
+          media={
+            type === "drop_pin" && pinImage
+              ? { type: "image", url: pinImage }
+              : media
+          }
+          alt={title}
         />
       </div>
 
       {/* Footer (Answers / Controls) */}
-      <div className="relative z-10 w-full pb-8" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="relative z-10 w-full pb-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
-          <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold border border-white/5">
-            <span className="translate-y-1 text-sm opacity-60">{t("game:hud.time")}</span>
+          <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
+            <span className="translate-y-1 text-sm opacity-60">
+              {t("game:hud.time")}
+            </span>
             <span className="tabular-nums">{question.time}</span>
           </div>
-          <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold border border-white/5">
-            <span className="translate-y-1 text-sm opacity-60">{t("game:hud.answers")}</span>
+          <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
+            <span className="translate-y-1 text-sm opacity-60">
+              {t("game:hud.answers")}
+            </span>
             <span className="tabular-nums">0/10</span>
           </div>
         </div>
@@ -105,14 +140,14 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           {type === "mcq" && answers && (
             <McqAnswers answers={answers} onAnswer={() => {}} />
           )}
-          {type === "true_false" && (
-            <TrueFalseAnswers />
-          )}
-          {type === "open" && (
-            <OpenAnswerPlaceholder />
-          )}
+          {type === "true_false" && <TrueFalseAnswers />}
+          {type === "open" && <OpenAnswerPlaceholder />}
           {type === "date" && (
-            <DateAnswer minYear={minYear} maxYear={maxYear} onNumberAnswer={() => {}} />
+            <DateAnswer
+              minYear={minYear}
+              maxYear={maxYear}
+              onNumberAnswer={() => {}}
+            />
           )}
           {type === "slider" && (
             <SliderAnswer
@@ -125,8 +160,8 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
             <PuzzleAnswer items={items} onOrderAnswer={() => {}} />
           )}
           {type === "drop_pin" && pinImage && (
-            <div className="pointer-events-none opacity-80 scale-90">
-                <DropPinAnswer pinImage={pinImage} onTextAnswer={() => {}} />
+            <div className="pointer-events-none scale-90 opacity-80">
+              <DropPinAnswer pinImage={pinImage} onTextAnswer={() => {}} />
             </div>
           )}
         </div>
@@ -135,7 +170,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       {/* Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-[100] rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors backdrop-blur-md border border-white/20 shadow-lg"
+        className="absolute top-4 right-4 z-[100] rounded-full border border-white/20 bg-white/10 p-2 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20"
       >
         <X className="size-6" />
       </button>

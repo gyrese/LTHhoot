@@ -17,7 +17,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const [localDescription, setLocalDescription] = useState(ctx.description)
   const [localFolder, setLocalFolder] = useState(ctx.folder)
   const [localTags, setLocalTags] = useState<string[]>(ctx.tags)
-  const [localImage, setLocalImage] = useState<string | undefined>(ctx.listingImage)
+  const [localImage, setLocalImage] = useState<string | undefined>(
+    ctx.listingImage,
+  )
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -95,7 +97,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-        <h1 className="text-lg font-bold text-gray-800">{t("quizz:settings.title")}</h1>
+        <h1 className="text-lg font-bold text-gray-800">
+          {t("quizz:settings.title")}
+        </h1>
         <div className="flex gap-2">
           <button
             type="button"
@@ -136,7 +140,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
               <label className="mb-1 block text-sm font-bold text-gray-800">
                 {t("quizz:settings.titleLabel")}
               </label>
-              <p className="mb-2 text-xs text-gray-500">{t("quizz:settings.titleHint")}</p>
+              <p className="mb-2 text-xs text-gray-500">
+                {t("quizz:settings.titleHint")}
+              </p>
               <div className="relative">
                 <input
                   value={localSubject}
@@ -145,7 +151,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 pr-14 text-sm outline-none focus:border-blue-500"
                   placeholder={t("quizz:titleQuizzPlaceholder")}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-gray-400">
                   {localSubject.length}/90
                 </span>
               </div>
@@ -155,9 +161,13 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
             <div>
               <label className="mb-1 block text-sm font-bold text-gray-800">
                 {t("quizz:settings.descriptionLabel")}{" "}
-                <span className="font-normal text-gray-400">({t("common:optional")})</span>
+                <span className="font-normal text-gray-400">
+                  ({t("common:optional")})
+                </span>
               </label>
-              <p className="mb-2 text-xs text-gray-500">{t("quizz:settings.descriptionHint")}</p>
+              <p className="mb-2 text-xs text-gray-500">
+                {t("quizz:settings.descriptionHint")}
+              </p>
               <div className="relative">
                 <textarea
                   value={localDescription}
@@ -167,7 +177,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   className="w-full resize-none rounded-lg border-2 border-gray-300 px-4 py-3 pr-14 text-sm outline-none focus:border-blue-500"
                   placeholder={t("quizz:settings.descriptionPlaceholder")}
                 />
-                <span className="absolute bottom-3 right-3 text-xs text-gray-400">
+                <span className="absolute right-3 bottom-3 text-xs text-gray-400">
                   {localDescription.length}/500
                 </span>
               </div>
@@ -202,7 +212,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                     <button
                       type="button"
                       className="text-blue-400 hover:text-red-500"
-                      onClick={() => setLocalTags(localTags.filter((t) => t !== tag))}
+                      onClick={() =>
+                        setLocalTags(localTags.filter((t) => t !== tag))
+                      }
                     >
                       <X className="size-3" />
                     </button>
@@ -226,7 +238,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
               <label className="mb-1 block text-sm font-bold text-gray-800">
                 {t("quizz:settings.coverImageLabel")}
               </label>
-              <p className="mb-3 text-xs text-gray-500">{t("quizz:settings.coverImageHint")}</p>
+              <p className="mb-3 text-xs text-gray-500">
+                {t("quizz:settings.coverImageHint")}
+              </p>
 
               <input
                 ref={fileInputRef}
@@ -236,7 +250,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 onChange={(e) => {
                   const file = e.target.files?.[0]
 
-                  if (file) { void handleImageUpload(file) }
+                  if (file) {
+                    void handleImageUpload(file)
+                  }
 
                   e.target.value = ""
                 }}
@@ -250,16 +266,22 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50"
                 >
                   <Upload className="size-5" />
-                  <span className="text-xs">{uploading ? "…" : t("quizz:settings.upload")}</span>
+                  <span className="text-xs">
+                    {uploading ? "…" : t("quizz:settings.upload")}
+                  </span>
                 </button>
 
                 {localImage && (
                   <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-gray-200">
-                    <img src={localImage} alt="cover" className="h-full w-full object-cover" />
+                    <img
+                      src={localImage}
+                      alt="cover"
+                      className="h-full w-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => setLocalImage(undefined)}
-                      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                     >
                       <X className="size-3" />
                     </button>

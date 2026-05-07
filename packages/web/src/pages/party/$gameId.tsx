@@ -32,7 +32,9 @@ const PlayerGamePage = () => {
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,
     ({ gameId, status, player, currentQuestion }) => {
-      console.log(`[RECONNECT] Succès → gameId=${gameId} joueur=${player.username} status=${status.name}`)
+      console.log(
+        `[RECONNECT] Succès → gameId=${gameId} joueur=${player.username} status=${status.name}`,
+      )
       setGameId(gameId)
       setStatus(status.name, status.data)
       setPlayer(player)

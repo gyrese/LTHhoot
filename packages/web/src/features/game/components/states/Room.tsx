@@ -67,7 +67,7 @@ const Room = ({ data }: Props) => {
           <div className="absolute inset-0 bg-black/50" />
         </>
       )}
-      
+
       <div className="relative z-10 flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-2">
         <div className="mb-10 flex flex-col-reverse items-center gap-3 md:flex-row md:items-stretch">
           <div className="flex flex-col gap-3 md:flex-row">
@@ -78,17 +78,14 @@ const Room = ({ data }: Props) => {
 
             <div className="game-pin-in flex flex-col justify-center rounded-md bg-white px-6 py-4 text-center md:rounded-l-none md:text-left">
               <p className="text-2xl font-bold">{t("game:gamePinLabel")}</p>
-              <p id="game-pin" className="text-6xl font-extrabold">{inviteCode}</p>
+              <p id="game-pin" className="text-6xl font-extrabold">
+                {inviteCode}
+              </p>
             </div>
           </div>
 
           <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-md bg-white p-2">
-            {inviteCode && (
-              <QRCodeSVG
-                size={144}
-                value={joinUrl}
-              />
-            )}
+            {inviteCode && <QRCodeSVG size={144} value={joinUrl} />}
           </div>
         </div>
 
@@ -99,7 +96,10 @@ const Room = ({ data }: Props) => {
         <div className="mb-6 flex items-center justify-center rounded-full bg-black/40 px-6 py-3">
           <span className="text-2xl font-bold text-white drop-shadow-md">
             {t("game:playersJoined")}
-            <span key={totalPlayers} className="anim-pop-in inline-block tabular-nums">
+            <span
+              key={totalPlayers}
+              className="anim-pop-in inline-block tabular-nums"
+            >
               {totalPlayers}
             </span>
           </span>
@@ -123,7 +123,9 @@ const Room = ({ data }: Props) => {
                   animated
                   animationStates={WAITING_ANIMATION_STATES}
                   className="h-11 w-11 rounded-full border-2 border-white/50"
-                  style={{ animationDelay: `${(playerList.indexOf(player) % 6) * 0.2}s` }}
+                  style={{
+                    animationDelay: `${(playerList.indexOf(player) % 6) * 0.2}s`,
+                  }}
                 />
                 <span className="cursor-pointer text-2xl drop-shadow-sm hover:line-through">
                   {player.username}

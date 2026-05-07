@@ -36,7 +36,7 @@ const ResultModalHeader = () => {
         <button
           onClick={() => downloadGameResultCSV(result)}
           title={t("manager:result.exportCSV")}
-          className="ml-2 rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors"
+          className="hover:text-primary ml-2 rounded p-1 text-gray-500 transition-colors hover:bg-gray-100"
         >
           <Download className="size-5" />
         </button>

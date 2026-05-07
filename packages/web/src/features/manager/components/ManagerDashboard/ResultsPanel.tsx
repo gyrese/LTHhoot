@@ -31,8 +31,8 @@ const ResultsPanel = () => {
   const itemsPerPage = 10
 
   const filteredResults = useMemo(() => {
-    return results.filter((r) => 
-      r.subject.toLowerCase().includes(search.toLowerCase())
+    return results.filter((r) =>
+      r.subject.toLowerCase().includes(search.toLowerCase()),
     )
   }, [results, search])
 
@@ -60,31 +60,36 @@ const ResultsPanel = () => {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl bg-black/30 p-4 backdrop-blur-md border border-white/10 overflow-hidden">
-      <div className="flex items-center justify-between shrink-0">
+    <div className="flex h-full flex-col gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md">
+      <div className="flex shrink-0 items-center justify-between">
         <p className="text-sm font-semibold text-white/80">
           {t("manager:tabs.results")}
         </p>
         <div className="relative w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-white/40" />
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-white/40" />
           <input
             type="text"
             placeholder={t("manager:quizz.search")}
             value={search}
             onChange={handleSearchChange}
-            className="w-full rounded-lg bg-white/5 py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-white/30 border border-white/5 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+            className="focus:ring-primary/50 w-full rounded-lg border border-white/5 bg-white/5 py-1.5 pr-3 pl-8 text-xs text-white transition-all placeholder:text-white/30 focus:bg-white/10 focus:ring-1 focus:outline-none"
           />
         </div>
       </div>
-      
+
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {paginatedResults.map((r) => (
           <div
             key={r.id}
             className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 transition-colors hover:bg-white/15"
           >
-            <button className="min-w-0 flex-1 text-left" onClick={handleOpen(r.id)}>
-              <p className="truncate font-semibold text-white text-sm">{r.subject}</p>
+            <button
+              className="min-w-0 flex-1 text-left"
+              onClick={handleOpen(r.id)}
+            >
+              <p className="truncate text-sm font-semibold text-white">
+                {r.subject}
+              </p>
               <p className="text-[10px] text-white/50">
                 {formatDate(r.date)} ·{" "}
                 {t("manager:result.playerCount", { count: r.playerCount })}
@@ -97,7 +102,9 @@ const ResultsPanel = () => {
                 </button>
               }
               title={t("manager:result.delete")}
-              description={t("manager:result.deleteConfirm", { name: r.subject })}
+              description={t("manager:result.deleteConfirm", {
+                name: r.subject,
+              })}
               confirmLabel={t("common:delete")}
               onConfirm={handleDelete(r.id)}
             />
@@ -105,7 +112,7 @@ const ResultsPanel = () => {
         ))}
         {filteredResults.length === 0 && (
           <div className="flex h-full items-center justify-center">
-            <p className="text-center text-sm text-white/40 italic py-10">
+            <p className="py-10 text-center text-sm text-white/40 italic">
               {search ? t("manager:quizz.notFound") : t("manager:result.none")}
             </p>
           </div>
@@ -113,25 +120,25 @@ const ResultsPanel = () => {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-white/5 pt-3 shrink-0">
+        <div className="flex shrink-0 items-center justify-between border-t border-white/5 pt-3">
           <p className="text-[10px] text-white/40">
             {filteredResults.length} résultats
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 disabled:opacity-20 transition-all"
+              className="rounded-lg bg-white/5 p-1.5 text-white/60 transition-all hover:bg-white/10 disabled:opacity-20"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="text-[11px] font-bold text-white/80 min-w-[3rem] text-center">
+            <span className="min-w-[3rem] text-center text-[11px] font-bold text-white/80">
               {page} / {totalPages}
             </span>
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 disabled:opacity-20 transition-all"
+              className="rounded-lg bg-white/5 p-1.5 text-white/60 transition-all hover:bg-white/10 disabled:opacity-20"
             >
               <ChevronRight className="size-4" />
             </button>

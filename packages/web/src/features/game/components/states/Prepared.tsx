@@ -30,7 +30,7 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
   return (
     <section className="relative mx-auto flex h-full w-full flex-col items-center justify-center px-4">
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
+      <div className="bg-primary/20 pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -46,7 +46,7 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-lg font-black uppercase tracking-[0.3em] text-white/50"
+              className="text-lg font-black tracking-[0.3em] text-white/50 uppercase"
             >
               {t("game:getReady")}
             </motion.span>
@@ -64,27 +64,36 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
               className="absolute inset-0 rounded-full border-4 border-white/10"
             />
-            
+
             <motion.div
               initial={{ scale: 0, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.4 }}
-              className="relative flex h-64 w-64 items-center justify-center overflow-hidden rounded-[4rem] bg-gradient-to-br from-white/10 to-white/5 shadow-2xl backdrop-blur-xl border border-white/20 md:h-80 md:w-80"
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.4,
+              }}
+              className="relative flex h-64 w-64 items-center justify-center overflow-hidden rounded-[4rem] border border-white/20 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl backdrop-blur-xl md:h-80 md:w-80"
             >
               {image ? (
                 <motion.img
                   animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 8,
+                    ease: "easeInOut",
+                  }}
                   src={image}
                   alt={type}
-                  className="h-full w-full object-cover [mix-blend-mode:multiply] opacity-90"
+                  className="h-full w-full object-cover opacity-90 [mix-blend-mode:multiply]"
                 />
               ) : (
-                <div className="text-8xl text-white/20 font-black">?</div>
+                <div className="text-8xl font-black text-white/20">?</div>
               )}
-              
+
               {/* Inner Gloss */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
             </motion.div>
           </div>
 
@@ -93,9 +102,9 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-4 rounded-full bg-white/10 px-6 py-2 border border-white/10 backdrop-blur-sm"
+            className="mt-4 rounded-full border border-white/10 bg-white/10 px-6 py-2 backdrop-blur-sm"
           >
-            <span className="text-sm font-bold text-white/80 uppercase tracking-widest">
+            <span className="text-sm font-bold tracking-widest text-white/80 uppercase">
               {t(`quizz:questionType.${type}`)}
             </span>
           </motion.div>

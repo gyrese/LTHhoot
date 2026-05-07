@@ -12,7 +12,10 @@ import { Download, Settings } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
-import { downloadJson, exportQuizzWithMedia } from "@rahoot/web/features/quizz/utils/export"
+import {
+  downloadJson,
+  exportQuizzWithMedia,
+} from "@rahoot/web/features/quizz/utils/export"
 import clsx from "clsx"
 
 const QuizzEditorHeader = () => {
@@ -34,7 +37,9 @@ const QuizzEditorHeader = () => {
   const [showSettings, setShowSettings] = useState(false)
 
   const handleExport = async () => {
-    const loadingToast = toast.loading(t("manager:quizz.exporting", "Exportation en cours..."))
+    const loadingToast = toast.loading(
+      t("manager:quizz.exporting", "Exportation en cours..."),
+    )
     try {
       const payload = {
         subject,
@@ -45,13 +50,15 @@ const QuizzEditorHeader = () => {
         listingImage: listingImage || undefined,
         questions,
       }
-      
+
       const fullQuizz = await exportQuizzWithMedia(payload)
       downloadJson(fullQuizz, subject || "quizz-export")
       toast.success(t("quizz:quizzExported"), { id: loadingToast })
     } catch (error) {
       console.error("Export failed:", error)
-      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), { id: loadingToast })
+      toast.error(t("errors:quizz.exportFailed", "L'exportation a échoué"), {
+        id: loadingToast,
+      })
     }
   }
 
@@ -64,26 +71,42 @@ const QuizzEditorHeader = () => {
           <Button
             type="button"
             onClick={() => setShowSettings(true)}
-            className="border-2 border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 shadow-none px-4 py-2"
+            className="border-2 border-gray-200 bg-white px-4 py-2 text-gray-700 shadow-none hover:border-gray-300 hover:bg-gray-50"
             classNameContent="gap-3"
           >
-            <span className="max-w-64 truncate text-xl font-black">{subject || t("quizz:titleQuizzPlaceholder")}</span>
+            <span className="max-w-64 truncate text-xl font-black">
+              {subject || t("quizz:titleQuizzPlaceholder")}
+            </span>
             <Settings className="size-6 shrink-0 text-gray-500" />
           </Button>
 
           {lastSaved && (
             <div className="flex flex-col text-xs text-gray-400">
-              <span className={clsx("font-semibold uppercase tracking-wider", isSaving && "animate-pulse text-blue-500")}>
-                {isSaving 
-                  ? t("quizz:saving", "Sauvegarde...") 
-                  : isDirty 
-                    ? t("quizz:unsavedChanges", "Modifications non enregistrées") 
-                    : t("quizz:allChangesSaved", "Toutes les modifications sont enregistrées")}
+              <span
+                className={clsx(
+                  "font-semibold tracking-wider uppercase",
+                  isSaving && "animate-pulse text-blue-500",
+                )}
+              >
+                {isSaving
+                  ? t("quizz:saving", "Sauvegarde...")
+                  : isDirty
+                    ? t(
+                        "quizz:unsavedChanges",
+                        "Modifications non enregistrées",
+                      )
+                    : t(
+                        "quizz:allChangesSaved",
+                        "Toutes les modifications sont enregistrées",
+                      )}
               </span>
               {!isSaving && (
                 <span>
                   {t("quizz:lastSavedAt", "Dernier enregistrement à {{time}}", {
-                    time: lastSaved.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" }),
+                    time: lastSaved.toLocaleTimeString(i18n.language, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
                   })}
                 </span>
               )}
@@ -94,26 +117,33 @@ const QuizzEditorHeader = () => {
         <div className="flex gap-3">
           <Button
             size="sm"
-            className="bg-gray-100 font-semibold text-gray-600 shadow-none border-2 border-transparent hover:border-gray-200"
+            className="border-2 border-transparent bg-gray-100 font-semibold text-gray-600 shadow-none hover:border-gray-200"
             onClick={() => navigate({ to: "/manager" })}
           >
             {t("common:exit")}
           </Button>
           <Button
             size="sm"
-            className="bg-blue-50 font-bold text-blue-600 shadow-none border-2 border-transparent hover:border-blue-100"
+            className="border-2 border-transparent bg-blue-50 font-bold text-blue-600 shadow-none hover:border-blue-100"
             onClick={handleExport}
           >
             <Download className="mr-2 size-4" />
             {t("common:export")}
           </Button>
-          <Button size="sm" className="bg-primary px-6" onClick={() => saveQuizz({ navigate: true })}>
+          <Button
+            size="sm"
+            className="bg-primary px-6"
+            onClick={() => saveQuizz({ navigate: true })}
+          >
             {t("common:save")}
           </Button>
         </div>
       </header>
 
-      <QuizzSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      <QuizzSettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </>
   )
 }

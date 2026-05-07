@@ -25,7 +25,9 @@ const QuestionEditorPuzzle = () => {
       return
     }
 
-    updateQuestion(currentIndex, { items: q.items.filter((_, i) => i !== index) })
+    updateQuestion(currentIndex, {
+      items: q.items.filter((_, i) => i !== index),
+    })
   }
 
   return (
@@ -49,7 +51,7 @@ const QuestionEditorPuzzle = () => {
         {q.items.map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 rounded bg-purple-500 px-4 py-4 shadow-inset"
+            className="shadow-inset flex items-center gap-3 rounded bg-purple-500 px-4 py-4"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
               {i + 1}

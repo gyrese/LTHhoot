@@ -28,9 +28,16 @@ const ResultModalTable = () => {
       <tbody className="divide-y divide-gray-100">
         {questionResult.playerAnswers.map((pa, i) => {
           const isCorrect = pa.points > 0
-          const hasMcqAnswer = pa.answerId !== null && pa.answerId !== undefined && questionResult.type === "mcq"
-          const mcqAnswers = questionResult.type === "mcq" ? questionResult.answers : []
-          const AnswerIcon = pa.answerId !== null && pa.answerId !== undefined ? ANSWERS_ICONS[pa.answerId % 4] : null
+          const hasMcqAnswer =
+            pa.answerId !== null &&
+            pa.answerId !== undefined &&
+            questionResult.type === "mcq"
+          const mcqAnswers =
+            questionResult.type === "mcq" ? questionResult.answers : []
+          const AnswerIcon =
+            pa.answerId !== null && pa.answerId !== undefined
+              ? ANSWERS_ICONS[pa.answerId % 4]
+              : null
 
           return (
             <tr key={i} className="hover:bg-gray-50">
@@ -46,21 +53,38 @@ const ResultModalTable = () => {
                         )}
                       >
                         <AnswerIcon className="size-3" />
-                        <span className="max-w-30 truncate">{mcqAnswers[pa.answerId!]}</span>
+                        <span className="max-w-30 truncate">
+                          {mcqAnswers[pa.answerId!]}
+                        </span>
                       </span>
                     )
                   }
 
                   if (pa.textAnswer !== null && pa.textAnswer !== undefined) {
-                    return <span className="text-xs text-gray-700">{pa.textAnswer}</span>
+                    return (
+                      <span className="text-xs text-gray-700">
+                        {pa.textAnswer}
+                      </span>
+                    )
                   }
 
-                  if (pa.numberAnswer !== null && pa.numberAnswer !== undefined) {
-                    return <span className="text-xs text-gray-700">{pa.numberAnswer}</span>
+                  if (
+                    pa.numberAnswer !== null &&
+                    pa.numberAnswer !== undefined
+                  ) {
+                    return (
+                      <span className="text-xs text-gray-700">
+                        {pa.numberAnswer}
+                      </span>
+                    )
                   }
 
                   if (pa.answerId !== null && pa.answerId !== undefined) {
-                    return <span className="text-xs text-gray-700">{pa.answerId === 1 ? "Vrai" : "Faux"}</span>
+                    return (
+                      <span className="text-xs text-gray-700">
+                        {pa.answerId === 1 ? "Vrai" : "Faux"}
+                      </span>
+                    )
                   }
 
                   return <span className="text-xs text-gray-400">—</span>

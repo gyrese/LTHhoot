@@ -70,7 +70,9 @@ export class RoundManager {
   }
 
   private getNonTitleCount() {
-    const total = this.opts.quizz.questions.filter((q) => q.type !== "title").length
+    const total = this.opts.quizz.questions.filter(
+      (q) => q.type !== "title",
+    ).length
     const current = this.opts.quizz.questions
       .slice(0, this.currentQuestion + 1)
       .filter((q) => q.type !== "title").length
@@ -121,7 +123,9 @@ export class RoundManager {
   }
 
   async newQuestion(): Promise<void> {
-    if (this.questionInProgress) {return}
+    if (this.questionInProgress) {
+      return
+    }
 
     this.questionInProgress = true
 
@@ -168,13 +172,16 @@ export class RoundManager {
           this.showLeaderboard()
         } else {
           this.currentQuestion += 1
-          setTimeout(() => { void this.newQuestion() }, 0)
+          setTimeout(() => {
+            void this.newQuestion()
+          }, 0)
         }
 
         return
       }
 
-      const { current: questionNumber, total: questionTotal } = this.getNonTitleCount()
+      const { current: questionNumber, total: questionTotal } =
+        this.getNonTitleCount()
 
       this.opts.io.to(this.opts.gameId).emit(EVENTS.GAME.UPDATE_QUESTION, {
         current: questionNumber,
@@ -264,15 +271,15 @@ export class RoundManager {
             return {}
 
           case "date":
-            return { 
-              minYear: question.minYear ?? (question.correctYear - 30), 
-              maxYear: question.maxYear ?? (question.correctYear + 30) 
+            return {
+              minYear: question.minYear ?? question.correctYear - 30,
+              maxYear: question.maxYear ?? question.correctYear + 30,
             }
 
           case "slider":
-            return { 
-              min: question.min ?? 0, 
-              max: question.max ?? 100 
+            return {
+              min: question.min ?? 0,
+              max: question.max ?? 100,
             }
 
           case "puzzle":
@@ -317,11 +324,18 @@ export class RoundManager {
   private showOpenAnswers(question: Question): void {
     this.pendingOpenQuestion = question
 
-    if (question.type === "open" && this.pendingOpenCorrectAnswers.length === 0) {
+    if (
+      question.type === "open" &&
+      this.pendingOpenCorrectAnswers.length === 0
+    ) {
       this.pendingOpenCorrectAnswers = [...question.correctAnswers]
     }
 
-    const answers = buildOpenAnswersList(this.playersAnswers, this.opts.players.getAll(), this.pendingOpenCorrectAnswers)
+    const answers = buildOpenAnswersList(
+      this.playersAnswers,
+      this.opts.players.getAll(),
+      this.pendingOpenCorrectAnswers,
+    )
 
     const baseData = {
       question: question.question,
@@ -404,26 +418,31 @@ export class RoundManager {
         let points =
           playerAnswer && isCorrect ? Math.round(playerAnswer.points) : 0
 
-        if (question.type === "drop_pin" && playerAnswer && isCorrect && playerAnswer.textAnswer) {
+        if (
+          question.type === "drop_pin" &&
+          playerAnswer &&
+          isCorrect &&
+          playerAnswer.textAnswer
+        ) {
           const parts = playerAnswer.textAnswer.split(":")
           const px = parseFloat(parts[0])
           const py = parseFloat(parts[1])
-          const correctZones = question.zones?.filter(z => z.isCorrect) || []
+          const correctZones = question.zones?.filter((z) => z.isCorrect) || []
 
           if (correctZones.length > 0 && !isNaN(px) && !isNaN(py)) {
             // Trouver la distance à la zone correcte la plus proche
-            const distances = correctZones.map(z => 
-              Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
+            const distances = correctZones.map((z) =>
+              Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2)),
             )
             const minDistance = Math.min(...distances)
-            
+
             // On utilise le même seuil que dans checkAnswer (20%)
             const threshold = 20
-            
+
             // Accuracy scales linearly from 1.0 (exact) to 0.1 (at threshold)
             // If distance is very small (inside the 5x5 visual zone), we keep it near 1.0
-            const accuracy = Math.max(0.1, 1 - (minDistance / threshold))
-            
+            const accuracy = Math.max(0.1, 1 - minDistance / threshold)
+
             points = Math.round(playerAnswer.points * accuracy)
             points = Math.max(1, points)
           } else {
@@ -481,7 +500,11 @@ export class RoundManager {
           return { correctYear: question.correctYear }
 
         case "slider":
-          return { correctValue: question.correctValue, min: question.min, max: question.max }
+          return {
+            correctValue: question.correctValue,
+            min: question.min,
+            max: question.max,
+          }
 
         case "puzzle":
           return { items: question.items }

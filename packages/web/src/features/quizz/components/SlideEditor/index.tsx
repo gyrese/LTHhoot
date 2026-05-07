@@ -1,4 +1,7 @@
-import { type SlideElement, type SlideBackground } from "@rahoot/common/types/game"
+import {
+  type SlideElement,
+  type SlideBackground,
+} from "@rahoot/common/types/game"
 import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
@@ -12,12 +15,27 @@ type SlideEditorProps = {
   backgroundOpacity?: number
 }
 
-const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: SlideEditorProps) => {
-  const { currentQuestion, updateQuestion, currentIndex, selectedId, setSelectedId } = useQuizzEditor()
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; show: boolean } | null>(null)
+const SlideEditor = ({
+  elements,
+  onChange,
+  background,
+  backgroundOpacity,
+}: SlideEditorProps) => {
+  const {
+    currentQuestion,
+    updateQuestion,
+    currentIndex,
+    selectedId,
+    setSelectedId,
+  } = useQuizzEditor()
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    show: boolean
+  } | null>(null)
   const [copiedElement, setCopiedElement] = useState<SlideElement | null>(null)
 
-  const selectedElement = elements.find(e => e.id === selectedId)
+  const selectedElement = elements.find((e) => e.id === selectedId)
   const selectedType = selectedElement?.type
 
   const handleContextMenuAction = (action: ContextMenuAction) => {
@@ -56,21 +74,27 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
 
       case "bringToFront": {
         if (selectedId && selectedElement) {
-          onChange([...elements.filter(e => e.id !== selectedId), selectedElement])
+          onChange([
+            ...elements.filter((e) => e.id !== selectedId),
+            selectedElement,
+          ])
         }
         break
       }
 
       case "sendToBack": {
         if (selectedId && selectedElement) {
-          onChange([selectedElement, ...elements.filter(e => e.id !== selectedId)])
+          onChange([
+            selectedElement,
+            ...elements.filter((e) => e.id !== selectedId),
+          ])
         }
         break
       }
-      
+
       case "bringForward": {
         if (selectedId && selectedElement) {
-          const idx = elements.findIndex(e => e.id === selectedId)
+          const idx = elements.findIndex((e) => e.id === selectedId)
           if (idx < elements.length - 1) {
             const newElements = [...elements]
             const temp = newElements[idx]
@@ -84,7 +108,7 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
 
       case "sendBackward": {
         if (selectedId && selectedElement) {
-          const idx = elements.findIndex(e => e.id === selectedId)
+          const idx = elements.findIndex((e) => e.id === selectedId)
           if (idx > 0) {
             const newElements = [...elements]
             const temp = newElements[idx]
@@ -97,10 +121,14 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
       }
 
       case "setAsBackground": {
-        if (selectedType === "image" && selectedElement && "url" in selectedElement) {
-          updateQuestion(currentIndex, { 
+        if (
+          selectedType === "image" &&
+          selectedElement &&
+          "url" in selectedElement
+        ) {
+          updateQuestion(currentIndex, {
             background: { type: "image", value: selectedElement.url },
-            elements: elements.filter(e => e.id !== selectedId)
+            elements: elements.filter((e) => e.id !== selectedId),
           })
           setSelectedId(undefined)
         }
@@ -109,8 +137,12 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
 
       case "opacity": {
         if (selectedElement) {
-          const newOpacity = ((selectedElement.opacity || 1) <= 0.5) ? 1 : 0.5
-          onChange(elements.map(e => e.id === selectedId ? { ...e, opacity: newOpacity } : e))
+          const newOpacity = (selectedElement.opacity || 1) <= 0.5 ? 1 : 0.5
+          onChange(
+            elements.map((e) =>
+              e.id === selectedId ? { ...e, opacity: newOpacity } : e,
+            ),
+          )
         }
         break
       }
@@ -126,8 +158,8 @@ const SlideEditor = ({ elements, onChange, background, backgroundOpacity }: Slid
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <div className="absolute inset-0 w-full h-full pointer-events-auto">
+    <div className="pointer-events-none absolute inset-0 h-full w-full">
+      <div className="pointer-events-auto absolute inset-0 h-full w-full">
         <SlideCanvas
           elements={elements}
           onChange={onChange}

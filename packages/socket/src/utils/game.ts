@@ -84,8 +84,7 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
         answer.textAnswer !== undefined &&
         question.correctAnswers.some(
           (ca) =>
-            ca.trim().toLowerCase() ===
-            answer.textAnswer!.trim().toLowerCase(),
+            ca.trim().toLowerCase() === answer.textAnswer!.trim().toLowerCase(),
         )
       )
 
@@ -118,17 +117,19 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
       const px = parseFloat(parts[0])
       const py = parseFloat(parts[1])
       if (isNaN(px) || isNaN(py)) return false
-      
-      const correctZones = question.zones.filter(z => z.isCorrect)
+
+      const correctZones = question.zones.filter((z) => z.isCorrect)
       if (correctZones.length === 0) return true
 
       // Seuil de proximité : 20% de la diagonale (environ 28 unités sur 100)
-      const PROXIMITY_THRESHOLD = 20 
+      const PROXIMITY_THRESHOLD = 20
 
-      return correctZones.some(z => {
+      return correctZones.some((z) => {
         // Calcul de la distance au centre de la zone
         // (Les zones font 5x5 dans l'éditeur actuel, x/y est le point cliqué)
-        const distance = Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2))
+        const distance = Math.sqrt(
+          Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2),
+        )
         return distance <= PROXIMITY_THRESHOLD
       })
     }

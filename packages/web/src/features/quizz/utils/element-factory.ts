@@ -1,7 +1,13 @@
-import { type SlideElement, type TextElement, type ShapeElement } from "@rahoot/common/types/game"
+import {
+  type SlideElement,
+  type TextElement,
+  type ShapeElement,
+} from "@rahoot/common/types/game"
 import { v4 as uuidv4 } from "uuid"
 
-export const createTextElement = (overrides: Partial<TextElement> = {}): TextElement => ({
+export const createTextElement = (
+  overrides: Partial<TextElement> = {},
+): TextElement => ({
   id: `el_${uuidv4()}`,
   type: "text",
   text: "Texte",
@@ -20,7 +26,9 @@ export const createTextElement = (overrides: Partial<TextElement> = {}): TextEle
   ...overrides,
 })
 
-export const createShapeElement = (overrides: Partial<ShapeElement> = {}): ShapeElement => ({
+export const createShapeElement = (
+  overrides: Partial<ShapeElement> = {},
+): ShapeElement => ({
   id: `el_${uuidv4()}`,
   type: "shape",
   shapeType: "rect",
@@ -34,7 +42,11 @@ export const createShapeElement = (overrides: Partial<ShapeElement> = {}): Shape
   ...overrides,
 })
 
-export const createImageElement = (url: string, width: number, height: number): SlideElement => ({
+export const createImageElement = (
+  url: string,
+  width: number,
+  height: number,
+): SlideElement => ({
   id: `el_${uuidv4()}`,
   type: "image",
   url,

@@ -23,7 +23,9 @@ const configPath = process.env.CONFIG_PATH
 
 const uploadsDir = resolve(configPath, "uploads")
 
-if (!existsSync(uploadsDir)) {mkdirSync(uploadsDir, { recursive: true })}
+if (!existsSync(uploadsDir)) {
+  mkdirSync(uploadsDir, { recursive: true })
+}
 
 // Multer stocke temporairement dans uploads, on convertira en WebP ensuite
 const storage = multer.diskStorage({
@@ -58,7 +60,9 @@ app.post(
       return
     }
 
-    console.log(`Réception d'un fichier : ${req.file.originalname} (${req.file.size} octets)`)
+    console.log(
+      `Réception d'un fichier : ${req.file.originalname} (${req.file.size} octets)`,
+    )
 
     const tmpPath = req.file.path
     const outName = `img-${Date.now()}.webp`
@@ -67,33 +71,40 @@ app.post(
     try {
       // Limiter la concurrence pour éviter de saturer la RAM sur de gros GIFs
       sharp.concurrency(1)
-      
+
       await sharp(tmpPath, { animated: true })
         .webp({ quality: 82 })
         .toFile(outPath)
 
       // Supprimer le fichier temporaire
-      await unlink(tmpPath).catch(err => console.error("Erreur lors de la suppression du temporaire :", err))
+      await unlink(tmpPath).catch((err) =>
+        console.error("Erreur lors de la suppression du temporaire :", err),
+      )
 
       res.json({ url: `/uploads/${outName}` })
     } catch (err) {
-      console.error("Échec de la conversion WebP, tentative de conservation du fichier original. Raison :", err)
+      console.error(
+        "Échec de la conversion WebP, tentative de conservation du fichier original. Raison :",
+        err,
+      )
 
       try {
         // Fallback : on garde le fichier original avec son extension d'origine
         const originalExt = extname(req.file.originalname) || ".bin"
         const fallbackName = `img-orig-${Date.now()}${originalExt}`
         const fallbackPath = resolve(uploadsDir, fallbackName)
-        
-        console.log(`Tentative de fallback par copie : ${tmpPath} -> ${fallbackPath}`)
+
+        console.log(
+          `Tentative de fallback par copie : ${tmpPath} -> ${fallbackPath}`,
+        )
         await copyFile(tmpPath, fallbackPath)
         await unlink(tmpPath).catch(() => {}) // On essaie de supprimer mais c'est pas grave si ça échoue
-        
+
         res.json({ url: `/uploads/${fallbackName}` })
       } catch (fallbackErr) {
         console.error("Échec critique du fallback :", fallbackErr)
-        res.status(422).json({ 
-          error: `Échec du traitement de l'image. Erreur Sharp: ${err instanceof Error ? err.message : String(err)}. Erreur Fallback: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}` 
+        res.status(422).json({
+          error: `Échec du traitement de l'image. Erreur Sharp: ${err instanceof Error ? err.message : String(err)}. Erreur Fallback: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`,
         })
       }
     }

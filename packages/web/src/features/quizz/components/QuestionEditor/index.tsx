@@ -43,7 +43,6 @@ const QuestionAnswerEditor = () => {
   }
 }
 
-
 const QuestionEditor = () => {
   const { currentQuestion, updateQuestion, currentIndex } = useQuizzEditor()
 
@@ -53,22 +52,26 @@ const QuestionEditor = () => {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <main className="mx-auto flex max-w-7xl flex-1 flex-col gap-4 overflow-y-auto p-6 relative">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <SlideEditor 
-            elements={currentQuestion.elements || []} 
-            onChange={(elements) => updateQuestion(currentIndex, { elements })} 
+      <main className="relative mx-auto flex max-w-7xl flex-1 flex-col gap-4 overflow-y-auto p-6">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <SlideEditor
+            elements={currentQuestion.elements || []}
+            onChange={(elements) => updateQuestion(currentIndex, { elements })}
             background={currentQuestion.background}
             backgroundOpacity={currentQuestion.backgroundOpacity}
           />
         </div>
 
-        <div className="relative z-10 flex flex-col gap-4 flex-1 pointer-events-none">
+        <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
           {currentQuestion.type !== "title" && (
-            <div className="pointer-events-auto"><QuestionEditorTitle /></div>
+            <div className="pointer-events-auto">
+              <QuestionEditorTitle />
+            </div>
           )}
-          <div className="flex-1 pointer-events-none flex flex-col"></div>
-          <div className="pointer-events-auto"><QuestionAnswerEditor /></div>
+          <div className="pointer-events-none flex flex-1 flex-col"></div>
+          <div className="pointer-events-auto">
+            <QuestionAnswerEditor />
+          </div>
         </div>
       </main>
       <QuestionEditorConfig />

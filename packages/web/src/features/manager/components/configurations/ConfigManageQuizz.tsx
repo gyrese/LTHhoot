@@ -45,7 +45,9 @@ const ConfigManageQuizz = () => {
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
 
-    if (!file) {return}
+    if (!file) {
+      return
+    }
 
     const reader = new FileReader()
 
@@ -96,7 +98,10 @@ const ConfigManageQuizz = () => {
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* Toolbar */}
       <div className="flex shrink-0 gap-2">
-        <Button className="flex-1" onClick={() => navigate({ to: "/manager/quizz" })}>
+        <Button
+          className="flex-1"
+          onClick={() => navigate({ to: "/manager/quizz" })}
+        >
           {t("manager:quizz.create")}
         </Button>
         <Button
@@ -112,9 +117,19 @@ const ConfigManageQuizz = () => {
           className="rounded bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"
           title={gridView ? "List view" : "Grid view"}
         >
-          {gridView ? <List className="size-4" /> : <LayoutGrid className="size-4" />}
+          {gridView ? (
+            <List className="size-4" />
+          ) : (
+            <LayoutGrid className="size-4" />
+          )}
         </button>
-        <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleImport}
+        />
       </div>
 
       {/* Search */}
@@ -122,7 +137,7 @@ const ConfigManageQuizz = () => {
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          className="w-full rounded-md border border-gray-200 py-1.5 pl-8 pr-3 text-sm outline-none focus:border-yellow-400"
+          className="w-full rounded-md border border-gray-200 py-1.5 pr-3 pl-8 text-sm outline-none focus:border-yellow-400"
           placeholder={t("manager:quizz.search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -145,7 +160,9 @@ const ConfigManageQuizz = () => {
             <button
               key={folder}
               type="button"
-              onClick={() => setActiveFolder(activeFolder === folder ? null : folder)}
+              onClick={() =>
+                setActiveFolder(activeFolder === folder ? null : folder)
+              }
               className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                 activeFolder === folder
                   ? "bg-yellow-500 text-white"
@@ -181,8 +198,10 @@ const ConfigManageQuizz = () => {
       )}
 
       {/* Quiz list / grid */}
-      <div className={`min-h-0 flex-1 overflow-auto p-0.5 ${gridView ? "grid grid-cols-2 gap-2 content-start" : "space-y-2"}`}>
-        {filtered.map((q) => (
+      <div
+        className={`min-h-0 flex-1 overflow-auto p-0.5 ${gridView ? "grid grid-cols-2 content-start gap-2" : "space-y-2"}`}
+      >
+        {filtered.map((q) =>
           gridView ? (
             <div
               key={q.id}
@@ -190,10 +209,16 @@ const ConfigManageQuizz = () => {
             >
               {q.listingImage && (
                 <div className="mb-2 h-32 w-full shrink-0 overflow-hidden rounded-md bg-gray-100">
-                  <img src={q.listingImage} className="h-full w-full object-cover" alt="" />
+                  <img
+                    src={q.listingImage}
+                    className="h-full w-full object-cover"
+                    alt=""
+                  />
                 </div>
               )}
-              <p className="mb-1 truncate font-semibold text-gray-800">{q.subject}</p>
+              <p className="mb-1 truncate font-semibold text-gray-800">
+                {q.subject}
+              </p>
 
               {q.folder && (
                 <p className="mb-1 flex items-center gap-1 text-xs text-gray-400">
@@ -218,7 +243,12 @@ const ConfigManageQuizz = () => {
               <div className="flex justify-end gap-0.5">
                 <button
                   className="rounded-sm p-1.5 text-gray-500 hover:bg-gray-100"
-                  onClick={() => navigate({ to: "/manager/quizz/$quizzId", params: { quizzId: q.id } })}
+                  onClick={() =>
+                    navigate({
+                      to: "/manager/quizz/$quizzId",
+                      params: { quizzId: q.id },
+                    })
+                  }
                 >
                   <SquarePen className="size-4" />
                 </button>
@@ -229,7 +259,9 @@ const ConfigManageQuizz = () => {
                     </button>
                   }
                   title={t("manager:quizz.delete")}
-                  description={t("manager:quizz.deleteConfirm", { name: q.subject })}
+                  description={t("manager:quizz.deleteConfirm", {
+                    name: q.subject,
+                  })}
                   confirmLabel={t("common:delete")}
                   onConfirm={handleDelete(q.id)}
                 />
@@ -252,7 +284,12 @@ const ConfigManageQuizz = () => {
               <div className="flex gap-0.5">
                 <button
                   className="rounded-sm p-2 text-gray-600 hover:bg-gray-600/10"
-                  onClick={() => navigate({ to: "/manager/quizz/$quizzId", params: { quizzId: q.id } })}
+                  onClick={() =>
+                    navigate({
+                      to: "/manager/quizz/$quizzId",
+                      params: { quizzId: q.id },
+                    })
+                  }
                 >
                   <SquarePen className="size-4" />
                 </button>
@@ -263,14 +300,16 @@ const ConfigManageQuizz = () => {
                     </button>
                   }
                   title={t("manager:quizz.delete")}
-                  description={t("manager:quizz.deleteConfirm", { name: q.subject })}
+                  description={t("manager:quizz.deleteConfirm", {
+                    name: q.subject,
+                  })}
                   confirmLabel={t("common:delete")}
                   onConfirm={handleDelete(q.id)}
                 />
               </div>
             </div>
-          )
-        ))}
+          ),
+        )}
 
         {filtered.length === 0 && (
           <p className="col-span-2 my-8 text-center text-gray-500">

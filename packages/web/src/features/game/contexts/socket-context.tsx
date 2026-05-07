@@ -80,12 +80,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       setSocket(socketClient)
 
       socketClient.on("connect", () => {
-        console.log(`[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)}`)
+        console.log(
+          `[SOCKET] Connecté socket=${socketClient?.id} clientId=${clientId.substring(0, 8)}`,
+        )
         setIsConnected(true)
       })
 
       socketClient.on("disconnect", (reason) => {
-        console.log(`[SOCKET] Déconnecté socket=${socketClient?.id} raison=${reason}`)
+        console.log(
+          `[SOCKET] Déconnecté socket=${socketClient?.id} raison=${reason}`,
+        )
         setIsConnected(false)
       })
 
@@ -156,7 +160,7 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
     }
 
     const stableHandler = (...args: Parameters<ServerToClientEvents[E]>) => {
-      (callbackRef.current as (..._a: unknown[]) => void)(...args)
+      ;(callbackRef.current as (..._a: unknown[]) => void)(...args)
     }
 
     socket.on(event, stableHandler as any)
