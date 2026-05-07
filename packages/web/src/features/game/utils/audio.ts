@@ -18,7 +18,9 @@ export function parseAudio(audio: string): AudioSource {
 }
 
 export function extractYoutubeId(url: string): string | null {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/u)
+  const match = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/u,
+  )
 
   return match?.[1] ?? null
 }

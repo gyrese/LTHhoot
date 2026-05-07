@@ -47,7 +47,11 @@ export class PlayerManager {
 
     this.players.push(player)
     this.io.to(this.getManagerId()).emit(EVENTS.MANAGER.NEW_PLAYER, player)
-    this.io.to(this.gameId).emit(EVENTS.GAME.NEW_PLAYER, { id: player.id, username: player.username, avatar: player.avatar })
+    this.io.to(this.gameId).emit(EVENTS.GAME.NEW_PLAYER, {
+      id: player.id,
+      username: player.username,
+      avatar: player.avatar,
+    })
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
     socket.emit(EVENTS.GAME.SUCCESS_JOIN, this.gameId)
   }
@@ -67,7 +71,9 @@ export class PlayerManager {
 
     this.io.in(playerId).socketsLeave(this.gameId)
     this.io.to(player.id).emit(EVENTS.GAME.RESET, "errors:game.kickedByManager")
-    this.io.to(this.getManagerId()).emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
+    this.io
+      .to(this.getManagerId())
+      .emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
     this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
 

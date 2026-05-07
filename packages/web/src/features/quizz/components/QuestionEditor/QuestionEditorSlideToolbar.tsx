@@ -1,6 +1,11 @@
 import type { SlideBackground } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { parseAudio, extractYoutubeId, mmssToSeconds, secondsToMmss } from "@rahoot/web/features/game/utils/audio"
+import {
+  parseAudio,
+  extractYoutubeId,
+  mmssToSeconds,
+  secondsToMmss,
+} from "@rahoot/web/features/game/utils/audio"
 import { Image, Music, X } from "lucide-react"
 import { useState, useRef, type MouseEvent } from "react"
 import toast from "react-hot-toast"
@@ -71,7 +76,9 @@ export const BackgroundButton = () => {
         onChange={(e) => {
           const file = e.target.files?.[0]
 
-          if (file) { void handleFileUpload(file) }
+          if (file) {
+            void handleFileUpload(file)
+          }
 
           e.target.value = ""
         }}
@@ -88,11 +95,14 @@ export const BackgroundButton = () => {
         className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-sm font-semibold text-gray-700 shadow hover:bg-white"
       >
         {bg?.type === "color" && (
-          <span className="size-4 rounded-full border border-gray-300" style={{ background: bg.value }} />
+          <span
+            className="size-4 rounded-full border border-gray-300"
+            style={{ background: bg.value }}
+          />
         )}
         {bg?.type === "image" && (
-          <span className="size-4 rounded overflow-hidden border border-gray-300">
-            <img src={bg.value} className="w-full h-full object-cover" alt="" />
+          <span className="size-4 overflow-hidden rounded border border-gray-300">
+            <img src={bg.value} className="h-full w-full object-cover" alt="" />
           </span>
         )}
         {!bg && <Image className="size-4" />}
@@ -108,14 +118,20 @@ export const BackgroundButton = () => {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-2 w-76 rounded-xl bg-white p-3 shadow-xl border border-gray-100">
+        <div className="absolute top-full left-0 z-50 mt-2 w-76 rounded-xl border border-gray-100 bg-white p-3 shadow-xl">
           <div className="mb-3 flex gap-1">
-            <button type="button" onClick={() => setTab("color")}
-              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "color" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button
+              type="button"
+              onClick={() => setTab("color")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "color" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
               {t("quizz:bgColor")}
             </button>
-            <button type="button" onClick={() => setTab("image")}
-              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "image" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button
+              type="button"
+              onClick={() => setTab("image")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "image" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
               {t("quizz:bgImage")}
             </button>
           </div>
@@ -126,10 +142,13 @@ export const BackgroundButton = () => {
                 type="color"
                 value={colorInput}
                 onChange={(e) => setColorInput(e.target.value)}
-                className="w-full h-12 rounded border border-gray-200 cursor-pointer"
+                className="h-12 w-full cursor-pointer rounded border border-gray-200"
               />
-              <button type="button" onClick={handleSaveColor}
-                className="w-full rounded bg-yellow-500 py-1.5 text-xs font-semibold text-white hover:bg-yellow-600">
+              <button
+                type="button"
+                onClick={handleSaveColor}
+                className="w-full rounded bg-yellow-500 py-1.5 text-xs font-semibold text-white hover:bg-yellow-600"
+              >
                 {t("common:save")}
               </button>
             </div>
@@ -144,7 +163,7 @@ export const BackgroundButton = () => {
                 {uploading ? t("quizz:uploading") : t("quizz:uploadFromPC")}
               </button>
 
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
                 <div className="flex-1 border-t border-gray-200" />
                 {t("quizz:or")}
                 <div className="flex-1 border-t border-gray-200" />
@@ -165,17 +184,26 @@ export const BackgroundButton = () => {
                   src={urlInput}
                   alt="preview"
                   className="h-20 w-full rounded object-cover"
-                  onError={(e) => { e.currentTarget.style.display = "none" }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none"
+                  }}
                 />
               )}
 
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setOpen(false)}
-                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+                >
                   {t("common:cancel")}
                 </button>
-                <button type="button" onClick={handleSaveUrl} disabled={!urlInput.trim()}
-                  className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600 disabled:opacity-40">
+                <button
+                  type="button"
+                  onClick={handleSaveUrl}
+                  disabled={!urlInput.trim()}
+                  className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600 disabled:opacity-40"
+                >
                   {t("common:save")}
                 </button>
               </div>
@@ -264,22 +292,30 @@ export const AudioButton = () => {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-2 w-80 rounded-xl bg-white p-3 shadow-lg border border-gray-100">
+        <div className="absolute top-full left-0 z-50 mt-2 w-80 rounded-xl border border-gray-100 bg-white p-3 shadow-lg">
           {/* Onglets */}
           <div className="mb-3 flex gap-1">
-            <button type="button" onClick={() => setTab("file")}
-              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "file" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button
+              type="button"
+              onClick={() => setTab("file")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "file" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
               URL audio
             </button>
-            <button type="button" onClick={() => setTab("youtube")}
-              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "youtube" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button
+              type="button"
+              onClick={() => setTab("youtube")}
+              className={`flex-1 rounded py-1 text-xs font-semibold ${tab === "youtube" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
               YouTube
             </button>
           </div>
 
           {tab === "file" ? (
             <>
-              <p className="mb-2 text-xs font-semibold text-gray-500">{t("quizz:slideUrlLabel")}</p>
+              <p className="mb-2 text-xs font-semibold text-gray-500">
+                {t("quizz:slideUrlLabel")}
+              </p>
               <input
                 autoFocus
                 type="url"
@@ -290,19 +326,27 @@ export const AudioButton = () => {
                 onKeyDown={(e) => e.key === "Enter" && handleSaveFile()}
               />
               <div className="mt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setOpen(false)}
-                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+                >
                   {t("common:cancel")}
                 </button>
-                <button type="button" onClick={handleSaveFile}
-                  className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600">
+                <button
+                  type="button"
+                  onClick={handleSaveFile}
+                  className="rounded bg-yellow-500 px-2 py-1 text-xs font-semibold text-white hover:bg-yellow-600"
+                >
                   {t("common:save")}
                 </button>
               </div>
             </>
           ) : (
             <>
-              <p className="mb-2 text-xs font-semibold text-gray-500">URL YouTube</p>
+              <p className="mb-2 text-xs font-semibold text-gray-500">
+                URL YouTube
+              </p>
               <input
                 autoFocus
                 type="url"
@@ -316,7 +360,7 @@ export const AudioButton = () => {
                   <p className="mb-1 text-xs text-gray-400">Début</p>
                   <input
                     type="text"
-                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400 font-mono"
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 font-mono text-sm outline-none focus:border-red-400"
                     placeholder="00:00"
                     value={ytStart}
                     onChange={(e) => setYtStart(e.target.value)}
@@ -326,7 +370,7 @@ export const AudioButton = () => {
                   <p className="mb-1 text-xs text-gray-400">Fin (optionnel)</p>
                   <input
                     type="text"
-                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400 font-mono"
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 font-mono text-sm outline-none focus:border-red-400"
                     placeholder="mm:ss"
                     value={ytEnd}
                     onChange={(e) => setYtEnd(e.target.value)}
@@ -334,12 +378,19 @@ export const AudioButton = () => {
                 </div>
               </div>
               <div className="mt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setOpen(false)}
-                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+                >
                   {t("common:cancel")}
                 </button>
-                <button type="button" onClick={handleSaveYoutube} disabled={!extractYoutubeId(ytUrl.trim())}
-                  className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-40">
+                <button
+                  type="button"
+                  onClick={handleSaveYoutube}
+                  disabled={!extractYoutubeId(ytUrl.trim())}
+                  className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-40"
+                >
                   {t("common:save")}
                 </button>
               </div>
@@ -352,10 +403,10 @@ export const AudioButton = () => {
 }
 
 const QuestionEditorSlideToolbar = () => (
-    <div className="z-10 flex flex-wrap gap-2 border-t border-white/20 pt-3">
-      <BackgroundButton />
-      <AudioButton />
-    </div>
-  )
+  <div className="z-10 flex flex-wrap gap-2 border-t border-white/20 pt-3">
+    <BackgroundButton />
+    <AudioButton />
+  </div>
+)
 
 export default QuestionEditorSlideToolbar

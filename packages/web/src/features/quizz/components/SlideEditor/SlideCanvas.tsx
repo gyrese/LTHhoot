@@ -1,8 +1,22 @@
-import { type SlideElement, type SlideBackground } from "@rahoot/common/types/game"
+import {
+  type SlideElement,
+  type SlideBackground,
+} from "@rahoot/common/types/game"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
 import React, { useRef, useState, useEffect } from "react"
-import { createImageElement, createTextElement } from "@rahoot/web/features/quizz/utils/element-factory"
-import { Stage, Layer, Text, Rect, Transformer, Group, Image as KonvaImage } from "react-konva"
+import {
+  createImageElement,
+  createTextElement,
+} from "@rahoot/web/features/quizz/utils/element-factory"
+import {
+  Stage,
+  Layer,
+  Text,
+  Rect,
+  Transformer,
+  Group,
+  Image as KonvaImage,
+} from "react-konva"
 import type Konva from "konva"
 import type { KonvaEventObject } from "konva/lib/Node"
 
@@ -88,7 +102,11 @@ const SlideCanvas = ({
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>, id: string) => {
     const node = e.target
-    onChange(elements.map((el) => el.id === id ? { ...el, x: node.x(), y: node.y() } : el))
+    onChange(
+      elements.map((el) =>
+        el.id === id ? { ...el, x: node.x(), y: node.y() } : el,
+      ),
+    )
   }
 
   const handleTransformEnd = (e: KonvaEventObject<Event>, id: string) => {
@@ -97,30 +115,36 @@ const SlideCanvas = ({
     const scaleY = node.scaleY()
     node.scaleX(1)
     node.scaleY(1)
-    onChange(elements.map((el) => {
-      if (el.id !== id) return el
-      if (el.type === "text") {
+    onChange(
+      elements.map((el) => {
+        if (el.id !== id) return el
+        if (el.type === "text") {
+          return {
+            ...el,
+            x: node.x(),
+            y: node.y(),
+            width: Math.max(5, node.width() * scaleX),
+            height: Math.max(5, node.height() * scaleY),
+            fontSize: el.fontSize * scaleY,
+            rotation: node.rotation(),
+          }
+        }
         return {
           ...el,
-          x: node.x(), y: node.y(),
+          x: node.x(),
+          y: node.y(),
           width: Math.max(5, node.width() * scaleX),
           height: Math.max(5, node.height() * scaleY),
-          fontSize: el.fontSize * scaleY,
           rotation: node.rotation(),
         }
-      }
-      return {
-        ...el,
-        x: node.x(), y: node.y(),
-        width: Math.max(5, node.width() * scaleX),
-        height: Math.max(5, node.height() * scaleY),
-        rotation: node.rotation(),
-      }
-    }))
+      }),
+    )
   }
 
   const hasBackground = !!background
-  const bgImage = useSimpleImage(background?.type === "image" ? background.value : slideBg)
+  const bgImage = useSimpleImage(
+    background?.type === "image" ? background.value : slideBg,
+  )
   const bgColor = background?.type === "color" ? background.value : undefined
   const bgOpacity = backgroundOpacity ?? (background ? 1 : 0.5)
   const defaultBgImage = useSimpleImage("/bg-salon.png")
@@ -128,15 +152,33 @@ const SlideCanvas = ({
   const [editingId, setEditingId] = useState<string | undefined>()
 
   // Ref to avoid stale closures in the paste listener
-  const pasteStateRef = useRef({ elements, onChange, onSelect, readOnly, editingId: undefined as string | undefined })
+  const pasteStateRef = useRef({
+    elements,
+    onChange,
+    onSelect,
+    readOnly,
+    editingId: undefined as string | undefined,
+  })
 
   useEffect(() => {
-    pasteStateRef.current = { elements, onChange, onSelect, readOnly, editingId }
+    pasteStateRef.current = {
+      elements,
+      onChange,
+      onSelect,
+      readOnly,
+      editingId,
+    }
   })
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      const { elements: els, onChange: change, onSelect: select, readOnly: ro, editingId: editing } = pasteStateRef.current
+      const {
+        elements: els,
+        onChange: change,
+        onSelect: select,
+        readOnly: ro,
+        editingId: editing,
+      } = pasteStateRef.current
 
       if (ro || editing) {
         return
@@ -305,7 +347,9 @@ const SlideCanvas = ({
       return
     }
 
-    const files = Array.from(e.dataTransfer.files).filter((f: File) => f.type.startsWith("image/"))
+    const files = Array.from(e.dataTransfer.files).filter((f: File) =>
+      f.type.startsWith("image/"),
+    )
 
     if (!files.length) {
       return
@@ -320,7 +364,10 @@ const SlideCanvas = ({
 
   return (
     // Outer: fills available space, observed for size
-    <div ref={outerRef} className="w-full h-full flex items-center justify-center">
+    <div
+      ref={outerRef}
+      className="flex h-full w-full items-center justify-center"
+    >
       {canvasSize.width > 0 && (
         // Inner: exact 16:9 dimensions, anchors all overlays
         <div
@@ -337,7 +384,10 @@ const SlideCanvas = ({
             height={canvasSize.height}
             onMouseDown={(e) => {
               checkDeselect(e)
-              if (e.target === e.target.getStage() || e.target.id() !== editingId) {
+              if (
+                e.target === e.target.getStage() ||
+                e.target.id() !== editingId
+              ) {
                 setEditingId(undefined)
               }
             }}
@@ -358,16 +408,31 @@ const SlideCanvas = ({
                     <>
                       <Rect width={CANVAS_W} height={CANVAS_H} fill="#000000" />
                       {bgColor ? (
-                        <Rect width={CANVAS_W} height={CANVAS_H} fill={bgColor} opacity={bgOpacity} />
+                        <Rect
+                          width={CANVAS_W}
+                          height={CANVAS_H}
+                          fill={bgColor}
+                          opacity={bgOpacity}
+                        />
                       ) : (
-                        <KonvaImage image={bgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={bgOpacity} />
+                        <KonvaImage
+                          image={bgImage || undefined}
+                          width={CANVAS_W}
+                          height={CANVAS_H}
+                          opacity={bgOpacity}
+                        />
                       )}
                     </>
                   ) : (
                     <>
                       {/* Fond par défaut : dark base + salon à 50% */}
                       <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
-                      <KonvaImage image={defaultBgImage || undefined} width={CANVAS_W} height={CANVAS_H} opacity={0.5} />
+                      <KonvaImage
+                        image={defaultBgImage || undefined}
+                        width={CANVAS_W}
+                        height={CANVAS_H}
+                        opacity={0.5}
+                      />
                     </>
                   )}
                 </>
@@ -378,13 +443,24 @@ const SlideCanvas = ({
                   const isEditing = editingId === el.id
                   return (
                     <Text
-                      key={el.id} id={el.id}
-                      x={el.x} y={el.y} width={el.width} height={el.height}
-                      rotation={el.rotation} text={isEditing ? "" : el.text}
-                      fontSize={el.fontSize} fontFamily={el.fontFamily}
-                      fill={el.fill || "#000"} align={el.align}
-                      draggable={!isEditing} visible={!isEditing}
-                      onClick={() => { if (selectedId === el.id) setEditingId(el.id); onSelect(el.id) }}
+                      key={el.id}
+                      id={el.id}
+                      x={el.x}
+                      y={el.y}
+                      width={el.width}
+                      height={el.height}
+                      rotation={el.rotation}
+                      text={isEditing ? "" : el.text}
+                      fontSize={el.fontSize}
+                      fontFamily={el.fontFamily}
+                      fill={el.fill || "#000"}
+                      align={el.align}
+                      draggable={!isEditing}
+                      visible={!isEditing}
+                      onClick={() => {
+                        if (selectedId === el.id) setEditingId(el.id)
+                        onSelect(el.id)
+                      }}
                       onDblClick={() => setEditingId(el.id)}
                       onTap={() => onSelect(el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
@@ -396,10 +472,17 @@ const SlideCanvas = ({
                 if (el.type === "shape" && el.shapeType === "rect") {
                   return (
                     <Rect
-                      key={el.id} id={el.id}
-                      x={el.x} y={el.y} width={el.width} height={el.height}
-                      rotation={el.rotation} fill={el.fill || "#ccc"} draggable
-                      onClick={() => onSelect(el.id)} onTap={() => onSelect(el.id)}
+                      key={el.id}
+                      id={el.id}
+                      x={el.x}
+                      y={el.y}
+                      width={el.width}
+                      height={el.height}
+                      rotation={el.rotation}
+                      fill={el.fill || "#ccc"}
+                      draggable
+                      onClick={() => onSelect(el.id)}
+                      onTap={() => onSelect(el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
                     />
@@ -408,16 +491,24 @@ const SlideCanvas = ({
 
                 if (el.type === "image") {
                   return (
-                    <CanvasImageElement key={el.id} el={el}
-                      onSelect={onSelect} handleDragEnd={handleDragEnd} handleTransformEnd={handleTransformEnd}
+                    <CanvasImageElement
+                      key={el.id}
+                      el={el}
+                      onSelect={onSelect}
+                      handleDragEnd={handleDragEnd}
+                      handleTransformEnd={handleTransformEnd}
                     />
                   )
                 }
 
                 if (el.type === "youtube" && !readOnly) {
                   return (
-                    <CanvasYoutubeElement key={el.id} el={el}
-                      onSelect={onSelect} handleDragEnd={handleDragEnd} handleTransformEnd={handleTransformEnd}
+                    <CanvasYoutubeElement
+                      key={el.id}
+                      el={el}
+                      onSelect={onSelect}
+                      handleDragEnd={handleDragEnd}
+                      handleTransformEnd={handleTransformEnd}
                     />
                   )
                 }
@@ -430,37 +521,42 @@ const SlideCanvas = ({
           </Stage>
 
           {/* Text editing overlay — positioned relative to the 16:9 inner div */}
-          {!readOnly && editingId && (() => {
-            const el = elements.find((e) => e.id === editingId)
-            if (!el || el.type !== "text") return null
-            return (
-              <textarea
-                autoFocus
-                className="absolute z-50 bg-transparent border-none p-0 m-0 outline-none resize-none overflow-hidden"
-                value={el.text}
-                onChange={(e) => handleTextChange(el.id, e.target.value)}
-                onBlur={() => setEditingId(undefined)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) setEditingId(undefined) }}
-                style={{
-                  left: el.x * scale,
-                  top: el.y * scale,
-                  width: el.width * scale,
-                  height: (el.height || 100) * scale,
-                  fontSize: el.fontSize * scale,
-                  fontFamily: el.fontFamily || "Arial",
-                  color: el.fill || "#000",
-                  textAlign: el.align,
-                  transform: `rotate(${el.rotation}deg)`,
-                  transformOrigin: "top left",
-                  lineHeight: 1.2,
-                }}
-              />
-            )
-          })()}
+          {!readOnly &&
+            editingId &&
+            (() => {
+              const el = elements.find((e) => e.id === editingId)
+              if (!el || el.type !== "text") return null
+              return (
+                <textarea
+                  autoFocus
+                  className="absolute z-50 m-0 resize-none overflow-hidden border-none bg-transparent p-0 outline-none"
+                  value={el.text}
+                  onChange={(e) => handleTextChange(el.id, e.target.value)}
+                  onBlur={() => setEditingId(undefined)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey)
+                      setEditingId(undefined)
+                  }}
+                  style={{
+                    left: el.x * scale,
+                    top: el.y * scale,
+                    width: el.width * scale,
+                    height: (el.height || 100) * scale,
+                    fontSize: el.fontSize * scale,
+                    fontFamily: el.fontFamily || "Arial",
+                    color: el.fill || "#000",
+                    textAlign: el.align,
+                    transform: `rotate(${el.rotation}deg)`,
+                    transformOrigin: "top left",
+                    lineHeight: 1.2,
+                  }}
+                />
+              )
+            })()}
 
           {/* Drop zone overlay */}
           {isDraggingFile && (
-            <div className="absolute inset-0 z-50 pointer-events-none rounded-lg border-4 border-dashed border-blue-400 bg-blue-400/10 flex items-center justify-center">
+            <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-4 border-dashed border-blue-400 bg-blue-400/10">
               <div className="rounded-lg bg-white/90 px-6 py-3 text-base font-semibold text-blue-600 shadow-lg">
                 Déposer l'image ici
               </div>
@@ -468,40 +564,44 @@ const SlideCanvas = ({
           )}
 
           {/* YouTube iframes in readOnly — positioned relative to the 16:9 inner div */}
-          {readOnly && elements
-            .filter((el): el is Extract<SlideElement, { type: "youtube" }> => el.type === "youtube")
-            .map((el) => {
-              const params = new URLSearchParams({
-                autoplay: el.autoplay ? "1" : "0",
-                mute: el.mute ? "1" : "0",
-                loop: el.loop ? "1" : "0",
-                controls: el.controls ? "1" : "0",
-                rel: "0",
-                playsinline: "1",
-              })
-              if (el.loop) params.set("playlist", el.videoId)
-              if (el.startTime) params.set("start", String(el.startTime))
-              if (el.endTime) params.set("end", String(el.endTime))
-              return (
-                <iframe
-                  key={el.id}
-                  src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute rounded-md"
-                  style={{
-                    left: el.x * scale,
-                    top: el.y * scale,
-                    width: el.width * scale,
-                    height: el.height * scale,
-                    transform: `rotate(${el.rotation}deg)`,
-                    transformOrigin: "top left",
-                    opacity: el.opacity,
-                    pointerEvents: "auto",
-                  }}
-                />
+          {readOnly &&
+            elements
+              .filter(
+                (el): el is Extract<SlideElement, { type: "youtube" }> =>
+                  el.type === "youtube",
               )
-            })}
+              .map((el) => {
+                const params = new URLSearchParams({
+                  autoplay: el.autoplay ? "1" : "0",
+                  mute: el.mute ? "1" : "0",
+                  loop: el.loop ? "1" : "0",
+                  controls: el.controls ? "1" : "0",
+                  rel: "0",
+                  playsinline: "1",
+                })
+                if (el.loop) params.set("playlist", el.videoId)
+                if (el.startTime) params.set("start", String(el.startTime))
+                if (el.endTime) params.set("end", String(el.endTime))
+                return (
+                  <iframe
+                    key={el.id}
+                    src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute rounded-md"
+                    style={{
+                      left: el.x * scale,
+                      top: el.y * scale,
+                      width: el.width * scale,
+                      height: el.height * scale,
+                      transform: `rotate(${el.rotation}deg)`,
+                      transformOrigin: "top left",
+                      opacity: el.opacity,
+                      pointerEvents: "auto",
+                    }}
+                  />
+                )
+              })}
         </div>
       )}
     </div>
@@ -519,7 +619,12 @@ const useSimpleImage = (url: string) => {
   return image
 }
 
-const CanvasImageElement = ({ el, onSelect, handleDragEnd, handleTransformEnd }: {
+const CanvasImageElement = ({
+  el,
+  onSelect,
+  handleDragEnd,
+  handleTransformEnd,
+}: {
   el: Extract<SlideElement, { type: "image" }>
   onSelect: (_id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
@@ -528,35 +633,75 @@ const CanvasImageElement = ({ el, onSelect, handleDragEnd, handleTransformEnd }:
   const image = useSimpleImage(el.url)
   return (
     <KonvaImage
-      id={el.id} image={image || undefined}
-      x={el.x} y={el.y} width={el.width} height={el.height}
-      rotation={el.rotation} opacity={el.opacity} draggable
-      onClick={() => onSelect(el.id)} onTap={() => onSelect(el.id)}
+      id={el.id}
+      image={image || undefined}
+      x={el.x}
+      y={el.y}
+      width={el.width}
+      height={el.height}
+      rotation={el.rotation}
+      opacity={el.opacity}
+      draggable
+      onClick={() => onSelect(el.id)}
+      onTap={() => onSelect(el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
     />
   )
 }
 
-const CanvasYoutubeElement = ({ el, onSelect, handleDragEnd, handleTransformEnd }: {
+const CanvasYoutubeElement = ({
+  el,
+  onSelect,
+  handleDragEnd,
+  handleTransformEnd,
+}: {
   el: Extract<SlideElement, { type: "youtube" }>
   onSelect: (_id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
 }) => {
-  const image = useSimpleImage(`https://img.youtube.com/vi/${el.videoId}/hqdefault.jpg`)
+  const image = useSimpleImage(
+    `https://img.youtube.com/vi/${el.videoId}/hqdefault.jpg`,
+  )
   return (
     <Group
-      id={el.id} x={el.x} y={el.y} width={el.width} height={el.height}
-      rotation={el.rotation} draggable
-      onClick={() => onSelect(el.id)} onTap={() => onSelect(el.id)}
+      id={el.id}
+      x={el.x}
+      y={el.y}
+      width={el.width}
+      height={el.height}
+      rotation={el.rotation}
+      draggable
+      onClick={() => onSelect(el.id)}
+      onTap={() => onSelect(el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
     >
       <Rect width={el.width} height={el.height} fill="#000" cornerRadius={8} />
-      {image && <KonvaImage image={image} width={el.width} height={el.height} opacity={0.8} />}
-      <Rect x={el.width / 2 - 30} y={el.height / 2 - 20} width={60} height={40} fill="#ff0000" cornerRadius={8} />
-      <Text text="▶" fill="#ffffff" fontSize={24} x={el.width / 2 - 10} y={el.height / 2 - 12} />
+      {image && (
+        <KonvaImage
+          image={image}
+          width={el.width}
+          height={el.height}
+          opacity={0.8}
+        />
+      )}
+      <Rect
+        x={el.width / 2 - 30}
+        y={el.height / 2 - 20}
+        width={60}
+        height={40}
+        fill="#ff0000"
+        cornerRadius={8}
+      />
+      <Text
+        text="▶"
+        fill="#ffffff"
+        fontSize={24}
+        x={el.width / 2 - 10}
+        y={el.height / 2 - 12}
+      />
     </Group>
   )
 }

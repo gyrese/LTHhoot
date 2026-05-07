@@ -35,8 +35,10 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
   const rankKey =
     typeof rank === "number" ? (rankKeyMap[rank] ?? "game:rank.other") : null
 
-  const avatarBorder = (typeof rank === "number" && AVATAR_BORDER[rank]) || "border-white/50"
-  const rankColor = (typeof rank === "number" && RANK_COLOR[rank]) || "text-white"
+  const avatarBorder =
+    (typeof rank === "number" && AVATAR_BORDER[rank]) || "border-white/50"
+  const rankColor =
+    (typeof rank === "number" && RANK_COLOR[rank]) || "text-white"
   const isTopThree = typeof rank === "number" && rank <= 3
   const isLastPlace =
     typeof rank === "number" &&

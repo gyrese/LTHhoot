@@ -17,7 +17,19 @@ const DEFAULT_BG: CSSProperties = {
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
 
-const Question = ({ data: { question, type, media, background, backgroundOpacity, elements, audio, cooldown, pinImage } }: Props) => {
+const Question = ({
+  data: {
+    question,
+    type,
+    media,
+    background,
+    backgroundOpacity,
+    elements,
+    audio,
+    cooldown,
+    pinImage,
+  },
+}: Props) => {
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
 
   useEffect(() => {
@@ -27,7 +39,11 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
   let bgStyle: CSSProperties = DEFAULT_BG
 
   if (background?.type === "image") {
-    bgStyle = { backgroundImage: `url(${background.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+    bgStyle = {
+      backgroundImage: `url(${background.value})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    }
   } else if (background?.type === "color") {
     bgStyle = { backgroundColor: background.value }
   }
@@ -41,7 +57,7 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
       />
 
       {elements && elements.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
             elements={elements}
             onChange={noopChange}
@@ -65,7 +81,14 @@ const Question = ({ data: { question, type, media, background, backgroundOpacity
 
       <section className="relative mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center px-4">
         <div className="flex flex-1 flex-col items-center justify-center gap-5">
-          <QuestionMedia media={type === "drop_pin" && pinImage ? { type: "image", url: pinImage } : media} alt={question} />
+          <QuestionMedia
+            media={
+              type === "drop_pin" && pinImage
+                ? { type: "image", url: pinImage }
+                : media
+            }
+            alt={question}
+          />
         </div>
         {type !== "title" && (
           <div

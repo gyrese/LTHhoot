@@ -48,7 +48,11 @@ export interface ServerToClientEvents {
     total: number
   }) => void
   [EVENTS.GAME.PLAYER_ANSWER]: (_count: number) => void
-  [EVENTS.GAME.NEW_PLAYER]: (_player: { id: string; username: string; avatar?: string }) => void
+  [EVENTS.GAME.NEW_PLAYER]: (_player: {
+    id: string
+    username: string
+    avatar?: string
+  }) => void
   [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
 
   // Player events
@@ -103,6 +107,7 @@ export interface ClientToServerEvents {
     playerId: string
   }) => void
   [EVENTS.MANAGER.START_GAME]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.START_DEMO]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.ABORT_QUIZ]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
@@ -118,7 +123,10 @@ export interface ClientToServerEvents {
   [EVENTS.QUIZZ.SAVE]: (_quizz: Quizz) => void
   [EVENTS.QUIZZ.UPDATE]: (_data: QuizzWithId) => void
   [EVENTS.QUIZZ.DELETE]: (_id: string) => void
-  [EVENTS.QUIZZ.MOVE_FOLDER]: (_data: { id: string; folder: string | null }) => void
+  [EVENTS.QUIZZ.MOVE_FOLDER]: (_data: {
+    id: string
+    folder: string | null
+  }) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void

@@ -24,7 +24,9 @@ const QuestionEditorDropPin = () => {
       const formData = new FormData()
       formData.append("image", file)
       const res = await fetch("/upload", { method: "POST", body: formData })
-      if (!res.ok) { throw new Error("Upload failed") }
+      if (!res.ok) {
+        throw new Error("Upload failed")
+      }
       const data = (await res.json()) as { url: string }
       updateQuestion(currentIndex, { pinImage: data.url, zones: [] })
     } catch {
@@ -36,20 +38,34 @@ const QuestionEditorDropPin = () => {
 
   const imgRef = useRef<HTMLImageElement>(null)
 
-  const handleImageClick = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+  const handleImageClick = (
+    e: React.MouseEvent | React.TouchEvent | React.PointerEvent,
+  ) => {
     e.preventDefault()
-    
+
     if (!imgRef.current) return
 
     // Support both mouse and touch events
-    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX
-    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY
+    const clientX =
+      "touches" in e
+        ? (e as React.TouchEvent).touches[0].clientX
+        : (e as React.MouseEvent).clientX
+    const clientY =
+      "touches" in e
+        ? (e as React.TouchEvent).touches[0].clientY
+        : (e as React.MouseEvent).clientY
 
     const rect = imgRef.current.getBoundingClientRect()
-    
+
     // Clamp to 0-100%
-    const xPct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
-    const yPct = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
+    const xPct = Math.max(
+      0,
+      Math.min(100, ((clientX - rect.left) / rect.width) * 100),
+    )
+    const yPct = Math.max(
+      0,
+      Math.min(100, ((clientY - rect.top) / rect.height) * 100),
+    )
 
     if (isNaN(xPct) || isNaN(yPct)) {
       toast.error("Erreur: Impossible de calculer la position.")
@@ -76,17 +92,21 @@ const QuestionEditorDropPin = () => {
   const pin = q.zones?.[0]
 
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+    <div className="animate-in fade-in slide-in-from-bottom-4 flex min-h-0 w-full flex-1 flex-col gap-6 duration-500">
       {/* 🚀 PRO MAX UX: Giant Empty State Drag & Drop Zone */}
       {!q.pinImage && (
-        <div 
+        <div
           className={clsx(
-            "flex flex-col items-center justify-center flex-1 rounded-3xl border-2 border-dashed transition-all duration-300 group cursor-pointer overflow-hidden min-h-[50vh]",
-            isDragging ? "border-purple-500 bg-purple-500/10 scale-[0.98]" : "border-white/20 bg-black/20 hover:bg-black/40 hover:border-white/40"
+            "group flex min-h-[50vh] flex-1 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300",
+            isDragging
+              ? "scale-[0.98] border-purple-500 bg-purple-500/10"
+              : "border-white/20 bg-black/20 hover:border-white/40 hover:bg-black/40",
           )}
           onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setIsDragging(true)
+          }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => {
             e.preventDefault()
@@ -102,23 +122,35 @@ const QuestionEditorDropPin = () => {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) { void handleFileUpload(file) }
+              if (file) {
+                void handleFileUpload(file)
+              }
               e.target.value = ""
             }}
           />
-          <div className="flex flex-col items-center gap-6 text-center p-8 z-10">
+          <div className="z-10 flex flex-col items-center gap-6 p-8 text-center">
             <div className="relative">
-              <div className="absolute inset-0 bg-purple-500 blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full" />
-              <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-2xl backdrop-blur-sm relative">
-                <UploadCloud className={clsx("w-12 h-12 transition-colors duration-500", isDragging ? "text-purple-400" : "text-white/60 group-hover:text-white")} />
+              <div className="absolute inset-0 rounded-full bg-purple-500 opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40" />
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-transform duration-500 group-hover:scale-110">
+                <UploadCloud
+                  className={clsx(
+                    "h-12 w-12 transition-colors duration-500",
+                    isDragging
+                      ? "text-purple-400"
+                      : "text-white/60 group-hover:text-white",
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-white tracking-tight">
-                {uploading ? "Création de la magie..." : "Glissez l'image cible ici"}
+              <h3 className="text-2xl font-bold tracking-tight text-white">
+                {uploading
+                  ? "Création de la magie..."
+                  : "Glissez l'image cible ici"}
               </h3>
-              <p className="text-white/50 text-base max-w-md mx-auto">
-                Ou cliquez pour parcourir. Choisissez une image sur laquelle vos joueurs devront placer leur épingle.
+              <p className="mx-auto max-w-md text-base text-white/50">
+                Ou cliquez pour parcourir. Choisissez une image sur laquelle vos
+                joueurs devront placer leur épingle.
               </p>
             </div>
           </div>
@@ -127,25 +159,28 @@ const QuestionEditorDropPin = () => {
 
       {/* 🚀 PRO MAX UX: Image & Pin Placement Layout */}
       {q.pinImage && (
-        <div className="flex flex-col flex-1 min-h-0 gap-4">
-          
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           {/* Glassmorphic Top Toolbar */}
-          <div className="flex items-center justify-between shrink-0 bg-black/30 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 shadow-2xl">
+          <div className="flex shrink-0 items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-5 py-3 shadow-2xl backdrop-blur-xl">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                <Crosshair className="w-5 h-5 text-blue-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/20">
+                <Crosshair className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <h4 className="text-base font-bold text-white leading-tight">Définir la cible</h4>
-                <p className="text-xs text-white/60 mt-0.5">Cliquez n'importe où sur l'image pour positionner l'épingle.</p>
+                <h4 className="text-base leading-tight font-bold text-white">
+                  Définir la cible
+                </h4>
+                <p className="mt-0.5 text-xs text-white/60">
+                  Cliquez n'importe où sur l'image pour positionner l'épingle.
+                </p>
               </div>
             </div>
-            
+
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2.5 bg-white/5 hover:bg-white/15 border border-white/10 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2 shadow-lg"
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-white/15"
             >
-              <ImagePlus className="w-4 h-4" />
+              <ImagePlus className="h-4 w-4" />
               Changer l'image
             </button>
           </div>
@@ -157,55 +192,56 @@ const QuestionEditorDropPin = () => {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) { void handleFileUpload(file) }
+              if (file) {
+                void handleFileUpload(file)
+              }
               e.target.value = ""
             }}
           />
 
           {/* Interactive Canvas Container */}
-          <div 
-            className="relative flex-1 min-h-0 w-full rounded-3xl overflow-hidden bg-black/40 border border-white/5 shadow-[inset_0_2px_20px_rgba(0,0,0,0.5)] flex items-center justify-center cursor-crosshair touch-none select-none"
+          <div
+            className="relative flex min-h-0 w-full flex-1 cursor-crosshair touch-none items-center justify-center overflow-hidden rounded-3xl border border-white/5 bg-black/40 shadow-[inset_0_2px_20px_rgba(0,0,0,0.5)] select-none"
             onPointerDown={handleImageClick}
           >
-            
             {/* Hint Overlay (Disappears once pinned) */}
             {!pin && (
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-10 transition-opacity duration-500">
-                <div className="px-6 py-4 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl text-white font-bold text-lg flex items-center gap-3 shadow-2xl animate-pulse">
-                  <MapPin className="w-6 h-6 text-blue-400" />
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity duration-500">
+                <div className="flex animate-pulse items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-6 py-4 text-lg font-bold text-white shadow-2xl backdrop-blur-xl">
+                  <MapPin className="h-6 w-6 text-blue-400" />
                   Cliquez pour placer l'épingle cible
                 </div>
               </div>
             )}
 
-            <div className="relative inline-block max-w-full max-h-full pointer-events-none">
-              <img 
+            <div className="pointer-events-none relative inline-block max-h-full max-w-full">
+              <img
                 ref={imgRef}
-                src={q.pinImage} 
-                alt="Target" 
-                className="block max-h-[60vh] max-w-full w-auto h-auto object-contain select-none rounded-xl"
+                src={q.pinImage}
+                alt="Target"
+                className="block h-auto max-h-[60vh] w-auto max-w-full rounded-xl object-contain select-none"
                 draggable={false}
               />
 
               {/* The Map Pin */}
               {pin && (
                 <div
-                  className="absolute z-20 pointer-events-none"
+                  className="pointer-events-none absolute z-20"
                   style={{
                     left: `${pin.x}%`,
                     top: `${pin.y}%`,
-                    transform: 'translate(-50%, -100%)', // Align pin tip exactly on coordinate
+                    transform: "translate(-50%, -100%)", // Align pin tip exactly on coordinate
                   }}
                 >
-                  <div className="relative animate-in zoom-in-50 duration-300 origin-bottom">
+                  <div className="animate-in zoom-in-50 relative origin-bottom duration-300">
                     {/* Pulsing ring underneath */}
-                    <div className="absolute -bottom-1 -translate-x-1/2 left-1/2 w-6 h-6 bg-red-500/40 rounded-full animate-ping" />
-                    
+                    <div className="absolute -bottom-1 left-1/2 h-6 w-6 -translate-x-1/2 animate-ping rounded-full bg-red-500/40" />
+
                     {/* Physical Pin Icon */}
-                    <MapPin className="w-12 h-12 text-red-500 fill-red-500 drop-shadow-[0_10px_10px_rgba(0,0,0,0.6)]" />
-                    
+                    <MapPin className="h-12 w-12 fill-red-500 text-red-500 drop-shadow-[0_10px_10px_rgba(0,0,0,0.6)]" />
+
                     {/* Sleek Tooltip */}
-                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-xl px-4 py-1.5 rounded-xl border border-white/10 text-xs font-bold text-white whitespace-nowrap shadow-2xl">
+                    <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 rounded-xl border border-white/10 bg-black/90 px-4 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-2xl backdrop-blur-xl">
                       Cible Enregistrée
                     </div>
                   </div>
@@ -215,31 +251,36 @@ const QuestionEditorDropPin = () => {
           </div>
 
           {/* Success / Info Panel */}
-          <div className={clsx(
-            "shrink-0 transition-all duration-500 overflow-hidden",
-            pin ? "h-[76px] opacity-100" : "h-0 opacity-0"
-          )}>
-            <div className="h-full bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-2xl px-5 flex items-center justify-between backdrop-blur-md">
+          <div
+            className={clsx(
+              "shrink-0 overflow-hidden transition-all duration-500",
+              pin ? "h-[76px] opacity-100" : "h-0 opacity-0",
+            )}
+          >
+            <div className="flex h-full items-center justify-between rounded-2xl border border-green-500/20 bg-gradient-to-r from-green-500/10 to-blue-500/10 px-5 backdrop-blur-md">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                  <MapPin className="w-5 h-5 text-green-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-green-500/40 bg-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                  <MapPin className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <h4 className="text-white font-bold text-sm">Zone Validée Automatiquement</h4>
-                  <p className="text-white/60 text-xs mt-0.5">La cible est positionnée à {pin?.x}% sur l'axe horizontal.</p>
+                  <h4 className="text-sm font-bold text-white">
+                    Zone Validée Automatiquement
+                  </h4>
+                  <p className="mt-0.5 text-xs text-white/60">
+                    La cible est positionnée à {pin?.x}% sur l'axe horizontal.
+                  </p>
                 </div>
               </div>
 
               <button
                 onClick={removePin}
-                className="px-4 py-2 hover:bg-red-500/20 text-red-400 text-xs font-bold rounded-xl transition-all flex items-center gap-2 border border-transparent hover:border-red-500/30"
+                className="flex items-center gap-2 rounded-xl border border-transparent px-4 py-2 text-xs font-bold text-red-400 transition-all hover:border-red-500/30 hover:bg-red-500/20"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
                 Supprimer
               </button>
             </div>
           </div>
-
         </div>
       )}
     </div>

@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
-import { ANSWERS_COLORS, ANSWERS_ICONS } from "@rahoot/web/features/game/utils/constants"
+import {
+  ANSWERS_COLORS,
+  ANSWERS_ICONS,
+} from "@rahoot/web/features/game/utils/constants"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import { useState, type FormEvent } from "react"
 
@@ -33,7 +36,11 @@ export const McqAnswers = ({
   </div>
 )
 
-export const TrueFalseAnswers = ({ onAnswer }: { onAnswer?: (_key: number) => void }) => {
+export const TrueFalseAnswers = ({
+  onAnswer,
+}: {
+  onAnswer?: (_key: number) => void
+}) => {
   const { t } = useTranslation()
 
   return (
@@ -83,7 +90,7 @@ export const OpenAnswer = ({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={t("game:openAnswerPlaceholder")}
-          className="flex-1 rounded-xl bg-white px-4 py-3 text-lg font-semibold text-gray-800 outline-none placeholder-gray-400"
+          className="flex-1 rounded-xl bg-white px-4 py-3 text-lg font-semibold text-gray-800 placeholder-gray-400 outline-none"
         />
         <button
           type="submit"
@@ -101,12 +108,12 @@ export const OpenAnswerPlaceholder = () => {
   const { t } = useTranslation()
 
   return (
-    <div className="mx-auto mb-4 w-full max-w-lg px-2 anim-slide-up">
+    <div className="anim-slide-up mx-auto mb-4 w-full max-w-lg px-2">
       <div className="flex gap-2 opacity-60">
-        <div className="flex-1 rounded-xl bg-white/10 border-2 border-white/20 px-4 py-3 text-lg font-semibold text-white/40 backdrop-blur-sm">
+        <div className="flex-1 rounded-xl border-2 border-white/20 bg-white/10 px-4 py-3 text-lg font-semibold text-white/40 backdrop-blur-sm">
           {t("game:openAnswerPlaceholder")}
         </div>
-        <div className="rounded-xl bg-white/10 border-2 border-white/20 px-5 py-3 font-bold text-white/40 backdrop-blur-sm">
+        <div className="rounded-xl border-2 border-white/20 bg-white/10 px-5 py-3 font-bold text-white/40 backdrop-blur-sm">
           {t("common:submit")}
         </div>
       </div>

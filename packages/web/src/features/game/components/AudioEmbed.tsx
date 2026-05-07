@@ -35,7 +35,13 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
     <iframe
       src={`https://www.youtube.com/embed/${src.videoId}?${params.toString()}`}
       allow="autoplay"
-      style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        width: 1,
+        height: 1,
+        opacity: 0,
+        pointerEvents: "none",
+      }}
       aria-hidden="true"
     />
   )

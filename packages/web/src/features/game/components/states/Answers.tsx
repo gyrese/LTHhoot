@@ -10,7 +10,10 @@ import {
   SliderAnswer,
   TrueFalseAnswers,
 } from "@rahoot/web/features/game/components/AnswersDisplay"
-import { DropPinAnswer, PuzzleAnswer } from "@rahoot/web/features/game/components/states/AnswerInputs"
+import {
+  DropPinAnswer,
+  PuzzleAnswer,
+} from "@rahoot/web/features/game/components/states/AnswerInputs"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
@@ -34,7 +37,24 @@ type Props = {
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 const Answers = ({
-  data: { question, type, answers, media, background, backgroundOpacity, elements, audio, time, totalPlayer, min, max, minYear, maxYear, items, pinImage },
+  data: {
+    question,
+    type,
+    answers,
+    media,
+    background,
+    backgroundOpacity,
+    elements,
+    audio,
+    time,
+    totalPlayer,
+    min,
+    max,
+    minYear,
+    maxYear,
+    items,
+    pinImage,
+  },
 }: Props) => {
   const { socket } = useSocket()
   const { player, gameId } = usePlayerStore()
@@ -126,9 +146,13 @@ const Answers = ({
   const progress = time > 0 ? (cooldown / time) * 100 : 0
 
   function getProgressColor(pct: number) {
-    if (pct > 50) { return "#22c55e" }
+    if (pct > 50) {
+      return "#22c55e"
+    }
 
-    if (pct > 25) { return "#f59e0b" }
+    if (pct > 25) {
+      return "#f59e0b"
+    }
 
     return "#ef4444"
   }
@@ -141,9 +165,13 @@ const Answers = ({
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundColor: background.type === "color" ? background.value : undefined,
-              backgroundImage: background.type === "image" ? `url(${background.value})` : undefined,
-              opacity: backgroundOpacity ?? 1
+              backgroundColor:
+                background.type === "color" ? background.value : undefined,
+              backgroundImage:
+                background.type === "image"
+                  ? `url(${background.value})`
+                  : undefined,
+              opacity: backgroundOpacity ?? 1,
             }}
           />
         </>
@@ -154,22 +182,25 @@ const Answers = ({
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: `url(/bg-salon.png)`,
-              opacity: 0.5
+              opacity: 0.5,
             }}
           />
         </>
       )}
 
       {/* Barre de progression du temps */}
-      <div className="absolute top-0 left-0 right-0 z-20 h-2 bg-white/10">
+      <div className="absolute top-0 right-0 left-0 z-20 h-2 bg-white/10">
         <div
-          className="h-full transition-all duration-1000 ease-linear rounded-r-full"
-          style={{ width: `${progress}%`, backgroundColor: getProgressColor(progress) }}
+          className="h-full rounded-r-full transition-all duration-1000 ease-linear"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: getProgressColor(progress),
+          }}
         />
       </div>
 
       {elements && elements.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
             elements={elements}
             onChange={noopChange}
@@ -192,49 +223,75 @@ const Answers = ({
       </div>
 
       <div className="relative mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <QuestionMedia 
-          media={type === "drop_pin" && pinImage && !isPlayer ? { type: "image", url: pinImage } : media} 
-          alt={question} 
+        <QuestionMedia
+          media={
+            type === "drop_pin" && pinImage && !isPlayer
+              ? { type: "image", url: pinImage }
+              : media
+          }
+          alt={question}
         />
       </div>
 
-      <div className={`relative${isPlayer ? " pb-12" : ""}`}>
+      <div className={`relative${isPlayer ? "pb-12" : ""}`}>
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
           <div
             className={clsx(
               "flex flex-col items-center rounded-full px-4 text-lg font-bold transition-colors",
-              cooldown <= 5 ? "bg-red-600 anim-pulse-urgent" : "bg-black/40",
+              cooldown <= 5 ? "anim-pulse-urgent bg-red-600" : "bg-black/40",
             )}
           >
             <span className="translate-y-1 text-sm">{t("game:hud.time")}</span>
-            <span id="timer" key={cooldown} className="anim-pop-in tabular-nums">{cooldown}</span>
+            <span
+              id="timer"
+              key={cooldown}
+              className="anim-pop-in tabular-nums"
+            >
+              {cooldown}
+            </span>
           </div>
           <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
-            <span className="translate-y-1 text-sm">{t("game:hud.answers")}</span>
-            <span key={totalAnswer} className="anim-pop-in tabular-nums">{totalAnswer}/{totalPlayer}</span>
+            <span className="translate-y-1 text-sm">
+              {t("game:hud.answers")}
+            </span>
+            <span key={totalAnswer} className="anim-pop-in tabular-nums">
+              {totalAnswer}/{totalPlayer}
+            </span>
           </div>
         </div>
 
         {!isPlayer && type === "mcq" && answers && (
           <McqAnswers answers={answers} onAnswer={() => undefined} />
         )}
-        {!isPlayer && type === "true_false" && (
-          <TrueFalseAnswers />
-        )}
-        {!isPlayer && type === "open" && (
-          <OpenAnswerPlaceholder />
-        )}
+        {!isPlayer && type === "true_false" && <TrueFalseAnswers />}
+        {!isPlayer && type === "open" && <OpenAnswerPlaceholder />}
         {isPlayer && !answered && type === "mcq" && answers && (
-          <McqAnswers key={question} answers={answers} iconOnly onAnswer={(k) => emit({ answerId: k })} />
+          <McqAnswers
+            key={question}
+            answers={answers}
+            iconOnly
+            onAnswer={(k) => emit({ answerId: k })}
+          />
         )}
         {isPlayer && !answered && type === "true_false" && (
-          <TrueFalseAnswers key={question} onAnswer={(k) => emit({ answerId: k })} />
+          <TrueFalseAnswers
+            key={question}
+            onAnswer={(k) => emit({ answerId: k })}
+          />
         )}
         {isPlayer && !answered && type === "open" && (
-          <OpenAnswer key={question} onTextAnswer={(text) => emit({ textAnswer: text })} />
+          <OpenAnswer
+            key={question}
+            onTextAnswer={(text) => emit({ textAnswer: text })}
+          />
         )}
         {isPlayer && !answered && type === "date" && (
-          <DateAnswer key={question} minYear={minYear} maxYear={maxYear} onNumberAnswer={(n) => emit({ numberAnswer: n })} />
+          <DateAnswer
+            key={question}
+            minYear={minYear}
+            maxYear={maxYear}
+            onNumberAnswer={(n) => emit({ numberAnswer: n })}
+          />
         )}
         {isPlayer && !answered && type === "slider" && (
           <SliderAnswer
@@ -245,10 +302,18 @@ const Answers = ({
           />
         )}
         {isPlayer && !answered && type === "puzzle" && items && (
-          <PuzzleAnswer key={question} items={items} onOrderAnswer={(order) => emit({ orderAnswer: order })} />
+          <PuzzleAnswer
+            key={question}
+            items={items}
+            onOrderAnswer={(order) => emit({ orderAnswer: order })}
+          />
         )}
         {isPlayer && !answered && type === "drop_pin" && pinImage && (
-          <DropPinAnswer key={question} pinImage={pinImage} onTextAnswer={(text) => emit({ textAnswer: text })} />
+          <DropPinAnswer
+            key={question}
+            pinImage={pinImage}
+            onTextAnswer={(text) => emit({ textAnswer: text })}
+          />
         )}
 
         {isPlayer && answered && (

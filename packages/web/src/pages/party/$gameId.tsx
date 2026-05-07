@@ -24,6 +24,7 @@ const PlayerGamePage = () => {
 
   useEvent("connect", () => {
     if (gameIdParam) {
+      console.log(`[RECONNECT] Émission player:reconnect gameId=${gameIdParam}`)
       socket?.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
     }
   })
@@ -31,6 +32,9 @@ const PlayerGamePage = () => {
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,
     ({ gameId, status, player, currentQuestion }) => {
+      console.log(
+        `[RECONNECT] Succès → gameId=${gameId} joueur=${player.username} status=${status.name}`,
+      )
       setGameId(gameId)
       setStatus(status.name, status.data)
       setPlayer(player)

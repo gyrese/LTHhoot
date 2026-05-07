@@ -1,5 +1,8 @@
 import type { DateQuestion } from "@rahoot/common/types/game"
-import { useQuizzEditor, type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import {
+  useQuizzEditor,
+  type QuestionWithId,
+} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { useTranslation } from "react-i18next"
 
 type DateWithId = DateQuestion & { id: string }

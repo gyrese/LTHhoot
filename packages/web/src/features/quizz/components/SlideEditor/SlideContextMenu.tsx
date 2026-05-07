@@ -18,7 +18,22 @@ import {
 import { useTranslation } from "react-i18next"
 import { useEffect, useRef } from "react"
 
-export type ContextMenuAction = "addText" | "addShape" | "addImage" | "addYoutube" | "copy" | "cut" | "paste" | "delete" | "bringToFront" | "sendToBack" | "bringForward" | "sendBackward" | "setAsBackground" | "crop" | "opacity"
+export type ContextMenuAction =
+  | "addText"
+  | "addShape"
+  | "addImage"
+  | "addYoutube"
+  | "copy"
+  | "cut"
+  | "paste"
+  | "delete"
+  | "bringToFront"
+  | "sendToBack"
+  | "bringForward"
+  | "sendBackward"
+  | "setAsBackground"
+  | "crop"
+  | "opacity"
 
 type ContextMenuProps = {
   x: number
@@ -30,7 +45,15 @@ type ContextMenuProps = {
   onAction: (action: ContextMenuAction) => void
 }
 
-const SlideContextMenu = ({ x, y, hasSelection, selectedType, canPaste, onClose, onAction }: ContextMenuProps) => {
+const SlideContextMenu = ({
+  x,
+  y,
+  hasSelection,
+  selectedType,
+  canPaste,
+  onClose,
+  onAction,
+}: ContextMenuProps) => {
   const { t } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -67,56 +90,86 @@ const SlideContextMenu = ({ x, y, hasSelection, selectedType, canPaste, onClose,
   return (
     <div
       ref={menuRef}
-      className="fixed z-[100] w-48 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-xl py-1 text-sm text-gray-700 pointer-events-auto"
+      className="pointer-events-auto fixed z-[100] w-48 rounded-xl border border-gray-200 bg-white/95 py-1 text-sm text-gray-700 shadow-xl backdrop-blur-md"
       style={menuStyle}
       onContextMenu={handleContextMenu}
     >
       {hasSelection ? (
         <>
-          <button onClick={() => handleAction("copy")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("copy")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <Copy className="size-4" /> Copier
           </button>
-          <button onClick={() => handleAction("cut")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("cut")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <Scissors className="size-4" /> Couper
           </button>
           <button
             onClick={() => handleAction("paste")}
             disabled={!canPaste}
-            className={`w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left ${canPaste ? "hover:bg-gray-100" : "opacity-50 cursor-not-allowed"}`}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors ${canPaste ? "hover:bg-gray-100" : "cursor-not-allowed opacity-50"}`}
           >
             <ClipboardPaste className="size-4" /> Coller
           </button>
-          <div className="h-px bg-gray-200 my-1 mx-2" />
-          <button onClick={() => handleAction("bringToFront")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <div className="mx-2 my-1 h-px bg-gray-200" />
+          <button
+            onClick={() => handleAction("bringToFront")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <ArrowUpToLine className="size-4" /> Premier plan
           </button>
-          <button onClick={() => handleAction("sendToBack")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("sendToBack")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <ArrowDownToLine className="size-4" /> Dernier plan
           </button>
-          <div className="h-px bg-gray-200 my-1 mx-2" />
-          <button onClick={() => handleAction("bringForward")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <div className="mx-2 my-1 h-px bg-gray-200" />
+          <button
+            onClick={() => handleAction("bringForward")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <ArrowUp className="size-4" /> Avancer
           </button>
-          <button onClick={() => handleAction("sendBackward")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("sendBackward")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <ArrowDown className="size-4" /> Reculer
           </button>
-          
+
           {selectedType === "image" && (
             <>
-              <div className="h-px bg-gray-200 my-1 mx-2" />
-              <button onClick={() => handleAction("setAsBackground")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+              <div className="mx-2 my-1 h-px bg-gray-200" />
+              <button
+                onClick={() => handleAction("setAsBackground")}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+              >
                 <Maximize className="size-4" /> Mettre en fond
               </button>
-              <button onClick={() => handleAction("crop")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+              <button
+                onClick={() => handleAction("crop")}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+              >
                 <Crop className="size-4" /> Recadrer
               </button>
-              <button onClick={() => handleAction("opacity")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+              <button
+                onClick={() => handleAction("opacity")}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+              >
                 <Sun className="size-4" /> Opacité
               </button>
             </>
           )}
-          <div className="h-px bg-gray-200 my-1 mx-2" />
-          <button onClick={() => handleAction("delete")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-red-50 text-red-600 transition-colors text-left">
+          <div className="mx-2 my-1 h-px bg-gray-200" />
+          <button
+            onClick={() => handleAction("delete")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 transition-colors hover:bg-red-50"
+          >
             <Trash2 className="size-4" /> Supprimer
           </button>
         </>
@@ -125,21 +178,33 @@ const SlideContextMenu = ({ x, y, hasSelection, selectedType, canPaste, onClose,
           <button
             onClick={() => handleAction("paste")}
             disabled={!canPaste}
-            className={`w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left ${canPaste ? "hover:bg-gray-100" : "opacity-50 cursor-not-allowed"}`}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors ${canPaste ? "hover:bg-gray-100" : "cursor-not-allowed opacity-50"}`}
           >
             <ClipboardPaste className="size-4" /> Coller
           </button>
-          <div className="h-px bg-gray-200 my-1 mx-2" />
-          <button onClick={() => handleAction("addText")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <div className="mx-2 my-1 h-px bg-gray-200" />
+          <button
+            onClick={() => handleAction("addText")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <Type className="size-4" /> Ajouter Texte
           </button>
-          <button onClick={() => handleAction("addShape")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("addShape")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <Square className="size-4" /> Ajouter Forme
           </button>
-          <button onClick={() => handleAction("addImage")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("addImage")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <ImageIcon className="size-4" /> Ajouter Image
           </button>
-          <button onClick={() => handleAction("addYoutube")} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 transition-colors text-left">
+          <button
+            onClick={() => handleAction("addYoutube")}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
+          >
             <Play className="size-4" /> Ajouter YouTube
           </button>
         </>

@@ -29,18 +29,20 @@ const Wait = ({ data: { text } }: Props) => {
   return (
     <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-6 px-4">
       <div className="flex flex-col items-center gap-3">
-        <Loader className="h-20 anim-wiggle" />
+        <Loader className="anim-wiggle h-20" />
         <h2 className="anim-slide-up text-center text-3xl font-bold text-white drop-shadow-lg md:text-4xl">
           {t(text)}
         </h2>
         <div className="dot-loader text-white" aria-hidden="true">
-          <span /><span /><span />
+          <span />
+          <span />
+          <span />
         </div>
       </div>
 
       {players.length > 0 && (
         /* Conteneur scrollable — hauteur limitée pour laisser le loader visible */
-        <div className="w-full max-h-56 overflow-y-auto px-1">
+        <div className="max-h-56 w-full overflow-y-auto px-1">
           <div className="flex flex-wrap justify-center gap-4">
             <AnimatePresence>
               {players.map((player, i) => (

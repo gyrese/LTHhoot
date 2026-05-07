@@ -9,7 +9,10 @@ import type {
 } from "@rahoot/common/types/game"
 
 const randomUUID = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID()
   }
 
@@ -28,7 +31,10 @@ import {
   useState,
   type PropsWithChildren,
 } from "react"
-import { useSocket, useEvent } from "@rahoot/web/features/game/contexts/socket-context"
+import {
+  useSocket,
+  useEvent,
+} from "@rahoot/web/features/game/contexts/socket-context"
 import { EVENTS } from "@rahoot/common/constants"
 import toast from "react-hot-toast"
 import { useNavigate } from "@tanstack/react-router"
@@ -116,7 +122,16 @@ const toQuestionWithId = (q: Question): QuestionWithId => ({
 const buildDefaultForType = (
   base: Pick<
     QuestionWithId,
-    "id" | "question" | "media" | "background" | "backgroundOpacity" | "elements" | "audio" | "showLeaderboard" | "cooldown" | "time"
+    | "id"
+    | "question"
+    | "media"
+    | "background"
+    | "backgroundOpacity"
+    | "elements"
+    | "audio"
+    | "showLeaderboard"
+    | "cooldown"
+    | "time"
   >,
   type: QuestionType,
 ): QuestionWithId => {
@@ -133,11 +148,25 @@ const buildDefaultForType = (
     case "date": {
       const year = new Date().getFullYear()
 
-      return { ...base, type: "date", correctYear: year, tolerance: 5, minYear: year - 30, maxYear: year + 30 }
+      return {
+        ...base,
+        type: "date",
+        correctYear: year,
+        tolerance: 5,
+        minYear: year - 30,
+        maxYear: year + 30,
+      }
     }
 
     case "slider":
-      return { ...base, type: "slider", correctValue: 50, min: 0, max: 100, tolerance: 5 }
+      return {
+        ...base,
+        type: "slider",
+        correctValue: 50,
+        min: 0,
+        max: 100,
+        tolerance: 5,
+      }
 
     case "title":
       return { ...base, type: "title" }
@@ -157,7 +186,6 @@ type QuizzEditorProviderProps = PropsWithChildren<{
   initialData?: QuizzWithId
 }>
 
-
 export const QuizzEditorProvider = ({
   children,
   initialData,
@@ -165,14 +193,22 @@ export const QuizzEditorProvider = ({
   const { socket } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [subject, setSubject] = useState(initialData?.subject ?? "Untitled Quizz")
+  const [subject, setSubject] = useState(
+    initialData?.subject ?? "Untitled Quizz",
+  )
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [folder, setFolder] = useState(initialData?.folder ?? "")
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? [])
-  const [salonImage, setSalonImage] = useState<string | undefined>(initialData?.salonImage)
-  const [listingImage, setListingImage] = useState<string | undefined>(initialData?.listingImage)
+  const [salonImage, setSalonImage] = useState<string | undefined>(
+    initialData?.salonImage,
+  )
+  const [listingImage, setListingImage] = useState<string | undefined>(
+    initialData?.listingImage,
+  )
   const [questions, setQuestions] = useState<QuestionWithId[]>(
-    initialData ? initialData.questions.map(toQuestionWithId) : [defaultQuestion()],
+    initialData
+      ? initialData.questions.map(toQuestionWithId)
+      : [defaultQuestion()],
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedId, setSelectedId] = useState<string | undefined>()
@@ -185,12 +221,30 @@ export const QuizzEditorProvider = ({
 
   const markDirty = () => setIsDirty(true)
 
-  const wrappedSetSubject = (val: string) => { setSubject(val); markDirty() }
-  const wrappedSetDescription = (val: string) => { setDescription(val); markDirty() }
-  const wrappedSetFolder = (val: string) => { setFolder(val); markDirty() }
-  const wrappedSetTags = (val: string[]) => { setTags(val); markDirty() }
-  const wrappedSetSalonImage = (val?: string) => { setSalonImage(val); markDirty() }
-  const wrappedSetListingImage = (val?: string) => { setListingImage(val); markDirty() }
+  const wrappedSetSubject = (val: string) => {
+    setSubject(val)
+    markDirty()
+  }
+  const wrappedSetDescription = (val: string) => {
+    setDescription(val)
+    markDirty()
+  }
+  const wrappedSetFolder = (val: string) => {
+    setFolder(val)
+    markDirty()
+  }
+  const wrappedSetTags = (val: string[]) => {
+    setTags(val)
+    markDirty()
+  }
+  const wrappedSetSalonImage = (val?: string) => {
+    setSalonImage(val)
+    markDirty()
+  }
+  const wrappedSetListingImage = (val?: string) => {
+    setListingImage(val)
+    markDirty()
+  }
 
   const handleSetCurrentIndex = (index: number) => {
     setCurrentIndex(index)
@@ -205,7 +259,9 @@ export const QuizzEditorProvider = ({
 
   const removeQuestion = (index: number) => {
     setQuestions((prev) => prev.filter((_, i) => i !== index))
-    handleSetCurrentIndex(Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex))
+    handleSetCurrentIndex(
+      Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex),
+    )
     markDirty()
   }
 
@@ -234,7 +290,9 @@ export const QuizzEditorProvider = ({
 
   const updateQuestion = (index: number, updates: QuestionUpdate) => {
     setQuestions((prev) =>
-      prev.map((q, i) => (i === index ? ({ ...q, ...updates } as QuestionWithId) : q)),
+      prev.map((q, i) =>
+        i === index ? ({ ...q, ...updates } as QuestionWithId) : q,
+      ),
     )
     markDirty()
   }
@@ -267,35 +325,49 @@ export const QuizzEditorProvider = ({
 
   const [pendingNavigation, setPendingNavigation] = useState(false)
 
-  const saveQuizz = useCallback((options?: { silent?: boolean; navigate?: boolean }) => {
-    if (!socket) return
+  const saveQuizz = useCallback(
+    (options?: { silent?: boolean; navigate?: boolean }) => {
+      if (!socket) return
 
-    const payload = {
+      const payload = {
+        subject,
+        description: description || undefined,
+        folder: folder || undefined,
+        tags: tags.length ? tags : undefined,
+        salonImage: salonImage || undefined,
+        listingImage: listingImage || undefined,
+        questions,
+      }
+
+      if (options?.navigate) {
+        setPendingNavigation(true)
+      }
+
+      setIsSaving(true)
+
+      if (quizzId) {
+        socket.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
+      } else {
+        socket.emit(EVENTS.QUIZZ.SAVE, payload)
+      }
+
+      if (!options?.silent) {
+        toast.loading(t("quizz:saving"), { id: "quizz-save" })
+      }
+    },
+    [
+      socket,
       subject,
-      description: description || undefined,
-      folder: folder || undefined,
-      tags: tags.length ? tags : undefined,
-      salonImage: salonImage || undefined,
-      listingImage: listingImage || undefined,
+      description,
+      folder,
+      tags,
+      salonImage,
+      listingImage,
       questions,
-    }
-
-    if (options?.navigate) {
-      setPendingNavigation(true)
-    }
-
-    setIsSaving(true)
-
-    if (quizzId) {
-      socket.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
-    } else {
-      socket.emit(EVENTS.QUIZZ.SAVE, payload)
-    }
-
-    if (!options?.silent) {
-      toast.loading(t("quizz:saving"), { id: "quizz-save" })
-    }
-  }, [socket, subject, description, folder, tags, salonImage, listingImage, questions, quizzId, t])
+      quizzId,
+      t,
+    ],
+  )
 
   useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id }) => {
     setQuizzId(id)

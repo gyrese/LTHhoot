@@ -28,6 +28,7 @@ export class CooldownTimer {
       this.currentInterval = setInterval(() => {
         if (!this.active || count <= 0) {
           this.clear()
+
           return
         }
 
@@ -52,6 +53,7 @@ export class CooldownTimer {
     if (interval) {
       clearInterval(interval)
     }
+
     if (resolve) {
       resolve()
     }

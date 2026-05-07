@@ -48,11 +48,11 @@ const GameAvatar = ({
     [],
   )
   const frameSequence = useMemo(() => {
-    const states = animationStates?.length ? animationStates : [PETDEX_IDLE_STATE]
+    const states = animationStates?.length
+      ? animationStates
+      : [PETDEX_IDLE_STATE]
 
-    return states
-      .map((stateId) => PETDEX_STATES[stateId])
-      .filter(Boolean)
+    return states.map((stateId) => PETDEX_STATES[stateId]).filter(Boolean)
   }, [animationStates])
   const [sourceUrl, setSourceUrl] = useState<string | null>(
     pet ? pet.spritesheetUrl : null,
@@ -120,7 +120,10 @@ const GameAvatar = ({
 
       const frameMs = 1000 / PETDEX_FPS
       const start = performance.now()
-      const totalFrames = frameSequence.reduce((sum, state) => sum + state.frames, 0)
+      const totalFrames = frameSequence.reduce(
+        (sum, state) => sum + state.frames,
+        0,
+      )
 
       const tick = (now: number) => {
         if (stopped) return

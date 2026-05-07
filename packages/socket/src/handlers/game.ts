@@ -54,8 +54,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     if (!Manager.isLogged(socket)) {
       socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
-      
-return
+      return
     }
 
     const quizzList = Config.quizz()
@@ -141,7 +140,7 @@ return
   )
 
   socket.on("disconnect", () => {
-    console.log(`A user disconnected : ${socket.id}`)
+    console.log(`[DISCONNECT] socket=${socket.id}`)
 
     const managerGame = registry.getGameByManagerSocketId(socket.id)
 
@@ -150,7 +149,9 @@ return
       registry.markGameAsEmpty(managerGame)
 
       if (!managerGame.started) {
-        console.log("Reset game (manager disconnected)")
+        console.log(
+          `[DISCONNECT] Manager game=${managerGame.inviteCode} → reset (partie non démarrée)`,
+        )
         managerGame.abortCooldown()
         io.to(managerGame.gameId).emit(
           EVENTS.GAME.RESET,
@@ -160,6 +161,12 @@ return
 
         return
       }
+
+      console.log(
+        `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie en cours, reconnexion possible`,
+      )
+
+      return
     }
 
     const game = registry.getGameByPlayerSocketId(socket.id)
@@ -169,13 +176,8 @@ return
     }
 
     if (!game.started) {
-      const player = game.removePlayer(socket.id)
-
-      if (player) {
-        console.log(
-          `Removed player ${player.username} from game ${game.gameId}`,
-        )
-      }
+      // Grace period : le joueur a 30s pour reconnecter avant d'être supprimé
+      game.schedulePlayerRemoval(socket.id)
 
       return
     }

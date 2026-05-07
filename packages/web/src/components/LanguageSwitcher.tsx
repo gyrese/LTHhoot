@@ -18,9 +18,7 @@ const LanguageSwitcher = () => {
 
   return (
     <Select.Root value={language} onValueChange={changeLanguage} disabled>
-      <Select.Trigger 
-        className="flex cursor-not-allowed items-center gap-1.5 rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm font-semibold text-gray-400 focus:outline-none opacity-70"
-      >
+      <Select.Trigger className="flex cursor-not-allowed items-center gap-1.5 rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm font-semibold text-gray-400 opacity-70 focus:outline-none">
         <Globe className="size-4 text-gray-400" />
         <Select.Value>{language.toUpperCase()}</Select.Value>
       </Select.Trigger>

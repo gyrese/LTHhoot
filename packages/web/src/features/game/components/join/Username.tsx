@@ -64,7 +64,11 @@ const Username = () => {
         transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
         className="mb-8"
       >
-        <img src={logo} alt="LTNHOOT" className="h-40 md:h-56 drop-shadow-[0_0_30px_rgba(255,153,0,0.5)]" />
+        <img
+          src={logo}
+          alt="LTNHOOT"
+          className="h-40 drop-shadow-[0_0_30px_rgba(255,153,0,0.5)] md:h-56"
+        />
       </motion.div>
 
       <motion.div
@@ -74,14 +78,14 @@ const Username = () => {
         className="relative w-full max-w-md"
       >
         {/* Glow effect background */}
-        <div className="absolute -inset-4 rounded-[2.5rem] bg-primary/20 blur-3xl" />
+        <div className="bg-primary/20 absolute -inset-4 rounded-[2.5rem] blur-3xl" />
 
         <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-black/40 p-8 shadow-2xl backdrop-blur-2xl">
           <div className="flex flex-col items-center gap-8">
             {/* Avatar Section */}
             <div className="relative">
               <div className="relative">
-                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-primary to-orange-300 opacity-50 blur-lg" />
+                <div className="from-primary absolute -inset-2 rounded-full bg-gradient-to-tr to-orange-300 opacity-50 blur-lg" />
                 <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 p-2 shadow-inner backdrop-blur-md">
                   <GameAvatar
                     seed={avatarSeed}
@@ -97,7 +101,7 @@ const Username = () => {
                     e.stopPropagation()
                     randomizeAvatar()
                   }}
-                  className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:rotate-180 active:scale-90"
+                  className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:rotate-180 active:scale-90"
                 >
                   <RefreshCcw size={18} />
                 </button>
@@ -107,11 +111,11 @@ const Username = () => {
             {/* Input Section */}
             <div className="flex w-full flex-col gap-6">
               <div className="relative flex flex-col gap-2">
-                <label className="ml-1 text-xs font-black uppercase tracking-widest text-white/50">
+                <label className="ml-1 text-xs font-black tracking-widest text-white/50 uppercase">
                   {t("game:yourPseudo", "Ton Pseudo")}
                 </label>
                 <div className="group relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 transition-colors group-focus-within:text-primary">
+                  <div className="group-focus-within:text-primary absolute top-1/2 left-4 -translate-y-1/2 text-white/40 transition-colors">
                     <User size={20} />
                   </div>
                   <input
@@ -122,7 +126,7 @@ const Username = () => {
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={t("game:usernamePlaceholder")}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-lg font-bold text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/20"
+                    className="focus:border-primary/50 focus:ring-primary/20 w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-4 pl-12 text-lg font-bold text-white placeholder:text-white/20 focus:bg-white/10 focus:ring-4 focus:outline-none"
                   />
                 </div>
               </div>
@@ -133,7 +137,7 @@ const Username = () => {
                 whileTap={{ scale: 0.98, y: 0 }}
                 onClick={handleLogin}
                 disabled={!username.trim()}
-                className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-primary py-5 text-lg font-black uppercase tracking-wider text-black shadow-[0_0_40px_rgba(255,153,0,0.3)] transition-all hover:shadow-[0_0_60px_rgba(255,153,0,0.5)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                className="group bg-primary relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl py-5 text-lg font-black tracking-wider text-black uppercase shadow-[0_0_40px_rgba(255,153,0,0.3)] transition-all hover:shadow-[0_0_60px_rgba(255,153,0,0.5)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
               >
                 <span>{t("common:submit")}</span>
                 <ArrowRight
@@ -145,7 +149,6 @@ const Username = () => {
           </div>
         </div>
       </motion.div>
-
     </div>
   )
 }

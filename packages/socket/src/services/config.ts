@@ -13,9 +13,11 @@ import { z } from "zod"
 function safeId(id: string): string {
   const sanitized = path.basename(id).replace(/[^a-z0-9_.-]/giu, "")
 
-  if (!sanitized) {throw new Error("ID invalide")}
-  
-return sanitized
+  if (!sanitized) {
+    throw new Error("ID invalide")
+  }
+
+  return sanitized
 }
 
 const inContainerPath = process.env.CONFIG_PATH
@@ -79,14 +81,16 @@ class Config {
   }
 
   static quizzMeta() {
-    return Config.quizz().map(({ id, subject, folder, tags, salonImage, listingImage }) => ({
-      id,
-      subject,
-      folder,
-      tags,
-      salonImage,
-      listingImage,
-    }))
+    return Config.quizz().map(
+      ({ id, subject, folder, tags, salonImage, listingImage }) => ({
+        id,
+        subject,
+        folder,
+        tags,
+        salonImage,
+        listingImage,
+      }),
+    )
   }
 
   static quizzById(id: string) {

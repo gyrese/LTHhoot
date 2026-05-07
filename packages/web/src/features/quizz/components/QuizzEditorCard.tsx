@@ -10,11 +10,7 @@ import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
-import {
-  Presentation,
-  Trash2,
-  Copy,
-} from "lucide-react"
+import { Presentation, Trash2, Copy } from "lucide-react"
 import { type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
@@ -46,12 +42,30 @@ const SlideElementPreview = ({ el }: { el: SlideElement }) => {
   if (el.type === "text") {
     let justifyContent: CSSProperties["justifyContent"] = "flex-start"
 
-    if (el.align === "center") { justifyContent = "center" }
-    else if (el.align === "right") { justifyContent = "flex-end" }
+    if (el.align === "center") {
+      justifyContent = "center"
+    } else if (el.align === "right") {
+      justifyContent = "flex-end"
+    }
 
     return (
-      <div style={{ ...style, color: el.fill, display: "flex", alignItems: "center", justifyContent }}>
-        <span style={{ fontSize: `${(el.fontSize / 1080) * 100}cqh`, fontFamily: el.fontFamily, lineHeight: 1.2, wordBreak: "break-word" }}>
+      <div
+        style={{
+          ...style,
+          color: el.fill,
+          display: "flex",
+          alignItems: "center",
+          justifyContent,
+        }}
+      >
+        <span
+          style={{
+            fontSize: `${(el.fontSize / 1080) * 100}cqh`,
+            fontFamily: el.fontFamily,
+            lineHeight: 1.2,
+            wordBreak: "break-word",
+          }}
+        >
           {el.text}
         </span>
       </div>
@@ -59,7 +73,17 @@ const SlideElementPreview = ({ el }: { el: SlideElement }) => {
   }
 
   if (el.type === "shape" && el.shapeType === "rect") {
-    return <div style={{ ...style, backgroundColor: el.fill, borderRadius: el.cornerRadius ? `${(el.cornerRadius / 1920) * 100}%` : undefined }} />
+    return (
+      <div
+        style={{
+          ...style,
+          backgroundColor: el.fill,
+          borderRadius: el.cornerRadius
+            ? `${(el.cornerRadius / 1920) * 100}%`
+            : undefined,
+        }}
+      />
+    )
   }
 
   if (el.type === "image") {
@@ -68,7 +92,15 @@ const SlideElementPreview = ({ el }: { el: SlideElement }) => {
 
   if (el.type === "youtube") {
     return (
-      <div style={{ ...style, backgroundColor: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          ...style,
+          backgroundColor: "#000",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <img
           src={`https://img.youtube.com/vi/${el.videoId}/mqdefault.jpg`}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -87,28 +119,32 @@ const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
   const bgOpacity = question.backgroundOpacity ?? 1
 
   return (
-    <div className="relative w-full overflow-hidden rounded-sm bg-black" style={{ aspectRatio: "16/9", containerType: "size" }}>
+    <div
+      className="relative w-full overflow-hidden rounded-sm bg-black"
+      style={{ aspectRatio: "16/9", containerType: "size" }}
+    >
       {hasBg ? (
         <>
           <div className="absolute inset-0 bg-black" />
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-            style={{ 
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
               backgroundColor: bg.type === "color" ? bg.value : undefined,
-              backgroundImage: bg.type === "image" ? `url(${bg.value})` : undefined,
-              opacity: bgOpacity 
-            }} 
+              backgroundImage:
+                bg.type === "image" ? `url(${bg.value})` : undefined,
+              opacity: bgOpacity,
+            }}
           />
         </>
       ) : (
         <>
           <div className="absolute inset-0 bg-[#0f172a]" />
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-            style={{ 
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
               backgroundImage: `url(/bg-salon.png)`,
-              opacity: 0.5 
-            }} 
+              opacity: 0.5,
+            }}
           />
         </>
       )}
@@ -120,8 +156,15 @@ const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
       {question.question && question.type !== "title" && (
         <div className="absolute inset-x-0 top-[5%] flex items-center justify-center px-[3%]">
           <span
-            className="rounded bg-white/80 px-1 text-center font-semibold text-gray-800 leading-tight"
-            style={{ fontSize: "clamp(5px, 1.8cqw, 11px)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}
+            className="rounded bg-white/80 px-1 text-center leading-tight font-semibold text-gray-800"
+            style={{
+              fontSize: "clamp(5px, 1.8cqw, 11px)",
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              display: "block",
+            }}
           >
             {question.question}
           </span>
@@ -131,15 +174,25 @@ const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
       {question.type === "mcq" && (
         <div className="absolute inset-x-[3%] bottom-[5%] grid grid-cols-2 gap-[1%]">
           {question.answers.map((_, i) => (
-            <div key={i} className={clsx("rounded-sm opacity-80", ANSWERS_COLORS[i])} style={{ height: "clamp(4px, 1.8cqh, 10px)" }} />
+            <div
+              key={i}
+              className={clsx("rounded-sm opacity-80", ANSWERS_COLORS[i])}
+              style={{ height: "clamp(4px, 1.8cqh, 10px)" }}
+            />
           ))}
         </div>
       )}
 
       {question.type === "true_false" && (
         <div className="absolute inset-x-[3%] bottom-[5%] grid grid-cols-2 gap-[1%]">
-          <div className="rounded-sm bg-red-400 opacity-80" style={{ height: "clamp(4px, 1.8cqh, 10px)" }} />
-          <div className="rounded-sm bg-green-400 opacity-80" style={{ height: "clamp(4px, 1.8cqh, 10px)" }} />
+          <div
+            className="rounded-sm bg-red-400 opacity-80"
+            style={{ height: "clamp(4px, 1.8cqh, 10px)" }}
+          />
+          <div
+            className="rounded-sm bg-green-400 opacity-80"
+            style={{ height: "clamp(4px, 1.8cqh, 10px)" }}
+          />
         </div>
       )}
     </div>
@@ -157,7 +210,16 @@ type Props = {
   onContextMenu?: (e: React.MouseEvent) => void
 }
 
-const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDelete, onDuplicate, onContextMenu }: Props) => {
+const QuizzEditorCard = ({
+  question,
+  index,
+  isActive,
+  canDelete,
+  onClick,
+  onDelete,
+  onDuplicate,
+  onContextMenu,
+}: Props) => {
   const { t } = useTranslation()
   const Asset = TYPE_ASSETS[question.type]
   const isImage = typeof Asset === "string"
@@ -168,7 +230,7 @@ const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDele
       onContextMenu={onContextMenu}
       className={twMerge(
         clsx(
-          "group relative cursor-pointer rounded-sm border-2 border-gray-200 bg-white overflow-hidden",
+          "group relative cursor-pointer overflow-hidden rounded-sm border-2 border-gray-200 bg-white",
           { "border-primary": isActive },
         ),
       )}
@@ -202,7 +264,7 @@ const QuizzEditorCard = ({ question, index, isActive, canDelete, onClick, onDele
           >
             <Copy className="size-3" />
           </button>
-          
+
           <AlertDialog
             trigger={
               <button

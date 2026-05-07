@@ -90,7 +90,7 @@ const Medal = ({ rank }: { rank: number }) => {
       )}
     >
       <div className="absolute inset-0 overflow-hidden rounded-full opacity-30">
-        <div className="absolute -left-full top-0 h-full w-full skew-x-[-45deg] bg-gradient-to-r from-transparent via-white to-transparent animate-[shine_2s_infinite]" />
+        <div className="absolute top-0 -left-full h-full w-full skew-x-[-45deg] animate-[shine_2s_infinite] bg-gradient-to-r from-transparent via-white to-transparent" />
       </div>
       <span style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>{rank}</span>
     </motion.div>
@@ -125,10 +125,18 @@ const PodiumPlace = ({
             <div className="relative">
               <motion.div
                 animate={isFirst ? { y: [0, -10, 0] } : {}}
-                transition={isFirst ? { repeat: Infinity, duration: 4, ease: "easeInOut" } : {}}
+                transition={
+                  isFirst
+                    ? { repeat: Infinity, duration: 4, ease: "easeInOut" }
+                    : {}
+                }
                 className={clsx(
                   "relative h-24 w-24 overflow-hidden rounded-full border-4 bg-white shadow-2xl md:h-32 md:w-32",
-                  isFirst ? "border-yellow-400" : rank === 2 ? "border-slate-300" : "border-amber-600",
+                  isFirst
+                    ? "border-yellow-400"
+                    : rank === 2
+                      ? "border-slate-300"
+                      : "border-amber-600",
                 )}
               >
                 <GameAvatar
@@ -169,7 +177,9 @@ const PodiumPlace = ({
         transition={{ type: "spring", stiffness: 50, damping: 15, delay }}
         className={clsx(
           "relative mt-4 flex w-full flex-col items-center gap-4 rounded-t-2xl pt-8 shadow-2xl backdrop-blur-xl",
-          isFirst ? "z-30 bg-white/20 border-t border-x border-white/30" : "z-10 bg-white/10 border-t border-x border-white/20",
+          isFirst
+            ? "z-30 border-x border-t border-white/30 bg-white/20"
+            : "z-10 border-x border-t border-white/20 bg-white/10",
         )}
       >
         <Medal rank={rank} />
@@ -180,7 +190,7 @@ const PodiumPlace = ({
         >
           {player.points}
         </motion.p>
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-t-2xl" />
+        <div className="pointer-events-none absolute inset-0 rounded-t-2xl bg-gradient-to-b from-white/10 to-transparent" />
       </motion.div>
     </div>
   )
@@ -194,25 +204,28 @@ const Podium = ({ data: { subject, top } }: Props) => {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-between overflow-hidden bg-slate-950 p-4 md:p-8">
       {/* Background with Ambient Glow */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0">
         {salonImage ? (
           <>
-            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 blur-sm" style={{ backgroundImage: `url(${salonImage})` }} />
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 blur-sm"
+              style={{ backgroundImage: `url(${salonImage})` }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
           </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-950 to-purple-950" />
         )}
         <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
+        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
       </div>
 
       {apparition >= 4 && (
         <ReactConfetti
           width={width}
           height={height}
-          className="h-full w-full z-50"
-          colors={['#FFD700', '#C0C0C0', '#CD7F32', '#FFFFFF']}
+          className="z-50 h-full w-full"
+          colors={["#FFD700", "#C0C0C0", "#CD7F32", "#FFFFFF"]}
         />
       )}
 
@@ -258,7 +271,6 @@ const Podium = ({ data: { subject, top } }: Props) => {
           )}
         </div>
       </div>
-
     </div>
   )
 }

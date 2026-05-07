@@ -1,4 +1,8 @@
-import type { GameResult, McqQuestion, QuestionResult } from "@rahoot/common/types/game"
+import type {
+  GameResult,
+  McqQuestion,
+  QuestionResult,
+} from "@rahoot/common/types/game"
 import {
   createContext,
   useContext,
@@ -6,7 +10,9 @@ import {
   type PropsWithChildren,
 } from "react"
 
-type McqQuestionResult = McqQuestion & { playerAnswers: QuestionResult["playerAnswers"] }
+type McqQuestionResult = McqQuestion & {
+  playerAnswers: QuestionResult["playerAnswers"]
+}
 
 const isMcqResult = (qr: QuestionResult): qr is McqQuestionResult =>
   qr.type === "mcq"
@@ -42,12 +48,18 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
   const totalPlayers = result.players.length
 
   const answeredCount = questionResult.playerAnswers.filter(
-    (pa) => pa.answerId !== null && pa.answerId !== undefined || pa.textAnswer !== null && pa.textAnswer !== undefined || pa.numberAnswer !== null && pa.numberAnswer !== undefined,
+    (pa) =>
+      (pa.answerId !== null && pa.answerId !== undefined) ||
+      (pa.textAnswer !== null && pa.textAnswer !== undefined) ||
+      (pa.numberAnswer !== null && pa.numberAnswer !== undefined),
   ).length
 
   const correctCount = isMcqResult(questionResult)
     ? questionResult.playerAnswers.filter(
-        (pa) => pa.answerId !== null && pa.answerId !== undefined && questionResult.solutions.includes(pa.answerId),
+        (pa) =>
+          pa.answerId !== null &&
+          pa.answerId !== undefined &&
+          questionResult.solutions.includes(pa.answerId),
       ).length
     : questionResult.playerAnswers.filter((pa) => pa.points > 0).length
 
@@ -59,7 +71,8 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
         1,
         ...questionResult.answers.map(
           (_, ai) =>
-            questionResult.playerAnswers.filter((pa) => pa.answerId === ai).length,
+            questionResult.playerAnswers.filter((pa) => pa.answerId === ai)
+              .length,
         ),
       )
     : Math.max(1, answeredCount)

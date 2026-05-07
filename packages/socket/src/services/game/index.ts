@@ -30,6 +30,11 @@ class Game {
   private readonly round: RoundManager
   private readonly cooldown: CooldownTimer
 
+  private readonly disconnectTimers: Map<
+    string,
+    ReturnType<typeof setTimeout>
+  > = new Map()
+
   private lastBroadcastStatus: {
     name: Status
     data: StatusDataMap[Status]
@@ -232,7 +237,13 @@ class Game {
     const { clientId } = socket.handshake.auth
     const player = this.playerManager.findByClientId(clientId)
 
+    console.log(
+      `[RECONNECT] clientId=${clientId.substring(0, 8)} game=${this.inviteCode} playerFound=${Boolean(player)} started=${this.started}`,
+    )
+
     if (!player) {
+      socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
+
       return
     }
 
@@ -242,9 +253,20 @@ class Game {
       return
     }
 
-    socket.join(this.gameId)
-
     const oldSocketId = player.id
+
+    // Annuler le timer de grâce s'il est en cours
+    const timer = this.disconnectTimers.get(oldSocketId)
+
+    if (timer) {
+      clearTimeout(timer)
+      this.disconnectTimers.delete(oldSocketId)
+      console.log(
+        `[RECONNECT] Timer de grâce annulé pour socket=${oldSocketId}`,
+      )
+    }
+
+    socket.join(this.gameId)
     this.playerManager.updateSocketId(oldSocketId, socket.id)
     player.connected = true
 
@@ -264,12 +286,16 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
-      player: { username: player.username, avatar: player.avatar, points: player.points },
+      player: {
+        username: player.username,
+        avatar: player.avatar,
+        points: player.points,
+      },
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
     console.log(
-      `Player ${player.username} reconnected to game ${this.inviteCode}`,
+      `[RECONNECT] ${player.username} socket=${oldSocketId} → ${socket.id} game=${this.inviteCode} joueurs=${this.playerManager.count()}`,
     )
   }
 
@@ -277,6 +303,7 @@ class Game {
 
   setManagerDisconnected() {
     this._manager.connected = false
+    console.log(`[DISCONNECT] Manager déconnecté game=${this.inviteCode}`)
   }
 
   removePlayer(socketId: string): Player | undefined {
@@ -286,14 +313,55 @@ class Game {
       this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
+      console.log(
+        `[REMOVE] ${player.username} supprimé définitivement game=${this.inviteCode} joueurs restants=${this.playerManager.count()}`,
+      )
     }
 
     return player
   }
 
   setPlayerDisconnected(socketId: string) {
+    const player = this.playerManager.findById(socketId)
+
+    console.log(
+      `[DISCONNECT] socket=${socketId} joueur=${player?.username ?? "?"} game=${this.inviteCode} (partie en cours)`,
+    )
     this.playerManager.setDisconnected(socketId)
     this.playerManager.broadcastCount()
+  }
+
+  // Timer de grâce : marque le joueur déconnecté et le supprime après 30s si pas de reconnexion
+  schedulePlayerRemoval(socketId: string) {
+    const player = this.playerManager.findById(socketId)
+
+    if (!player) {
+      console.log(
+        `[DISCONNECT] socket=${socketId} - joueur introuvable game=${this.inviteCode}`,
+      )
+
+      return
+    }
+
+    console.log(
+      `[DISCONNECT] ${player.username} (${player.clientId.substring(0, 8)}) socket=${socketId} game=${this.inviteCode} → grace period 30s`,
+    )
+
+    this.playerManager.setDisconnected(socketId)
+    this.playerManager.broadcastCount()
+
+    const timer = setTimeout(() => {
+      this.disconnectTimers.delete(socketId)
+      const removed = this.removePlayer(socketId)
+
+      if (removed) {
+        console.log(
+          `[TIMEOUT] ${removed.username} supprimé après 30s sans reconnexion game=${this.inviteCode}`,
+        )
+      }
+    }, 30_000)
+
+    this.disconnectTimers.set(socketId, timer)
   }
 
   // Game flow

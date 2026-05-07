@@ -48,5 +48,5 @@ export const AVAILABLE_FONTS = [
   "Permanent Marker",
   "Orbitron",
   "Inter",
-  "Outfit"
-].sort();
+  "Outfit",
+].sort()
