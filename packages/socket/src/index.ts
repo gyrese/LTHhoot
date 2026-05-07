@@ -13,7 +13,7 @@ import multer from "multer"
 import { extname, resolve } from "path"
 import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
-import { unlink, rename, copyFile } from "fs/promises"
+import { unlink, copyFile } from "fs/promises"
 
 const WS_PORT = 3001
 
@@ -98,7 +98,8 @@ app.post(
           `Tentative de fallback par copie : ${tmpPath} -> ${fallbackPath}`,
         )
         await copyFile(tmpPath, fallbackPath)
-        await unlink(tmpPath).catch(() => {}) // On essaie de supprimer mais c'est pas grave si ça échoue
+        // Nettoyage non critique
+        await unlink(tmpPath).catch(console.error)
 
         res.json({ url: `/uploads/${fallbackName}` })
       } catch (fallbackErr) {
@@ -113,7 +114,8 @@ app.post(
 
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
-  maxHttpBufferSize: 1e8, // 100MB
+  // 100MB
+  maxHttpBufferSize: 1e8,
   cors: {
     origin: process.env.ALLOWED_ORIGIN ?? "*",
   },

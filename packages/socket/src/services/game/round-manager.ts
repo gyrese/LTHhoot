@@ -236,7 +236,7 @@ export class RoundManager {
         audio: question.audio,
         cooldown: question.cooldown,
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
-        ...this.getQuestionSolutionData(question),
+        ...RoundManager.getQuestionSolutionData(question),
       })
 
       await this.opts.cooldown.start(question.cooldown)
@@ -302,7 +302,7 @@ export class RoundManager {
       this.opts.send(this.opts.getManagerId(), STATUS.SELECT_ANSWER, {
         ...selectAnswerBase,
         ...selectAnswerExtra,
-        ...this.getQuestionSolutionData(question),
+        ...RoundManager.getQuestionSolutionData(question),
       })
 
       await this.opts.cooldown.start(question.time)
@@ -432,7 +432,7 @@ export class RoundManager {
           if (correctZones.length > 0 && !isNaN(px) && !isNaN(py)) {
             // Trouver la distance à la zone correcte la plus proche
             const distances = correctZones.map((z) =>
-              Math.sqrt(Math.pow(px - z.x, 2) + Math.pow(py - z.y, 2)),
+              Math.sqrt((px - z.x) ** 2 + (py - z.y) ** 2),
             )
             const minDistance = Math.min(...distances)
 
@@ -448,6 +448,7 @@ export class RoundManager {
           } else {
             points = 1
           }
+
           playerAnswer.points = points
         }
 
@@ -689,7 +690,7 @@ export class RoundManager {
     this.tempOldLeaderboard = null
   }
 
-  private getQuestionSolutionData(question: Question) {
+  private static getQuestionSolutionData(question: Question) {
     switch (question.type) {
       case "mcq":
         return { solutions: question.solutions }
