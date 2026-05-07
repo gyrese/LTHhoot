@@ -17,15 +17,17 @@ export class PlayerManager {
 
   join(socket: Socket, username: string, avatar?: string): void {
     const existingPlayer = this.findByClientId(socket.handshake.auth.clientId)
+
     if (existingPlayer) {
       console.log(`[TAKEOVER] Login takeover for ${existingPlayer.username}`)
-      // On déconnecte l'ancien socket s'il existe
+
       const oldSocket = this.io.sockets.sockets.get(existingPlayer.id)
+
       if (oldSocket && oldSocket.id !== socket.id) {
         oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
         oldSocket.disconnect(true)
       }
-      // On met à jour l'ID et on continue (cela mettra à jour le pseudo/avatar si besoin)
+
       this.players = this.players.filter((p) => p.clientId !== socket.handshake.auth.clientId)
     }
 

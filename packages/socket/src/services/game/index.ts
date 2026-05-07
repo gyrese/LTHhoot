@@ -257,6 +257,7 @@ class Game {
     if (player.connected && oldSocketId !== newSocketId) {
       console.log(`[TAKEOVER] Triggered for ${player.username} (${oldSocketId} -> ${newSocketId})`)
       const oldSocket = this.io.sockets.sockets.get(oldSocketId)
+
       if (oldSocket) {
         console.log(`[TAKEOVER] Disconnecting old socket ${oldSocketId}`)
         oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
@@ -280,12 +281,24 @@ class Game {
     this.playerManager.updateSocketId(oldSocketId, newSocketId)
     player.connected = true
 
-    // Restore status
-    const status = this.playerStatus.get(oldSocketId) ??
-      this.lastBroadcastStatus ?? {
-        name: STATUS.WAIT,
-        data: { text: "game:waitingForPlayers" },
+    // Restore status : utiliser le statut joueur spécifique en priorité,
+    // sinon le dernier statut broadcasté à tous.
+    // Si la partie est en cours mais lastBroadcastStatus est encore SHOW_ROOM
+    // (joueur reconnecté avant le démarrage), utiliser WAIT pour éviter l'état lobby.
+    const playerSpecific = this.playerStatus.get(oldSocketId)
+    const liveStatus = (() => {
+      const last = this.lastBroadcastStatus
+
+      if (this.started && (!last || last.name === STATUS.SHOW_ROOM)) {
+        return {
+          name: STATUS.WAIT,
+          data: { text: "game:waitingForAnswers" },
+        } as const
       }
+
+      return last ?? { name: STATUS.WAIT, data: { text: "game:waitingForPlayers" } }
+    })()
+    const status = playerSpecific ?? liveStatus
 
     if (this.playerStatus.has(oldSocketId)) {
       const oldStatus = this.playerStatus.get(oldSocketId)!

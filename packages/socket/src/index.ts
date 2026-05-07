@@ -143,7 +143,7 @@ io.engine.on("connection", (engineSocket) => {
     `[POLLING] Connexion active: sid=${engineSocket.id} transport=${engineSocket.transport.name} ip=${engineSocket.remoteAddress}`,
   )
 
-  engineSocket.on("close", (reason) => {
+  engineSocket.on("close", (reason: string) => {
     console.log(`[POLLING] Connexion close: sid=${engineSocket.id} raison=${reason}`)
   })
 })
