@@ -153,6 +153,24 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketClient.on("connect_error", (err) => {
         console.error(`[SOCKET] Erreur connexion: ${err.message}`)
       })
+
+      // Listeners métiers IMMÉDIATS pour éviter les race conditions
+      socketClient.on(EVENTS.PLAYER.SUCCESS_RECONNECT, () => {
+        console.log("[SESSION] SUCCESS_RECONNECT reçu (global)")
+        setIsReconnecting(false)
+      })
+      socketClient.on(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
+        console.log("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
+        setIsReconnecting(false)
+      })
+      socketClient.on(EVENTS.GAME.ERROR_MESSAGE, (msg) => {
+        console.warn(`[SESSION] ERROR_MESSAGE reçu: ${msg}`)
+        setIsReconnecting(false)
+      })
+      socketClient.on(EVENTS.GAME.RESET, (msg) => {
+        console.warn(`[SESSION] GAME.RESET reçu: ${msg}`)
+        setIsReconnecting(false)
+      })
     } catch (error) {
       console.error("Failed to initialize socket:", error)
     }
@@ -185,35 +203,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (socket) {
       socket.disconnect()
       socket.connect()
-    }
-  }, [socket])
-
-  // Listeners globaux pour l'état isReconnecting
-  useEffect(() => {
-    if (!socket) return
-
-    const handleSuccess = () => {
-      console.log("[SESSION] Reconnexion métier réussie")
-      setIsReconnecting(false)
-    }
-
-    const handleError = (msg: string) => {
-      console.warn(`[SESSION] Échec reconnexion métier: ${msg}`)
-      setIsReconnecting(false)
-      // Si échec réel, on pourrait reset les stores ici, 
-      // mais on laisse les composants décider pour l'instant
-    }
-
-    socket.on(EVENTS.PLAYER.SUCCESS_RECONNECT, handleSuccess)
-    socket.on(EVENTS.MANAGER.SUCCESS_RECONNECT, handleSuccess)
-    socket.on(EVENTS.GAME.ERROR_MESSAGE, handleError)
-    socket.on(EVENTS.MANAGER.ERROR_MESSAGE, handleError)
-
-    return () => {
-      socket.off(EVENTS.PLAYER.SUCCESS_RECONNECT, handleSuccess)
-      socket.off(EVENTS.MANAGER.SUCCESS_RECONNECT, handleSuccess)
-      socket.off(EVENTS.GAME.ERROR_MESSAGE, handleError)
-      socket.off(EVENTS.MANAGER.ERROR_MESSAGE, handleError)
     }
   }, [socket])
 

@@ -236,44 +236,49 @@ class Game {
   private reconnectPlayer(socket: Socket) {
     const { clientId } = socket.handshake.auth
     const player = this.playerManager.findByClientId(clientId)
+    const newSocketId = socket.id
 
-    console.log(
-      `[RECONNECT] clientId=${clientId.substring(0, 8)} game=${this.inviteCode} playerFound=${Boolean(player)} started=${this.started}`,
-    )
+    console.log(`[RECONNECT_START] clientId=${clientId.substring(0, 8)} newSocket=${newSocketId}`)
 
     if (!player) {
+      console.warn(`[RECONNECT_REJECT] Player not found for clientId=${clientId}`)
       socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
 
       return
     }
 
     const oldSocketId = player.id
-    const newSocketId = socket.id
+    const isTimerActive = this.disconnectTimers.has(oldSocketId)
+
+    console.log(`[RECONNECT_TRACE] player=${player.username} oldSocket=${oldSocketId} connected=${player.connected} timerActive=${isTimerActive}`)
 
     if (player.connected && oldSocketId !== newSocketId) {
-      console.log(`[TAKEOVER] Session takeover: ${player.username} (${oldSocketId} -> ${newSocketId})`)
+      console.log(`[TAKEOVER] Triggered for ${player.username} (${oldSocketId} -> ${newSocketId})`)
       const oldSocket = this.io.sockets.sockets.get(oldSocketId)
       if (oldSocket) {
+        console.log(`[TAKEOVER] Disconnecting old socket ${oldSocketId}`)
         oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
         oldSocket.disconnect(true)
+      } else {
+        console.log(`[TAKEOVER] Old socket ${oldSocketId} already gone from memory`)
       }
     }
 
     // Annuler le timer de grâce s'il est en cours
-    const timer = this.disconnectTimers.get(oldSocketId)
-
-    if (timer) {
-      clearTimeout(timer)
+    if (isTimerActive) {
+      clearTimeout(this.disconnectTimers.get(oldSocketId))
       this.disconnectTimers.delete(oldSocketId)
-      console.log(
-        `[RECONNECT] Timer de grâce annulé pour socket=${oldSocketId}`,
-      )
+      console.log(`[RECONNECT_TIMER] Cancelled grace period for ${oldSocketId}`)
     }
 
+    // Join room
     socket.join(this.gameId)
-    this.playerManager.updateSocketId(oldSocketId, socket.id)
+    
+    // Update player info
+    this.playerManager.updateSocketId(oldSocketId, newSocketId)
     player.connected = true
 
+    // Restore status
     const status = this.playerStatus.get(oldSocketId) ??
       this.lastBroadcastStatus ?? {
         name: STATUS.WAIT,
@@ -283,9 +288,10 @@ class Game {
     if (this.playerStatus.has(oldSocketId)) {
       const oldStatus = this.playerStatus.get(oldSocketId)!
       this.playerStatus.delete(oldSocketId)
-      this.playerStatus.set(socket.id, oldStatus)
+      this.playerStatus.set(newSocketId, oldStatus)
     }
 
+    console.log(`[RECONNECT_SUCCESS] Emitting SUCCESS_RECONNECT to ${newSocketId}`)
     socket.emit(EVENTS.PLAYER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
@@ -296,10 +302,11 @@ class Game {
         points: player.points,
       },
     })
+
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
     console.log(
-      `[RECONNECT] ${player.username} socket=${oldSocketId} → ${socket.id} game=${this.inviteCode} joueurs=${this.playerManager.count()}`,
+      `[RECONNECT_FINISH] ${player.username} session restored on ${newSocketId}`,
     )
   }
 
