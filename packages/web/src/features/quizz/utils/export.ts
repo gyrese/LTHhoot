@@ -6,6 +6,7 @@ const toBase64 = async (url: string): Promise<string> => {
   try {
     const response = await fetch(url)
     const blob = await response.blob()
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)
@@ -14,52 +15,52 @@ const toBase64 = async (url: string): Promise<string> => {
     })
   } catch (error) {
     console.error(`Failed to convert ${url} to base64:`, error)
-    return url // Return original URL if failed
+
+    // Return original URL if failed
+    return url
   }
 }
 
+const convertElement = async (el: any): Promise<any> => {
+  if (el.type === "image" && el.url) {
+    return { ...el, url: await toBase64(el.url) }
+  }
+
+  return el
+}
+
+const convertQuestion = async (question: any): Promise<any> => {
+  const updated = { ...question }
+
+  if (updated.media?.url) {
+    updated.media = { ...updated.media, url: await toBase64(updated.media.url) }
+  }
+
+  if (updated.background?.type === "image" && updated.background.value) {
+    updated.background = {
+      ...updated.background,
+      value: await toBase64(updated.background.value),
+    }
+  }
+
+  updated.audio &&= await toBase64(updated.audio)
+  updated.pinImage &&= await toBase64(updated.pinImage)
+
+  updated.elements &&= await Promise.all(updated.elements.map(convertElement))
+
+  return updated
+}
+
 export const exportQuizzWithMedia = async (quizz: any) => {
-  const exported = JSON.parse(JSON.stringify(quizz)) // Deep clone
+  // Deep clone
+  const exported = JSON.parse(JSON.stringify(quizz))
 
-  // 1. Convert cover images
-  if (exported.salonImage) {
-    exported.salonImage = await toBase64(exported.salonImage)
-  }
-  if (exported.listingImage) {
-    exported.listingImage = await toBase64(exported.listingImage)
-  }
+  exported.salonImage &&= await toBase64(exported.salonImage)
+  exported.listingImage &&= await toBase64(exported.listingImage)
 
-  // 2. Convert question media and slide elements
-  for (const question of exported.questions) {
-    // Main question media
-    if (question.media?.url) {
-      question.media.url = await toBase64(question.media.url)
-    }
-
-    // Background
-    if (question.background?.type === "image" && question.background.value) {
-      question.background.value = await toBase64(question.background.value)
-    }
-
-    // Audio
-    if (question.audio) {
-      question.audio = await toBase64(question.audio)
-    }
-
-    // Pin Image (Drop Pin)
-    if (question.pinImage) {
-      question.pinImage = await toBase64(question.pinImage)
-    }
-
-    // Slide Elements
-    if (question.elements) {
-      for (const el of question.elements) {
-        if (el.type === "image" && el.url) {
-          el.url = await toBase64(el.url)
-        }
-      }
-    }
-  }
+  exported.questions = await Promise.all(
+    exported.questions.map(convertQuestion),
+  )
 
   return exported
 }

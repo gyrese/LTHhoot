@@ -9,7 +9,7 @@ import {
 } from "@rahoot/web/features/game/utils/constants"
 import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
@@ -68,19 +68,21 @@ const DateResult = ({ correctYear }: { correctYear: number }) => {
         return
       }
 
-      const range = Math.round(300 * Math.pow(1 - progress, 2.5))
+      const range = Math.round(300 * (1 - progress) ** 2.5)
       const offset =
         range > 0 ? Math.round((Math.random() - 0.5) * range * 2) : 0
       setDisplayed(correctYear + offset)
 
-      const delay = 30 + 200 * Math.pow(progress, 2)
+      const delay = 30 + 200 * progress ** 2
       timerRef.current = setTimeout(tick, delay)
     }
 
     timerRef.current = setTimeout(tick, 80)
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
     }
   }, [correctYear])
 
@@ -160,20 +162,22 @@ const SliderResult = ({
         return
       }
 
-      const base = min + (correctValue - min) * Math.pow(progress, 0.6)
-      const range = (max - min) * 0.15 * Math.pow(1 - progress, 2)
+      const base = min + (correctValue - min) * progress ** 0.6
+      const range = (max - min) * 0.15 * (1 - progress) ** 2
       const offset = (Math.random() - 0.5) * range * 2
       const val = Math.round(Math.max(min, Math.min(max, base + offset)))
       setDisplayed(val)
 
-      const delay = 30 + 180 * Math.pow(progress, 2)
+      const delay = 30 + 180 * progress ** 2
       timerRef.current = setTimeout(tick, delay)
     }
 
     timerRef.current = setTimeout(tick, 100)
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
     }
   }, [correctValue, min, max])
 

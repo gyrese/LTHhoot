@@ -11,20 +11,20 @@ import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-e
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
 import { Presentation, Trash2, Copy } from "lucide-react"
-import { type CSSProperties } from "react"
+import { type CSSProperties, type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
 
-const TYPE_ASSETS: Record<QuestionType, any> = {
-  title: Presentation,
-  mcq: mcqImg,
-  true_false: trueFalseImg,
-  open: openImg,
-  date: dateImg,
-  slider: sliderImg,
-  puzzle: puzzleImg,
-  drop_pin: dropPinImg,
-}
+const TYPE_ASSETS = new Map<QuestionType, any>([
+  ["title", Presentation],
+  ["mcq", mcqImg],
+  ["true_false", trueFalseImg],
+  ["open", openImg],
+  ["date", dateImg],
+  ["slider", sliderImg],
+  ["puzzle", puzzleImg],
+  ["drop_pin", dropPinImg],
+])
 
 const SlideElementPreview = ({ el }: { el: SlideElement }) => {
   const style: CSSProperties = {
@@ -207,7 +207,7 @@ type Props = {
   onClick: () => void
   onDelete: () => void
   onDuplicate: () => void
-  onContextMenu?: (e: React.MouseEvent) => void
+  onContextMenu?: (_e: MouseEvent) => void
 }
 
 const QuizzEditorCard = ({
@@ -221,7 +221,7 @@ const QuizzEditorCard = ({
   onContextMenu,
 }: Props) => {
   const { t } = useTranslation()
-  const Asset = TYPE_ASSETS[question.type]
+  const Asset = TYPE_ASSETS.get(question.type)
   const isImage = typeof Asset === "string"
 
   return (

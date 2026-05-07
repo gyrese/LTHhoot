@@ -39,8 +39,10 @@ const ManagerDashboard = ({ data }: Props) => {
   const handleStart = () => {
     if (!selectedQuizz) {
       toast.error(t("manager:quizz.pleaseSelect"))
+
       return
     }
+
     socket?.emit(EVENTS.GAME.CREATE, selectedQuizz)
   }
 

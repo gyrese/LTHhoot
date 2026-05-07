@@ -1,4 +1,9 @@
-import { useState } from "react"
+import {
+  type MouseEvent,
+  type TouchEvent,
+  type PointerEvent,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
@@ -17,7 +22,7 @@ const shuffleIndices = (length: number): number[] => {
   return arr
 }
 
-import { Reorder, useDragControls } from "motion/react"
+import { Reorder } from "motion/react"
 
 // ── Puzzle ────────────────────────────────────────────────────────────────────
 
@@ -46,7 +51,7 @@ export const PuzzleAnswer = ({
       <Reorder.Group
         axis="y"
         values={order}
-        onReorder={!submitted ? setOrder : () => {}}
+        onReorder={!submitted ? setOrder : () => undefined}
         className="mb-4 flex flex-col gap-3"
       >
         {order.map((itemIdx, position) => (
@@ -110,10 +115,11 @@ export const DropPinAnswer = ({
   const [submitted, setSubmitted] = useState(false)
   const { t } = useTranslation()
 
-  const handleImgClick = (
-    e: React.MouseEvent | React.TouchEvent | React.PointerEvent,
-  ) => {
-    if (submitted) return
+  const handleImgClick = (e: MouseEvent | TouchEvent | PointerEvent) => {
+    if (submitted) {
+      return
+    }
+
     e.preventDefault()
 
     const target = e.currentTarget as HTMLElement
@@ -121,12 +127,12 @@ export const DropPinAnswer = ({
 
     const clientX =
       "touches" in e
-        ? (e as React.TouchEvent).touches[0].clientX
-        : (e as React.MouseEvent).clientX
+        ? (e as TouchEvent).touches[0].clientX
+        : (e as MouseEvent).clientX
     const clientY =
       "touches" in e
-        ? (e as React.TouchEvent).touches[0].clientY
-        : (e as React.MouseEvent).clientY
+        ? (e as TouchEvent).touches[0].clientY
+        : (e as MouseEvent).clientY
 
     const xPct = Math.max(
       0,
@@ -179,7 +185,8 @@ export const DropPinAnswer = ({
               style={{
                 left: `${pin.x}%`,
                 top: `${pin.y}%`,
-                transform: "translate(-50%, -100%)", // Align pin tip exactly on coordinate
+                // Align pin tip exactly on coordinate
+                transform: "translate(-50%, -100%)",
               }}
             >
               <div className="animate-in zoom-in flex flex-col items-center drop-shadow-2xl duration-300">

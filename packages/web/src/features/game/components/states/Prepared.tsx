@@ -13,19 +13,19 @@ type Props = {
   data: CommonStatusDataMap["SHOW_PREPARED"]
 }
 
-const TYPE_ASSETS: Record<string, string> = {
-  open: openImg,
-  date: dateImg,
-  slider: sliderImg,
-  mcq: mcqImg,
-  true_false: trueFalseImg,
-  puzzle: puzzleImg,
-  drop_pin: dropPinImg,
-}
+const TYPE_ASSETS = new Map<string, string>([
+  ["open", openImg],
+  ["date", dateImg],
+  ["slider", sliderImg],
+  ["mcq", mcqImg],
+  ["true_false", trueFalseImg],
+  ["puzzle", puzzleImg],
+  ["drop_pin", dropPinImg],
+])
 
 const Prepared = ({ data: { questionNumber, type } }: Props) => {
   const { t } = useTranslation()
-  const image = TYPE_ASSETS[type]
+  const image = TYPE_ASSETS.get(type)
 
   return (
     <section className="relative mx-auto flex h-full w-full flex-col items-center justify-center px-4">

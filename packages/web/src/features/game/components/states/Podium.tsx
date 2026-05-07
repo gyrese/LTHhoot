@@ -42,10 +42,13 @@ const usePodiumAnimation = (topLength: number) => {
   useEffect(() => {
     if (topLength < 3) {
       setApparition(4)
-      return
+
+      return undefined
     }
 
-    if (apparition >= 4) return
+    if (apparition >= 4) {
+      return undefined
+    }
 
     const interval = setInterval(() => {
       setApparition((value) => value + 1)
@@ -132,11 +135,9 @@ const PodiumPlace = ({
                 }
                 className={clsx(
                   "relative h-24 w-24 overflow-hidden rounded-full border-4 bg-white shadow-2xl md:h-32 md:w-32",
-                  isFirst
-                    ? "border-yellow-400"
-                    : rank === 2
-                      ? "border-slate-300"
-                      : "border-amber-600",
+                  isFirst && "border-yellow-400",
+                  !isFirst && rank === 2 && "border-slate-300",
+                  !isFirst && rank !== 2 && "border-amber-600",
                 )}
               >
                 <GameAvatar

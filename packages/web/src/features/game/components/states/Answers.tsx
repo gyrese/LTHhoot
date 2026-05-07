@@ -23,7 +23,7 @@ import {
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 

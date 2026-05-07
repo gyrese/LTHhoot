@@ -1,13 +1,6 @@
 import { useSpring, useTransform } from "motion/react"
 import { useEffect, useState } from "react"
 
-type Props = {
-  from: number
-  to: number
-  className?: string
-  delay?: number
-}
-
 const AnimatedPoints = ({
   from,
   to,

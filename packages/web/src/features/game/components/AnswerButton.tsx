@@ -7,6 +7,18 @@ import type {
   PropsWithChildren,
 } from "react"
 
+const childrenSizeClass = (text: string): string => {
+  if (text.length > 50) {
+    return "text-base leading-tight md:text-lg"
+  }
+
+  if (text.length > 25) {
+    return "text-xl md:text-2xl"
+  }
+
+  return "text-3xl md:text-4xl"
+}
+
 type Props = PropsWithChildren &
   ButtonHTMLAttributes<HTMLButtonElement> & {
     icon: ElementType
@@ -51,11 +63,7 @@ const AnswerButton = ({
           className={clsx(
             "w-full flex-1 font-black tracking-tight break-words text-white transition-all duration-300",
             children && typeof children === "string"
-              ? children.length > 50
-                ? "text-base leading-tight md:text-lg"
-                : children.length > 25
-                  ? "text-xl md:text-2xl"
-                  : "text-3xl md:text-4xl"
+              ? childrenSizeClass(children)
               : "text-3xl md:text-4xl",
           )}
           style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}

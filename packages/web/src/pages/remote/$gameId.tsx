@@ -3,6 +3,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router"
 
 const RemotePage = () => {
   const { gameId } = useParams({ from: "/remote/$gameId" })
+
   return <RemoteControl gameId={gameId} />
 }
 

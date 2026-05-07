@@ -49,7 +49,7 @@ const PlayerGamePage = () => {
   })
 
   useEvent(EVENTS.GAME.RESET, (message) => {
-    navigate({ to: "/" })
+    navigate({ to: "/", search: { pin: undefined } })
     reset()
     setQuestionStates(null)
     toast.error(t(message))

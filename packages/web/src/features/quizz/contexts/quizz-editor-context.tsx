@@ -282,6 +282,7 @@ export const QuizzEditorProvider = ({
       const next = [...prev]
       const duplicated = { ...next[index], id: randomUUID() }
       next.splice(index + 1, 0, duplicated)
+
       return next
     })
     handleSetCurrentIndex(index + 1)
@@ -327,7 +328,9 @@ export const QuizzEditorProvider = ({
 
   const saveQuizz = useCallback(
     (options?: { silent?: boolean; navigate?: boolean }) => {
-      if (!socket) return
+      if (!socket) {
+        return
+      }
 
       const payload = {
         subject,
@@ -375,6 +378,7 @@ export const QuizzEditorProvider = ({
     setIsSaving(false)
     setLastSaved(new Date())
     toast.success(t("quizz:quizzSaved"), { id: "quizz-save" })
+
     if (pendingNavigation) {
       navigate({ to: "/manager/config" })
     }
@@ -385,6 +389,7 @@ export const QuizzEditorProvider = ({
     setIsSaving(false)
     setLastSaved(new Date())
     toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
+
     if (pendingNavigation) {
       navigate({ to: "/manager/config" })
     }

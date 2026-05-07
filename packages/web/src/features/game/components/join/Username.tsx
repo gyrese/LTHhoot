@@ -9,7 +9,7 @@ import {
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { PETDEX_AVATARS } from "@rahoot/web/features/game/utils/avatars"
 import { useNavigate } from "@tanstack/react-router"
-import { AnimatePresence, motion } from "motion/react"
+import { motion } from "motion/react"
 import { type KeyboardEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { User, ArrowRight, RefreshCcw } from "lucide-react"
@@ -23,6 +23,7 @@ const Username = () => {
   const [username, setUsername] = useState("")
   const [avatarSeed, setAvatarSeed] = useState(() => {
     const idx = Math.floor(Math.random() * PETDEX_AVATARS.length)
+
     return PETDEX_AVATARS[idx]?.seed ?? "boba"
   })
   const { t } = useTranslation()

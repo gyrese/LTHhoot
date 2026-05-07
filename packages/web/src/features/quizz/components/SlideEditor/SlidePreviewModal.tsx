@@ -27,9 +27,12 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") {
+        onClose()
+      }
     }
     window.addEventListener("keydown", onKey)
+
     return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
 
@@ -47,7 +50,15 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
     maxYear,
     items,
     pinImage,
-  } = question
+  } = question as QuestionWithId & {
+    answers?: string[]
+    min?: number
+    max?: number
+    minYear?: number
+    maxYear?: number
+    items?: string[]
+    pinImage?: string
+  }
 
   let bgStyle: CSSProperties = {
     backgroundImage: `url(${slideBg})`,
@@ -80,9 +91,9 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       <div className="pointer-events-none absolute inset-0">
         <SlideCanvas
           elements={elements || []}
-          onChange={() => {}}
+          onChange={() => undefined}
           selectedId={undefined}
-          onSelect={() => {}}
+          onSelect={() => undefined}
           readOnly={true}
         />
       </div>
@@ -138,7 +149,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
 
         <div className="w-full">
           {type === "mcq" && answers && (
-            <McqAnswers answers={answers} onAnswer={() => {}} />
+            <McqAnswers answers={answers} onAnswer={() => undefined} />
           )}
           {type === "true_false" && <TrueFalseAnswers />}
           {type === "open" && <OpenAnswerPlaceholder />}
@@ -146,22 +157,25 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
             <DateAnswer
               minYear={minYear}
               maxYear={maxYear}
-              onNumberAnswer={() => {}}
+              onNumberAnswer={() => undefined}
             />
           )}
           {type === "slider" && (
             <SliderAnswer
               min={min ?? 0}
               max={max ?? 100}
-              onNumberAnswer={() => {}}
+              onNumberAnswer={() => undefined}
             />
           )}
           {type === "puzzle" && items && (
-            <PuzzleAnswer items={items} onOrderAnswer={() => {}} />
+            <PuzzleAnswer items={items} onOrderAnswer={() => undefined} />
           )}
           {type === "drop_pin" && pinImage && (
             <div className="pointer-events-none scale-90 opacity-80">
-              <DropPinAnswer pinImage={pinImage} onTextAnswer={() => {}} />
+              <DropPinAnswer
+                pinImage={pinImage}
+                onTextAnswer={() => undefined}
+              />
             </div>
           )}
         </div>

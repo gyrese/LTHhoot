@@ -76,12 +76,16 @@ export function getPetdexAvatar(seed: string): PetdexAvatar | undefined {
 
 export function getDiceBearUrl(seed: string): string {
   const bg = AVATAR_BG[Math.abs(seed.charCodeAt(0)) % AVATAR_BG.length]
+
   return `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${bg}`
 }
 
 export function getAvatarUrl(seed: string): string {
   const pet = getPetdexAvatar(seed)
-  if (pet) return pet.spritesheetUrl
+
+  if (pet) {
+    return pet.spritesheetUrl
+  }
 
   return getDiceBearUrl(seed)
 }

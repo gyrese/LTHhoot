@@ -25,7 +25,6 @@ const Question = ({
     background,
     backgroundOpacity,
     elements,
-    audio,
     cooldown,
     pinImage,
   },

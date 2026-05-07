@@ -1,10 +1,5 @@
-import { EVENTS } from "@rahoot/common/constants"
 import Logo from "@rahoot/web/components/Logo"
 import Button from "@rahoot/web/components/Button"
-import {
-  useEvent,
-  useSocket,
-} from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
 import { useNavigate } from "@tanstack/react-router"
@@ -40,6 +35,7 @@ const QuizzEditorHeader = () => {
     const loadingToast = toast.loading(
       t("manager:quizz.exporting", "Exportation en cours..."),
     )
+
     try {
       const payload = {
         subject,
@@ -88,17 +84,23 @@ const QuizzEditorHeader = () => {
                   isSaving && "animate-pulse text-blue-500",
                 )}
               >
-                {isSaving
-                  ? t("quizz:saving", "Sauvegarde...")
-                  : isDirty
-                    ? t(
-                        "quizz:unsavedChanges",
-                        "Modifications non enregistrées",
-                      )
-                    : t(
-                        "quizz:allChangesSaved",
-                        "Toutes les modifications sont enregistrées",
-                      )}
+                {(() => {
+                  if (isSaving) {
+                    return t("quizz:saving", "Sauvegarde...")
+                  }
+
+                  if (isDirty) {
+                    return t(
+                      "quizz:unsavedChanges",
+                      "Modifications non enregistrées",
+                    )
+                  }
+
+                  return t(
+                    "quizz:allChangesSaved",
+                    "Toutes les modifications sont enregistrées",
+                  )
+                })()}
               </span>
               {!isSaving && (
                 <span>
