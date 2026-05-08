@@ -30,6 +30,7 @@ type SlideCanvasProps = {
   background?: SlideBackground
   backgroundOpacity?: number
   onContextMenuEvent?: (_e: MouseEvent, _isElement: boolean) => void
+  hideYoutube?: boolean
 }
 
 const CANVAS_W = 1920
@@ -45,6 +46,7 @@ const SlideCanvas = ({
   background,
   backgroundOpacity,
   onContextMenuEvent,
+  hideYoutube = false,
 }: SlideCanvasProps) => {
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -593,6 +595,7 @@ const SlideCanvas = ({
 
           {/* YouTube iframes in readOnly — positioned relative to the 16:9 inner div */}
           {readOnly &&
+            !hideYoutube &&
             elements
               .filter(
                 (el): el is Extract<SlideElement, { type: "youtube" }> =>

@@ -58,12 +58,13 @@ const Question = ({
       {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
-            elements={elements.filter((el) => el.type !== "youtube")}
+            elements={elements}
             onChange={noopChange}
             selectedId={undefined}
             onSelect={noopSelect}
             readOnly
             noBackground
+            hideYoutube
           />
         </div>
       )}
