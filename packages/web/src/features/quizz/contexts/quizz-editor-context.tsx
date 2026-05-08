@@ -223,7 +223,7 @@ export const QuizzEditorProvider = ({
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
-  const currentQuestion = questions[currentIndex]
+  const currentQuestion = questions[currentIndex] || questions[Math.max(0, questions.length - 1)] || questions[0]
 
   const markDirty = () => setIsDirty(true)
 
@@ -264,10 +264,25 @@ export const QuizzEditorProvider = ({
   }
 
   const removeQuestion = (index: number) => {
-    setQuestions((prev) => prev.filter((_, i) => i !== index))
-    handleSetCurrentIndex(
-      Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex),
-    )
+    const oldQuestionsCount = questions.length
+    const oldCurrentIndex = currentIndex
+    
+    console.log(`[DELETE_FLOW] Deleting slide at index ${index}. Total before: ${oldQuestionsCount}`)
+    
+    const nextQuestions = questions.filter((_, i) => i !== index)
+    setQuestions(nextQuestions)
+    
+    // Calcul de l'index suivant :
+    // - Si on supprime le slide courant ou un slide avant le courant, on recule de 1 (sans descendre sous 0)
+    // - Sinon on garde le même index
+    const nextIndex = Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex)
+    
+    // Sécurité : si on a tout supprimé (ne devrait pas arriver avec canDelete), on reste à 0
+    const finalIndex = nextQuestions.length === 0 ? 0 : Math.min(nextIndex, nextQuestions.length - 1)
+    
+    console.log(`[DELETE_FLOW] nextIndex computed: ${finalIndex}. Total remaining: ${nextQuestions.length}`)
+    
+    handleSetCurrentIndex(finalIndex)
     markDirty()
   }
 

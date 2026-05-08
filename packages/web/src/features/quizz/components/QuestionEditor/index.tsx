@@ -13,6 +13,10 @@ import SlideEditor from "@rahoot/web/features/quizz/components/SlideEditor"
 
 const QuestionAnswerEditor = () => {
   const { currentQuestion } = useQuizzEditor()
+  
+  if (!currentQuestion) {
+    return null
+  }
 
   switch (currentQuestion.type) {
     case "mcq":

@@ -36,7 +36,7 @@ const QuestionEditorConfig = () => {
     }
 
   const handleUpdateElement = (id: string, updates: any) => {
-    const elements = (currentQuestion.elements || []).map((el) =>
+    const elements = (currentQuestion?.elements || []).map((el) =>
       el.id === id ? { ...el, ...updates } : el,
     )
     updateQuestion(currentIndex, { elements })
@@ -44,7 +44,7 @@ const QuestionEditorConfig = () => {
 
   const handleDeleteLayer = (id: string) => (e: React.MouseEvent) => {
     e.stopPropagation()
-    const elements = (currentQuestion.elements || []).filter(
+    const elements = (currentQuestion?.elements || []).filter(
       (el) => el.id !== id,
     )
     updateQuestion(currentIndex, { elements })
@@ -57,7 +57,7 @@ const QuestionEditorConfig = () => {
   const handleMoveLayer =
     (id: string, direction: "up" | "down") => (e: React.MouseEvent) => {
       e.stopPropagation()
-      const elements = [...(currentQuestion.elements || [])]
+      const elements = [...(currentQuestion?.elements || [])]
       const index = elements.findIndex((el) => el.id === id)
 
       if (index === -1) {
@@ -79,11 +79,15 @@ const QuestionEditorConfig = () => {
       updateQuestion(currentIndex, { elements })
     }
 
-  const isTitle = currentQuestion.type === "title"
-  const selectedElement = currentQuestion.elements?.find(
+  const isTitle = currentQuestion?.type === "title"
+  const selectedElement = currentQuestion?.elements?.find(
     (el) => el.id === selectedId,
   )
   const isYoutube = selectedElement?.type === "youtube"
+
+  if (!currentQuestion) {
+    return null
+  }
 
   return (
     <aside className="z-10 flex w-68 shrink-0 flex-col gap-6 overflow-auto border-l border-gray-200 bg-white px-4 pb-4">
@@ -216,7 +220,7 @@ const QuestionEditorConfig = () => {
               type="range"
               min="0"
               max="100"
-              value={(currentQuestion.backgroundOpacity ?? 0.5) * 100}
+              value={(currentQuestion?.backgroundOpacity ?? 0.5) * 100}
               onChange={(e) =>
                 handleUpdateQuestion("backgroundOpacity")(
                   Number(e.target.value) / 100,
@@ -225,7 +229,7 @@ const QuestionEditorConfig = () => {
               className="accent-primary h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
             />
             <span className="w-8 text-right text-xs font-medium text-gray-500">
-              {Math.round((currentQuestion.backgroundOpacity ?? 0.5) * 100)}%
+              {Math.round((currentQuestion?.backgroundOpacity ?? 0.5) * 100)}%
             </span>
           </div>
           <ConfigField.Description>
@@ -243,7 +247,7 @@ const QuestionEditorConfig = () => {
             )}
           />
           <ConfigNumberInput
-            value={currentQuestion.cooldown}
+            value={currentQuestion?.cooldown}
             min={3}
             onChange={handleUpdateQuestion("cooldown")}
           />
@@ -263,7 +267,7 @@ const QuestionEditorConfig = () => {
               label={t("quizz:question.config.answerTime")}
             />
             <ConfigNumberInput
-              value={currentQuestion.time}
+              value={currentQuestion?.time}
               min={5}
               onChange={handleUpdateQuestion("time")}
             />
@@ -284,19 +288,19 @@ const QuestionEditorConfig = () => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={Boolean(currentQuestion.showLeaderboard)}
+                aria-checked={Boolean(currentQuestion?.showLeaderboard)}
                 onClick={() =>
                   updateQuestion(currentIndex, {
-                    showLeaderboard: !currentQuestion.showLeaderboard,
+                    showLeaderboard: !currentQuestion?.showLeaderboard,
                   })
                 }
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                  currentQuestion.showLeaderboard ? "bg-primary" : "bg-gray-300"
+                  currentQuestion?.showLeaderboard ? "bg-primary" : "bg-gray-300"
                 }`}
               >
                 <span
                   className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                    currentQuestion.showLeaderboard
+                    currentQuestion?.showLeaderboard
                       ? "translate-x-4"
                       : "translate-x-0.5"
                   }`}
