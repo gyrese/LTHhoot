@@ -7,6 +7,7 @@ import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
 import { useEffect, useState } from "react"
 import ReactConfetti from "react-confetti"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
 type Props = {
@@ -17,6 +18,7 @@ const WINNING_ANIMATION_STATES = ["waving"] as const
 
 const usePodiumAnimation = (topLength: number) => {
   const [apparition, setApparition] = useState(0)
+  const { isHost } = useGameConfig()
 
   const [sfxtThree] = useSound(SFX.PODIUM.THREE, { volume: 0.2 })
   const [sfxSecond] = useSound(SFX.PODIUM.SECOND, { volume: 0.2 })
@@ -26,6 +28,8 @@ const usePodiumAnimation = (topLength: number) => {
   const [sfxFirst] = useSound(SFX.PODIUM.FIRST, { volume: 0.2 })
 
   useEffect(() => {
+    if (!isHost) return
+
     const actions: Partial<Record<number, () => void>> = {
       4: () => {
         sfxRoolStop()
@@ -37,7 +41,7 @@ const usePodiumAnimation = (topLength: number) => {
     }
 
     actions[apparition]?.()
-  }, [apparition, sfxFirst, sfxSecond, sfxtThree, sfxRool, sfxRoolStop])
+  }, [apparition, sfxFirst, sfxSecond, sfxtThree, sfxRool, sfxRoolStop, isHost])
 
   useEffect(() => {
     if (topLength < 3) {

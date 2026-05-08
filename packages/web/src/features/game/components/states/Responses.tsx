@@ -11,6 +11,7 @@ import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
 const noopChange = (_els: SlideElement[]) => undefined
@@ -446,8 +447,13 @@ const Responses = ({
     volume: 0.2,
   })
 
+  const { isHost } = useGameConfig()
+
   useEffect(() => {
     stopMusic()
+    
+    if (!isHost) return
+
     sfxResults()
     setPercentages(calculatePercentages(responses))
     playMusic()
@@ -458,7 +464,7 @@ const Responses = ({
       stopMusic()
       clearTimeout(revealTimer)
     }
-  }, [])
+  }, [isHost])
 
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">

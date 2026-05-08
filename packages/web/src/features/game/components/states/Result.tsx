@@ -6,6 +6,7 @@ import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
 type Props = {
@@ -24,6 +25,7 @@ const Result = ({
   }
   const rankKey = rankKeyMap[rank] ?? "game:rank.other"
 
+  const { isHost } = useGameConfig()
   const [sfxCorrect] = useSound(SFX.RESULTS_SOUND, { volume: 0.3 })
   const [sfxWrong] = useSound(SFX.BOUMP_SOUND, { volume: 0.3 })
 
@@ -35,10 +37,12 @@ const Result = ({
       player.updatePoints(myPoints)
     }, 2000)
 
-    if (correct) {
-      sfxCorrect()
-    } else {
-      sfxWrong()
+    if (isHost) {
+      if (correct) {
+        sfxCorrect()
+      } else {
+        sfxWrong()
+      }
     }
 
     return () => clearTimeout(timer)

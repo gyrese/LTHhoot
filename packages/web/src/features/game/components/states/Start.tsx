@@ -4,6 +4,7 @@ import { useEvent } from "@rahoot/web/features/game/contexts/socket-context"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
 import { useState } from "react"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
 type Props = {
@@ -16,13 +17,19 @@ const Start = ({ data: { time, subject } }: Props) => {
 
   const [sfxBoump] = useSound(SFX.BOUMP_SOUND, { volume: 0.2 })
 
+  const { isHost } = useGameConfig()
+
   useEvent(EVENTS.GAME.START_COOLDOWN, () => {
-    sfxBoump()
+    if (isHost) {
+      sfxBoump()
+    }
     setShowTitle(false)
   })
 
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
-    sfxBoump()
+    if (isHost) {
+      sfxBoump()
+    }
     setCooldown(sec)
   })
 

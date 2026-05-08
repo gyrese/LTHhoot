@@ -1,12 +1,18 @@
 import { forwardRef } from "react"
 import { parseAudio } from "@rahoot/web/features/game/utils/audio"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 
 type Props = {
   audio: string
 }
 
 const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
+  const { isHost } = useGameConfig()
   const src = parseAudio(audio)
+
+  if (!isHost) {
+    return null
+  }
 
   if (src.type === "file") {
     return <audio ref={ref} src={src.url} autoPlay loop hidden />

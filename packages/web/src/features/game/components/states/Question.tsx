@@ -4,6 +4,7 @@ import { type SlideElement } from "@rahoot/common/types/game"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
 type Props = {
@@ -31,9 +32,13 @@ const Question = ({
 }: Props) => {
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
 
+  const { isHost } = useGameConfig()
+
   useEffect(() => {
-    sfxShow()
-  }, [sfxShow])
+    if (isHost) {
+      sfxShow()
+    }
+  }, [sfxShow, isHost])
 
   let bgStyle: CSSProperties = DEFAULT_BG
 

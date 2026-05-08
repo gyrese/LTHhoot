@@ -20,6 +20,7 @@ import {
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
@@ -86,8 +87,10 @@ const Answers = ({
 
     socket?.emit(EVENTS.PLAYER.SELECTED_ANSWER, { gameId, data: payload })
     setAnswered(true)
-    sfxPop()
   }
+
+  const { isHost } = useGameConfig()
+  const isPlayer = !isHost
 
   useEffect(() => {
     const disabledMusicMedia = [
@@ -97,7 +100,8 @@ const Answers = ({
 
     const hasYoutube = elements?.some((el) => el.type === "youtube") ?? false
 
-    if (disabledMusicMedia.includes(media?.type) || audio || hasYoutube) {
+    // Musique autorisée uniquement sur Host et si pas d'autre média audio/vidéo
+    if (!isHost || disabledMusicMedia.includes(media?.type) || audio || hasYoutube) {
       return
     }
 
@@ -107,11 +111,14 @@ const Answers = ({
     return () => {
       stopMusic()
     }
-  }, [playMusic])
+  }, [playMusic, isHost])
 
   const audioCtxRef = useRef<AudioContext | null>(null)
 
   function playTick(urgent: boolean) {
+    // Ticks sonores autorisés uniquement sur le Host
+    if (!isHost) return
+
     try {
       audioCtxRef.current ||= new AudioContext()
 
@@ -134,16 +141,17 @@ const Answers = ({
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     setCooldown(sec)
 
-    if (isPlayer && sec <= 5 && sec > 0) {
+    if (isHost && sec <= 5 && sec > 0) {
       playTick(sec <= 3)
     }
   })
+
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setTotalAnswer(count)
-    sfxPop()
+    if (isHost) {
+      sfxPop()
+    }
   })
-
-  const isPlayer = player !== null
 
   const progress = time > 0 ? (cooldown / time) * 100 : 0
 
@@ -215,7 +223,7 @@ const Answers = ({
         </div>
       )}
 
-      {audio && <AudioEmbed ref={slideAudioRef} audio={audio} />}
+      {audio && isHost && <AudioEmbed ref={slideAudioRef} audio={audio} />}
 
       <div id="question-container" className="relative z-10 px-4 pt-4">
         <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
