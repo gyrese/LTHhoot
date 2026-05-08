@@ -63,8 +63,13 @@ const PlayerGamePage = () => {
 
     console.log(`[DEBUG] Processing GAME.RESET (msg: ${message})`)
     navigate({ to: "/", search: { pin: undefined } })
-    reset()
-    setQuestionStates(null)
+    const currentId = usePlayerStore.getState().gameId
+    setTimeout(() => {
+      if (usePlayerStore.getState().gameId === currentId) {
+        reset()
+        setQuestionStates(null)
+      }
+    }, 30_000)
     toast.error(t(message))
   })
 

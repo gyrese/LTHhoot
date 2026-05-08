@@ -6,6 +6,9 @@ import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import Loader from "@rahoot/web/components/Loader"
+import { LogOut } from "lucide-react"
+import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
+import { useNavigate } from "@tanstack/react-router"
 
 type Props = {
   data: PlayerStatusDataMap["WAIT"]
@@ -16,6 +19,8 @@ const WAITING_ANIMATION_STATES = ["waiting"] as const
 
 const Wait = ({ data: { text } }: Props) => {
   const { t } = useTranslation()
+  const { reset } = usePlayerStore()
+  const navigate = useNavigate()
   const [players, setPlayers] = useState<LobbyPlayer[]>([])
 
   useEvent(EVENTS.GAME.NEW_PLAYER, (player) => {
@@ -38,6 +43,16 @@ const Wait = ({ data: { text } }: Props) => {
           <span />
           <span />
         </div>
+        <button
+          onClick={() => {
+            reset()
+            navigate({ to: "/" })
+          }}
+          className="mt-4 flex items-center gap-2 text-sm font-bold text-white/40 transition-colors hover:text-white/80"
+        >
+          <LogOut size={16} />
+          {t("common:quit", "Quitter la session")}
+        </button>
       </div>
 
       {players.length > 0 && (

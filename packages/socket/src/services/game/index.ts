@@ -175,9 +175,22 @@ class Game {
 
   // Reconnexion depuis un appareil tiers authentifié (télécommande)
   reconnectRemote(socket: Socket) {
+    const newSocketId = socket.id
+    const oldSocketId = this._manager.id
+
+    if (this._manager.connected && oldSocketId !== newSocketId) {
+      console.log(`[TAKEOVER] Remote takeover: ${oldSocketId} -> ${newSocketId}`)
+      const oldSocket = this.io.sockets.sockets.get(oldSocketId)
+
+      if (oldSocket) {
+        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        oldSocket.disconnect(true)
+      }
+    }
+
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
-    this._manager.id = socket.id
+    this._manager.id = newSocketId
     this._manager.connected = true
 
     const status = this.managerStatus ??
@@ -202,15 +215,22 @@ class Game {
   }
 
   private reconnectManager(socket: Socket) {
-    if (this._manager.connected) {
-      socket.emit(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    const newSocketId = socket.id
+    const oldSocketId = this._manager.id
 
-      return
+    if (this._manager.connected && oldSocketId !== newSocketId) {
+      console.log(`[TAKEOVER] Manager takeover: ${oldSocketId} -> ${newSocketId}`)
+      const oldSocket = this.io.sockets.sockets.get(oldSocketId)
+
+      if (oldSocket) {
+        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        oldSocket.disconnect(true)
+      }
     }
 
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
-    this._manager.id = socket.id
+    this._manager.id = newSocketId
     this._manager.connected = true
 
     const status = this.managerStatus ??

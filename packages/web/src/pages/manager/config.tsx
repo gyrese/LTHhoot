@@ -9,15 +9,26 @@ import {
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import ManagerDashboard from "@rahoot/web/features/manager/components/ManagerDashboard"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 
 const ManagerConfigPage = () => {
-  const { isConnected } = useSocket()
+  const { isConnected, socket } = useSocket()
   const { setGameId, setStatus, setConfig, setSalonImage, config } =
     useManagerStore()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    if (isConnected && !config) {
+      socket?.emit(EVENTS.MANAGER.GET_CONFIG)
+    }
+  }, [isConnected, config, socket])
+
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
     setConfig(data)
+  })
+  
+  useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
+    navigate({ to: "/manager" })
   })
 
   useEvent(
@@ -43,7 +54,11 @@ const ManagerConfigPage = () => {
   }
 
   if (!config) {
-    return navigate({ to: "/manager" })
+    return (
+      <Background>
+        <Loader className="h-23" />
+      </Background>
+    )
   }
 
   return <ManagerDashboard data={config} />

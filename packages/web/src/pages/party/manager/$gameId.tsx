@@ -67,8 +67,13 @@ const ManagerGamePage = () => {
 
     console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
     navigate({ to: "/manager/config" })
-    reset()
-    setQuestionStates(null)
+    const currentId = useManagerStore.getState().gameId
+    setTimeout(() => {
+      if (useManagerStore.getState().gameId === currentId) {
+        reset()
+        setQuestionStates(null)
+      }
+    }, 30_000)
     toast.error(t(message))
   })
 
@@ -79,8 +84,13 @@ const ManagerGamePage = () => {
 
     if (status.name === STATUS.FINISHED) {
       navigate({ to: "/manager/config" })
-      reset()
-      setQuestionStates(null)
+      const currentId = useManagerStore.getState().gameId
+      setTimeout(() => {
+        if (useManagerStore.getState().gameId === currentId) {
+          reset()
+          setQuestionStates(null)
+        }
+      }, 30_000)
 
       return
     }

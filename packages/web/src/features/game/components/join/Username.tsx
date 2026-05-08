@@ -12,13 +12,13 @@ import { useNavigate } from "@tanstack/react-router"
 import { motion } from "motion/react"
 import { type KeyboardEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { User, ArrowRight, RefreshCcw } from "lucide-react"
+import { User, ArrowRight, RefreshCcw, LogOut } from "lucide-react"
 
 const WELCOME_ANIMATION_STATES = ["idle", "waving", "waiting"] as const
 
 const Username = () => {
   const { socket } = useSocket()
-  const { gameId, login, setStatus } = usePlayerStore()
+  const { gameId, login, setStatus, reset } = usePlayerStore()
   const navigate = useNavigate()
   const [username, setUsername] = useState("")
   const [avatarSeed, setAvatarSeed] = useState(() => {
@@ -146,6 +146,17 @@ const Username = () => {
                   className="transition-transform group-hover:translate-x-1"
                 />
               </motion.button>
+
+              <button
+                onClick={() => {
+                  reset()
+                  navigate({ to: "/" })
+                }}
+                className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-bold text-white/40 transition-colors hover:text-white/80"
+              >
+                <LogOut size={16} />
+                {t("common:quit", "Quitter la session")}
+              </button>
             </div>
           </div>
         </div>

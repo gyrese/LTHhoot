@@ -69,6 +69,9 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
     }),
     {
       name: "rahoot-manager-storage",
+      partialize: (state) => ({
+        gameId: state.gameId,
+      }),
     },
   ),
 )
