@@ -119,6 +119,7 @@ const Leaderboard = ({
             onSelect={noopSelect}
             readOnly
             noBackground
+            hideYoutube
           />
         </div>
       )}
