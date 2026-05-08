@@ -81,6 +81,21 @@ export const IconTrophy = ({ className }: { className?: string }) => (
   </svg>
 )
 
+export const IconPower = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+    <line x1="12" y1="2" x2="12" y2="12" />
+  </svg>
+)
+
 // ─── Écran d'authentification ─────────────────────────────────────────────────
 
 export function AuthScreen({
@@ -167,11 +182,13 @@ export function RemoteHeader({
   questionStates,
   statusName,
   inviteCode,
+  onEndGame,
 }: {
   isConnected: boolean
   questionStates: QuestionStates | null
   statusName: Status | undefined
   inviteCode: string
+  onEndGame: () => void
 }) {
   const [codeVisible, setCodeVisible] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -188,7 +205,13 @@ export function RemoteHeader({
 
   return (
     <header className="relative z-20 flex items-center gap-3 border-b border-white/8 bg-black/40 px-4 py-3 backdrop-blur-xl">
-      <img src={logo} alt="LTNHoot!" className="h-7 w-auto object-contain" />
+      <button
+        onClick={onEndGame}
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-500 transition-colors hover:bg-red-500/20 active:scale-90"
+        title="Fermer la session"
+      >
+        <IconPower className="h-5 w-5" />
+      </button>
 
       <div className="flex flex-1 items-center justify-center gap-2">
         {questionStates && (

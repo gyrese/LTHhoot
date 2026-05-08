@@ -27,6 +27,7 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
     playlist: src.videoId,
     rel: "0",
     playsinline: "1",
+    origin: typeof window !== "undefined" ? window.location.origin : "",
   })
 
   if (src.start > 0) {
@@ -40,7 +41,7 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
   return (
     <iframe
       src={`https://www.youtube.com/embed/${src.videoId}?${params.toString()}`}
-      allow="autoplay"
+      allow="autoplay; encrypted-media"
       style={{
         position: "absolute",
         width: 1,

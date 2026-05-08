@@ -274,6 +274,20 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     [socket, gameId],
   )
 
+  const handleEndGame = useCallback(() => {
+    if (!socket || !gameId) {
+      return
+    }
+
+    if (
+      window.confirm(
+        t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
+      )
+    ) {
+      socket.emit(EVENTS.MANAGER.END_GAME, { gameId })
+    }
+  }, [socket, gameId, t])
+
   const primaryAction = getPrimaryAction(status, players.length, t)
 
   if (!isAuthenticated) {
@@ -301,6 +315,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         questionStates={questionStates}
         statusName={status?.name}
         inviteCode={inviteCode}
+        onEndGame={handleEndGame}
       />
 
       <main className="relative z-10 flex-1 overflow-y-auto">

@@ -458,6 +458,12 @@ class Game {
   finalizeOpenAnswers() {
     this.round.finalizeOpenAnswers()
   }
+
+  endGame() {
+    console.log(`[END_GAME] Force closing session game=${this.inviteCode}`)
+    this.io.to(this.gameId).emit(EVENTS.GAME.RESET, "game:sessionClosedByManager")
+    registry.removeGame(this.gameId)
+  }
 }
 
 export default Game

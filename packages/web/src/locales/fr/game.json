@@ -43,5 +43,9 @@
     "players": "joueurs",
     "clickToValidate": "Clique sur une réponse pour la valider",
     "noAnswer": "Sans réponse"
-  }
+  },
+  "sessionClosedByManager": "La session a été fermée par le manager.",
+  "confirmEndGame": "Voulez-vous vraiment fermer cette session ? Tous les joueurs seront déconnectés.",
+  "closeSession": "Fermer la session",
+  "quit": "Quitter"
 }

@@ -1,8 +1,6 @@
 import type { PlayerStatusDataMap } from "@rahoot/common/types/game/status"
 import { EVENTS } from "@rahoot/common/constants"
-import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import { useEvent } from "@rahoot/web/features/game/contexts/socket-context"
-import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import Loader from "@rahoot/web/components/Loader"
@@ -14,21 +12,14 @@ type Props = {
   data: PlayerStatusDataMap["WAIT"]
 }
 
-type LobbyPlayer = { id: string; username: string; avatar?: string }
-const WAITING_ANIMATION_STATES = ["waiting"] as const
-
 const Wait = ({ data: { text } }: Props) => {
   const { t } = useTranslation()
   const { reset } = usePlayerStore()
   const navigate = useNavigate()
-  const [players, setPlayers] = useState<LobbyPlayer[]>([])
+  const [totalPlayers, setTotalPlayers] = useState(0)
 
-  useEvent(EVENTS.GAME.NEW_PLAYER, (player) => {
-    setPlayers((prev) => [...prev, player])
-  })
-
-  useEvent(EVENTS.GAME.REMOVE_PLAYER, (playerId) => {
-    setPlayers((prev) => prev.filter((p) => p.id !== playerId))
+  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
+    setTotalPlayers(total)
   })
 
   return (
@@ -38,6 +29,15 @@ const Wait = ({ data: { text } }: Props) => {
         <h2 className="anim-slide-up text-center text-3xl font-bold text-white drop-shadow-lg md:text-4xl">
           {t(text)}
         </h2>
+
+        {totalPlayers > 0 && (
+          <div className="anim-pop-in mt-2 flex items-center justify-center rounded-full bg-white/10 px-5 py-2 backdrop-blur-sm">
+            <span className="text-lg font-bold text-white">
+              {totalPlayers} {t("game:playersJoined", "joueurs connectés")}
+            </span>
+          </div>
+        )}
+
         <div className="dot-loader text-white" aria-hidden="true">
           <span />
           <span />
@@ -54,39 +54,6 @@ const Wait = ({ data: { text } }: Props) => {
           {t("common:quit", "Quitter la session")}
         </button>
       </div>
-
-      {players.length > 0 && (
-        /* Conteneur scrollable — hauteur limitée pour laisser le loader visible */
-        <div className="max-h-56 w-full overflow-y-auto px-1">
-          <div className="flex flex-wrap justify-center gap-4">
-            <AnimatePresence>
-              {players.map((player, i) => (
-                <motion.div
-                  key={player.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.4, y: -16 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.4, y: 16 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                  className="flex flex-col items-center gap-1.5"
-                >
-                  <GameAvatar
-                    seed={player.avatar || player.username}
-                    animated
-                    animationStates={WAITING_ANIMATION_STATES}
-                    className="h-16 w-16 rounded-full border-2 border-white/50 shadow-md"
-                    style={{ animationDelay: `${(i % 6) * 0.2}s` }}
-                  />
-                  {/* Username — max-w élargi, lisible sur petits écrans */}
-                  <span className="max-w-20 truncate text-center text-xs font-bold text-white drop-shadow">
-                    {player.username}
-                  </span>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
     </section>
   )
 }

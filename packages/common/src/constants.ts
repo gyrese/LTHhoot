@@ -44,6 +44,7 @@ export const EVENTS = {
     VALIDATE_OPEN_ANSWER: "manager:validateOpenAnswer",
     FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
     START_DEMO: "manager:startDemo",
+    END_GAME: "manager:endGame",
   },
   QUIZZ: {
     GET: "quizz:get",

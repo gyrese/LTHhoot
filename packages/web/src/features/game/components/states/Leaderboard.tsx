@@ -1,18 +1,10 @@
-import type { SlideElement } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
-import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import Fire from "@rahoot/web/features/game/components/icons/Fire"
 import { AnimatePresence, motion, useSpring, useTransform } from "motion/react"
-import { useEffect, useState, type CSSProperties } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-
-const noopChange = (_els: SlideElement[]) => undefined
-const noopSelect = (_id: string | undefined) => undefined
-
-const DEFAULT_BG: CSSProperties = {
-  background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
-}
+import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 
 type Props = {
   data: ManagerStatusDataMap["SHOW_LEADERBOARD"]
@@ -62,14 +54,12 @@ const Leaderboard = ({
     leaderboard,
     roundLeaderboard,
     totalPlayers,
-    background,
-    backgroundOpacity,
-    elements,
   },
 }: Props) => {
   const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
   const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
   const { t } = useTranslation()
+  const { salonImage } = useManagerStore()
 
   useEffect(() => {
     setDisplayedPlayers(roundLeaderboard)
@@ -90,39 +80,24 @@ const Leaderboard = ({
     }
   }, [roundLeaderboard, leaderboard])
 
-  let bgStyle: CSSProperties = DEFAULT_BG
-
-  if (background?.type === "image") {
-    bgStyle = {
-      backgroundImage: `url(${background.value})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    }
-  } else if (background?.type === "color") {
-    bgStyle = { backgroundColor: background.value }
-  }
-
   return (
-    <section className="relative flex flex-1 flex-col justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-black" />
-      <div
-        className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
-      />
-
-      {elements && elements.length > 0 && (
-        <div className="pointer-events-none absolute inset-0">
-          <SlideCanvas
-            elements={elements}
-            onChange={noopChange}
-            selectedId={undefined}
-            onSelect={noopSelect}
-            readOnly
-            noBackground
-            hideYoutube
-          />
-        </div>
-      )}
+    <section className="relative flex flex-1 flex-col justify-center overflow-hidden bg-slate-950">
+      {/* Background with Ambient Glow matching Podium style */}
+      <div className="pointer-events-none absolute inset-0">
+        {salonImage ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 blur-sm"
+              style={{ backgroundImage: `url(${salonImage})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-950 to-purple-950" />
+        )}
+        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
+        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
+      </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
         <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
