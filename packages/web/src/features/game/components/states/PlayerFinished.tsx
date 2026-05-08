@@ -2,6 +2,9 @@ import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useTranslation } from "react-i18next"
+import { useEffect, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
+import { LogOut } from "lucide-react"
 
 type Props = {
   data: CommonStatusDataMap["FINISHED"]
@@ -24,8 +27,16 @@ const WAITING_ANIMATION_STATES = ["waiting"] as const
 const FAILED_ANIMATION_STATES = ["failed"] as const
 
 const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
-  const { player } = usePlayerStore()
+  const { player, reset } = usePlayerStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [showQuit, setShowQuit] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowQuit(true), 5000)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const rankKeyMap: Record<number, string> = {
     1: "game:rank.1",
@@ -96,6 +107,19 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
           <span className="ml-1 text-lg font-bold text-white/60">pts</span>
         </p>
       </div>
+
+      {showQuit && (
+        <button
+          onClick={() => {
+            reset()
+            navigate({ to: "/" })
+          }}
+          className="anim-pop-in mt-4 flex items-center justify-center gap-3 rounded-2xl bg-white px-10 py-5 text-2xl font-black text-black shadow-xl transition-all hover:scale-105 active:scale-95"
+        >
+          <LogOut size={28} />
+          {t("common:quit", "Quitter")}
+        </button>
+      )}
     </div>
   )
 }
