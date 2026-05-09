@@ -174,24 +174,10 @@ class Game {
   }
 
   // Reconnexion depuis un appareil tiers authentifié (télécommande)
+  // La télécommande rejoint simplement la room manager sans remplacer le manager principal
   reconnectRemote(socket: Socket) {
-    const newSocketId = socket.id
-    const oldSocketId = this._manager.id
-
-    if (this._manager.connected && oldSocketId !== newSocketId) {
-      console.log(`[TAKEOVER] Remote takeover: ${oldSocketId} -> ${newSocketId}`)
-      const oldSocket = this.io.sockets.sockets.get(oldSocketId)
-
-      if (oldSocket) {
-        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
-        oldSocket.disconnect(true)
-      }
-    }
-
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
-    this._manager.id = newSocketId
-    this._manager.connected = true
 
     const status = this.managerStatus ??
       this.lastBroadcastStatus ?? {

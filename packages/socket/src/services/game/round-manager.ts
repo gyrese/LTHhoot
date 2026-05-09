@@ -87,7 +87,7 @@ export class RoundManager {
   }
 
   async start(socket: Socket): Promise<void> {
-    if (this.opts.getManagerId() !== socket.id) {
+    if (!socket.rooms.has(`manager-${this.opts.gameId}`)) {
       return
     }
 
@@ -592,7 +592,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!socket.rooms.has(`manager-${this.opts.gameId}`)) {
       return
     }
 
@@ -609,7 +609,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!socket.rooms.has(`manager-${this.opts.gameId}`)) {
       return
     }
 

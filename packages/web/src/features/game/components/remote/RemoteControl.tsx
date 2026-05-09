@@ -100,6 +100,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     resetAuthLoading(msg || "Erreur de connexion à la partie")
   })
 
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+    setActionPending(false)
+  })
+
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
     ({ gameId: gId, status: s, players: p, currentQuestion }) => {

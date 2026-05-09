@@ -26,7 +26,6 @@ const Room = ({ data }: Props) => {
   const joinUrl = inviteCode ? `${webUrl}/?pin=${inviteCode}` : webUrl
   const { players } = useManagerStore()
   const [playerList, setPlayerList] = useState<Player[]>(players)
-  const [totalPlayers, setTotalPlayers] = useState(0)
   const { t } = useTranslation()
 
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
@@ -39,10 +38,6 @@ const Room = ({ data }: Props) => {
 
   useEvent(EVENTS.MANAGER.PLAYER_KICKED, (playerId) => {
     setPlayerList((prev) => prev.filter((p) => p.id !== playerId))
-  })
-
-  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
-    setTotalPlayers(total)
   })
 
   const handleKick = (playerId: string) => () => {
@@ -118,10 +113,10 @@ const Room = ({ data }: Props) => {
           <span className="text-2xl font-bold text-white drop-shadow-md">
             {t("game:playersJoined")}
             <span
-              key={totalPlayers}
+              key={playerList.length}
               className="anim-pop-in inline-block tabular-nums"
             >
-              {totalPlayers}
+              {playerList.length}
             </span>
           </span>
         </div>
