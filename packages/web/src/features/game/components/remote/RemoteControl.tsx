@@ -18,6 +18,7 @@ import {
   BottomBar,
   GamePanel,
   getPrimaryAction,
+  JournalPanel,
   KickModal,
   PlayersPanel,
   RemoteHeader,
@@ -55,6 +56,9 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const [maxTime, setMaxTime] = useState(0)
 
   const [activeTab, setActiveTab] = useState<RemoteTab>("jeu")
+  const [logs, setLogs] = useState<
+    { id: string; timestamp: number; level: "info" | "warn" | "error"; message: string }[]
+  >([])
   const [kickTargetId, setKickTargetId] = useState<string | null>(null)
   const [actionPending, setActionPending] = useState(false)
   const { t } = useTranslation()
@@ -102,6 +106,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
     setActionPending(false)
+  })
+
+  useEvent(EVENTS.MANAGER.LOG_ENTRY, (entry) => {
+    setLogs((prev) => [...prev, entry])
   })
 
   useEvent(
@@ -323,7 +331,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       />
 
       <main className="relative z-10 flex-1 overflow-y-auto">
-        {activeTab === "jeu" ? (
+        {activeTab === "jeu" && (
           <GamePanel
             status={status}
             answerCount={answerCount}
@@ -333,7 +341,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             timer={timer}
             maxTime={maxTime}
           />
-        ) : (
+        )}
+        {activeTab === "joueurs" && (
           <PlayersPanel
             players={players}
             statusName={status?.name}
@@ -343,6 +352,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             onKick={handleKick}
           />
         )}
+        {activeTab === "journal" && <JournalPanel logs={logs} />}
         <div className="h-28" />
       </main>
 
@@ -355,6 +365,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         isPending={actionPending}
         playerCount={players.length}
         statusName={status?.name}
+        errorCount={logs.filter((l) => l.level === "error" || l.level === "warn").length}
       />
 
       {kickTargetId && (

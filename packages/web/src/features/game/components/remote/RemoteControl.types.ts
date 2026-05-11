@@ -4,7 +4,7 @@ import { STATUS, type Status } from "@rahoot/common/types/game/status"
 
 export type GameStatus = { name: Status; data: Record<string, unknown> } | null
 export type QuestionStates = { current: number; total: number } | null
-export type RemoteTab = "jeu" | "joueurs"
+export type RemoteTab = "jeu" | "joueurs" | "journal"
 
 export interface PrimaryAction {
   label: string

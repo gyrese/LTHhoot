@@ -24,6 +24,8 @@ export const EVENTS = {
   },
   MANAGER: {
     SUCCESS_RECONNECT: "manager:successReconnect",
+    LOG_ENTRY: "manager:logEntry",
+    GET_LOGS: "manager:getLogs",
     CONFIG: "manager:config",
     GAME_CREATED: "manager:gameCreated",
     STATUS_UPDATE: "manager:statusUpdate",

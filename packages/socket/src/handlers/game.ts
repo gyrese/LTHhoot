@@ -149,6 +149,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     withGame(gameId, socket, (game) => game.endGame()),
   )
 
+  socket.on(EVENTS.MANAGER.GET_LOGS, ({ gameId }) =>
+    withGame(gameId, socket, (game) => {
+      for (const entry of game.getLogs()) {
+        socket.emit(EVENTS.MANAGER.LOG_ENTRY, entry)
+      }
+    }),
+  )
+
   socket.on("disconnect", () => {
     console.log(`[DISCONNECT] socket=${socket.id}`)
 

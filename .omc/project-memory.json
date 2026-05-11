@@ -26,7 +26,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "pnpm build",
+    "buildCommand": "pnpm build 2>&1",
     "testCommand": null,
     "lintCommand": "pnpm lint",
     "devCommand": "pnpm dev",
@@ -136,8 +136,8 @@
     },
     {
       "path": "packages\\socket\\src\\services\\game\\index.ts",
-      "accessCount": 45,
-      "lastAccessed": 1778513344461,
+      "accessCount": 49,
+      "lastAccessed": 1778521546378,
       "type": "file"
     },
     {
@@ -178,8 +178,8 @@
     },
     {
       "path": "packages\\socket\\src\\handlers\\game.ts",
-      "accessCount": 18,
-      "lastAccessed": 1778513300618,
+      "accessCount": 19,
+      "lastAccessed": 1778521552537,
       "type": "file"
     },
     {
@@ -208,8 +208,14 @@
     },
     {
       "path": "packages\\common\\src\\constants.ts",
-      "accessCount": 14,
-      "lastAccessed": 1778138602713,
+      "accessCount": 16,
+      "lastAccessed": 1778521459429,
+      "type": "file"
+    },
+    {
+      "path": "packages\\common\\src\\types\\game\\socket.ts",
+      "accessCount": 15,
+      "lastAccessed": 1778521470580,
       "type": "file"
     },
     {
@@ -222,12 +228,6 @@
       "path": "packages\\web\\src\\features\\game\\components\\states\\Wait.tsx",
       "accessCount": 13,
       "lastAccessed": 1778159440960,
-      "type": "file"
-    },
-    {
-      "path": "packages\\common\\src\\types\\game\\socket.ts",
-      "accessCount": 12,
-      "lastAccessed": 1778139486837,
       "type": "file"
     },
     {

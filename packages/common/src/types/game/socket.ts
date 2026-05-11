@@ -89,6 +89,12 @@ export interface ServerToClientEvents {
   [EVENTS.MANAGER.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.MANAGER.PLAYER_KICKED]: (_playerId: string) => void
   [EVENTS.MANAGER.UNAUTHORIZED]: () => void
+  [EVENTS.MANAGER.LOG_ENTRY]: (_entry: {
+    id: string
+    timestamp: number
+    level: "info" | "warn" | "error"
+    message: string
+  }) => void
 
   // Quizz events
   [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string }) => void
@@ -144,6 +150,9 @@ export interface ClientToServerEvents {
       orderAnswer?: number[]
     }>,
   ) => void
+
+  // Manager actions supplémentaires
+  [EVENTS.MANAGER.GET_LOGS]: (_message: { gameId: string }) => void
 
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void

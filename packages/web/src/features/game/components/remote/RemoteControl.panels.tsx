@@ -81,6 +81,24 @@ export const IconTrophy = ({ className }: { className?: string }) => (
   </svg>
 )
 
+export const IconScroll = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14,2 14,8 20,8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10,9 9,9 8,9" />
+  </svg>
+)
+
 export const IconPower = ({ className }: { className?: string }) => (
   <svg
     className={className}
@@ -1453,6 +1471,74 @@ export function PlayersPanel({
   )
 }
 
+// ─── Journal ─────────────────────────────────────────────────────────────────
+
+export function JournalPanel({
+  logs,
+}: {
+  logs: { id: string; timestamp: number; level: "info" | "warn" | "error"; message: string }[]
+}) {
+  const levelStyle = {
+    info: "text-blue-300 bg-blue-500/10 border-blue-500/20",
+    warn: "text-yellow-300 bg-yellow-500/10 border-yellow-500/20",
+    error: "text-red-300 bg-red-500/10 border-red-500/20",
+  }
+
+  const levelIcon = {
+    info: "●",
+    warn: "▲",
+    error: "✕",
+  }
+
+  const fmt = (ts: number) => {
+    const d = new Date(ts)
+    const hh = String(d.getHours()).padStart(2, "0")
+    const mm = String(d.getMinutes()).padStart(2, "0")
+    const ss = String(d.getSeconds()).padStart(2, "0")
+
+    return `${hh}:${mm}:${ss}`
+  }
+
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold tracking-wider text-white/45 uppercase">
+          Journal ({logs.length})
+        </h2>
+        <p className="text-xs text-white/25">Événements en temps réel</p>
+      </div>
+
+      {logs.length === 0 ? (
+        <p className="py-12 text-center text-sm text-white/25">
+          Aucun événement pour l'instant
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {[...logs].reverse().map((entry) => (
+            <div
+              key={entry.id}
+              className={clsx(
+                "flex items-start gap-2.5 rounded-xl border px-3 py-2.5",
+                levelStyle[entry.level],
+              )}
+            >
+              <span className="mt-0.5 shrink-0 text-xs font-black">
+                {levelIcon[entry.level]}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium leading-snug">{entry.message}</p>
+                <p className="mt-0.5 font-mono text-[10px] opacity-50">
+                  {fmt(entry.timestamp)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Barre inférieure ─────────────────────────────────────────────────────────
 
 export function BottomBar({
@@ -1464,6 +1550,7 @@ export function BottomBar({
   isPending,
   playerCount,
   statusName,
+  errorCount,
 }: {
   activeTab: RemoteTab
   setActiveTab: (_t: RemoteTab) => void
@@ -1473,6 +1560,7 @@ export function BottomBar({
   isPending: boolean
   playerCount: number
   statusName?: Status
+  errorCount: number
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-black/70 px-4 pt-3 pb-6 backdrop-blur-xl">
@@ -1504,6 +1592,24 @@ export function BottomBar({
           {playerCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-black text-white">
               {playerCount > 9 ? "9+" : playerCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("journal")}
+          className={clsx(
+            "relative flex min-w-[52px] flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-all",
+            activeTab === "journal"
+              ? "bg-orange-500/15 text-orange-400"
+              : "text-white/35 hover:text-white/60",
+          )}
+        >
+          <IconScroll className="h-5 w-5" />
+          <span className="text-[10px] font-semibold">Journal</span>
+          {errorCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white">
+              {errorCount > 9 ? "9+" : errorCount}
             </span>
           )}
         </button>

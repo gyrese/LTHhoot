@@ -8,6 +8,7 @@ import {
 } from "@rahoot/common/types/game/status"
 import Config from "@rahoot/socket/services/config"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
+import { GameLogger } from "@rahoot/socket/services/game/logger"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { RoundManager } from "@rahoot/socket/services/game/round-manager"
 import Registry from "@rahoot/socket/services/registry"
@@ -29,6 +30,7 @@ class Game {
   private readonly playerManager: PlayerManager
   private readonly round: RoundManager
   private readonly cooldown: CooldownTimer
+  private readonly logger: GameLogger
 
   private readonly disconnectTimers: Map<
     string,
@@ -58,6 +60,7 @@ class Game {
     this.io = io
     this.gameId = uuid()
     this.inviteCode = createInviteCode()
+    this.logger = new GameLogger()
     this._manager = {
       id: socket.id,
       clientId: socket.handshake.auth.clientId,
@@ -65,7 +68,6 @@ class Game {
     }
 
     this.cooldown = new CooldownTimer(io, this.gameId)
-
     this.playerManager = new PlayerManager(io, this.gameId)
 
     this.round = new RoundManager({
@@ -104,6 +106,7 @@ class Game {
       salonImage: quizz.salonImage || quizz.listingImage,
     })
 
+    this.logAndEmit("info", `Partie créée — quiz : ${quizz.subject}`)
     console.log(
       `New game created: ${this.inviteCode} subject: ${quizz.subject}`,
     )
@@ -119,6 +122,19 @@ class Game {
 
   get started(): boolean {
     return this.round.isStarted()
+  }
+
+  getLogs() {
+    return this.logger.getAll()
+  }
+
+  // ── Logger ───────────────────────────────────────────────────────────────────
+
+  private logAndEmit(level: "info" | "warn" | "error", message: string) {
+    const entry = this.logger.log(level, message)
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.LOG_ENTRY, entry)
   }
 
   // ── Status broadcasting ──────────────────────────────────────────────────
@@ -145,19 +161,23 @@ class Game {
     }
   }
 
-  // Player actions
+  // ── Player actions ───────────────────────────────────────────────────────────
 
   join(socket: Socket, username: string, avatar?: string) {
     this.playerManager.join(socket, username, avatar)
+    this.logAndEmit("info", `${username} a rejoint la partie`)
   }
 
   kickPlayer(socket: Socket, playerId: string) {
+    const player = this.playerManager.findById(playerId)
+
     if (this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
+      this.logAndEmit("warn", `${player?.username ?? playerId} a été expulsé`)
     }
   }
 
-  // Reconnect
+  // ── Reconnect ────────────────────────────────────────────────────────────────
 
   reconnect(socket: Socket) {
     const { clientId } = socket.handshake.auth
@@ -172,7 +192,6 @@ class Game {
   }
 
   // Reconnexion depuis un appareil tiers authentifié (télécommande)
-  // La télécommande rejoint simplement la room manager sans remplacer le manager principal
   reconnectRemote(socket: Socket) {
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
@@ -194,7 +213,13 @@ class Game {
       players: this.playerManager.getAll(),
     })
 
+    // Envoyer l'historique des logs à la télécommande qui vient de se connecter
+    for (const entry of this.logger.getAll()) {
+      socket.emit(EVENTS.MANAGER.LOG_ENTRY, entry)
+    }
+
     registry.reactivateGame(this.gameId)
+    this.logAndEmit("info", "Télécommande connectée")
     console.log(`Remote control connected to game ${this.inviteCode}`)
   }
 
@@ -237,7 +262,13 @@ class Game {
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
+    // Envoyer l'historique des logs au manager qui vient de se reconnecter
+    for (const entry of this.logger.getAll()) {
+      socket.emit(EVENTS.MANAGER.LOG_ENTRY, entry)
+    }
+
     registry.reactivateGame(this.gameId)
+    this.logAndEmit("info", "Manager reconnecté")
     console.log(`Manager reconnected to game ${this.inviteCode}`)
   }
 
@@ -273,24 +304,16 @@ class Game {
       }
     }
 
-    // Annuler le timer de grâce s'il est en cours
     if (isTimerActive) {
       clearTimeout(this.disconnectTimers.get(oldSocketId))
       this.disconnectTimers.delete(oldSocketId)
       console.log(`[RECONNECT_TIMER] Cancelled grace period for ${oldSocketId}`)
     }
 
-    // Join room
     socket.join(this.gameId)
-    
-    // Update player info
     this.playerManager.updateSocketId(oldSocketId, newSocketId)
     player.connected = true
 
-    // Restore status : utiliser le statut joueur spécifique en priorité,
-    // sinon le dernier statut broadcasté à tous.
-    // Les statuts SHOW_ROOM et SHOW_LEADERBOARD sont réservés au manager :
-    // un joueur qui reconnecte dans ces phases doit voir WAIT.
     const MANAGER_ONLY_STATUSES: Status[] = [STATUS.SHOW_ROOM, STATUS.SHOW_LEADERBOARD]
     const playerSpecific = this.playerStatus.get(oldSocketId)
     const liveStatus = (() => {
@@ -327,31 +350,34 @@ class Game {
     })
 
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
+    this.logAndEmit("info", `${player.username} reconnecté`)
 
     console.log(
       `[RECONNECT_FINISH] ${player.username} session restored on ${newSocketId}`,
     )
   }
 
-  // Disconnect helpers
+  // ── Disconnect helpers ───────────────────────────────────────────────────────
 
   setManagerDisconnected() {
     this._manager.connected = false
+    this.logAndEmit("warn", "Manager déconnecté — en attente de reconnexion")
     console.log(`[DISCONNECT] Manager déconnecté game=${this.inviteCode}`)
   }
 
-  // Grace period 30s avant de reset tous les joueurs si le manager ne reconnecte pas
   scheduleManagerReset() {
     if (this.managerDisconnectTimer) {
       return
     }
 
+    this.logAndEmit("warn", "Manager absent — reset dans 30s si pas de reconnexion")
     console.log(
       `[DISCONNECT] Manager game=${this.inviteCode} → grace period 30s avant reset joueurs`,
     )
 
     this.managerDisconnectTimer = setTimeout(() => {
       this.managerDisconnectTimer = null
+      this.logAndEmit("error", "Manager non reconnecté après 30s — session fermée")
       console.log(
         `[TIMEOUT] Manager game=${this.inviteCode} → reset après 30s sans reconnexion`,
       )
@@ -380,6 +406,7 @@ class Game {
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
+      this.logAndEmit("warn", `${player.username} retiré (30s sans reconnexion)`)
       console.log(
         `[REMOVE] ${player.username} supprimé définitivement game=${this.inviteCode} joueurs restants=${this.playerManager.count()}`,
       )
@@ -391,6 +418,7 @@ class Game {
   setPlayerDisconnected(socketId: string) {
     const player = this.playerManager.findById(socketId)
 
+    this.logAndEmit("warn", `${player?.username ?? "?"} déconnecté`)
     console.log(
       `[DISCONNECT] socket=${socketId} joueur=${player?.username ?? "?"} game=${this.inviteCode} (partie en cours)`,
     )
@@ -398,7 +426,6 @@ class Game {
     this.playerManager.broadcastCount()
   }
 
-  // Timer de grâce : marque le joueur déconnecté et le supprime après 30s si pas de reconnexion
   schedulePlayerRemoval(socketId: string) {
     const player = this.playerManager.findById(socketId)
 
@@ -410,6 +437,7 @@ class Game {
       return
     }
 
+    this.logAndEmit("warn", `${player.username} déconnecté — grace period 30s`)
     console.log(
       `[DISCONNECT] ${player.username} (${player.clientId.substring(0, 8)}) socket=${socketId} game=${this.inviteCode} → grace period 30s`,
     )
@@ -431,17 +459,19 @@ class Game {
     this.disconnectTimers.set(socketId, timer)
   }
 
-  // Game flow
+  // ── Game flow ────────────────────────────────────────────────────────────────
 
   abortCooldown() {
     this.cooldown.abort()
   }
 
   async start(socket: Socket) {
+    this.logAndEmit("info", "Démarrage de la partie")
     await this.round.start(socket)
   }
 
   async startDemo(socket: Socket) {
+    this.logAndEmit("info", "Démarrage en mode démo")
     this.round.setDemoMode(true)
     await this.round.start(socket)
   }
@@ -463,6 +493,7 @@ class Game {
   }
 
   abortRound(socket: Socket) {
+    this.logAndEmit("warn", "Question interrompue par le manager")
     this.round.abortQuestion(socket)
   }
 
@@ -479,6 +510,7 @@ class Game {
   }
 
   endGame() {
+    this.logAndEmit("warn", "Session fermée manuellement par le manager")
     console.log(`[END_GAME] Force closing session game=${this.inviteCode}`)
     this.io.to(this.gameId).emit(EVENTS.GAME.RESET, "game:sessionClosedByManager")
     registry.removeGame(this.gameId)
