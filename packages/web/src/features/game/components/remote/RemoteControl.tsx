@@ -168,7 +168,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     }
 
     toast.error(message)
-    navigate({ to: "/manager/config" })
+    navigate({ to: "/remote" })
   })
 
   // La reconnexion est gérée globalement par le SocketProvider
@@ -230,7 +230,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         break
 
       case STATUS.FINISHED:
-        navigate({ to: "/manager/config" })
+        navigate({ to: "/remote" })
 
         break
 
