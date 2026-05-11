@@ -23,12 +23,18 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   socket.on(EVENTS.MANAGER.RECONNECT, ({ gameId }) => {
-    // Socket authentifié manager (peut venir d'un autre appareil = télécommande)
+    // Socket authentifié manager (manager principal ou télécommande)
     if (Manager.isLogged(socket)) {
       const game = registry.getGameById(gameId)
 
       if (game) {
-        game.reconnectRemote(socket)
+        // Manager principal (même clientId) → reconnectManager (met à jour _manager.id)
+        // Télécommande (clientId différent) → reconnectRemote (ne touche pas _manager.id)
+        if (game.manager.clientId === socket.handshake.auth.clientId) {
+          game.reconnect(socket)
+        } else {
+          game.reconnectRemote(socket)
+        }
 
         return
       }
@@ -38,7 +44,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    // Reconnexion standard par clientId (même navigateur)
+    // Reconnexion standard par clientId (même navigateur, sans mot de passe)
     const game = registry.getManagerGame(gameId, socket.handshake.auth.clientId)
 
     if (game) {
@@ -154,21 +160,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
       if (!managerGame.started) {
         console.log(
-          `[DISCONNECT] Manager game=${managerGame.inviteCode} → reset (partie non démarrée)`,
+          `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie non démarrée, grace period 30s`,
         )
-        managerGame.abortCooldown()
-        io.to(managerGame.gameId).emit(
-          EVENTS.GAME.RESET,
-          "game.managerDisconnected",
+        managerGame.scheduleManagerReset()
+      } else {
+        console.log(
+          `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie en cours, reconnexion possible`,
         )
-        registry.removeGame(managerGame.gameId)
-
-        return
       }
-
-      console.log(
-        `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie en cours, reconnexion possible`,
-      )
 
       return
     }

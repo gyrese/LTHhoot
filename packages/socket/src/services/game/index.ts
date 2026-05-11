@@ -35,6 +35,8 @@ class Game {
     ReturnType<typeof setTimeout>
   > = new Map()
 
+  private managerDisconnectTimer: ReturnType<typeof setTimeout> | null = null
+
   private lastBroadcastStatus: {
     name: Status
     data: StatusDataMap[Status]
@@ -64,11 +66,7 @@ class Game {
 
     this.cooldown = new CooldownTimer(io, this.gameId)
 
-    this.playerManager = new PlayerManager(
-      io,
-      this.gameId,
-      () => this._manager.id,
-    )
+    this.playerManager = new PlayerManager(io, this.gameId)
 
     this.round = new RoundManager({
       quizz,
@@ -214,6 +212,8 @@ class Game {
       }
     }
 
+    this.cancelManagerReset()
+
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
     this._manager.id = newSocketId
@@ -340,11 +340,44 @@ class Game {
     console.log(`[DISCONNECT] Manager déconnecté game=${this.inviteCode}`)
   }
 
+  // Grace period 30s avant de reset tous les joueurs si le manager ne reconnecte pas
+  scheduleManagerReset() {
+    if (this.managerDisconnectTimer) {
+      return
+    }
+
+    console.log(
+      `[DISCONNECT] Manager game=${this.inviteCode} → grace period 30s avant reset joueurs`,
+    )
+
+    this.managerDisconnectTimer = setTimeout(() => {
+      this.managerDisconnectTimer = null
+      console.log(
+        `[TIMEOUT] Manager game=${this.inviteCode} → reset après 30s sans reconnexion`,
+      )
+      this.abortCooldown()
+      this.io
+        .to(this.gameId)
+        .emit(EVENTS.GAME.RESET, "game.managerDisconnected")
+      registry.removeGame(this.gameId)
+    }, 30_000)
+  }
+
+  cancelManagerReset() {
+    if (this.managerDisconnectTimer) {
+      clearTimeout(this.managerDisconnectTimer)
+      this.managerDisconnectTimer = null
+      console.log(
+        `[RECONNECT] Manager game=${this.inviteCode} → timer reset annulé`,
+      )
+    }
+  }
+
   removePlayer(socketId: string): Player | undefined {
     const player = this.playerManager.remove(socketId)
 
     if (player) {
-      this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
       console.log(

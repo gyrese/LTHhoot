@@ -6,13 +6,11 @@ import { usernameValidator } from "@rahoot/common/validators/auth"
 export class PlayerManager {
   private readonly io: Server
   private readonly gameId: string
-  private readonly getManagerId: () => string
   private players: Player[] = []
 
-  constructor(io: Server, gameId: string, getManagerId: () => string) {
+  constructor(io: Server, gameId: string) {
     this.io = io
     this.gameId = gameId
-    this.getManagerId = getManagerId
   }
 
   join(socket: Socket, username: string, avatar?: string): void {
@@ -27,6 +25,12 @@ export class PlayerManager {
         oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
         oldSocket.disconnect(true)
       }
+
+      // Signaler la suppression de l'ancien joueur au manager avant de le retirer
+      this.io
+        .to(`manager-${this.gameId}`)
+        .emit(EVENTS.MANAGER.REMOVE_PLAYER, existingPlayer.id)
+      this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, existingPlayer.id)
 
       this.players = this.players.filter((p) => p.clientId !== socket.handshake.auth.clientId)
     }
@@ -52,7 +56,7 @@ export class PlayerManager {
     }
 
     this.players.push(player)
-    this.io.to(this.getManagerId()).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+    this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
     this.io.to(this.gameId).emit(EVENTS.GAME.NEW_PLAYER, {
       id: player.id,
       username: player.username,
@@ -63,7 +67,7 @@ export class PlayerManager {
   }
 
   kick(socket: Socket, playerId: string): boolean {
-    if (this.getManagerId() !== socket.id) {
+    if (!socket.rooms.has(`manager-${this.gameId}`)) {
       return false
     }
 
@@ -78,7 +82,7 @@ export class PlayerManager {
     this.io.in(playerId).socketsLeave(this.gameId)
     this.io.to(player.id).emit(EVENTS.GAME.RESET, "errors:game.kickedByManager")
     this.io
-      .to(this.getManagerId())
+      .to(`manager-${this.gameId}`)
       .emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
     this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)

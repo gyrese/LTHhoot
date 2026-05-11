@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1778158254587,
+  "lastScanned": 1778512937741,
   "projectRoot": "c:\\ai\\testrahoot",
   "techStack": {
     "languages": [
@@ -60,7 +60,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1778158254546,
+      "lastAccessed": 1778512937691,
       "keyFiles": [
         "game.json"
       ]
@@ -69,7 +69,7 @@
       "path": "docker",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778158254547,
+      "lastAccessed": 1778512937693,
       "keyFiles": [
         "nginx.conf",
         "supervisord.conf"
@@ -79,14 +79,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1778158254559,
+      "lastAccessed": 1778512937706,
       "keyFiles": []
     },
     "save": {
       "path": "save",
       "purpose": null,
       "fileCount": 14,
-      "lastAccessed": 1778158254560,
+      "lastAccessed": 1778512937707,
       "keyFiles": [
         "agent.md",
         "audit.md",
@@ -99,7 +99,7 @@
       "path": "tasks",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778158254560,
+      "lastAccessed": 1778512937708,
       "keyFiles": [
         "petdex-sync.ps1",
         "TODO0405.md"
@@ -109,7 +109,7 @@
       "path": "temp-skill",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1778158254561,
+      "lastAccessed": 1778512937709,
       "keyFiles": [
         "CLAUDE.md",
         "LICENSE",
@@ -121,7 +121,7 @@
       "path": "temp-skill\\docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1778158254564,
+      "lastAccessed": 1778512937712,
       "keyFiles": [
         "三个 data-scripts-templates 的区别.md"
       ]
@@ -130,8 +130,14 @@
   "hotPaths": [
     {
       "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
-      "accessCount": 58,
-      "lastAccessed": 1778162292267,
+      "accessCount": 67,
+      "lastAccessed": 1778513052394,
+      "type": "file"
+    },
+    {
+      "path": "packages\\socket\\src\\services\\game\\index.ts",
+      "accessCount": 45,
+      "lastAccessed": 1778513344461,
       "type": "file"
     },
     {
@@ -147,12 +153,6 @@
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\services\\game\\index.ts",
-      "accessCount": 32,
-      "lastAccessed": 1778160437866,
-      "type": "file"
-    },
-    {
       "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
       "accessCount": 30,
       "lastAccessed": 1778161817613,
@@ -165,16 +165,34 @@
       "type": "file"
     },
     {
+      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
+      "accessCount": 20,
+      "lastAccessed": 1778513333168,
+      "type": "file"
+    },
+    {
       "path": "packages\\web\\src",
       "accessCount": 19,
       "lastAccessed": 1778136353671,
       "type": "directory"
     },
     {
+      "path": "packages\\socket\\src\\handlers\\game.ts",
+      "accessCount": 18,
+      "lastAccessed": 1778513300618,
+      "type": "file"
+    },
+    {
       "path": "",
       "accessCount": 17,
       "lastAccessed": 1778139655612,
       "type": "directory"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Room.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1778337523683,
+      "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Leaderboard.tsx",
@@ -189,18 +207,6 @@
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\handlers\\game.ts",
-      "accessCount": 15,
-      "lastAccessed": 1778160452468,
-      "type": "file"
-    },
-    {
-      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
-      "accessCount": 15,
-      "lastAccessed": 1778160573007,
-      "type": "file"
-    },
-    {
       "path": "packages\\common\\src\\constants.ts",
       "accessCount": 14,
       "lastAccessed": 1778138602713,
@@ -210,12 +216,6 @@
       "path": "packages\\web\\src\\features\\game\\utils\\constants.ts",
       "accessCount": 14,
       "lastAccessed": 1778158032530,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Room.tsx",
-      "accessCount": 13,
-      "lastAccessed": 1778136448559,
       "type": "file"
     },
     {
@@ -268,8 +268,8 @@
     },
     {
       "path": "packages\\socket\\src\\handlers\\manager.ts",
-      "accessCount": 6,
-      "lastAccessed": 1778138340110,
+      "accessCount": 7,
+      "lastAccessed": 1778513047111,
       "type": "file"
     },
     {
