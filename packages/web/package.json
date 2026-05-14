@@ -24,6 +24,7 @@
     "konva": "^10.2.5",
     "lucide-react": "^1.8.0",
     "motion": "^12.38.0",
+    "pptxgenjs": "^4.0.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.5",
     "react-confetti": "^6.4.0",

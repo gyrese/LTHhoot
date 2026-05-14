@@ -84,7 +84,7 @@ class Game {
         this.managerStatus = null
       },
       onGameFinished: (result) => {
-        Config.saveResult(result)
+        Config.saveResult({ ...result, logs: this.logger.getAll() })
         registry.removeGame(this.gameId)
       },
     })

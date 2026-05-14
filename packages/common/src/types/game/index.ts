@@ -224,12 +224,20 @@ export type GameResultPlayer = {
   rank: number
 }
 
+export type LogEntry = {
+  id: string
+  timestamp: number
+  level: "info" | "warn" | "error"
+  message: string
+}
+
 export type GameResult = {
   id: string
   subject: string
   date: string
   players: GameResultPlayer[]
   questions: QuestionResult[]
+  logs?: LogEntry[]
 }
 
 export type GameResultMeta = {

@@ -9,6 +9,7 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   Check,
   Download,
+  FileDown,
   Plus,
   Search,
   SquarePen,
@@ -22,6 +23,7 @@ import {
   downloadJson,
   exportQuizzWithMedia,
 } from "@rahoot/web/features/quizz/utils/export"
+import { exportQuizzToPptx } from "@rahoot/web/features/quizz/utils/export-pptx"
 import toast from "react-hot-toast"
 import clsx from "clsx"
 
@@ -46,6 +48,7 @@ const QuizzPanel = ({
   const { socket } = useSocket()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const exportTypeRef = useRef<"json" | "pptx">("json")
   const { t } = useTranslation()
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
@@ -53,13 +56,19 @@ const QuizzPanel = ({
   })
 
   useEvent(EVENTS.QUIZZ.DATA, async (data) => {
+    const isPptx = exportTypeRef.current === "pptx"
     const loadingToast = toast.loading(
       t("manager:quizz.exporting", "Exportation en cours..."),
     )
 
     try {
-      const fullQuizz = await exportQuizzWithMedia(data)
-      downloadJson(fullQuizz, data.subject)
+      if (isPptx) {
+        await exportQuizzToPptx(data)
+      } else {
+        const fullQuizz = await exportQuizzWithMedia(data)
+        downloadJson(fullQuizz, data.subject)
+      }
+
       toast.success(t("manager:quizz.exported"), { id: loadingToast })
     } catch (error) {
       console.error("Export failed:", error)
@@ -102,6 +111,13 @@ const QuizzPanel = ({
 
   const handleExport = (id: string) => (e: React.MouseEvent) => {
     e.stopPropagation()
+    exportTypeRef.current = "json"
+    socket?.emit(EVENTS.QUIZZ.GET, id)
+  }
+
+  const handleExportPptx = (id: string) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    exportTypeRef.current = "pptx"
     socket?.emit(EVENTS.QUIZZ.GET, id)
   }
 
@@ -112,7 +128,7 @@ const QuizzPanel = ({
           return false
         }
 
-        if (activeFolder && q.folder !== activeFolder) {
+        if (activeFolder && q.folder !== activeFolder && !q.folder?.startsWith(`${activeFolder}/`)) {
           return false
         }
 
@@ -236,6 +252,13 @@ const QuizzPanel = ({
                       title={t("common:export")}
                     >
                       <Download className="size-3.5" />
+                    </button>
+                    <button
+                      onClick={handleExportPptx(q.id)}
+                      className="rounded-lg bg-black/50 p-1.5 text-purple-400 backdrop-blur-sm hover:bg-black/70"
+                      title="Exporter en PPTX"
+                    >
+                      <FileDown className="size-3.5" />
                     </button>
                     <AlertDialog
                       trigger={
