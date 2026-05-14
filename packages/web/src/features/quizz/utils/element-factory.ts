@@ -3,12 +3,12 @@ import {
   type TextElement,
   type ShapeElement,
 } from "@rahoot/common/types/game"
-import { v4 as uuidv4 } from "uuid"
+import { generateElementId } from "@rahoot/web/features/quizz/utils/id"
 
 export const createTextElement = (
   overrides: Partial<TextElement> = {},
 ): TextElement => ({
-  id: `el_${uuidv4()}`,
+  id: generateElementId(),
   type: "text",
   text: "Texte",
   x: 100 + Math.random() * 100,
@@ -29,7 +29,7 @@ export const createTextElement = (
 export const createShapeElement = (
   overrides: Partial<ShapeElement> = {},
 ): ShapeElement => ({
-  id: `el_${uuidv4()}`,
+  id: generateElementId(),
   type: "shape",
   shapeType: "rect",
   x: 150 + Math.random() * 100,
@@ -47,7 +47,7 @@ export const createImageElement = (
   width: number,
   height: number,
 ): SlideElement => ({
-  id: `el_${uuidv4()}`,
+  id: generateElementId(),
   type: "image",
   url,
   x: 100 + Math.random() * 50,

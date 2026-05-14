@@ -32,8 +32,17 @@ const QuestionEditorSlider = () => {
   const { t } = useTranslation()
   const q = currentQuestion as QuestionWithId & SliderWithId
 
-  const update = (key: string) => (value: number) =>
-    updateQuestion(currentIndex, { [key]: value })
+  const updateMin = (newMin: number) => {
+    const safeMin = newMin < q.max ? newMin : q.max - 1
+    const safeCorrect = Math.max(safeMin, q.correctValue)
+    updateQuestion(currentIndex, { min: safeMin, correctValue: safeCorrect })
+  }
+
+  const updateMax = (newMax: number) => {
+    const safeMax = newMax > q.min ? newMax : q.min + 1
+    const safeCorrect = Math.min(safeMax, q.correctValue)
+    updateQuestion(currentIndex, { max: safeMax, correctValue: safeCorrect })
+  }
 
   return (
     <div className="z-10 flex flex-col gap-4 rounded-xl bg-white/10 p-4">
@@ -41,12 +50,12 @@ const QuestionEditorSlider = () => {
         <NumberField
           label={t("quizz:sliderMin")}
           value={q.min}
-          onChange={update("min")}
+          onChange={updateMin}
         />
         <NumberField
           label={t("quizz:sliderMax")}
           value={q.max}
-          onChange={update("max")}
+          onChange={updateMax}
         />
       </div>
 

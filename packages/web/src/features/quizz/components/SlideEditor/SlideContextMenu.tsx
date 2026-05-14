@@ -11,7 +11,6 @@ import {
   ArrowDownToLine,
   ArrowUp,
   ArrowDown,
-  Crop,
   Maximize,
   Sun,
 } from "lucide-react"
@@ -31,7 +30,6 @@ export type ContextMenuAction =
   | "bringForward"
   | "sendBackward"
   | "setAsBackground"
-  | "crop"
   | "opacity"
 
 type ContextMenuProps = {
@@ -151,12 +149,6 @@ const SlideContextMenu = ({
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
               >
                 <Maximize className="size-4" /> Mettre en fond
-              </button>
-              <button
-                onClick={() => handleAction("crop")}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-gray-100"
-              >
-                <Crop className="size-4" /> Recadrer
               </button>
               <button
                 onClick={() => handleAction("opacity")}

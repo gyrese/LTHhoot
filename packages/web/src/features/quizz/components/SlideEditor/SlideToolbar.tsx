@@ -11,8 +11,6 @@ import {
   Upload,
   Link,
   Play,
-  Undo2,
-  Redo2,
   Trash2,
   BringToFront,
   SendToBack,
@@ -201,24 +199,6 @@ const SlideToolbar = () => {
           e.target.value = ""
         }}
       />
-
-      {/* Undo/Redo */}
-      <div className="flex items-center gap-0.5">
-        <button
-          className="cursor-not-allowed rounded p-1.5 text-gray-400 hover:bg-gray-100"
-          title="Annuler"
-        >
-          <Undo2 className="size-4" />
-        </button>
-        <button
-          className="cursor-not-allowed rounded p-1.5 text-gray-400 hover:bg-gray-100"
-          title="Rétablir"
-        >
-          <Redo2 className="size-4" />
-        </button>
-      </div>
-
-      <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
       {/* Add tools */}
       <div className="flex items-center gap-0.5">

@@ -13,6 +13,9 @@ import {
   Layer,
   Text,
   Rect,
+  Ellipse,
+  Line,
+  Star,
   Transformer,
   Group,
   Image as KonvaImage,
@@ -494,7 +497,71 @@ const SlideCanvas = ({
                   )
                 }
 
-                if (el.type === "shape" && el.shapeType === "rect") {
+                if (el.type === "shape") {
+                  const commonGroup = {
+                    id: el.id,
+                    x: el.x,
+                    y: el.y,
+                    rotation: el.rotation,
+                    opacity: el.opacity,
+                    width: el.width,
+                    height: el.height,
+                    draggable: true,
+                    onClick: () => onSelect(el.id),
+                    onTap: () => onSelect(el.id),
+                    onDragEnd: (e: KonvaEventObject<DragEvent>) =>
+                      handleDragEnd(e, el.id),
+                    onTransformEnd: (e: KonvaEventObject<Event>) =>
+                      handleTransformEnd(e, el.id),
+                  }
+
+                  if (el.shapeType === "circle") {
+                    return (
+                      <Group key={el.id} {...commonGroup}>
+                        <Ellipse
+                          x={el.width / 2}
+                          y={el.height / 2}
+                          radiusX={el.width / 2}
+                          radiusY={el.height / 2}
+                          fill={el.fill || "#ccc"}
+                        />
+                      </Group>
+                    )
+                  }
+
+                  if (el.shapeType === "triangle") {
+                    return (
+                      <Group key={el.id} {...commonGroup}>
+                        <Line
+                          points={[
+                            el.width / 2, 0,
+                            el.width, el.height,
+                            0, el.height,
+                          ]}
+                          closed
+                          fill={el.fill || "#ccc"}
+                        />
+                      </Group>
+                    )
+                  }
+
+                  if (el.shapeType === "star") {
+                    const r = Math.min(el.width, el.height) / 2
+
+                    return (
+                      <Group key={el.id} {...commonGroup}>
+                        <Star
+                          x={el.width / 2}
+                          y={el.height / 2}
+                          numPoints={5}
+                          innerRadius={r / 2}
+                          outerRadius={r}
+                          fill={el.fill || "#ccc"}
+                        />
+                      </Group>
+                    )
+                  }
+
                   return (
                     <Rect
                       key={el.id}
@@ -504,7 +571,9 @@ const SlideCanvas = ({
                       width={el.width}
                       height={el.height}
                       rotation={el.rotation}
+                      opacity={el.opacity}
                       fill={el.fill || "#ccc"}
+                      cornerRadius={el.cornerRadius || 0}
                       draggable
                       onClick={() => onSelect(el.id)}
                       onTap={() => onSelect(el.id)}

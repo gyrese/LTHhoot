@@ -20,9 +20,14 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const [localImage, setLocalImage] = useState<string | undefined>(
     ctx.listingImage,
   )
+  const [localSalonImage, setLocalSalonImage] = useState<string | undefined>(
+    ctx.salonImage,
+  )
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
+  const [uploadingSalon, setUploadingSalon] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const salonFileInputRef = useRef<HTMLInputElement>(null)
 
   if (!open) {
     return null
@@ -40,6 +45,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     ctx.setFolder(localFolder)
     ctx.setTags(localTags)
     ctx.setListingImage(localImage)
+    ctx.setSalonImage(localSalonImage)
     onClose()
   }
 
@@ -49,12 +55,11 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     setLocalFolder(ctx.folder)
     setLocalTags(ctx.tags)
     setLocalImage(ctx.listingImage)
+    setLocalSalonImage(ctx.salonImage)
     onClose()
   }
 
-  const handleImageUpload = async (file: File) => {
-    setUploading(true)
-
+  const uploadImage = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData()
       formData.append("image", file)
@@ -67,13 +72,36 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
       }
 
       const data = (await res.json()) as { url: string }
-      setLocalImage(data.url)
+
+      return data.url
     } catch (error) {
       console.error("Image upload error:", error)
       toast.error(t("errors:upload.failed"))
-    } finally {
-      setUploading(false)
+
+      return null
     }
+  }
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
+    const url = await uploadImage(file)
+
+    if (url) {
+      setLocalImage(url)
+    }
+
+    setUploading(false)
+  }
+
+  const handleSalonImageUpload = async (file: File) => {
+    setUploadingSalon(true)
+    const url = await uploadImage(file)
+
+    if (url) {
+      setLocalSalonImage(url)
+    }
+
+    setUploadingSalon(false)
   }
 
   const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -281,6 +309,66 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                     <button
                       type="button"
                       onClick={() => setLocalImage(undefined)}
+                      className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Salon image */}
+            <div>
+              <label className="mb-1 block text-sm font-bold text-gray-800">
+                Image du salon{" "}
+                <span className="font-normal text-gray-400">
+                  ({t("common:optional")})
+                </span>
+              </label>
+              <p className="mb-3 text-xs text-gray-500">
+                Affichée en arrière-plan sur l'écran d'attente des joueurs.
+              </p>
+
+              <input
+                ref={salonFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+
+                  if (file) {
+                    void handleSalonImageUpload(file)
+                  }
+
+                  e.target.value = ""
+                }}
+              />
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => salonFileInputRef.current?.click()}
+                  disabled={uploadingSalon}
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50"
+                >
+                  <Upload className="size-5" />
+                  <span className="text-xs">
+                    {uploadingSalon ? "…" : t("quizz:settings.upload")}
+                  </span>
+                </button>
+
+                {localSalonImage && (
+                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src={localSalonImage}
+                      alt="salon"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLocalSalonImage(undefined)}
                       className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                     >
                       <X className="size-3" />

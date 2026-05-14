@@ -3,7 +3,7 @@ import {
   type SlideBackground,
 } from "@rahoot/common/types/game"
 import { useState } from "react"
-import { v4 as uuidv4 } from "uuid"
+import { generateElementId } from "@rahoot/web/features/quizz/utils/id"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import SlideCanvas from "./SlideCanvas"
 import SlideContextMenu, { type ContextMenuAction } from "./SlideContextMenu"
@@ -49,7 +49,7 @@ const SlideEditor = ({
         if (copiedElement) {
           const newEl = {
             ...copiedElement,
-            id: `el_${uuidv4()}`,
+            id: generateElementId(),
             x: copiedElement.x + 20,
             y: copiedElement.y + 20,
           }
@@ -147,12 +147,6 @@ const SlideEditor = ({
             ),
           )
         }
-
-        break
-      }
-
-      case "crop": {
-        console.warn("Action Recadrer à implémenter")
 
         break
       }

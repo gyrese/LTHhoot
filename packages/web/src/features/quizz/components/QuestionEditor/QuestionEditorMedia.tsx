@@ -44,13 +44,13 @@ const QuestionEditorMedia = () => {
   }
 
   return (
-    <div className="pointer-events-none relative z-10 flex flex-1 flex-col items-center justify-center gap-3 p-4">
-      <div className="pointer-events-auto">
+    <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 p-4">
+      <div>
         <QuestionMedia media={currentQuestion.media} alt="Question Media" />
       </div>
 
       {!questionMedia?.type && (
-        <Card className="pointer-events-auto my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 bg-white shadow-md">
+        <Card className="my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 bg-white shadow-md">
           <ImageOff className="size-16 stroke-gray-600" />
           <p className="text-center text-sm text-gray-600">
             {t("quizz:question.addMediaHint")}
@@ -94,7 +94,7 @@ const QuestionEditorMedia = () => {
       )}
 
       {questionMedia?.type && (
-        <div className="pointer-events-auto absolute bottom-4">
+        <div className="absolute bottom-4">
           <Button
             className="rounded-sm bg-gray-200 px-4 py-2 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
             onClick={handleRemoveMedia}

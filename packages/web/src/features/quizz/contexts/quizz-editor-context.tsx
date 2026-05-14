@@ -7,22 +7,8 @@ import type {
   SlideBackground,
   SlideElement,
 } from "@rahoot/common/types/game"
-
-const randomUUID = (): string => {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID()
-  }
-
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/gu, (c) => {
-    const r = Math.trunc(Math.random() * 16)
-    const v = c === "x" ? r : (r % 4) + 8
-
-    return v.toString(16)
-  })
-}
+import { quizzValidator } from "@rahoot/common/validators/quizz"
+import { generateId } from "@rahoot/web/features/quizz/utils/id"
 import {
   createContext,
   useCallback,
@@ -105,7 +91,7 @@ type QuizzEditorContextType = {
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
 
 const defaultQuestion = (): QuestionWithId => ({
-  id: randomUUID(),
+  id: generateId(),
   type: "mcq",
   question: "",
   answers: ["", ""],
@@ -116,7 +102,7 @@ const defaultQuestion = (): QuestionWithId => ({
 
 const toQuestionWithId = (q: Question): QuestionWithId => ({
   ...q,
-  id: randomUUID(),
+  id: generateId(),
 })
 
 const buildDefaultForType = (
@@ -194,11 +180,6 @@ export const QuizzEditorProvider = ({
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  useEffect(() => {
-    console.log("[MOUNT] QuizzEditorProvider")
-
-    return () => console.log("[UNMOUNT] QuizzEditorProvider")
-  }, [])
   const [subject, setSubject] = useState(
     initialData?.subject ?? "Untitled Quizz",
   )
@@ -264,24 +245,18 @@ export const QuizzEditorProvider = ({
   }
 
   const removeQuestion = (index: number) => {
-    const oldQuestionsCount = questions.length
-    const oldCurrentIndex = currentIndex
-    
-    console.log(`[DELETE_FLOW] Deleting slide at index ${index}. Total before: ${oldQuestionsCount}`)
-    
     const nextQuestions = questions.filter((_, i) => i !== index)
     setQuestions(nextQuestions)
-    
-    // Calcul de l'index suivant :
-    // - Si on supprime le slide courant ou un slide avant le courant, on recule de 1 (sans descendre sous 0)
-    // - Sinon on garde le même index
-    const nextIndex = Math.max(0, currentIndex >= index ? currentIndex - 1 : currentIndex)
-    
-    // Sécurité : si on a tout supprimé (ne devrait pas arriver avec canDelete), on reste à 0
-    const finalIndex = nextQuestions.length === 0 ? 0 : Math.min(nextIndex, nextQuestions.length - 1)
-    
-    console.log(`[DELETE_FLOW] nextIndex computed: ${finalIndex}. Total remaining: ${nextQuestions.length}`)
-    
+
+    const nextIndex = Math.max(
+      0,
+      currentIndex >= index ? currentIndex - 1 : currentIndex,
+    )
+    const finalIndex =
+      nextQuestions.length === 0
+        ? 0
+        : Math.min(nextIndex, nextQuestions.length - 1)
+
     handleSetCurrentIndex(finalIndex)
     markDirty()
   }
@@ -301,7 +276,7 @@ export const QuizzEditorProvider = ({
   const duplicateQuestion = (index: number) => {
     setQuestions((prev) => {
       const next = [...prev]
-      const duplicated = { ...next[index], id: randomUUID() }
+      const duplicated = { ...next[index], id: generateId() }
       next.splice(index + 1, 0, duplicated)
 
       return next
@@ -361,6 +336,20 @@ export const QuizzEditorProvider = ({
         salonImage: salonImage || undefined,
         listingImage: listingImage || undefined,
         questions,
+      }
+
+      const result = quizzValidator.safeParse(payload)
+
+      if (!result.success) {
+        if (!options?.silent) {
+          const [first] = result.error.issues
+          const path = first.path.length ? ` (${first.path.join(".")})` : ""
+          toast.error(`${t(first.message, first.message)}${path}`, {
+            id: "quizz-save",
+          })
+        }
+
+        return
       }
 
       if (options?.navigate) {
@@ -431,6 +420,19 @@ export const QuizzEditorProvider = ({
 
     return () => clearInterval(interval)
   }, [isDirty, saveQuizz])
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+
+    window.addEventListener("beforeunload", handler)
+
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [isDirty])
 
   return (
     <QuizzEditorContext.Provider
