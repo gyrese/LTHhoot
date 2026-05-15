@@ -93,7 +93,7 @@ const DashboardSidebar = ({
   )
 
   const allFolders = useMemo(
-    () => [...new Set([...foldersFromQuizz, ...userFolders])],
+    () => [...new Set([ARCHIVE_FOLDER, ...foldersFromQuizz, ...userFolders])],
     [foldersFromQuizz, userFolders],
   )
 
