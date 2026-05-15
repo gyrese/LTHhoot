@@ -168,7 +168,7 @@ const renderElements = async (slide: pptxgen.Slide, elements: SlideElement[]) =>
 // ─── Badge type + numéro + timer ──────────────────────────────────────────────
 
 const addBadge = (slide: pptxgen.Slide, question: Question, index: number, total: number) => {
-  slide.addShape("rect", {
+  slide.addShape("roundRect", {
     x: 0.4, y: 0.2, w: 2.4, h: 0.45,
     fill: { color: "ff6b35" }, line: { width: 0 }, rectRadius: 0.1,
   })
@@ -299,7 +299,7 @@ const addMcqAnswers = async (slide: pptxgen.Slide, q: McqQuestion, y: number, h:
     const color = ANSWER_COLORS[i] ?? "555555"
     const isCorrect = q.solutions.includes(i)
 
-    slide.addShape("rect", {
+    slide.addShape("roundRect", {
       x, y: boxY, w: boxW, h: boxH,
       fill: { color },
       line: isCorrect ? { color: "FFFFFF", width: 3 } : { width: 0 },
@@ -329,7 +329,7 @@ const addTrueFalseAnswers = (slide: pptxgen.Slide, q: TrueFalseQuestion, y: numb
 
   options.forEach(({ label, color, correct }, i) => {
     const x = 0.4 + i * (boxW + 0.2)
-    slide.addShape("rect", {
+    slide.addShape("roundRect", {
       x, y, w: boxW, h,
       fill: { color },
       line: correct ? { color: "FFFFFF", width: 3 } : { width: 0 },
@@ -343,7 +343,7 @@ const addTrueFalseAnswers = (slide: pptxgen.Slide, q: TrueFalseQuestion, y: numb
 }
 
 const addOpenAnswers = (slide: pptxgen.Slide, q: OpenQuestion, y: number, h: number) => {
-  slide.addShape("rect", {
+  slide.addShape("roundRect", {
     x: 0.4, y, w: SLIDE_W - 0.8, h,
     fill: { color: "FFFFFF", transparency: 88 },
     line: { color: "FFFFFF", transparency: 70, width: 1 },
@@ -362,7 +362,7 @@ const addOpenAnswers = (slide: pptxgen.Slide, q: OpenQuestion, y: number, h: num
 const addDateAnswer = (slide: pptxgen.Slide, q: DateQuestion, y: number, h: number) => {
   const boxW = 4
   const x = (SLIDE_W - boxW) / 2
-  slide.addShape("rect", {
+  slide.addShape("roundRect", {
     x, y, w: boxW, h,
     fill: { color: "1368ce" }, line: { width: 0 }, rectRadius: 0.2,
   })
@@ -381,12 +381,12 @@ const addDateAnswer = (slide: pptxgen.Slide, q: DateQuestion, y: number, h: numb
 
 const addSliderAnswer = (slide: pptxgen.Slide, q: SliderQuestion, y: number, _h: number) => {
   const barX = 0.8, barY = y + 0.6, barW = SLIDE_W - 1.6, barH = 0.4
-  slide.addShape("rect", { x: barX, y: barY, w: barW, h: barH, fill: { color: "444444" }, line: { width: 0 }, rectRadius: 0.1 })
+  slide.addShape("roundRect", { x: barX, y: barY, w: barW, h: barH, fill: { color: "444444" }, line: { width: 0 }, rectRadius: 0.1 })
 
   const ratio = Math.max(0, Math.min(1, (q.correctValue - q.min) / (q.max - q.min || 1)))
   const fillW = barW * ratio
   if (fillW > 0) {
-    slide.addShape("rect", { x: barX, y: barY, w: fillW, h: barH, fill: { color: "ff6b35" }, line: { width: 0 }, rectRadius: 0.1 })
+    slide.addShape("roundRect", { x: barX, y: barY, w: fillW, h: barH, fill: { color: "ff6b35" }, line: { width: 0 }, rectRadius: 0.1 })
   }
   slide.addShape("ellipse", { x: barX + fillW - 0.25, y: barY - 0.15, w: 0.5, h: 0.5, fill: { color: "FFFFFF" }, line: { width: 0 } })
 
@@ -402,7 +402,7 @@ const addPuzzleAnswers = (slide: pptxgen.Slide, q: PuzzleQuestion, y: number, h:
   const itemH = Math.min(0.8, (h - 0.1 * (q.items.length - 1)) / q.items.length)
   q.items.forEach((item, i) => {
     const itemY = y + i * (itemH + 0.15)
-    slide.addShape("rect", {
+    slide.addShape("roundRect", {
       x: 0.4, y: itemY, w: SLIDE_W - 0.8, h: itemH,
       fill: { color: "1368ce" }, line: { width: 0 }, rectRadius: 0.1,
     })
