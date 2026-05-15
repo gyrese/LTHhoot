@@ -24,6 +24,7 @@ import {
   exportQuizzWithMedia,
 } from "@rahoot/web/features/quizz/utils/export"
 import { exportQuizzToPptx } from "@rahoot/web/features/quizz/utils/export-pptx"
+import { isArchived } from "@rahoot/web/features/manager/utils/folders"
 import toast from "react-hot-toast"
 import clsx from "clsx"
 
@@ -128,7 +129,11 @@ const QuizzPanel = ({
           return false
         }
 
-        if (activeFolder && q.folder !== activeFolder && !q.folder?.startsWith(`${activeFolder}/`)) {
+        if (activeFolder) {
+          if (q.folder !== activeFolder && !q.folder?.startsWith(`${activeFolder}/`)) {
+            return false
+          }
+        } else if (isArchived(q.folder)) {
           return false
         }
 

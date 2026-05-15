@@ -1,5 +1,6 @@
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import {
+  Archive,
   BarChart2,
   ChevronRight,
   FolderOpen,
@@ -10,6 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
+import { ARCHIVE_FOLDER, isArchived } from "@rahoot/web/features/manager/utils/folders"
 import { useMemo, useState, useEffect, type DragEvent, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -270,7 +272,11 @@ const DashboardSidebar = ({
               )}
             >
               <span className="flex min-w-0 items-center gap-1.5">
-                <FolderOpen className="size-3.5 shrink-0" />
+                {node.path === ARCHIVE_FOLDER ? (
+                  <Archive className="size-3.5 shrink-0 text-amber-300/80" />
+                ) : (
+                  <FolderOpen className="size-3.5 shrink-0" />
+                )}
                 <span className="truncate">{node.label}</span>
               </span>
               <span className="shrink-0 rounded-full bg-white/10 px-1.5 text-xs">{count}</span>
@@ -434,7 +440,9 @@ const DashboardSidebar = ({
                   <FolderOpen className="size-3.5" />
                   {t("manager:sidebar.all")}
                 </span>
-                <span className="rounded-full bg-white/10 px-1.5 text-xs">{quizz.length}</span>
+                <span className="rounded-full bg-white/10 px-1.5 text-xs">
+                  {quizz.filter((q) => !isArchived(q.folder)).length}
+                </span>
               </button>
 
               {/* Arbre de dossiers */}
