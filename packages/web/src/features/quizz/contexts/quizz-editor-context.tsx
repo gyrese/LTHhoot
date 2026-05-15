@@ -14,6 +14,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react"
@@ -86,6 +87,10 @@ type QuizzEditorContextType = {
   isDirty: boolean
   isSaving: boolean
   lastSaved: Date | null
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -237,6 +242,205 @@ export const QuizzEditorProvider = ({
     setCurrentIndex(index)
     setSelectedId(undefined)
   }
+
+  // ─── Undo / Redo ────────────────────────────────────────────────────────────
+
+  type Snapshot = {
+    questions: QuestionWithId[]
+    subject: string
+    description: string
+    folder: string
+    tags: string[]
+    salonImage?: string
+    listingImage?: string
+    currentIndex: number
+  }
+
+  const HISTORY_LIMIT = 50
+  const HISTORY_DEBOUNCE_MS = 400
+
+  const historyRef = useRef<{ stack: Snapshot[]; index: number }>({
+    stack: [],
+    index: -1,
+  })
+  const isApplyingHistoryRef = useRef(false)
+  const historyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  const refreshHistoryFlags = () => {
+    const { stack, index } = historyRef.current
+    setCanUndo(index > 0)
+    setCanRedo(index < stack.length - 1)
+  }
+
+  const takeSnapshot = useCallback(
+    (): Snapshot => ({
+      questions,
+      subject,
+      description,
+      folder,
+      tags,
+      salonImage,
+      listingImage,
+      currentIndex,
+    }),
+    [
+      questions,
+      subject,
+      description,
+      folder,
+      tags,
+      salonImage,
+      listingImage,
+      currentIndex,
+    ],
+  )
+
+  const pushSnapshot = (snapshot: Snapshot) => {
+    const { stack, index } = historyRef.current
+    const truncated = stack.slice(0, index + 1)
+    truncated.push(snapshot)
+
+    while (truncated.length > HISTORY_LIMIT) {
+      truncated.shift()
+    }
+
+    historyRef.current = {
+      stack: truncated,
+      index: truncated.length - 1,
+    }
+
+    refreshHistoryFlags()
+  }
+
+  const flushPendingHistoryPush = useCallback(() => {
+    if (historyTimerRef.current) {
+      clearTimeout(historyTimerRef.current)
+      historyTimerRef.current = null
+      pushSnapshot(takeSnapshot())
+    }
+  }, [takeSnapshot])
+
+  useEffect(() => {
+    if (isApplyingHistoryRef.current) {
+      isApplyingHistoryRef.current = false
+
+      return
+    }
+
+    if (historyRef.current.index === -1) {
+      pushSnapshot(takeSnapshot())
+
+      return
+    }
+
+    if (historyTimerRef.current) {
+      clearTimeout(historyTimerRef.current)
+    }
+
+    historyTimerRef.current = setTimeout(() => {
+      pushSnapshot(takeSnapshot())
+      historyTimerRef.current = null
+    }, HISTORY_DEBOUNCE_MS)
+  }, [
+    questions,
+    subject,
+    description,
+    folder,
+    tags,
+    salonImage,
+    listingImage,
+    currentIndex,
+    takeSnapshot,
+  ])
+
+  const applySnapshot = (s: Snapshot) => {
+    isApplyingHistoryRef.current = true
+    setQuestions(s.questions)
+    setSubject(s.subject)
+    setDescription(s.description)
+    setFolder(s.folder)
+    setTags(s.tags)
+    setSalonImage(s.salonImage)
+    setListingImage(s.listingImage)
+    setCurrentIndex(
+      s.questions.length === 0
+        ? 0
+        : Math.min(s.currentIndex, s.questions.length - 1),
+    )
+    setSelectedId(undefined)
+    setIsDirty(true)
+  }
+
+  const undo = useCallback(() => {
+    flushPendingHistoryPush()
+
+    const { stack, index } = historyRef.current
+
+    if (index <= 0) {
+      return
+    }
+
+    const newIndex = index - 1
+    historyRef.current = { stack, index: newIndex }
+    applySnapshot(stack[newIndex])
+    refreshHistoryFlags()
+  }, [flushPendingHistoryPush])
+
+  const redo = useCallback(() => {
+    flushPendingHistoryPush()
+
+    const { stack, index } = historyRef.current
+
+    if (index >= stack.length - 1) {
+      return
+    }
+
+    const newIndex = index + 1
+    historyRef.current = { stack, index: newIndex }
+    applySnapshot(stack[newIndex])
+    refreshHistoryFlags()
+  }, [flushPendingHistoryPush])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey
+
+      if (!ctrl) {
+        return
+      }
+
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName.toLowerCase()
+      const inTextField =
+        tag === "input" ||
+        tag === "textarea" ||
+        target?.isContentEditable === true
+
+      const key = e.key.toLowerCase()
+
+      if (key === "z" && !e.shiftKey) {
+        if (inTextField) {
+          return
+        }
+
+        e.preventDefault()
+        undo()
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        if (inTextField && key === "z") {
+          return
+        }
+
+        e.preventDefault()
+        redo()
+      }
+    }
+
+    window.addEventListener("keydown", handler)
+
+    return () => window.removeEventListener("keydown", handler)
+  }, [undo, redo])
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
@@ -466,6 +670,10 @@ export const QuizzEditorProvider = ({
         isDirty,
         isSaving,
         lastSaved,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
       }}
     >
       {children}

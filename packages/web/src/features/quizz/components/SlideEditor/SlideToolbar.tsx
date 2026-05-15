@@ -19,7 +19,10 @@ import {
   Expand,
   X,
   Check,
+  Undo2,
+  Redo2,
 } from "lucide-react"
+import clsx from "clsx"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -42,6 +45,10 @@ const SlideToolbar = () => {
     updateQuestion,
     selectedId,
     setSelectedId,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useQuizzEditor()
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -199,6 +206,38 @@ const SlideToolbar = () => {
           e.target.value = ""
         }}
       />
+
+      {/* Undo / Redo */}
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          className={clsx(
+            "rounded p-1.5 transition-colors",
+            canUndo
+              ? "text-gray-700 hover:bg-gray-100"
+              : "cursor-not-allowed text-gray-300",
+          )}
+          title="Annuler (Ctrl+Z)"
+        >
+          <Undo2 className="size-4" />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          className={clsx(
+            "rounded p-1.5 transition-colors",
+            canRedo
+              ? "text-gray-700 hover:bg-gray-100"
+              : "cursor-not-allowed text-gray-300",
+          )}
+          title="Rétablir (Ctrl+Y)"
+        >
+          <Redo2 className="size-4" />
+        </button>
+      </div>
+
+      <div className="mx-1.5 h-6 w-px bg-gray-200" />
 
       {/* Add tools */}
       <div className="flex items-center gap-0.5">
