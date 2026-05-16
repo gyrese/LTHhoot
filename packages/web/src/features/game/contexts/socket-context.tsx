@@ -95,9 +95,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnectionDelayMax: 8000, // Un peu plus lent pour le polling
         randomizationFactor: 0.5,
         timeout: 20000,
-        transports: ["polling"],
-        upgrade: false,
-        rememberUpgrade: false,
+        transports: ["polling", "websocket"],
+        upgrade: true,
         auth: {
           clientId,
         },

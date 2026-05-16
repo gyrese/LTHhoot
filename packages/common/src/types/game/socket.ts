@@ -153,6 +153,7 @@ export interface ClientToServerEvents {
 
   // Manager actions supplémentaires
   [EVENTS.MANAGER.GET_LOGS]: (_message: { gameId: string }) => void
+  [EVENTS.MANAGER.END_GAME]: (_message: { gameId: string }) => void
 
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
