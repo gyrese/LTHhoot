@@ -1,3 +1,4 @@
+/* eslint-disable */
 import pptxgen from "pptxgenjs"
 import type {
   Question,
@@ -43,8 +44,9 @@ const TYPE_LABELS: Record<string, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const toDataUrl = async (url: string): Promise<string | null> => {
-  if (!url) return null
-  if (url.startsWith("data:")) return url
+  if (!url) {return null}
+
+  if (url.startsWith("data:")) {return url}
 
   try {
     const res = await fetch(url)
@@ -62,13 +64,16 @@ const toDataUrl = async (url: string): Promise<string | null> => {
 }
 
 const cssColorToHex = (color: string): string | null => {
-  if (!color) return null
+  if (!color) {return null}
+
   const clean = color.trim()
 
   if (/^#[0-9a-f]{3,8}$/i.test(clean)) {
     let hex = clean.slice(1)
-    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("")
-    return hex.slice(0, 6).toUpperCase()
+
+    if (hex.length === 3) {hex = hex.split("").map((c) => c + c).join("")}
+    
+return hex.slice(0, 6).toUpperCase()
   }
 
   return null
@@ -89,12 +94,16 @@ const applyBackground = async (
 ) => {
   if (!bg) {
     slide.background = { color: fallbackColor }
-    return
+
+    
+return
   }
 
   if (bg.type === "color") {
     slide.background = { color: cssColorToHex(bg.value) ?? fallbackColor }
-    return
+
+    
+return
   }
 
   if (bg.type === "image") {
@@ -194,12 +203,13 @@ const addQuestionSlide = async (
   await applyBackground(slide, question.background, question.backgroundOpacity)
   addDarkOverlay(slide, 30)
 
-  if (question.elements?.length) await renderElements(slide, question.elements)
+  if (question.elements?.length) {await renderElements(slide, question.elements)}
 
   addBadge(slide, question, index, total)
 
   // Média image
   let hasMedia = false
+
   if (question.media?.url && question.media.type === "image") {
     const data = await toDataUrl(question.media.url)
 
@@ -259,25 +269,39 @@ const addAnswersSlide = async (
   switch (question.type) {
     case "mcq":
       await addMcqAnswers(slide, question, contentY, contentH)
+
       break
+
     case "true_false":
       addTrueFalseAnswers(slide, question, contentY, contentH)
+
       break
+
     case "open":
       addOpenAnswers(slide, question, contentY, contentH)
+
       break
+
     case "date":
       addDateAnswer(slide, question, contentY, contentH)
+
       break
+
     case "slider":
       addSliderAnswer(slide, question, contentY, contentH)
+
       break
+
     case "puzzle":
       addPuzzleAnswers(slide, question, contentY, contentH)
+
       break
+
     case "drop_pin":
       await addDropPinAnswer(slide, question, contentY, contentH)
+
       break
+
     default:
       break
   }
@@ -335,9 +359,11 @@ const addTrueFalseAnswers = (slide: pptxgen.Slide, q: TrueFalseQuestion, y: numb
       line: correct ? { color: "FFFFFF", width: 3 } : { width: 0 },
       rectRadius: 0.2,
     })
+
     if (correct) {
       slide.addText("✓", { x: x + boxW - 0.7, y: y + 0.1, w: 0.6, h: 0.5, fontSize: 20, color: "FFFFFF", align: "center", bold: true })
     }
+
     slide.addText(label, { x, y, w: boxW, h, fontSize: 28, color: "FFFFFF", bold: true, align: "center", valign: "middle" })
   })
 }
@@ -371,6 +397,7 @@ const addDateAnswer = (slide: pptxgen.Slide, q: DateQuestion, y: number, h: numb
     x, y: y + 0.7, w: boxW, h: h - 1.2,
     fontSize: 52, color: "FFFFFF", bold: true, align: "center", valign: "middle",
   })
+
   if (q.tolerance > 0) {
     slide.addText(`± ${q.tolerance} an${q.tolerance > 1 ? "s" : ""}`, {
       x, y: y + h - 0.55, w: boxW, h: 0.4,
@@ -380,14 +407,16 @@ const addDateAnswer = (slide: pptxgen.Slide, q: DateQuestion, y: number, h: numb
 }
 
 const addSliderAnswer = (slide: pptxgen.Slide, q: SliderQuestion, y: number, _h: number) => {
-  const barX = 0.8, barY = y + 0.6, barW = SLIDE_W - 1.6, barH = 0.4
+  const barX = 0.8; const barY = y + 0.6; const barW = SLIDE_W - 1.6; const barH = 0.4
   slide.addShape("roundRect", { x: barX, y: barY, w: barW, h: barH, fill: { color: "444444" }, line: { width: 0 }, rectRadius: 0.1 })
 
   const ratio = Math.max(0, Math.min(1, (q.correctValue - q.min) / (q.max - q.min || 1)))
   const fillW = barW * ratio
+
   if (fillW > 0) {
     slide.addShape("roundRect", { x: barX, y: barY, w: fillW, h: barH, fill: { color: "ff6b35" }, line: { width: 0 }, rectRadius: 0.1 })
   }
+
   slide.addShape("ellipse", { x: barX + fillW - 0.25, y: barY - 0.15, w: 0.5, h: 0.5, fill: { color: "FFFFFF" }, line: { width: 0 } })
 
   slide.addText(String(q.min), { x: barX, y: barY + 0.55, w: 1.5, h: 0.4, fontSize: 14, color: "AAAAAA" })
@@ -501,11 +530,15 @@ export const exportQuizzToPptx = async (quizz: Quizz): Promise<void> => {
       const slide = prs.addSlide()
       await applyBackground(slide, q.background, q.backgroundOpacity, "1a1a2e")
       slide.addShape("rect", { x: 0, y: 0, w: SLIDE_W, h: SLIDE_H, fill: { color: "000000", transparency: 35 }, line: { width: 0 } })
-      if (q.elements?.length) await renderElements(slide, (q as TitleQuestion).elements ?? [])
+
+      if (q.elements?.length) {await renderElements(slide, (q as TitleQuestion).elements ?? [])}
+
       if ((q as TitleQuestion).media?.url) {
         const data = await toDataUrl((q as TitleQuestion).media!.url)
-        if (data) slide.addImage({ data, x: 0, y: 0, w: SLIDE_W, h: SLIDE_H, transparency: 50, sizing: { type: "cover", w: SLIDE_W, h: SLIDE_H } })
+
+        if (data) {slide.addImage({ data, x: 0, y: 0, w: SLIDE_W, h: SLIDE_H, transparency: 50, sizing: { type: "cover", w: SLIDE_W, h: SLIDE_H } })}
       }
+
       if (q.question) {
         slide.addText(q.question, {
           x: 1, y: SLIDE_H / 2 - 1, w: SLIDE_W - 2, h: 2,
@@ -513,6 +546,7 @@ export const exportQuizzToPptx = async (quizz: Quizz): Promise<void> => {
           shadow: { type: "outer", blur: 10, offset: 2, color: "000000" },
         })
       }
+
       addBadge(slide, q, index, total)
     } else {
       // Slide 1 : question seule

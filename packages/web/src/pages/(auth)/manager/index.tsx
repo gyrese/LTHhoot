@@ -27,6 +27,7 @@ const ManagerAuthPage = () => {
   })
 
   const handleAuth = (password: string) => {
+    sessionStorage.setItem("rc_pwd", password)
     socket?.emit(EVENTS.MANAGER.AUTH, password)
   }
 

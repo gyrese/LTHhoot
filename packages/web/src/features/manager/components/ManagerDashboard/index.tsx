@@ -9,7 +9,8 @@ import { ConfigProvider } from "@rahoot/web/features/manager/contexts/config-con
 import DashboardSidebar from "./DashboardSidebar"
 import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
-import { LogOut, Play } from "lucide-react"
+import EveningFooter from "./EveningFooter"
+import { LogOut, Play, PartyPopper, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -26,6 +27,10 @@ const ManagerDashboard = ({ data }: Props) => {
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [view, setView] = useState<"quizz" | "results">("quizz")
+  const [eveningMode, setEveningMode] = useState(false)
+  const [eveningQuizIds, setEveningQuizIds] = useState<string[]>([])
+  const [powerUpsEnabled, setPowerUpsEnabled] = useState(true)
+  const [singlePowerUpsEnabled, setSinglePowerUpsEnabled] = useState(false)
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
@@ -43,7 +48,28 @@ const ManagerDashboard = ({ data }: Props) => {
       return
     }
 
-    socket?.emit(EVENTS.GAME.CREATE, selectedQuizz)
+    socket?.emit(EVENTS.GAME.CREATE, { quizId: selectedQuizz, powerUpsEnabled: singlePowerUpsEnabled })
+  }
+
+  const handleEveningStart = () => {
+    if (eveningQuizIds.length < 2) {
+      toast.error(t("manager:evening.selectTwo", "Sélectionne au moins 2 quiz"))
+
+      return
+    }
+
+    socket?.emit(EVENTS.EVENING.START, { quizIds: eveningQuizIds, powerUpsEnabled })
+  }
+
+  const handleToggleEveningQuizz = (id: string) => {
+    setEveningQuizIds((prev) =>
+      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id],
+    )
+  }
+
+  const handleToggleEveningOff = () => {
+    setEveningMode(false)
+    setEveningQuizIds([])
   }
 
   const selectedName = data.quizz.find((q) => q.id === selectedQuizz)?.subject
@@ -91,6 +117,9 @@ const ManagerDashboard = ({ data }: Props) => {
                 activeTag={activeTag}
                 selectedQuizz={selectedQuizz}
                 setSelectedQuizz={setSelectedQuizz}
+                eveningMode={eveningMode}
+                eveningQuizIds={eveningQuizIds}
+                onToggleEveningQuizz={handleToggleEveningQuizz}
               />
             ) : (
               <ResultsPanel />
@@ -99,28 +128,79 @@ const ManagerDashboard = ({ data }: Props) => {
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
-          <p className="truncate text-sm text-white/50">
-            {selectedName ? (
-              <span className="font-semibold text-white">{selectedName}</span>
-            ) : (
-              t("manager:quizz.pleaseSelect")
-            )}
-          </p>
-          <button
-            onClick={handleStart}
-            disabled={!selectedQuizz}
-            className={clsx(
-              "flex shrink-0 items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all",
-              selectedQuizz
-                ? "bg-orange-500 shadow-lg shadow-orange-500/30 hover:scale-105 hover:bg-orange-400"
-                : "cursor-not-allowed bg-white/10 text-white/30",
-            )}
-          >
-            <Play className="size-4 fill-current" />
-            {t("manager:quizz.startGame")}
-          </button>
-        </footer>
+        {eveningMode ? (
+          <EveningFooter
+            eveningQuizIds={eveningQuizIds}
+            quizzList={data.quizz}
+            powerUpsEnabled={powerUpsEnabled}
+            onRemove={handleToggleEveningQuizz}
+            onStart={handleEveningStart}
+            onToggleOff={handleToggleEveningOff}
+            onTogglePowerUps={setPowerUpsEnabled}
+          />
+        ) : (
+          <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setEveningMode(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    setEveningMode(true)
+                  }
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/60 ring-1 ring-white/10 transition-colors hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40 cursor-pointer select-none"
+                title={t("manager:evening.enable", "Mode Soirée")}
+              >
+                <PartyPopper className="size-4" />
+                <span className="hidden sm:inline">{t("manager:evening.mode", "Mode Soirée")}</span>
+              </div>
+              <p className="truncate text-sm text-white/50">
+                {selectedName ? (
+                  <span className="font-semibold text-white">{selectedName}</span>
+                ) : (
+                  t("manager:quizz.pleaseSelect")
+                )}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              {/* Toggle power-ups */}
+              <label
+                className={clsx(
+                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+                  singlePowerUpsEnabled
+                    ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
+                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+                )}
+                title={t("manager:quizz.powerUpsToggle")}
+              >
+                <input
+                  type="checkbox"
+                  checked={singlePowerUpsEnabled}
+                  onChange={(e) => setSinglePowerUpsEnabled(e.target.checked)}
+                  className="accent-yellow-400"
+                />
+                <Sparkles className="size-3.5" />
+                <span className="hidden sm:inline">{t("manager:quizz.powerUps")}</span>
+              </label>
+
+              <button
+                onClick={handleStart}
+                disabled={!selectedQuizz}
+                className={clsx(
+                  "flex shrink-0 items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all",
+                  selectedQuizz
+                    ? "bg-orange-500 shadow-lg shadow-orange-500/30 hover:scale-105 hover:bg-orange-400"
+                    : "cursor-not-allowed bg-white/10 text-white/30",
+                )}
+              >
+                <Play className="size-4 fill-current" />
+                {t("manager:quizz.startGame")}
+              </button>
+            </div>
+          </footer>
+        )}
       </div>
     </ConfigProvider>
   )

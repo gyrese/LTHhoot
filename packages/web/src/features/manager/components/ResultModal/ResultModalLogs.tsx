@@ -15,7 +15,9 @@ const LEVEL_LABELS = {
 
 const formatTime = (timestamp: number) => {
   const d = new Date(timestamp)
-  return d.toLocaleTimeString("fr-FR", {
+
+  
+return d.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

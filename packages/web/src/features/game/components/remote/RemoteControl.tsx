@@ -291,11 +291,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       return
     }
 
-    if (
-      window.confirm(
-        t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
-      )
-    ) {
+    // eslint-disable-next-line no-alert
+    const confirmed = window.confirm(
+      t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
+    )
+
+    if (confirmed) {
       socket.emit(EVENTS.MANAGER.END_GAME, { gameId })
     }
   }, [socket, gameId, t])

@@ -7,6 +7,7 @@ import type {
   QuizzWithId,
 } from "@rahoot/common/types/game"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
+import type { PowerUp, PowerUpEffect, PowerUpType } from "@rahoot/common/types/powerup"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
@@ -62,6 +63,7 @@ export interface ServerToClientEvents {
     player: { username: string; points: number; avatar?: string }
     currentQuestion: GameUpdateQuestion
     timer?: number
+    players?: { id: string; username: string; avatar?: string }[]
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
 
@@ -103,11 +105,30 @@ export interface ServerToClientEvents {
 
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
+
+  // Evening events
+  [EVENTS.EVENING.QUIZ_COMPLETE]: (_data: {
+    quizIndex: number
+    totalQuizzes: number
+    subject: string
+    leaderboard: { id: string; username: string; avatar?: string; points: number; rank: number }[]
+  }) => void
+  [EVENTS.EVENING.COMPLETE]: (_data: {
+    leaderboard: { id: string; username: string; avatar?: string; points: number; rank: number }[]
+  }) => void
+
+  // Power-up events
+  [EVENTS.POWER_UP.EARNED]: (_powerUp: PowerUp) => void
+  [EVENTS.POWER_UP.EFFECT]: (_effect: PowerUpEffect) => void
+  [EVENTS.POWER_UP.BLOCKED]: (_data: { powerUpType: PowerUpType; defenderId: string }) => void
+  [EVENTS.POWER_UP.INVENTORY]: (_powerUps: PowerUp[]) => void
 }
 
 export interface ClientToServerEvents {
   // Manager actions
-  [EVENTS.GAME.CREATE]: (_quizzId: string) => void
+  [EVENTS.GAME.CREATE]: (
+    _payload: string | { quizId: string; powerUpsEnabled?: boolean },
+  ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
   [EVENTS.MANAGER.KICK_PLAYER]: (_message: {
@@ -158,6 +179,14 @@ export interface ClientToServerEvents {
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
   [EVENTS.RESULTS.DELETE]: (_id: string) => void
+
+  // Evening actions
+  [EVENTS.EVENING.START]: (_data: { quizIds: string[]; powerUpsEnabled?: boolean }) => void
+  [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
+
+  // Power-up actions
+  [EVENTS.POWER_UP.USE]: (_data: { gameId: string; powerUpId: string; targetIds?: string[] }) => void
+  [EVENTS.POWER_UP.GET_INVENTORY]: () => void
 
   // Common
   disconnect: () => void

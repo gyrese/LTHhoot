@@ -58,6 +58,8 @@ export type CommonStatusDataMap = {
     maxYear?: number
     items?: string[]
     pinImage?: string
+    isFrozen?: boolean
+    isScrambled?: boolean
   }
   SHOW_RESULT: {
     correct: boolean

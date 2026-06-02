@@ -150,7 +150,7 @@ const Username = () => {
               <button
                 onClick={() => {
                   reset()
-                  navigate({ to: "/" })
+                  navigate({ to: "/", search: { pin: undefined } })
                 }}
                 className="mt-2 flex w-full items-center justify-center gap-2 text-sm font-bold text-white/40 transition-colors hover:text-white/80"
               >

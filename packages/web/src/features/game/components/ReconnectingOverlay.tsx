@@ -1,7 +1,5 @@
-import React from "react"
 
-const ReconnectingOverlay = () => {
-  return (
+const ReconnectingOverlay = () => (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 backdrop-blur-xl">
       <div className="relative">
         {/* Cercles d'animation */}
@@ -26,6 +24,5 @@ const ReconnectingOverlay = () => {
       </div>
     </div>
   )
-}
 
 export default ReconnectingOverlay

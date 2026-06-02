@@ -1,15 +1,10 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { Player } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
-import {
-  useEvent,
-  useSocket,
-} from "@rahoot/web/features/game/contexts/socket-context"
+import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { AnimatePresence, motion } from "motion/react"
 import { QRCodeSVG } from "qrcode.react"
-import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 type Props = {
@@ -24,21 +19,8 @@ const Room = ({ data }: Props) => {
   const { socket } = useSocket()
   const webUrl = window.location.origin
   const joinUrl = inviteCode ? `${webUrl}/?pin=${inviteCode}` : webUrl
-  const { players } = useManagerStore()
-  const [playerList, setPlayerList] = useState<Player[]>(players)
+  const { players: playerList } = useManagerStore()
   const { t } = useTranslation()
-
-  useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
-    setPlayerList((prev) => [...prev, player])
-  })
-
-  useEvent(EVENTS.MANAGER.REMOVE_PLAYER, (playerId) => {
-    setPlayerList((prev) => prev.filter((p) => p.id !== playerId))
-  })
-
-  useEvent(EVENTS.MANAGER.PLAYER_KICKED, (playerId) => {
-    setPlayerList((prev) => prev.filter((p) => p.id !== playerId))
-  })
 
   const handleKick = (playerId: string) => () => {
     if (!gameId) {
@@ -56,11 +38,12 @@ const Room = ({ data }: Props) => {
       return
     }
 
-    if (
-      window.confirm(
-        t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
-      )
-    ) {
+    // eslint-disable-next-line no-alert
+    const confirmed = window.confirm(
+      t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
+    )
+
+    if (confirmed) {
       socket.emit(EVENTS.MANAGER.END_GAME, { gameId })
     }
   }

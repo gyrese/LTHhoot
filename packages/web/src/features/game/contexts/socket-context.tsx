@@ -66,7 +66,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const playerGameId = usePlayerStore.getState().gameId
     const managerGameId = useManagerStore.getState().gameId
 
-    return !!(playerGameId || managerGameId)
+    return Boolean(playerGameId || managerGameId)
   })
   const [clientId] = useState<string>(() => getClientId())
 
@@ -92,7 +92,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
-        reconnectionDelayMax: 8000, // Un peu plus lent pour le polling
+        // Un peu plus lent pour le polling
+        reconnectionDelayMax: 8000,
         randomizationFactor: 0.5,
         timeout: 20000,
         transports: ["polling", "websocket"],
@@ -114,19 +115,26 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         // Tenter une reconnexion métier si on a une session
         const playerGameId = usePlayerStore.getState().gameId
         const managerGameId = useManagerStore.getState().gameId
+        const pwd = sessionStorage.getItem("rc_pwd")
 
         if (playerGameId) {
           console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
           setIsReconnecting(true)
           socketClient?.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
-        } else if (managerGameId) {
-          const pwd = sessionStorage.getItem("rc_pwd")
-          console.log(`[SESSION] Restauration session Manager: ${managerGameId} (auth=${!!pwd})`)
-          setIsReconnecting(true)
+        } else {
+          // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
+          // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
+          // même après une déconnexion réseau ou un redémarrage du serveur.
           if (pwd) {
+            console.log(`[SESSION] Restauration authentification Manager (auth=true)`)
             socketClient?.emit(EVENTS.MANAGER.AUTH, pwd)
           }
-          socketClient?.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+
+          if (managerGameId) {
+            console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
+            setIsReconnecting(true)
+            socketClient?.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+          }
         }
       })
 
@@ -190,6 +198,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const connect = useCallback(() => {
     console.log("[SOCKET] Action: connect")
+
     if (socket && !socket.connected) {
       socket.connect()
     }
@@ -197,6 +206,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const disconnect = useCallback(() => {
     console.log("[SOCKET] Action: disconnect")
+
     if (socket && socket.connected) {
       socket.disconnect()
     }
@@ -204,6 +214,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const reconnect = useCallback(() => {
     console.log("[SOCKET] Action: reconnect")
+
     if (socket) {
       socket.disconnect()
       socket.connect()
@@ -250,6 +261,7 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
 
   useEffect(() => {
     console.log(`[EVENT] Mount hook for event: ${event}`)
+
     if (!socket) {
       console.warn(`[EVENT] Skip attach ${event}: socket is null`)
 
@@ -260,6 +272,7 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
       if (event.includes("SUCCESS_RECONNECT")) {
         console.log(`[RESYNC] Réussite de la resynchronisation métier: ${event}`)
       }
+
       ;(callbackRef.current as (..._a: unknown[]) => void)(...args)
     }
 

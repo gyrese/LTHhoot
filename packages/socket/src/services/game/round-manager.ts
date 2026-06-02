@@ -13,8 +13,10 @@ import {
   STATUS,
   type StatusDataMap,
 } from "@rahoot/common/types/game/status"
+import type { PowerUp } from "@rahoot/common/types/powerup"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
+import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
 import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
 import { checkAnswer, timeToPoint } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
@@ -41,6 +43,9 @@ export interface RoundManagerOptions {
   send: SendFn
   onNewQuestion: () => void
   onGameFinished: (_result: GameResult) => void
+  onEveningQuizFinished?: (_result: GameResult, _leaderboard: Player[]) => void
+  powerUpManager?: PowerUpManager
+  onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
 }
 
 export class RoundManager {
@@ -293,10 +298,18 @@ export class RoundManager {
         }
       })()
 
-      this.opts.broadcast(STATUS.SELECT_ANSWER, {
-        ...selectAnswerBase,
-        ...selectAnswerExtra,
-      })
+      // Send custom SELECT_ANSWER status to each player to convey frozen / scrambled states
+      for (const player of this.opts.players.getAll()) {
+        const isFrozen = this.opts.powerUpManager?.hasFrozen(player.id) ?? false
+        const isScrambled = this.opts.powerUpManager?.hasScrambled(player.id) ?? false
+
+        this.opts.send(player.id, STATUS.SELECT_ANSWER, {
+          ...selectAnswerBase,
+          ...selectAnswerExtra,
+          isFrozen,
+          isScrambled,
+        } as any)
+      }
 
       // Send solution to manager only
       this.opts.send(this.opts.getManagerId(), STATUS.SELECT_ANSWER, {
@@ -452,6 +465,8 @@ export class RoundManager {
           playerAnswer.points = points
         }
 
+        points = this.opts.powerUpManager?.applyPointModifiers(player.id, points, isCorrect) ?? points
+
         player.points += points
         player.streak = isCorrect ? player.streak + 1 : 0
 
@@ -542,6 +557,17 @@ export class RoundManager {
     this.leaderboard = sortedPlayers
     this.tempOldLeaderboard = oldLeaderboard
     this.playersAnswers = []
+
+    // Évaluation et attribution des power-ups après chaque question
+    if (this.opts.powerUpManager && this.opts.onPowerUpEarned) {
+      const earned = this.opts.powerUpManager.evaluateRoundEarnings(
+        new Map(sortedPlayers.map((p) => [p.id, p.streak])),
+      )
+
+      for (const { playerId, powerUp } of earned) {
+        this.opts.onPowerUpEarned(playerId, powerUp)
+      }
+    }
   }
 
   selectAnswer(
@@ -564,13 +590,19 @@ export class RoundManager {
       return
     }
 
+    const isFrozen = this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
+    // Clear scrambled state upon answering
+    this.opts.powerUpManager?.consumeScrambled(player.id)
+
+    const startTimeForPoints = isFrozen ? this.startTime - 3000 : this.startTime
+
     this.playersAnswers.push({
       playerId: player.id,
       answerId: payload.answerId,
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,
-      points: timeToPoint(this.startTime, question.time),
+      points: timeToPoint(startTimeForPoints, question.time),
     })
 
     this.opts.send(socket.id, STATUS.WAIT, {
@@ -625,8 +657,7 @@ export class RoundManager {
       this.started = false
 
       const top = this.leaderboard.slice(0, 3)
-
-      this.opts.onGameFinished({
+      const gameResult = {
         id: `${Date.now()}-${nanoid(8)}`,
         subject: this.opts.quizz.subject,
         date: new Date().toISOString(),
@@ -637,7 +668,16 @@ export class RoundManager {
           rank: index + 1,
         })),
         questions: this.questionsHistory,
-      })
+      }
+
+      // Mode soirée : déléguer sans émettre STATUS.FINISHED
+      if (this.opts.onEveningQuizFinished) {
+        this.opts.onEveningQuizFinished(gameResult, this.leaderboard)
+
+        return
+      }
+
+      this.opts.onGameFinished(gameResult)
 
       this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, {
         subject: this.opts.quizz.subject,

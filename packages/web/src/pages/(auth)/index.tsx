@@ -30,6 +30,7 @@ const PlayerAuthPage = () => {
     if (isConnected && socket && !hasCheckedSession.current) {
       hasCheckedSession.current = true
       const { player: p, gameId: gid } = usePlayerStore.getState()
+
       if (p && gid) {
         socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gid })
       }

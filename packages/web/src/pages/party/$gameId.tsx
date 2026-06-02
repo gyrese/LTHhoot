@@ -16,9 +16,9 @@ import { useTranslation } from "react-i18next"
 
 const PlayerGamePage = () => {
   const navigate = useNavigate()
-  const { socket, isReconnecting } = useSocket()
+  const { isReconnecting } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
-  const { status, setPlayer, setGameId, setStatus, reset } = usePlayerStore()
+  const { status, setStatus, reset } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
 
@@ -52,7 +52,7 @@ const PlayerGamePage = () => {
     }
   })
 
-  // useSocket déplacé en haut
+  // UseSocket déplacé en haut
 
   useEvent(EVENTS.GAME.RESET, (message) => {
     if (isReconnecting) {

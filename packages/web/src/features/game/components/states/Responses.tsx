@@ -451,8 +451,12 @@ const Responses = ({
 
   useEffect(() => {
     stopMusic()
-    
-    if (!isHost) return
+
+    if (!isHost) {
+      return () => {
+        // Noop
+      }
+    }
 
     sfxResults()
     setPercentages(calculatePercentages(responses))

@@ -20,7 +20,7 @@ const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
   const { socket, isReconnecting } = useSocket()
-  const { gameId, status, setGameId, setStatus, setPlayers, reset } =
+  const { gameId, status, setStatus, setPlayers, reset } =
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
@@ -29,6 +29,32 @@ const ManagerGamePage = () => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
       setStatus(name, data)
     }
+  })
+
+  // Centralisation de la gestion des joueurs dans le store manager
+  // (évite la perte de la liste lors des re-mount de Room — bug mode soirée)
+  useEvent(EVENTS.MANAGER.NEW_PLAYER, (newPlayer) => {
+    const current = useManagerStore.getState().players
+
+    if (current.some((p) => p.id === newPlayer.id)) {
+      // Mettre à jour le joueur existant (ex. points modifiés par un power-up)
+      setPlayers(current.map((p) => (p.id === newPlayer.id ? newPlayer : p)))
+
+      
+return
+    }
+
+    setPlayers([...current, newPlayer])
+  })
+
+  useEvent(EVENTS.MANAGER.REMOVE_PLAYER, (playerId) => {
+    const current = useManagerStore.getState().players
+    setPlayers(current.filter((p) => p.id !== playerId))
+  })
+
+  useEvent(EVENTS.MANAGER.PLAYER_KICKED, (playerId) => {
+    const current = useManagerStore.getState().players
+    setPlayers(current.filter((p) => p.id !== playerId))
   })
 
   useEvent("connect", () => {
@@ -56,7 +82,7 @@ const ManagerGamePage = () => {
     },
   )
 
-  // useSocket déplacé en haut
+  // UseSocket déplacé en haut
 
   useEvent(EVENTS.GAME.RESET, (message) => {
     if (isReconnecting) {

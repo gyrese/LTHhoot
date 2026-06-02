@@ -1,6 +1,6 @@
 import { EVENTS, MEDIA_TYPES } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
-import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
+import type { QuestionMediaType } from "@rahoot/common/types/game"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import {
   DateAnswer,
@@ -14,8 +14,6 @@ import {
   DropPinAnswer,
   PuzzleAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
-import QuestionMedia from "@rahoot/web/components/QuestionMedia"
-import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
   useEvent,
   useSocket,
@@ -29,14 +27,13 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
-const noopChange = (_els: SlideElement[]) => undefined
-const noopSelect = (_id: string | undefined) => undefined
+
 
 type Props = {
   data: CommonStatusDataMap["SELECT_ANSWER"]
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+// ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 const Answers = ({
   data: {
@@ -56,7 +53,10 @@ const Answers = ({
     maxYear,
     items,
     pinImage,
+    isFrozen,
+    isScrambled,
   },
+  // eslint-disable-next-line complexity
 }: Props) => {
   const { socket } = useSocket()
   const { player, gameId } = usePlayerStore()
@@ -67,6 +67,56 @@ const Answers = ({
   const [totalAnswer, setTotalAnswer] = useState(0)
   const { t } = useTranslation()
   const slideAudioRef = useRef<HTMLAudioElement>(null)
+
+  const [isFreezeBlocked, setIsFreezeBlocked] = useState(false)
+  const [shuffledIndices, setShuffledIndices] = useState<number[] | undefined>(undefined)
+
+  const { isHost } = useGameConfig()
+  const isPlayer = !isHost
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    if (isFrozen && isPlayer) {
+      setIsFreezeBlocked(true)
+      timer = setTimeout(() => {
+        setIsFreezeBlocked(false)
+      }, 3000)
+    } else {
+      setIsFreezeBlocked(false)
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }
+  }, [isFrozen, isPlayer, question])
+
+  useEffect(() => {
+    if (isScrambled && isPlayer) {
+      let len = 0
+
+      if (type === "mcq" && answers) {
+        len = answers.length
+      } else if (type === "true_false") {
+        len = 2
+      }
+
+      if (len > 0) {
+        const arr = Array.from({ length: len }, (_, i) => i)
+        for (let i = arr.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1))
+          const temp = arr[i]!
+          arr[i] = arr[j]!
+          arr[j] = temp
+        }
+        setShuffledIndices(arr)
+      }
+    } else {
+      setShuffledIndices(undefined)
+    }
+  }, [isScrambled, isPlayer, question, type])
 
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.1 })
   const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
@@ -81,16 +131,13 @@ const Answers = ({
     numberAnswer?: number
     orderAnswer?: number[]
   }) => {
-    if (!player || !gameId || answered) {
+    if (!player || !gameId || answered || isFreezeBlocked) {
       return
     }
 
     socket?.emit(EVENTS.PLAYER.SELECTED_ANSWER, { gameId, data: payload })
     setAnswered(true)
   }
-
-  const { isHost } = useGameConfig()
-  const isPlayer = !isHost
 
   useEffect(() => {
     const disabledMusicMedia = [
@@ -100,7 +147,7 @@ const Answers = ({
 
     const hasYoutube = elements?.some((el) => el.type === "youtube") ?? false
 
-    // Musique autorisée uniquement sur Host et si pas d'autre média audio/vidéo
+    // Musique autoris├®e uniquement sur Host et si pas d'autre m├®dia audio/vid├®o
     if (!isHost || disabledMusicMedia.includes(media?.type) || audio || hasYoutube) {
       return
     }
@@ -117,7 +164,9 @@ const Answers = ({
 
   function playTick(urgent: boolean) {
     // Ticks sonores autorisés uniquement sur le Host
-    if (!isHost) return
+    if (!isHost) {
+      return
+    }
 
     try {
       audioCtxRef.current ||= new AudioContext()
@@ -134,7 +183,7 @@ const Answers = ({
       osc.start()
       osc.stop(ctx.currentTime + 0.08)
     } catch {
-      // AudioContext non supporté
+      // AudioContext non support├®
     }
   }
 
@@ -148,6 +197,7 @@ const Answers = ({
 
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setTotalAnswer(count)
+
     if (isHost) {
       sfxPop()
     }
@@ -209,44 +259,9 @@ const Answers = ({
         />
       </div>
 
-      {elements && elements.length > 0 && (
-        <div className="pointer-events-none absolute inset-0">
-          <SlideCanvas
-            elements={elements}
-            onChange={noopChange}
-            selectedId={undefined}
-            onSelect={noopSelect}
-            readOnly
-            noBackground
-            hideYoutube={isPlayer}
-          />
-        </div>
-      )}
-
       {audio && isHost && <AudioEmbed ref={slideAudioRef} audio={audio} />}
 
-      <div id="question-container" className="relative z-10 px-4 pt-4">
-        <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-          <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
-            {question}
-          </h2>
-        </div>
-      </div>
-
-      <div className="relative mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        {(!elements || elements.length === 0) && (
-          <QuestionMedia
-            media={
-              isPlayer && media?.type === "video"
-                ? undefined // On cache la vidéo pour les joueurs
-                : type === "drop_pin" && pinImage && !isPlayer
-                  ? { type: "image", url: pinImage }
-                  : media
-            }
-            alt={question}
-          />
-        )}
-      </div>
+      <div className="flex-1" />
 
       <div className={clsx("relative", isPlayer && "pb-12")}>
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
@@ -286,12 +301,14 @@ const Answers = ({
             answers={answers}
             iconOnly
             onAnswer={(k) => emit({ answerId: k })}
+            shuffledIndices={shuffledIndices}
           />
         )}
         {isPlayer && !answered && type === "true_false" && (
           <TrueFalseAnswers
             key={question}
             onAnswer={(k) => emit({ answerId: k })}
+            shuffledIndices={shuffledIndices}
           />
         )}
         {isPlayer && !answered && type === "open" && (
@@ -339,6 +356,22 @@ const Answers = ({
           </div>
         )}
       </div>
+
+      {isFreezeBlocked && isPlayer && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-blue-500/10 backdrop-blur-md animate-fade-in pointer-events-auto">
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/20 bg-blue-900/30 p-8 shadow-2xl backdrop-blur-2xl">
+            <svg className="size-16 animate-pulse text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18m-3-6L6 18M6 6l12 12m-6-9l2-2m-2 2l-2-2m2 11l2 2m-2-2l-2 2m-5-5l-2-2m2 2l-2 2m14-2l2-2m-2 2l2 2" />
+            </svg>
+            <span className="text-2xl font-black uppercase tracking-wider text-blue-200">
+              Gel├® !
+            </span>
+            <span className="text-sm font-semibold text-blue-100/70">
+              Vos r├®ponses se d├®bloquent dans 3 secondes...
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

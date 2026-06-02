@@ -181,7 +181,7 @@ export const QuizzEditorProvider = ({
   children,
   initialData,
 }: QuizzEditorProviderProps) => {
-  const { socket } = useSocket()
+  const { socket, isConnected } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
@@ -528,7 +528,13 @@ export const QuizzEditorProvider = ({
 
   const saveQuizz = useCallback(
     (options?: { silent?: boolean; navigate?: boolean }) => {
-      if (!socket) {
+      if (!socket || !isConnected) {
+        if (!options?.silent) {
+          toast.error(t("errors:quizz.failedToSave") || "Connexion perdue. Sauvegarde impossible.", {
+            id: "quizz-save",
+          })
+        }
+
         return
       }
 
@@ -574,6 +580,7 @@ export const QuizzEditorProvider = ({
     },
     [
       socket,
+      isConnected,
       subject,
       description,
       folder,
@@ -624,6 +631,15 @@ export const QuizzEditorProvider = ({
 
     return () => clearInterval(interval)
   }, [isDirty, saveQuizz])
+
+  useEffect(() => {
+    if (!isConnected && isSaving) {
+      setIsSaving(false)
+      toast.error(t("errors:quizz.failedToSave") || "Connexion perdue. Sauvegarde impossible.", {
+        id: "quizz-save",
+      })
+    }
+  }, [isConnected, isSaving, t])
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {

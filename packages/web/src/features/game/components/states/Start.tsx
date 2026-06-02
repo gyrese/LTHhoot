@@ -23,6 +23,7 @@ const Start = ({ data: { time, subject } }: Props) => {
     if (isHost) {
       sfxBoump()
     }
+
     setShowTitle(false)
   })
 
@@ -30,6 +31,7 @@ const Start = ({ data: { time, subject } }: Props) => {
     if (isHost) {
       sfxBoump()
     }
+
     setCooldown(sec)
   })
 

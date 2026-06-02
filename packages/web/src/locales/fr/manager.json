@@ -15,7 +15,19 @@
     "search": "Rechercher un quizz...",
     "startGame": "Démarrer la partie",
     "exported": "Quizz exporté avec succès",
-    "imported": "Quizz importé avec succès"
+    "imported": "Quizz importé avec succès",
+    "exporting": "Exportation en cours...",
+    "powerUps": "Power-ups",
+    "powerUpsToggle": "Activer ou désactiver les power-ups pour ce quiz"
+  },
+  "evening": {
+    "enable": "Activer le mode soirée",
+    "disable": "Désactiver la soirée",
+    "mode": "Mode Soirée",
+    "selectTwo": "Sélectionne au moins 2 quiz…",
+    "start": "Démarrer la soirée",
+    "powerUps": "Power-ups",
+    "powerUpsToggle": "Activer ou désactiver les power-ups pour cette soirée"
   },
   "result": {
     "delete": "Supprimer le résultat",

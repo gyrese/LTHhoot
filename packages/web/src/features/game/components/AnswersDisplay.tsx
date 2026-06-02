@@ -11,56 +11,83 @@ export const McqAnswers = ({
   answers,
   onAnswer,
   iconOnly,
+  shuffledIndices,
 }: {
   answers: string[]
   onAnswer: (_key: number) => void
   iconOnly?: boolean
-}) => (
-  <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2">
-    {answers.map((answer, key) => (
-      <AnswerButton
-        key={key}
-        index={key}
-        className={clsx(
-          ANSWERS_COLORS[key],
-          /* Surface tactile minimum 64px en mode icône seule */
-          iconOnly && "min-h-16",
-        )}
-        icon={ANSWERS_ICONS[key]}
-        iconOnly={iconOnly}
-        onClick={() => onAnswer(key)}
-      >
-        {answer}
-      </AnswerButton>
-    ))}
-  </div>
-)
+  shuffledIndices?: number[]
+}) => {
+  const displayIndices = shuffledIndices ?? answers.map((_, i) => i)
+
+  return (
+    <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2">
+      {displayIndices.map((origIndex) => {
+        const answer = answers[origIndex]
+
+        if (answer === undefined) {return null}
+
+        return (
+          <AnswerButton
+            key={origIndex}
+            index={origIndex}
+            className={clsx(
+              ANSWERS_COLORS[origIndex],
+              /* Surface tactile minimum 64px en mode icône seule */
+              iconOnly && "min-h-16",
+            )}
+            icon={ANSWERS_ICONS[origIndex]}
+            iconOnly={iconOnly}
+            onClick={() => onAnswer(origIndex)}
+          >
+            {answer}
+          </AnswerButton>
+        )
+      })}
+    </div>
+  )
+}
 
 export const TrueFalseAnswers = ({
   onAnswer,
+  shuffledIndices,
 }: {
   onAnswer?: (_key: number) => void
+  shuffledIndices?: number[]
 }) => {
   const { t } = useTranslation()
+  const displayIndices = shuffledIndices ?? [0, 1]
 
   return (
     <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 px-2">
-      <AnswerButton
-        index={0}
-        className="bg-red-500"
-        icon={ANSWERS_ICONS[0]}
-        onClick={() => onAnswer?.(0)}
-      >
-        {t("game:false")}
-      </AnswerButton>
-      <AnswerButton
-        index={1}
-        className="bg-blue-500"
-        icon={ANSWERS_ICONS[1]}
-        onClick={() => onAnswer?.(1)}
-      >
-        {t("game:true")}
-      </AnswerButton>
+      {displayIndices.map((origIndex) => {
+        if (origIndex === 0) {
+          return (
+            <AnswerButton
+              key={0}
+              index={0}
+              className="bg-red-500"
+              icon={ANSWERS_ICONS[0]}
+              onClick={() => onAnswer?.(0)}
+            >
+              {t("game:false")}
+            </AnswerButton>
+          )
+        }
+ 
+          
+return (
+            <AnswerButton
+              key={1}
+              index={1}
+              className="bg-blue-500"
+              icon={ANSWERS_ICONS[1]}
+              onClick={() => onAnswer?.(1)}
+            >
+              {t("game:true")}
+            </AnswerButton>
+          )
+      })}
     </div>
   )
 }

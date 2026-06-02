@@ -13,7 +13,9 @@
     "pleaseCreate": "Please create a quizz first",
     "pleaseSelect": "Please select a quizz",
     "search": "Search quizzes...",
-    "startGame": "Start game"
+    "startGame": "Start game",
+    "powerUps": "Power-ups",
+    "powerUpsToggle": "Enable or disable power-ups for this quiz"
   },
   "result": {
     "delete": "Delete result",

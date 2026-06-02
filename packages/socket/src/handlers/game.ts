@@ -56,9 +56,23 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     socket.emit(EVENTS.GAME.RESET, "game.expired")
   })
 
-  socket.on(EVENTS.GAME.CREATE, (quizzId) => {
+  socket.on(EVENTS.GAME.CREATE, (payload) => {
     if (!Manager.isLogged(socket)) {
       socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+      return
+    }
+
+    let quizzId = ""
+    let powerUpsEnabled = false
+
+    if (typeof payload === "string") {
+      quizzId = payload
+    } else if (payload && typeof payload === "object") {
+      quizzId = payload.quizId
+      powerUpsEnabled = Boolean(payload.powerUpsEnabled)
+    } else {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
 
       return
     }
@@ -72,7 +86,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz)
+    const game = new Game(io, socket, quizz, powerUpsEnabled)
     registry.addGame(game)
   })
 
@@ -148,6 +162,57 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on(EVENTS.MANAGER.END_GAME, ({ gameId }) =>
     withGame(gameId, socket, (game) => game.endGame()),
   )
+
+  socket.on(EVENTS.EVENING.START, ({ quizIds, powerUpsEnabled }) => {
+    if (!Manager.isLogged(socket)) {
+      socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+      return
+    }
+
+    if (!Array.isArray(quizIds) || quizIds.length < 2) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:evening.notEnoughQuizzes")
+
+      return
+    }
+
+    const quizzList = Config.quizz()
+    const firstQuizz = quizzList.find((q) => q.id === quizIds[0])
+
+    if (!firstQuizz) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
+
+      return
+    }
+
+    const game = new Game(io, socket, firstQuizz)
+    game.initEveningMode(quizIds, powerUpsEnabled ?? true)
+    registry.addGame(game)
+  })
+
+  socket.on(EVENTS.EVENING.NEXT, ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.startNextEveningQuiz()),
+  )
+
+  socket.on(EVENTS.POWER_UP.USE, ({ gameId, powerUpId, targetIds }) => {
+    const game = registry.getGameByPlayerSocketId(socket.id) ?? registry.getGameById(gameId)
+
+    if (!game) {
+      return
+    }
+
+    game.handlePowerUpUsed(socket.id, powerUpId, targetIds)
+  })
+
+  socket.on(EVENTS.POWER_UP.GET_INVENTORY, () => {
+    const game = registry.getGameByPlayerSocketId(socket.id)
+
+    if (!game) {
+      return
+    }
+
+    game.sendPlayerInventory(socket.id)
+  })
 
   socket.on(EVENTS.MANAGER.GET_LOGS, ({ gameId }) =>
     withGame(gameId, socket, (game) => {

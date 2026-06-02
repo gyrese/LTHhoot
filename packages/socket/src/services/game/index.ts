@@ -1,5 +1,5 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { Player, Quizz } from "@rahoot/common/types/game"
+import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
 import type { Server, Socket } from "@rahoot/common/types/game/socket"
 import {
   STATUS,
@@ -10,6 +10,7 @@ import Config from "@rahoot/socket/services/config"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { GameLogger } from "@rahoot/socket/services/game/logger"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
+import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
 import { RoundManager } from "@rahoot/socket/services/game/round-manager"
 import Registry from "@rahoot/socket/services/registry"
 import { createInviteCode } from "@rahoot/socket/utils/game"
@@ -28,9 +29,12 @@ class Game {
     connected: boolean
   }
   private readonly playerManager: PlayerManager
-  private readonly round: RoundManager
+  private round: RoundManager
   private readonly cooldown: CooldownTimer
   private readonly logger: GameLogger
+  private readonly powerUpManager: PowerUpManager
+  private eveningSession: { quizIds: string[]; currentIndex: number; powerUpsEnabled: boolean } | null = null
+  private singleQuizPowerUpsEnabled = false
 
   private readonly disconnectTimers: Map<
     string,
@@ -52,7 +56,7 @@ class Game {
     { name: Status; data: StatusDataMap[Status] }
   > = new Map()
 
-  constructor(io: Server, socket: Socket, quizz: Quizz) {
+  constructor(io: Server, socket: Socket, quizz: Quizz, powerUpsEnabled = false) {
     if (!io) {
       throw new Error("Socket server not initialized")
     }
@@ -66,28 +70,13 @@ class Game {
       clientId: socket.handshake.auth.clientId,
       connected: true,
     }
+    this.singleQuizPowerUpsEnabled = powerUpsEnabled
 
     this.cooldown = new CooldownTimer(io, this.gameId)
     this.playerManager = new PlayerManager(io, this.gameId)
+    this.powerUpManager = new PowerUpManager()
 
-    this.round = new RoundManager({
-      quizz,
-      players: this.playerManager,
-      cooldown: this.cooldown,
-      io,
-      gameId: this.gameId,
-      getManagerId: () => this._manager.id,
-      broadcast: this.broadcastStatus.bind(this),
-      send: this.sendStatus.bind(this),
-      onNewQuestion: () => {
-        this.playerStatus.clear()
-        this.managerStatus = null
-      },
-      onGameFinished: (result) => {
-        Config.saveResult({ ...result, logs: this.logger.getAll() })
-        registry.removeGame(this.gameId)
-      },
-    })
+    this.round = this.createRoundManager(quizz, false)
 
     this.lastBroadcastStatus = {
       name: STATUS.SHOW_ROOM,
@@ -110,6 +99,252 @@ class Game {
     console.log(
       `New game created: ${this.inviteCode} subject: ${quizz.subject}`,
     )
+  }
+
+  // ── Factory RoundManager ────────────────────────────────────────────────────
+
+  private createRoundManager(quizz: Quizz, isEvening: boolean): RoundManager {
+    return new RoundManager({
+      quizz,
+      players: this.playerManager,
+      cooldown: this.cooldown,
+      io: this.io,
+      gameId: this.gameId,
+      getManagerId: () => this._manager.id,
+      broadcast: this.broadcastStatus.bind(this),
+      send: this.sendStatus.bind(this),
+      onNewQuestion: () => {
+        this.playerStatus.clear()
+        this.managerStatus = null
+      },
+      onGameFinished: (result) => {
+        Config.saveResult({ ...result, logs: this.logger.getAll() })
+
+        if (!isEvening) {
+          registry.removeGame(this.gameId)
+        }
+      },
+      onEveningQuizFinished: isEvening
+        ? (result, leaderboard) => this.handleEveningQuizFinished(result, leaderboard)
+        : undefined,
+      // Power-ups uniquement en mode soirée avec flag activé
+      powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
+      onPowerUpEarned: this.powerUpsActive
+        ? (playerId, powerUp) => {
+            this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, powerUp)
+          }
+        : undefined,
+    })
+  }
+
+  // ── Mode Soirée ─────────────────────────────────────────────────────────────
+
+  initEveningMode(quizIds: string[], powerUpsEnabled: boolean = true) {
+    this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
+    const firstQuizz = Config.quizz().find((q) => q.id === quizIds[0])
+
+    if (!firstQuizz) {
+      return
+    }
+
+    this.round = this.createRoundManager(firstQuizz, true)
+  }
+
+  private get powerUpsActive(): boolean {
+    return this.singleQuizPowerUpsEnabled || Boolean(this.eveningSession?.powerUpsEnabled)
+  }
+
+  private handleEveningQuizFinished(result: GameResult, leaderboard: Player[]) {
+    if (!this.eveningSession) {
+      return
+    }
+
+    Config.saveResult({ ...result, logs: this.logger.getAll() })
+
+    // Évaluer les power-ups de fin de quiz (victoire, sans faute, 2 wins d'affilée)
+    this.grantQuizEndPowerUps(result, leaderboard)
+
+    const { quizIds, currentIndex } = this.eveningSession
+    const isLastQuiz = currentIndex + 1 >= quizIds.length
+
+    if (isLastQuiz) {
+      const top = leaderboard.slice(0, 3)
+
+      this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
+        name: STATUS.FINISHED,
+        data: { subject: result.subject, top, totalPlayers: leaderboard.length },
+      })
+
+      leaderboard.forEach((player, index) => {
+        this.io.to(player.id).emit(EVENTS.GAME.STATUS, {
+          name: STATUS.FINISHED,
+          data: {
+            subject: result.subject,
+            top,
+            rank: index + 1,
+            totalPlayers: leaderboard.length,
+          },
+        })
+      })
+
+      this.io.to(this.gameId).emit(EVENTS.EVENING.COMPLETE, {
+        leaderboard: leaderboard.map((p, i) => ({ ...p, rank: i + 1 })),
+      })
+
+      registry.removeGame(this.gameId)
+      this.eveningSession = null
+
+      return
+    }
+
+    this.eveningSession.currentIndex += 1
+
+    this.io.to(this.gameId).emit(EVENTS.EVENING.QUIZ_COMPLETE, {
+      quizIndex: currentIndex,
+      totalQuizzes: quizIds.length,
+      subject: result.subject,
+      leaderboard: leaderboard.map((p, i) => ({
+        id: p.id,
+        username: p.username,
+        avatar: p.avatar,
+        points: p.points,
+        rank: i + 1,
+      })),
+    })
+  }
+
+  startNextEveningQuiz() {
+    if (!this.eveningSession) {
+      return
+    }
+
+    const { quizIds, currentIndex } = this.eveningSession
+    const quizz = Config.quizz().find((q) => q.id === quizIds[currentIndex])
+
+    if (!quizz) {
+      return
+    }
+
+    // Réinitialiser les streaks des joueurs pour le nouveau quiz
+    for (const player of this.playerManager.getAll()) {
+      player.streak = 0
+    }
+
+    this.powerUpManager.resetBetweenQuizzes()
+    this.round = this.createRoundManager(quizz, true)
+
+    // Retour à la salle d'attente — permet aux nouveaux joueurs de rejoindre
+    // avant le quiz suivant. L'hôte déclenche le départ via MANAGER.START_GAME.
+    this.broadcastStatus(STATUS.SHOW_ROOM, {
+      text: "game:waitingForPlayers",
+      inviteCode: this.inviteCode,
+      salonImage: quizz.salonImage ?? quizz.listingImage,
+    })
+  }
+
+  // ── Power-ups ────────────────────────────────────────────────────────────────
+
+  private grantQuizEndPowerUps(result: GameResult, leaderboard: Player[]) {
+    if (!this.powerUpsActive) {
+      return
+    }
+
+    const [winner] = leaderboard
+    const winnerId = winner?.points && winner.points > 0 ? winner.id : null
+    const allPlayerIds = leaderboard.map((p) => p.id)
+
+    // Quiz sans faute : player a marqué des points à chaque question
+    const totalQuestions = result.questions.length
+    const perfectPlayerIds: string[] = []
+
+    for (const player of leaderboard) {
+      const correctAnswers = result.questions.filter((q) =>
+        q.playerAnswers.some((a) => a.playerName === player.username && a.points > 0),
+      ).length
+
+      if (totalQuestions > 0 && correctAnswers === totalQuestions) {
+        perfectPlayerIds.push(player.id)
+      }
+    }
+
+    const earned = this.powerUpManager.evaluateQuizEndEarnings(
+      winnerId,
+      perfectPlayerIds,
+      allPlayerIds,
+    )
+
+    for (const { playerId, powerUp } of earned) {
+      this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, powerUp)
+    }
+  }
+
+  sendPlayerInventory(playerId: string) {
+    if (!this.powerUpsActive) {
+      return
+    }
+
+    const inventory = this.powerUpManager.getPlayerPowerUps(playerId)
+    this.io.to(playerId).emit(EVENTS.POWER_UP.INVENTORY, inventory)
+
+    // Notify the player about all other connected players so their target list is fully synced
+    for (const p of this.playerManager.getAll()) {
+      if (p.id !== playerId) {
+        this.io.to(playerId).emit(EVENTS.GAME.NEW_PLAYER, {
+          id: p.id,
+          username: p.username,
+          avatar: p.avatar,
+        })
+      }
+    }
+  }
+
+  handlePowerUpUsed(playerId: string, powerUpId: string, targetIds?: string[]) {
+    if (!this.powerUpsActive) {
+      return
+    }
+
+    const players = this.playerManager.getAll()
+    const result = this.powerUpManager.usePowerUp(players, playerId, powerUpId, targetIds)
+
+    if (!result.success) {
+      return
+    }
+
+    if (!result.type) {
+      return
+    }
+
+    if (result.blockedBy) {
+      this.io.to(playerId).emit(EVENTS.POWER_UP.BLOCKED, {
+        powerUpType: result.type,
+        defenderId: result.blockedBy,
+      })
+
+      return
+    }
+
+    const activatorPlayer = players.find((p) => p.id === playerId)
+    this.io.to(this.gameId).emit(EVENTS.POWER_UP.EFFECT, {
+      type: result.type,
+      activatedBy: playerId,
+      activatedByUsername: activatorPlayer?.username,
+      affectedPlayers: result.affectedPlayers ?? [],
+      ...(result.mirroredTo ? { mirrored: true } : {}),
+    })
+
+    // Mettre à jour les points modifiés côté joueurs
+    if (result.affectedPlayers && result.affectedPlayers.length > 0) {
+      this.playerManager.replace(players)
+
+      for (const affected of result.affectedPlayers) {
+        const updated = players.find((p) => p.id === affected.id)
+
+        if (updated) {
+          // Informer le manager des nouvelles valeurs de score pour rafraîchissement temps réel
+          this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, updated)
+        }
+      }
+    }
   }
 
   get manager() {
@@ -166,6 +401,15 @@ class Game {
   join(socket: Socket, username: string, avatar?: string) {
     this.playerManager.join(socket, username, avatar)
     this.logAndEmit("info", `${username} a rejoint la partie`)
+
+    // Cadeau de bienvenue (mode soirée avec power-ups activés) : 1 commun aléatoire
+    if (this.powerUpsActive) {
+      const gift = this.powerUpManager.grantStartGift(socket.id)
+
+      if (gift) {
+        this.io.to(socket.id).emit(EVENTS.POWER_UP.EARNED, gift.powerUp)
+      }
+    }
   }
 
   kickPlayer(socket: Socket, playerId: string) {
@@ -347,6 +591,11 @@ class Game {
         avatar: player.avatar,
         points: player.points,
       },
+      players: this.playerManager.getAll().map((p) => ({
+        id: p.id,
+        username: p.username,
+        avatar: p.avatar,
+      })),
     })
 
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())

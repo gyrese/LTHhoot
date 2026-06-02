@@ -64,6 +64,20 @@ export const EVENTS = {
     DATA: "results:data",
     DELETE: "results:delete",
   },
+  EVENING: {
+    START: "evening:start",
+    QUIZ_COMPLETE: "evening:quizComplete",
+    COMPLETE: "evening:complete",
+    NEXT: "evening:next",
+  },
+  POWER_UP: {
+    EARNED: "powerup:earned",
+    USE: "powerup:use",
+    EFFECT: "powerup:effect",
+    BLOCKED: "powerup:blocked",
+    GET_INVENTORY: "powerup:get_inventory",
+    INVENTORY: "powerup:inventory",
+  },
 } as const
 
 export const MEDIA_TYPES = {

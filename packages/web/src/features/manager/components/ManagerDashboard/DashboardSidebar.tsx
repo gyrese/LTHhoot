@@ -48,6 +48,7 @@ const buildTree = (paths: string[]): FolderNode[] => {
       roots.push(node)
     } else {
       const parentPath = parts.slice(0, -1).join("/")
+
       if (nodes[parentPath]) {
         nodes[parentPath].children.push(node)
       } else {
@@ -75,7 +76,7 @@ const DashboardSidebar = ({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
-  // null = pas en création, "" = racine, "Maths" = sous-dossier de Maths
+  // Null = pas en création, "" = racine, "Maths" = sous-dossier de Maths
   const [creatingIn, setCreatingIn] = useState<string | null>(null)
   const [newFolderName, setNewFolderName] = useState("")
 
@@ -109,12 +110,14 @@ const DashboardSidebar = ({
   )
 
   const countInFolder = (path: string) =>
-    quizz.filter((q) => q.folder === path || q.folder?.startsWith(path + "/")).length
+    quizz.filter((q) => q.folder === path || q.folder?.startsWith(`${path  }/`)).length
 
   const handleDrop = (e: DragEvent, folder: string | null) => {
     e.preventDefault()
     const quizzId = e.dataTransfer.getData("quizzId")
-    if (quizzId) onMoveToFolder(quizzId, folder)
+
+    if (quizzId) {onMoveToFolder(quizzId, folder)}
+
     setDragOverFolder(null)
   }
 
@@ -127,38 +130,47 @@ const DashboardSidebar = ({
   const toggleCollapse = (path: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev)
-      if (next.has(path)) next.delete(path)
-      else next.add(path)
-      return next
+
+      if (next.has(path)) {next.delete(path)}
+      else {next.add(path)}
+      
+return next
     })
   }
 
   const startCreate = (parentPath: string | null) => {
     setCreatingIn(parentPath ?? "")
     setNewFolderName("")
+
     if (parentPath) {
       setCollapsed((prev) => {
         const next = new Set(prev)
         next.delete(parentPath)
-        return next
+
+        
+return next
       })
     }
   }
 
   const confirmCreate = () => {
     const name = newFolderName.trim()
+
     if (name) {
       const fullPath = creatingIn ? `${creatingIn}/${name}` : name
+
       if (!allFolders.includes(fullPath)) {
         setUserFolders((prev) => [...prev, fullPath])
       }
     }
+
     setNewFolderName("")
     setCreatingIn(null)
   }
 
   const handleCreateKey = (e: KeyboardEvent) => {
-    if (e.key === "Enter") confirmCreate()
+    if (e.key === "Enter") {confirmCreate()}
+
     if (e.key === "Escape") { setCreatingIn(null); setNewFolderName("") }
   }
 
@@ -170,7 +182,8 @@ const DashboardSidebar = ({
   const confirmRename = (oldPath: string) => {
     const newLabel = editName.trim()
     setEditingFolder(null)
-    if (!newLabel || newLabel === oldPath.split("/").pop()) return
+
+    if (!newLabel || newLabel === oldPath.split("/").pop()) {return}
 
     const parts = oldPath.split("/")
     parts[parts.length - 1] = newLabel
@@ -178,41 +191,46 @@ const DashboardSidebar = ({
 
     setUserFolders((prev) =>
       prev.map((f) => {
-        if (f === oldPath) return newPath
-        if (f.startsWith(oldPath + "/")) return newPath + f.slice(oldPath.length)
-        return f
+        if (f === oldPath) {return newPath}
+
+        if (f.startsWith(`${oldPath  }/`)) {return newPath + f.slice(oldPath.length)}
+        
+return f
       }),
     )
 
     quizz.forEach((q) => {
       if (q.folder === oldPath) {
         onMoveToFolder(q.id, newPath)
-      } else if (q.folder?.startsWith(oldPath + "/")) {
+      } else if (q.folder?.startsWith(`${oldPath  }/`)) {
         onMoveToFolder(q.id, newPath + q.folder.slice(oldPath.length))
       }
     })
 
-    if (activeFolder === oldPath) setActiveFolder(newPath)
-    else if (activeFolder?.startsWith(oldPath + "/")) {
+    if (activeFolder === oldPath) {setActiveFolder(newPath)}
+    else if (activeFolder?.startsWith(`${oldPath  }/`)) {
       setActiveFolder(newPath + activeFolder.slice(oldPath.length))
     }
   }
 
   const handleRenameKey = (e: KeyboardEvent, path: string) => {
-    if (e.key === "Enter") confirmRename(path)
-    if (e.key === "Escape") setEditingFolder(null)
+    if (e.key === "Enter") {confirmRename(path)}
+
+    if (e.key === "Escape") {setEditingFolder(null)}
   }
 
   const handleDeleteFolder = (path: string) => {
     quizz
-      .filter((q) => q.folder === path || q.folder?.startsWith(path + "/"))
-      .forEach((q) => onMoveToFolder(q.id, null))
+      .filter((q) => q.folder === path || q.folder?.startsWith(`${path  }/`))
+      .forEach((q) => {
+        onMoveToFolder(q.id, null)
+      })
 
     setUserFolders((prev) =>
-      prev.filter((f) => f !== path && !f.startsWith(path + "/")),
+      prev.filter((f) => f !== path && !f.startsWith(`${path  }/`)),
     )
 
-    if (activeFolder === path || activeFolder?.startsWith(path + "/")) {
+    if (activeFolder === path || activeFolder?.startsWith(`${path  }/`)) {
       setActiveFolder(null)
     }
   }

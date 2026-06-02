@@ -34,6 +34,7 @@
     "subjectEmpty": "Le sujet ne peut pas être vide",
     "tooFewAnswers": "Une question doit avoir au moins 2 réponses",
     "tooFewCorrectAnswers": "Au moins une réponse correcte est requise",
-    "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses"
+    "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses",
+    "exportFailed": "L'exportation a échoué"
   }
 }

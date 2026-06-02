@@ -35,6 +35,9 @@ type Props = {
   activeTag: string | null
   selectedQuizz: string | null
   setSelectedQuizz: (_id: string | null) => void
+  eveningMode?: boolean
+  eveningQuizIds?: string[]
+  onToggleEveningQuizz?: (_id: string) => void
 }
 
 const QuizzPanel = ({
@@ -44,6 +47,9 @@ const QuizzPanel = ({
   activeTag,
   selectedQuizz,
   setSelectedQuizz,
+  eveningMode = false,
+  eveningQuizIds = [],
+  onToggleEveningQuizz,
 }: Props) => {
   const { quizz } = useConfig()
   const { socket } = useSocket()
@@ -203,7 +209,10 @@ const QuizzPanel = ({
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(155px,1fr))] content-start gap-3">
             {filtered.map((q) => {
-              const isSelected = selectedQuizz === q.id
+              const isSelected = eveningMode
+                ? eveningQuizIds.includes(q.id)
+                : selectedQuizz === q.id
+              const eveningOrder = eveningMode ? eveningQuizIds.indexOf(q.id) + 1 : 0
 
               return (
                 <div
@@ -213,7 +222,13 @@ const QuizzPanel = ({
                     e.dataTransfer.setData("quizzId", q.id)
                     e.dataTransfer.effectAllowed = "move"
                   }}
-                  onClick={() => setSelectedQuizz(isSelected ? null : q.id)}
+                  onClick={() => {
+                    if (eveningMode) {
+                      onToggleEveningQuizz?.(q.id)
+                    } else {
+                      setSelectedQuizz(isSelected ? null : q.id)
+                    }
+                  }}
                   className={clsx(
                     "group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 transition-all duration-200",
                     isSelected
@@ -231,9 +246,15 @@ const QuizzPanel = ({
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                  {isSelected && (
+                  {isSelected && !eveningMode && (
                     <div className="absolute top-2 right-2 rounded-full bg-orange-500 p-0.5 shadow-md">
                       <Check className="size-3.5 stroke-[3] text-white" />
+                    </div>
+                  )}
+
+                  {isSelected && eveningMode && (
+                    <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white shadow-md">
+                      {eveningOrder}
                     </div>
                   )}
 

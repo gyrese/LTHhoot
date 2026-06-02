@@ -89,8 +89,9 @@ const Question = ({
           {(!elements || elements.length === 0) && (
             <QuestionMedia
               media={
-                (media?.type === "video" || (type === "drop_pin" && pinImage))
-                  ? undefined // On cache la vidéo en phase question
+                // On cache la vidéo en phase question
+                media?.type === "video" || (type === "drop_pin" && pinImage)
+                  ? undefined
                   : media
               }
               alt={question}

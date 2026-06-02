@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1778512937741,
+  "lastScanned": 1780396444378,
   "projectRoot": "c:\\ai\\testrahoot",
   "techStack": {
     "languages": [
@@ -26,7 +26,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "pnpm build 2>&1",
+    "buildCommand": "pnpm build",
     "testCommand": null,
     "lintCommand": "pnpm lint",
     "devCommand": "pnpm dev",
@@ -60,7 +60,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 1,
-      "lastAccessed": 1778512937691,
+      "lastAccessed": 1780396444324,
       "keyFiles": [
         "game.json"
       ]
@@ -69,24 +69,36 @@
       "path": "docker",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778512937693,
+      "lastAccessed": 1780396444325,
       "keyFiles": [
         "nginx.conf",
         "supervisord.conf"
+      ]
+    },
+    "ltnhoot-tests": {
+      "path": "ltnhoot-tests",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1780396444341,
+      "keyFiles": [
+        "package-lock.json",
+        "package.json",
+        "playwright.config.ts",
+        "tsconfig.json"
       ]
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1778512937706,
+      "lastAccessed": 1780396444342,
       "keyFiles": []
     },
     "save": {
       "path": "save",
       "purpose": null,
       "fileCount": 14,
-      "lastAccessed": 1778512937707,
+      "lastAccessed": 1780396444343,
       "keyFiles": [
         "agent.md",
         "audit.md",
@@ -99,7 +111,7 @@
       "path": "tasks",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778512937708,
+      "lastAccessed": 1780396444344,
       "keyFiles": [
         "petdex-sync.ps1",
         "TODO0405.md"
@@ -109,7 +121,7 @@
       "path": "temp-skill",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1778512937709,
+      "lastAccessed": 1780396444345,
       "keyFiles": [
         "CLAUDE.md",
         "LICENSE",
@@ -117,11 +129,27 @@
         "skill.json"
       ]
     },
+    "ltnhoot-tests\\helpers": {
+      "path": "ltnhoot-tests\\helpers",
+      "purpose": "Helper functions",
+      "fileCount": 1,
+      "lastAccessed": 1780396444347,
+      "keyFiles": [
+        "gameHelpers.ts"
+      ]
+    },
+    "ltnhoot-tests\\node_modules": {
+      "path": "ltnhoot-tests\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1780396444348,
+      "keyFiles": []
+    },
     "temp-skill\\docs": {
       "path": "temp-skill\\docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1778512937712,
+      "lastAccessed": 1780396444350,
       "keyFiles": [
         "三个 data-scripts-templates 的区别.md"
       ]
@@ -129,69 +157,105 @@
   },
   "hotPaths": [
     {
-      "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
-      "accessCount": 67,
-      "lastAccessed": 1778513052394,
-      "type": "file"
-    },
-    {
       "path": "packages\\socket\\src\\services\\game\\index.ts",
-      "accessCount": 49,
-      "lastAccessed": 1778521546378,
+      "accessCount": 99,
+      "lastAccessed": 1779214255816,
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\quizz\\components\\SlideEditor\\SlideCanvas.tsx",
-      "accessCount": 42,
-      "lastAccessed": 1778070533807,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Answers.tsx",
-      "accessCount": 42,
-      "lastAccessed": 1778162780241,
+      "path": "packages\\socket\\src\\services\\game\\round-manager.ts",
+      "accessCount": 95,
+      "lastAccessed": 1779192803034,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\GameWrapper.tsx",
-      "accessCount": 30,
-      "lastAccessed": 1778161817613,
+      "accessCount": 75,
+      "lastAccessed": 1779212537795,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\quizz\\components\\SlideEditor\\SlideCanvas.tsx",
+      "accessCount": 48,
+      "lastAccessed": 1778766452903,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Answers.tsx",
+      "accessCount": 45,
+      "lastAccessed": 1779173453607,
+      "type": "file"
+    },
+    {
+      "path": "packages\\common\\src\\types\\game\\socket.ts",
+      "accessCount": 32,
+      "lastAccessed": 1779213964719,
+      "type": "file"
+    },
+    {
+      "path": "packages\\socket\\src\\handlers\\game.ts",
+      "accessCount": 31,
+      "lastAccessed": 1779213981900,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Room.tsx",
+      "accessCount": 24,
+      "lastAccessed": 1779192554359,
+      "type": "file"
+    },
+    {
+      "path": "packages\\common\\src\\constants.ts",
+      "accessCount": 24,
+      "lastAccessed": 1779197952659,
       "type": "file"
     },
     {
       "path": "packages\\web\\src\\features\\game\\components\\join\\Username.tsx",
-      "accessCount": 22,
-      "lastAccessed": 1778161963914,
+      "accessCount": 23,
+      "lastAccessed": 1778581397313,
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
-      "accessCount": 20,
-      "lastAccessed": 1778513333168,
+      "path": "packages\\web\\src\\features\\quizz\\contexts\\quizz-editor-context.tsx",
+      "accessCount": 23,
+      "lastAccessed": 1778836521008,
       "type": "file"
     },
     {
       "path": "packages\\web\\src",
-      "accessCount": 19,
-      "lastAccessed": 1778136353671,
+      "accessCount": 23,
+      "lastAccessed": 1779192414039,
       "type": "directory"
-    },
-    {
-      "path": "packages\\socket\\src\\handlers\\game.ts",
-      "accessCount": 19,
-      "lastAccessed": 1778521552537,
-      "type": "file"
     },
     {
       "path": "",
-      "accessCount": 17,
-      "lastAccessed": 1778139655612,
+      "accessCount": 22,
+      "lastAccessed": 1779103148815,
       "type": "directory"
     },
     {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Room.tsx",
+      "path": "packages\\socket\\src\\services\\game\\player-manager.ts",
+      "accessCount": 21,
+      "lastAccessed": 1779024011787,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\manager\\components\\ManagerDashboard\\index.tsx",
+      "accessCount": 20,
+      "lastAccessed": 1779213953910,
+      "type": "file"
+    },
+    {
+      "path": "packages\\common\\src\\types\\game\\index.ts",
+      "accessCount": 18,
+      "lastAccessed": 1779194164790,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
       "accessCount": 17,
-      "lastAccessed": 1778337523683,
+      "lastAccessed": 1779023629069,
       "type": "file"
     },
     {
@@ -201,27 +265,9 @@
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\game\\components\\states\\Question.tsx",
-      "accessCount": 16,
-      "lastAccessed": 1778162157003,
-      "type": "file"
-    },
-    {
-      "path": "packages\\common\\src\\constants.ts",
-      "accessCount": 16,
-      "lastAccessed": 1778521459429,
-      "type": "file"
-    },
-    {
-      "path": "packages\\common\\src\\types\\game\\socket.ts",
-      "accessCount": 15,
-      "lastAccessed": 1778521470580,
-      "type": "file"
-    },
-    {
       "path": "packages\\web\\src\\features\\game\\utils\\constants.ts",
-      "accessCount": 14,
-      "lastAccessed": 1778158032530,
+      "accessCount": 16,
+      "lastAccessed": 1778765430759,
       "type": "file"
     },
     {
@@ -231,21 +277,39 @@
       "type": "file"
     },
     {
+      "path": "packages\\web\\src\\pages\\(auth)\\index.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1778593376363,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\components\\join\\Room.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1778593318229,
+      "type": "file"
+    },
+    {
+      "path": "packages\\common\\src\\types\\game\\status.ts",
+      "accessCount": 12,
+      "lastAccessed": 1779023563704,
+      "type": "file"
+    },
+    {
       "path": "Dockerfile",
       "accessCount": 11,
       "lastAccessed": 1778010160184,
       "type": "file"
     },
     {
-      "path": "packages\\common\\src\\types\\game\\status.ts",
-      "accessCount": 11,
-      "lastAccessed": 1778158033390,
+      "path": "packages\\socket\\src\\handlers\\manager.ts",
+      "accessCount": 10,
+      "lastAccessed": 1778754129510,
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\game\\components\\join\\Room.tsx",
+      "path": "packages\\socket\\src\\utils\\game.ts",
       "accessCount": 10,
-      "lastAccessed": 1778162102196,
+      "lastAccessed": 1778766306186,
       "type": "file"
     },
     {
@@ -255,40 +319,34 @@
       "type": "file"
     },
     {
+      "path": "docker\\nginx.conf",
+      "accessCount": 9,
+      "lastAccessed": 1778849574044,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\game\\stores\\player.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1779031979844,
+      "type": "file"
+    },
+    {
       "path": "packages\\web\\src\\features\\game\\components\\states\\Result.tsx",
       "accessCount": 8,
       "lastAccessed": 1777973349343,
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\utils\\game.ts",
+      "path": "packages\\web\\src\\features\\quizz\\components\\QuestionEditor\\QuestionEditorMedia.tsx",
       "accessCount": 7,
-      "lastAccessed": 1778160533473,
+      "lastAccessed": 1778766633526,
       "type": "file"
     },
     {
-      "path": "packages\\socket\\src\\handlers\\manager.ts",
+      "path": "packages\\socket\\src",
       "accessCount": 7,
-      "lastAccessed": 1778513047111,
-      "type": "file"
-    },
-    {
-      "path": "packages\\common\\src\\types\\game\\index.ts",
-      "accessCount": 6,
-      "lastAccessed": 1778140072390,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\pages\\(auth)\\index.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1778140380667,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\game\\stores\\player.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1778160310720,
-      "type": "file"
+      "lastAccessed": 1779192494793,
+      "type": "directory"
     },
     {
       "path": "packages\\web\\src\\components\\QuestionMedia.tsx",
@@ -315,21 +373,15 @@
       "type": "directory"
     },
     {
-      "path": "packages\\socket\\src",
-      "accessCount": 4,
-      "lastAccessed": 1777958966111,
-      "type": "directory"
-    },
-    {
-      "path": "packages\\web\\src\\features\\manager\\components\\ManagerDashboard\\index.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1777979844370,
+      "path": "packages\\socket\\src\\services\\manager.ts",
+      "accessCount": 5,
+      "lastAccessed": 1778679718885,
       "type": "file"
     },
     {
-      "path": "docker\\nginx.conf",
-      "accessCount": 4,
-      "lastAccessed": 1778009356471,
+      "path": "packages\\socket\\src\\services\\config.ts",
+      "accessCount": 5,
+      "lastAccessed": 1778754118326,
       "type": "file"
     },
     {
@@ -339,27 +391,27 @@
       "type": "directory"
     },
     {
-      "path": "packages\\socket\\src\\services\\manager.ts",
-      "accessCount": 4,
-      "lastAccessed": 1778138344682,
-      "type": "file"
-    },
-    {
       "path": "packages\\web\\src\\index.css",
       "accessCount": 3,
       "lastAccessed": 1777891742432,
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\quizz\\contexts\\quizz-editor-context.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1778140033450,
-      "type": "file"
-    },
-    {
       "path": "packages\\web\\src\\features\\game\\components\\states\\AnswerInputs.tsx",
       "accessCount": 3,
       "lastAccessed": 1778140170418,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\manager\\components\\ResultModal\\ResultModalAnswers.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778754132676,
+      "type": "file"
+    },
+    {
+      "path": "packages\\web\\src\\features\\quizz\\components\\SlideEditor\\YoutubePanel.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778762115970,
       "type": "file"
     },
     {
@@ -381,33 +433,9 @@
       "type": "file"
     },
     {
-      "path": "packages\\web\\src\\features\\manager\\components\\ResultModal\\ResultModalAnswers.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1777973361531,
-      "type": "file"
-    },
-    {
       "path": ".dockerignore",
       "accessCount": 2,
       "lastAccessed": 1777993230087,
-      "type": "file"
-    },
-    {
-      "path": "packages\\socket\\src\\services\\config.ts",
-      "accessCount": 2,
-      "lastAccessed": 1777995530171,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\quizz\\components\\QuestionEditor\\QuestionEditorMedia.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778049235638,
-      "type": "file"
-    },
-    {
-      "path": "packages\\web\\src\\features\\quizz\\components\\SlideEditor\\YoutubePanel.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778049239250,
       "type": "file"
     },
     {

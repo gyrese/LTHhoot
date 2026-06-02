@@ -47,5 +47,13 @@
   "sessionClosedByManager": "La session a été fermée par le manager.",
   "confirmEndGame": "Voulez-vous vraiment fermer cette session ? Tous les joueurs seront déconnectés.",
   "closeSession": "Fermer la session",
-  "quit": "Quitter"
+  "quit": "Quitter",
+  "you": "toi",
+  "evening": {
+    "quizComplete": "Quiz terminé !",
+    "progress": "Quiz {{current}} sur {{total}}",
+    "cumulativeRanking": "Classement soirée",
+    "nextQuiz": "Quiz suivant",
+    "waitingHost": "En attente du prochain quiz…"
+  }
 }
