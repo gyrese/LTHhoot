@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { EVENTS } from "@rahoot/common/constants"
 import { STATUS } from "@rahoot/common/types/game/status"
 import GameWrapper from "@rahoot/web/features/game/components/GameWrapper"
