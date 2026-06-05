@@ -1,7 +1,8 @@
 import { EVENTS, MEDIA_TYPES } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
-import type { QuestionMediaType } from "@rahoot/common/types/game"
+import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
+import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
   DateAnswer,
   McqAnswers,
@@ -28,6 +29,9 @@ import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
 
+
+const noopChange = (_els: SlideElement[]) => undefined
+const noopSelect = (_id: string | undefined) => undefined
 
 type Props = {
   data: CommonStatusDataMap["SELECT_ANSWER"]
@@ -246,6 +250,20 @@ const Answers = ({
             }}
           />
         </>
+      )}
+
+      {elements && elements.length > 0 && (
+        <div className="pointer-events-none absolute inset-0">
+          <SlideCanvas
+            elements={elements}
+            onChange={noopChange}
+            selectedId={undefined}
+            onSelect={noopSelect}
+            readOnly
+            noBackground
+            hideYoutube
+          />
+        </div>
       )}
 
       {/* Barre de progression du temps */}

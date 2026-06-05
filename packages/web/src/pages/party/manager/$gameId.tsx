@@ -92,14 +92,9 @@ return
     }
 
     console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
+    reset()
+    setQuestionStates(null)
     navigate({ to: "/manager/config" })
-    const currentId = useManagerStore.getState().gameId
-    setTimeout(() => {
-      if (useManagerStore.getState().gameId === currentId) {
-        reset()
-        setQuestionStates(null)
-      }
-    }, 30_000)
     toast.error(t(message))
   })
 
@@ -109,14 +104,9 @@ return
     }
 
     if (status.name === STATUS.FINISHED) {
+      reset()
+      setQuestionStates(null)
       navigate({ to: "/manager/config" })
-      const currentId = useManagerStore.getState().gameId
-      setTimeout(() => {
-        if (useManagerStore.getState().gameId === currentId) {
-          reset()
-          setQuestionStates(null)
-        }
-      }, 30_000)
 
       return
     }

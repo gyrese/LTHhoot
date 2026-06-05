@@ -584,6 +584,15 @@ const SlideCanvas = ({
                 }
 
                 if (el.type === "image") {
+                  const isGif =
+                    el.url.toLowerCase().endsWith(".gif") ||
+                    el.url.toLowerCase().includes(".gif?") ||
+                    el.url.startsWith("data:image/gif")
+
+                  if (readOnly && isGif) {
+                    return null
+                  }
+
                   return (
                     <CanvasImageElement
                       key={el.id}
@@ -712,6 +721,35 @@ const SlideCanvas = ({
                   />
                 )
               })}
+
+          {/* GIF images in readOnly — positioned relative to the 16:9 inner div */}
+          {readOnly &&
+            elements
+              .filter(
+                (el): el is Extract<SlideElement, { type: "image" }> =>
+                  el.type === "image" && (
+                    el.url.toLowerCase().endsWith(".gif") ||
+                    el.url.toLowerCase().includes(".gif?") ||
+                    el.url.startsWith("data:image/gif")
+                  ),
+              )
+              .map((el) => (
+                <img
+                  key={el.id}
+                  src={el.url}
+                  alt=""
+                  className="absolute rounded-md pointer-events-none"
+                  style={{
+                    left: el.x * scale,
+                    top: el.y * scale,
+                    width: el.width * scale,
+                    height: el.height * scale,
+                    transform: `rotate(${el.rotation}deg)`,
+                    transformOrigin: "top left",
+                    opacity: el.opacity,
+                  }}
+                />
+              ))}
         </div>
       )}
     </div>

@@ -171,9 +171,39 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   }, [statusName, setQuestionStates])
 
   const handleNext = () => {
+    if (isDisabled) {
+      return
+    }
     setIsDisabled(true)
     onNext?.()
   }
+
+  useEffect(() => {
+    if (!manager || !next) {
+      return
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        if (
+          document.activeElement?.tagName === "INPUT" ||
+          document.activeElement?.tagName === "TEXTAREA" ||
+          document.activeElement?.getAttribute("contenteditable") === "true"
+        ) {
+          return
+        }
+
+        e.preventDefault()
+        handleNext()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [manager, next, isDisabled, handleNext])
 
   const handleUsePowerUp = (powerUp: PowerUp) => {
     setDrawerPowerUp(powerUp)
