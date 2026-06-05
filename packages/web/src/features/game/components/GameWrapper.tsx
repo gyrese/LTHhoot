@@ -228,12 +228,16 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   return (
     <GameConfigContext.Provider value={{ isHost: Boolean(manager) }}>
       <section
-        className="relative flex h-dvh flex-col overflow-hidden"
-        style={{
-          backgroundImage: "url(/bg-salon.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="relative flex h-dvh flex-col overflow-hidden bg-slate-950"
+        style={
+          !isRoomScreen
+            ? {
+                backgroundImage: "url(/bg-salon.png)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
       >
         {/* Fond garage uniquement sur l'écran d'attente */}
         {isRoomScreen && (
