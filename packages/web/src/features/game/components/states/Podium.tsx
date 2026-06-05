@@ -417,12 +417,16 @@ const Podium = ({ data: { subject, top } }: Props) => {
       className="relative flex h-full w-full flex-col items-center justify-between overflow-hidden"
       style={{ backgroundColor: "#000000" }}
     >
-      {/* Image salon — très atténuée */}
+      {/* Image salon / couverture en fond */}
       {salonImage && (
-        <div
-          className="absolute inset-0 scale-105 bg-cover bg-center blur-md"
-          style={{ backgroundImage: `url(${salonImage})`, opacity: 0.05 }}
-        />
+        <>
+          <div
+            className="absolute inset-0 scale-105 bg-cover bg-center blur-sm"
+            style={{ backgroundImage: `url(${salonImage})`, opacity: 0.18 }}
+          />
+          {/* Overlay sombre pour conserver la lisibilité du podium néon */}
+          <div className="absolute inset-0 bg-black/60" />
+        </>
       )}
 
       {/* Grille de fond */}
