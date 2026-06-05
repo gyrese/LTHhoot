@@ -9,7 +9,7 @@ import {
 } from "@rahoot/web/features/game/utils/constants"
 import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
@@ -470,36 +470,27 @@ const Responses = ({
     }
   }, [isHost])
 
+  let bgStyle: CSSProperties = {
+    background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
+  }
+
+  if (background?.type === "image") {
+    bgStyle = {
+      backgroundImage: `url(${background.value})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    }
+  } else if (background?.type === "color") {
+    bgStyle = { backgroundColor: background.value }
+  }
+
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
-      {background && background.value ? (
-        <>
-          <div className="absolute inset-0 bg-black" />
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundColor:
-                background.type === "color" ? background.value : undefined,
-              backgroundImage:
-                background.type === "image"
-                  ? `url(${background.value})`
-                  : undefined,
-              opacity: backgroundOpacity ?? 1,
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <div className="absolute inset-0 bg-[#0f172a]" />
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url(/bg-salon.png)`,
-              opacity: 0.5,
-            }}
-          />
-        </>
-      )}
+      <div className="absolute inset-0 bg-black" />
+      <div
+        className="absolute inset-0"
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
+      />
 
       {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
@@ -515,10 +506,17 @@ const Responses = ({
         </div>
       )}
 
+      {type !== "title" && (
+        <div id="question-container" className="relative z-10 px-4 pt-4">
+          <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
+            <h2 className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+              {question}
+            </h2>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
-          {question}
-        </h2>
 
         {type === "mcq" && (
           <McqResult
