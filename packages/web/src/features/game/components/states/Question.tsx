@@ -60,7 +60,7 @@ const Question = ({
         style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
       />
 
-      {elements && elements.length > 0 && (
+      {type === "title" && elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
           <SlideCanvas
             elements={elements}
