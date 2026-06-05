@@ -255,7 +255,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
           {!isConnected && !statusName ? null : (
             <>
               {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
-              <div className="pointer-events-none absolute top-3 right-3 left-3 z-20 flex items-start justify-between">
+              <div className="pointer-events-none absolute top-3 right-3 left-3 z-30 flex items-start justify-between">
                 {questionStates && (
                   <div className="pointer-events-auto rounded-xl bg-black/50 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm">
                     {questionStates.current} / {questionStates.total}
