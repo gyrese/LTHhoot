@@ -140,6 +140,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
             setIsReconnecting(true)
             socketClient?.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+          } else {
+            setIsReconnecting(false)
           }
         }
       })
