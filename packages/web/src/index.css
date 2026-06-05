@@ -1,5 +1,12 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&family=Raleway:wght@300;400;700&family=PT+Sans:wght@400;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;700&family=Playfair+Display:wght@400;700&family=Ubuntu:wght@400;700&family=Poppins:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Libre+Baskerville:wght@400;700&family=Bitter:wght@400;700&family=Fjalla+One&family=Anton&family=Josefin+Sans:wght@300;400;700&family=Lobster&family=Pacifico&family=Dancing+Script:wght@400;700&family=Satisfy&family=Courgette&family=Bree+Serif&family=Archivo+Narrow&family=Arvo:wght@400;700&family=Exo:wght@400;700&family=Asap:wght@400;700&family=Indie+Flower&family=Shadows+Into+Light&family=Coming+Soon&family=Fredoka+One&family=Comfortaa:wght@400;700&family=Caveat:wght@400;700&family=Amatic+SC:wght@400;700&family=Permanent+Marker&family=Orbitron:wght@400;700&display=swap");
+/*
+ * NOTE: Les ~40 polices Google (sélecteur de police de l'éditeur + rendu des
+ * slides) NE sont PAS importées ici volontairement. Un @import en tête de CSS
+ * critique est bloquant pour le rendu et provoquait un écran blanc de ~20s sur
+ * mobile (le temps de télécharger ce gros fichier de polices avant le 1er
+ * affichage). Elles sont désormais chargées en NON-bloquant via un <link>
+ * media="print"/onload dans index.html. Voir packages/web/index.html.
+ */
 
 @theme {
   --color-primary: #ff9900;

@@ -7,14 +7,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Police d'interface (Outfit) chargée en non-bloquant : le rendu n'attend pas le réseau -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <!--
+      Polices de l'éditeur de quiz + rendu des slides (~40 familles).
+      Chargées en NON-bloquant (media="print" puis onload -> all) pour ne JAMAIS
+      retarder le 1er affichage. display=swap assure un texte immédiat en
+      fallback puis le remplacement quand la police est prête.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;700&family=Oswald:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;700&family=Raleway:wght@300;400;700&family=PT+Sans:wght@400;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;700&family=Playfair+Display:wght@400;700&family=Ubuntu:wght@400;700&family=Poppins:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Libre+Baskerville:wght@400;700&family=Bitter:wght@400;700&family=Fjalla+One&family=Anton&family=Josefin+Sans:wght@300;400;700&family=Lobster&family=Pacifico&family=Dancing+Script:wght@400;700&family=Satisfy&family=Courgette&family=Bree+Serif&family=Archivo+Narrow&family=Arvo:wght@400;700&family=Exo:wght@400;700&family=Asap:wght@400;700&family=Indie+Flower&family=Shadows+Into+Light&family=Coming+Soon&family=Fredoka+One&family=Comfortaa:wght@400;700&family=Caveat:wght@400;700&family=Amatic+SC:wght@400;700&family=Permanent+Marker&family=Orbitron:wght@400;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap"
+      />
+    </noscript>
+    <style>
+      /* Loader instantané affiché AVANT le montage React (téléchargement du bundle).
+         Évite l'écran blanc à la lecture du QR code. Remplacé dès que React rend #root. */
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        background: #1a140b;
+        z-index: 9999;
+      }
+      #initial-loader .il-spinner {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 5px solid rgba(255, 153, 0, 0.2);
+        border-top-color: #ff9900;
+        animation: il-spin 1s linear infinite;
+      }
+      #initial-loader .il-text {
+        font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 800;
+        letter-spacing: 0.25em;
+        font-size: 14px;
+        color: rgba(255, 244, 228, 0.7);
+        text-transform: uppercase;
+      }
+      @keyframes il-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
     <title>LTNHoot !</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-loader">
+        <div class="il-spinner"></div>
+        <div class="il-text">LTNHoot</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
