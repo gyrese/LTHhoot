@@ -92,9 +92,11 @@ return
     }
 
     console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
-    reset()
-    setQuestionStates(null)
     navigate({ to: "/manager/config" })
+    setTimeout(() => {
+      reset()
+      setQuestionStates(null)
+    }, 0)
     toast.error(t(message))
   })
 
@@ -104,9 +106,11 @@ return
     }
 
     if (status.name === STATUS.FINISHED) {
-      reset()
-      setQuestionStates(null)
       navigate({ to: "/manager/config" })
+      setTimeout(() => {
+        reset()
+        setQuestionStates(null)
+      }, 0)
 
       return
     }
