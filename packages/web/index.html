@@ -33,6 +33,13 @@
       />
     </noscript>
     <style>
+      /* Fond sombre garanti au niveau document : aucune frame blanche possible,
+         même avant le montage de React ou pendant une transition de route. */
+      html,
+      body {
+        margin: 0;
+        background-color: #1a140b;
+      }
       /* Loader instantané affiché AVANT le montage React (téléchargement du bundle).
          Évite l'écran blanc à la lecture du QR code. Remplacé dès que React rend #root. */
       #initial-loader {

@@ -59,13 +59,129 @@ const getClientId = (): string => {
   }
 }
 
+// Crée le client socket ET attache tous les handlers de façon SYNCHRONE.
+// Extrait au niveau module pour pouvoir être appelé depuis l'initialiseur du
+// provider (avant tout rendu), garantissant que le socket existe dès la 1re
+// frame — sinon `{socket ? children : null}` laisse un écran blanc.
+const createSocketClient = (
+  clientId: string,
+  setIsConnected: (_v: boolean) => void,
+  setIsReconnecting: (_v: boolean) => void,
+): TypedSocket | null => {
+  try {
+    const socketClient: TypedSocket = io("/", {
+      path: "/ws",
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      // Un peu plus lent pour le polling
+      reconnectionDelayMax: 8000,
+      randomizationFactor: 0.5,
+      timeout: 20000,
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      auth: {
+        clientId,
+      },
+    })
+
+    socketClient.on("connect", () => {
+      const transport = socketClient.io?.engine?.transport?.name
+      console.log(
+        `[SOCKET] Connecté (POLLING) socket=${socketClient.id} transport=${transport}`,
+      )
+      setIsConnected(true)
+
+      // Tenter une reconnexion métier si on a une session
+      const playerGameId = usePlayerStore.getState().gameId
+      const managerGameId = useManagerStore.getState().gameId
+      const pwd = sessionStorage.getItem("rc_pwd")
+
+      if (playerGameId) {
+        console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
+        setIsReconnecting(true)
+        socketClient.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
+      } else {
+        // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
+        // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
+        // même après une déconnexion réseau ou un redémarrage du serveur.
+        if (pwd) {
+          console.log(`[SESSION] Restauration authentification Manager (auth=true)`)
+          socketClient.emit(EVENTS.MANAGER.AUTH, pwd)
+        }
+
+        if (managerGameId) {
+          console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
+          setIsReconnecting(true)
+          socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+        } else {
+          setIsReconnecting(false)
+        }
+      }
+    })
+
+    socketClient.on("disconnect", (reason) => {
+      console.log(`[SOCKET] Déconnecté (POLLING) raison=${reason}`)
+      setIsConnected(false)
+
+      // Si la déconnexion est involontaire, on passe en mode reconnect
+      if (reason !== "io client disconnect") {
+        setIsReconnecting(true)
+      }
+    })
+
+    socketClient.io.on("reconnect_attempt", (attempt) => {
+      console.log(`[SOCKET] Tentative de reconnexion #${attempt}`)
+    })
+
+    socketClient.io.on("reconnect_error", (err) => {
+      console.error(`[SOCKET] Erreur de reconnexion: ${err.message}`)
+    })
+
+    socketClient.io.on("reconnect_failed", () => {
+      console.error("[SOCKET] Échec définitif de la reconnexion")
+    })
+
+    socketClient.on("connect_error", (err) => {
+      console.error(`[SOCKET] Erreur connexion: ${err.message}`)
+    })
+
+    // Listeners métiers IMMÉDIATS pour éviter les race conditions
+    socketClient.on(EVENTS.PLAYER.SUCCESS_RECONNECT, () => {
+      console.log("[SESSION] SUCCESS_RECONNECT reçu (global)")
+      setIsReconnecting(false)
+    })
+    socketClient.on(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
+      console.log("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
+      setIsReconnecting(false)
+    })
+    socketClient.on(EVENTS.GAME.ERROR_MESSAGE, (msg) => {
+      console.warn(`[SESSION] ERROR_MESSAGE reçu: ${msg}`)
+      setIsReconnecting(false)
+    })
+    socketClient.on(EVENTS.GAME.RESET, (msg) => {
+      console.warn(`[SESSION] GAME.RESET reçu: ${msg}`)
+      setIsReconnecting(false)
+    })
+
+    return socketClient
+  } catch (error) {
+    console.error("Failed to initialize socket:", error)
+
+    return null
+  }
+}
+
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const [socket, setSocket] = useState<TypedSocket | null>(null)
+  const [clientId] = useState<string>(() => getClientId())
   const [isConnected, setIsConnected] = useState(false)
   const [isReconnecting, setIsReconnecting] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search)
+
     if (urlParams.has("pin")) {
       usePlayerStore.getState().reset()
+
       return false
     }
 
@@ -74,7 +190,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     return Boolean(playerGameId || managerGameId)
   })
-  const [clientId] = useState<string>(() => getClientId())
+
+  // Création SYNCHRONE du socket via un ref lazy : il est disponible dès le 1er
+  // rendu. Auparavant il était créé dans un useEffect (donc null au 1er rendu),
+  // empêchant le montage du layout (fond sombre) ET du loader → écran BLANC
+  // pendant toute la connexion. Le ref garantit une création unique, y compris
+  // en double-invocation StrictMode.
+  const socketRef = useRef<TypedSocket | null>(null)
+
+  socketRef.current ||= createSocketClient(
+    clientId,
+    setIsConnected,
+    setIsReconnecting,
+  )
+
+  const socket = socketRef.current
 
   const playerStore = usePlayerStore()
   const managerStore = useManagerStore()
@@ -84,125 +214,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     console.log(`[UI_TRACE_v1k8qp] isReconnecting=${isReconnecting} isConnected=${isConnected} currentStatus=${currentStatus} overlayVisible=${isReconnecting}`)
   }, [isReconnecting, isConnected, playerStore.status?.name, managerStore.status?.name])
 
-  useEffect(() => {
-    if (socket) {
-      return
-    }
-
-    let socketClient: TypedSocket | null = null
-
-    try {
-      socketClient = io("/", {
-        path: "/ws",
-        autoConnect: false,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        // Un peu plus lent pour le polling
-        reconnectionDelayMax: 8000,
-        randomizationFactor: 0.5,
-        timeout: 20000,
-        transports: ["polling", "websocket"],
-        upgrade: true,
-        auth: {
-          clientId,
-        },
-      })
-
-      setSocket(socketClient)
-
-      socketClient.on("connect", () => {
-        const transport = socketClient?.io?.engine?.transport?.name
-        console.log(
-          `[SOCKET] Connecté (POLLING) socket=${socketClient?.id} transport=${transport}`,
-        )
-        setIsConnected(true)
-
-        // Tenter une reconnexion métier si on a une session
-        const playerGameId = usePlayerStore.getState().gameId
-        const managerGameId = useManagerStore.getState().gameId
-        const pwd = sessionStorage.getItem("rc_pwd")
-
-        if (playerGameId) {
-          console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
-          setIsReconnecting(true)
-          socketClient?.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
-        } else {
-          // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
-          // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
-          // même après une déconnexion réseau ou un redémarrage du serveur.
-          if (pwd) {
-            console.log(`[SESSION] Restauration authentification Manager (auth=true)`)
-            socketClient?.emit(EVENTS.MANAGER.AUTH, pwd)
-          }
-
-          if (managerGameId) {
-            console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
-            setIsReconnecting(true)
-            socketClient?.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
-          } else {
-            setIsReconnecting(false)
-          }
-        }
-      })
-
-      socketClient.on("disconnect", (reason) => {
-        console.log(
-          `[SOCKET] Déconnecté (POLLING) raison=${reason}`,
-        )
-        setIsConnected(false)
-        
-        // Si la déconnexion est involontaire, on passe en mode reconnect
-        if (reason !== "io client disconnect") {
-          setIsReconnecting(true)
-        }
-      })
-
-      socketClient.io.on("reconnect_attempt", (attempt) => {
-        console.log(`[SOCKET] Tentative de reconnexion #${attempt}`)
-      })
-
-      socketClient.io.on("reconnect_error", (err) => {
-        console.error(`[SOCKET] Erreur de reconnexion: ${err.message}`)
-      })
-
-      socketClient.io.on("reconnect_failed", () => {
-        console.error("[SOCKET] Échec définitif de la reconnexion")
-      })
-
-      socketClient.on("connect_error", (err) => {
-        console.error(`[SOCKET] Erreur connexion: ${err.message}`)
-      })
-
-      // Listeners métiers IMMÉDIATS pour éviter les race conditions
-      socketClient.on(EVENTS.PLAYER.SUCCESS_RECONNECT, () => {
-        console.log("[SESSION] SUCCESS_RECONNECT reçu (global)")
-        setIsReconnecting(false)
-      })
-      socketClient.on(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
-        console.log("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
-        setIsReconnecting(false)
-      })
-      socketClient.on(EVENTS.GAME.ERROR_MESSAGE, (msg) => {
-        console.warn(`[SESSION] ERROR_MESSAGE reçu: ${msg}`)
-        setIsReconnecting(false)
-      })
-      socketClient.on(EVENTS.GAME.RESET, (msg) => {
-        console.warn(`[SESSION] GAME.RESET reçu: ${msg}`)
-        setIsReconnecting(false)
-      })
-    } catch (error) {
-      console.error("Failed to initialize socket:", error)
-    }
-
-    // eslint-disable-next-line consistent-return
-    return () => {
-      if (socketClient) {
+  // Déconnexion propre au démontage du provider.
+  useEffect(
+    () => () => {
+      if (socketRef.current) {
         console.log("[SOCKET] Nettoyage socketClient (unmount)")
-        socketClient.disconnect()
+        socketRef.current.disconnect()
       }
-    }
-  }, [clientId, socket])
+    },
+    [],
+  )
 
   const connect = useCallback(() => {
     console.log("[SOCKET] Action: connect")
