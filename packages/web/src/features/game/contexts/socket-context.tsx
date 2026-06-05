@@ -102,8 +102,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnectionDelayMax: 8000,
         randomizationFactor: 0.5,
         timeout: 20000,
-        transports: ["polling"],
-        upgrade: false,
+        transports: ["polling", "websocket"],
+        upgrade: true,
         auth: {
           clientId,
         },
