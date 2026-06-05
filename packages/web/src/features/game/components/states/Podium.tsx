@@ -225,7 +225,7 @@ const PodiumPlace = ({
   const shadowStrong = neonShadow(cfg.neon, 2)
 
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex h-full w-full flex-col items-center justify-end">
       {/* Zone flottante */}
       <AnimatePresence>
         {show && (
@@ -519,7 +519,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
 
       {/* Grille podium */}
       <div className="relative z-20 flex w-full max-w-3xl flex-1 items-end px-2 pb-0">
-        <div className="grid w-full grid-cols-3 items-end gap-1 md:gap-2">
+        <div className="grid h-full w-full grid-cols-3 items-end gap-1 md:gap-2">
           {top[1] ? (
             <PodiumPlace player={top[1]} rank={2} show={apparition >= 2} apparition={apparition} />
           ) : <div />}
