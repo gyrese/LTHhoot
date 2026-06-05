@@ -111,7 +111,6 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
       {showQuit && (
         <button
           onClick={() => {
-            reset()
             navigate({ to: "/", search: { pin: undefined } })
           }}
           className="anim-pop-in mt-4 flex items-center justify-center gap-3 rounded-2xl bg-white px-10 py-5 text-2xl font-black text-black shadow-xl transition-all hover:scale-105 active:scale-95"

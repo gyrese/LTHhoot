@@ -54,6 +54,14 @@ const PlayerGamePage = () => {
 
   // UseSocket déplacé en haut
 
+  useEffect(() => {
+    return () => {
+      console.log("[DEBUG] PlayerGamePage unmounted, cleaning up store")
+      reset()
+      setQuestionStates(null)
+    }
+  }, [reset, setQuestionStates])
+
   useEvent(EVENTS.GAME.RESET, (message) => {
     if (isReconnecting) {
       console.log(`[DEBUG] Ignored GAME.RESET during reconnect (msg: ${message})`)
@@ -62,8 +70,6 @@ const PlayerGamePage = () => {
     }
 
     console.log(`[DEBUG] Processing GAME.RESET (msg: ${message})`)
-    reset()
-    setQuestionStates(null)
     navigate({ to: "/", search: { pin: undefined } })
     toast.error(t(message))
   })

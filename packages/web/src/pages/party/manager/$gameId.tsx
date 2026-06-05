@@ -84,6 +84,14 @@ return
 
   // UseSocket déplacé en haut
 
+  useEffect(() => {
+    return () => {
+      console.log("[DEBUG] ManagerGamePage unmounted, cleaning up store")
+      reset()
+      setQuestionStates(null)
+    }
+  }, [reset, setQuestionStates])
+
   useEvent(EVENTS.GAME.RESET, (message) => {
     if (isReconnecting) {
       console.log(`[DEBUG] Ignored MANAGER GAME.RESET during reconnect (msg: ${message})`)
@@ -93,10 +101,6 @@ return
 
     console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
     navigate({ to: "/manager/config" })
-    setTimeout(() => {
-      reset()
-      setQuestionStates(null)
-    }, 0)
     toast.error(t(message))
   })
 
@@ -107,10 +111,6 @@ return
 
     if (status.name === STATUS.FINISHED) {
       navigate({ to: "/manager/config" })
-      setTimeout(() => {
-        reset()
-        setQuestionStates(null)
-      }, 0)
 
       return
     }

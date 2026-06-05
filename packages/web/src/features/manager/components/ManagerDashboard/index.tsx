@@ -34,7 +34,7 @@ const ManagerDashboard = ({ data }: Props) => {
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
-    reset()
+    reset(true)
   }
 
   const handleMoveToFolder = (quizzId: string, folder: string | null) => {

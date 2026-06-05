@@ -63,6 +63,12 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<TypedSocket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isReconnecting, setIsReconnecting] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.has("pin")) {
+      usePlayerStore.getState().reset()
+      return false
+    }
+
     const playerGameId = usePlayerStore.getState().gameId
     const managerGameId = useManagerStore.getState().gameId
 
@@ -96,8 +102,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnectionDelayMax: 8000,
         randomizationFactor: 0.5,
         timeout: 20000,
-        transports: ["polling", "websocket"],
-        upgrade: true,
+        transports: ["polling"],
+        upgrade: false,
         auth: {
           clientId,
         },

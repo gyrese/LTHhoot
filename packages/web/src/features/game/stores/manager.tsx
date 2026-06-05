@@ -27,7 +27,7 @@ type ManagerStore<T> = {
     status: { name: keyof T; data: T[keyof T] }
     players: Player[]
   }) => void
-  reset: () => void
+  reset: (_clearConfig?: boolean) => void
 }
 
 const initialState = {
@@ -61,10 +61,16 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
         })
       },
 
-      reset: () => {
+      reset: (clearConfig = false) => {
         const {stack} = new Error()
         console.warn(`[STORE] Manager reset called! Stack:`, stack)
-        set(initialState)
+        set((state) => ({
+          gameId: null,
+          salonImage: undefined,
+          status: null,
+          players: [],
+          config: clearConfig ? null : state.config,
+        }))
       },
     }),
     {

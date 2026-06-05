@@ -45,7 +45,7 @@ const Configurations = ({ data }: Props) => {
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
-    reset()
+    reset(true)
   }
 
   return (
