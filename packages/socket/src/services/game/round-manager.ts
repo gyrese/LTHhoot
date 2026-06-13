@@ -558,11 +558,6 @@ export class RoundManager {
       }
     })()
 
-    this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
-      ...responsesBase,
-      ...responsesExtra,
-    })
-
     this.questionsHistory.push({
       ...question,
       playerAnswers: currentPlayers.map((player) => {
@@ -592,6 +587,15 @@ export class RoundManager {
       for (const { playerId, powerUp } of earned) {
         this.opts.onPowerUpEarned(playerId, powerUp)
       }
+    }
+
+    if (question.type === "open") {
+      this.showLeaderboard()
+    } else {
+      this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
+        ...responsesBase,
+        ...responsesExtra,
+      })
     }
   }
 
