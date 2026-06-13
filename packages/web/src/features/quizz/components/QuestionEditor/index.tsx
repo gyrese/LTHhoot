@@ -71,9 +71,11 @@ const QuestionEditor = () => {
             </div>
           )}
           <div className="pointer-events-none flex flex-1 flex-col"></div>
-          <div className="pointer-events-auto">
-            <QuestionAnswerEditor />
-          </div>
+          {currentQuestion.type !== "title" && (
+            <div className="pointer-events-auto">
+              <QuestionAnswerEditor />
+            </div>
+          )}
         </div>
       </main>
       <QuestionEditorConfig />

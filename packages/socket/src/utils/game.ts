@@ -28,6 +28,40 @@ export const withGame = (
   callback(game)
 }
 
+// Variante de withGame réservée aux actions de pilotage (manager principal ou
+// télécommande). En plus de vérifier l'existence de la partie, on exige que le
+// socket appartienne à la room `manager-${gameId}` — la seule preuve fiable
+// qu'il a été authentifié comme manager pour CETTE partie. Sans ce contrôle,
+// n'importe quel joueur connaissant le gameId pouvait piloter/fermer la partie.
+export const withManagerGame = (
+  gameId: string | undefined,
+  socket: Socket,
+  callback: (_game: Game) => void,
+): void => {
+  if (!gameId) {
+    socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.notFound")
+
+    return
+  }
+
+  if (!socket.rooms.has(`manager-${gameId}`)) {
+    socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+    return
+  }
+
+  const registry = Registry.getInstance()
+  const game = registry.getGameById(gameId)
+
+  if (!game) {
+    socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.notFound")
+
+    return
+  }
+
+  callback(game)
+}
+
 export const createInviteCode = (length = 6) => {
   let result = ""
   const characters = "0123456789"

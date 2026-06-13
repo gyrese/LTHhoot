@@ -1,4 +1,4 @@
-import type { DropPinZone, SlideElement } from "@rahoot/common/types/game"
+import type { AnswerReveal, DropPinZone, SlideElement } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
@@ -416,6 +416,52 @@ const DropPinResult = ({
   )
 }
 
+// ── Carte « Réponse » ─────────────────────────────────────────────────────────
+
+const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
+  const hasContent = reveal.image || reveal.videoId || reveal.text
+
+  if (!reveal.enabled || !hasContent) {
+    return null
+  }
+
+  return (
+    <div className="anim-show relative z-20 mx-auto w-full max-w-2xl px-4">
+      <div className="overflow-hidden rounded-3xl border border-white/20 bg-black/60 shadow-2xl backdrop-blur-xl">
+        {/* Vidéo ou image */}
+        {reveal.videoId ? (
+          <div className="aspect-video w-full">
+            <iframe
+              src={`https://www.youtube.com/embed/${reveal.videoId}?autoplay=1&mute=0`}
+              title="Réponse"
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          reveal.image && (
+            <img
+              src={reveal.image}
+              alt=""
+              className="max-h-72 w-full object-cover"
+            />
+          )
+        )}
+
+        {/* Texte */}
+        {reveal.text && (
+          <div className="px-6 py-4">
+            <p className="text-center text-lg leading-relaxed font-semibold text-white md:text-xl">
+              {reveal.text}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const Responses = ({
@@ -436,6 +482,7 @@ const Responses = ({
     background,
     backgroundOpacity,
     elements,
+    answerReveal,
   },
 }: Props) => {
   const answers = rawAnswers ?? []
@@ -555,6 +602,10 @@ const Responses = ({
 
         {type === "drop_pin" && pinImage && zones && (
           <DropPinResult pinImage={pinImage} zones={zones} />
+        )}
+
+        {revealed && answerReveal && (
+          <AnswerRevealCard reveal={answerReveal} />
         )}
       </div>
     </div>

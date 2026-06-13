@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Impossibile leggere la configurazione del gioco",
     "invalidPassword": "Password non valida",
-    "passwordNotConfigured": "La password del gestore non è configurata"
+    "passwordNotConfigured": "La password del gestore non è configurata",
+    "tooManyAttempts": "Troppi tentativi. Riprova tra un minuto."
   },
   "upload": {
     "failed": "Caricamento fallito. Assicurarsi che il server sia in esecuzione."

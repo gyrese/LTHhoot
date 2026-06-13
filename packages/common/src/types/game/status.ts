@@ -1,4 +1,5 @@
 import type {
+  AnswerReveal,
   DropPinZone,
   Player,
   QuestionMedia,
@@ -40,6 +41,11 @@ export type CommonStatusDataMap = {
     audio?: string
     cooldown: number
     pinImage?: string
+    revelationEnabled?: boolean
+    revealDuration?: number
+    gridCols?: number
+    gridRows?: number
+    revelationStyle?: string
   }
   SELECT_ANSWER: {
     question: string
@@ -60,6 +66,11 @@ export type CommonStatusDataMap = {
     pinImage?: string
     isFrozen?: boolean
     isScrambled?: boolean
+    revelationEnabled?: boolean
+    revealDuration?: number
+    gridCols?: number
+    gridRows?: number
+    revelationStyle?: string
   }
   SHOW_RESULT: {
     correct: boolean
@@ -121,6 +132,7 @@ type ManagerExtraStatus = {
     backgroundOpacity?: number
     elements?: SlideElement[]
     audio?: string
+    answerReveal?: AnswerReveal
   }
   SHOW_LEADERBOARD: {
     oldLeaderboard: Player[]

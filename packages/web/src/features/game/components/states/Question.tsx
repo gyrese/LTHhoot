@@ -7,6 +7,7 @@ import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/Slide
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import useSound from "use-sound"
 
+
 type Props = {
   data: CommonStatusDataMap["SHOW_QUESTION"]
 }
@@ -28,6 +29,10 @@ const Question = ({
     elements,
     cooldown,
     pinImage,
+    revelationEnabled,
+    revealDuration,
+    gridCols,
+    gridRows,
   },
 }: Props) => {
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
@@ -42,22 +47,26 @@ const Question = ({
 
   let bgStyle: CSSProperties = DEFAULT_BG
 
-  if (background?.type === "image") {
-    bgStyle = {
-      backgroundImage: `url(${background.value})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
+  if (!revelationEnabled) {
+    if (background?.type === "image") {
+      bgStyle = {
+        backgroundImage: `url(${background.value})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    } else if (background?.type === "color") {
+      bgStyle = { backgroundColor: background.value }
     }
-  } else if (background?.type === "color") {
-    bgStyle = { backgroundColor: background.value }
   }
+
+  const opacity = backgroundOpacity ?? 0.5
 
   return (
     <div className="relative flex w-full flex-1 flex-col overflow-hidden">
       <div className="absolute inset-0 bg-black" />
       <div
         className="absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
+        style={{ ...bgStyle, opacity }}
       />
 
       {type === "title" && elements && elements.length > 0 && (

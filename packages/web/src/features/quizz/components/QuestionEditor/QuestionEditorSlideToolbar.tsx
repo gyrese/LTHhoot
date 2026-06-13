@@ -46,7 +46,11 @@ export const BackgroundButton = () => {
     try {
       const formData = new FormData()
       formData.append("image", file)
-      const res = await fetch("/upload", { method: "POST", body: formData })
+      const res = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+        headers: { "x-client-id": localStorage.getItem("client_id") ?? "" },
+      })
 
       if (!res.ok) {
         throw new Error("Upload failed")

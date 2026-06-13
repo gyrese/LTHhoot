@@ -45,6 +45,20 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: "0.0.0.0",
+    // Reproduit le routage de l'hébergeur (nginx) pour tester le build en local.
+    // Sans effet sur la prod : `vite preview` n'est utilisé qu'en local.
+    proxy: {
+      "/ws": {
+        target: "http://localhost:3001",
+        ws: true,
+      },
+      "/upload": {
+        target: "http://localhost:3001",
+      },
+      "/uploads": {
+        target: "http://localhost:3001",
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 2000,

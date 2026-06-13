@@ -85,6 +85,13 @@ export type SlideBackground = {
   value: string
 }
 
+export type AnswerReveal = {
+  enabled: boolean
+  image?: string
+  videoId?: string
+  text?: string
+}
+
 // ─── Types de questions ───────────────────────────────────────────────────────
 
 export type QuestionType =
@@ -107,8 +114,14 @@ type BaseQuestion = {
   elements?: SlideElement[]
   audio?: string
   showLeaderboard?: boolean
+  answerReveal?: AnswerReveal
   cooldown: number
   time: number
+  revelationEnabled?: boolean
+  revealDuration?: number
+  gridCols?: number
+  gridRows?: number
+  revelationStyle?: string
 }
 
 export type McqQuestion = BaseQuestion & {

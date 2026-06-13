@@ -17,7 +17,8 @@
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",
     "invalidPassword": "Mot de passe invalide",
-    "passwordNotConfigured": "Mot de passe manager non configuré"
+    "passwordNotConfigured": "Mot de passe manager non configuré",
+    "tooManyAttempts": "Trop de tentatives. Réessayez dans une minute."
   },
   "upload": {
     "failed": "L'importation a échoué. Vérifiez que le serveur est démarré."

@@ -1,6 +1,7 @@
 import ConfigField from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField"
 import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigNumberInput"
 import ConfigSection from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection"
+import QuestionEditorAnswerReveal from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorAnswerReveal"
 import QuestionEditorTypeSelector from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTypeSelector"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import {
@@ -15,6 +16,8 @@ import {
   Repeat,
   Settings,
   Play,
+  Grid,
+  Columns,
 } from "lucide-react"
 import React from "react"
 import { useTranslation } from "react-i18next"
@@ -79,7 +82,7 @@ const QuestionEditorConfig = () => {
       updateQuestion(currentIndex, { elements })
     }
 
-  const isTitle = currentQuestion?.type === "title"
+  const isSlide = currentQuestion?.type === "title"
   const selectedElement = currentQuestion?.elements?.find(
     (el) => el.id === selectedId,
   )
@@ -241,7 +244,7 @@ const QuestionEditorConfig = () => {
           <ConfigField.Label
             icon={<Clock className="size-4" />}
             label={t(
-              isTitle
+              isSlide
                 ? "quizz:question.config.displayDuration"
                 : "quizz:question.config.questionDisplay",
             )}
@@ -249,18 +252,20 @@ const QuestionEditorConfig = () => {
           <ConfigNumberInput
             value={currentQuestion?.cooldown}
             min={3}
-            onChange={handleUpdateQuestion("cooldown")}
+            onChange={(val) => {
+              handleUpdateQuestion("cooldown")(val)
+            }}
           />
           <ConfigField.Description>
             {t(
-              isTitle
+              isSlide
                 ? "quizz:question.config.displayDurationHint"
                 : "quizz:question.config.questionDisplayHint",
             )}
           </ConfigField.Description>
         </ConfigField>
 
-        {!isTitle && (
+        {!isSlide && (
           <ConfigField>
             <ConfigField.Label
               icon={<Timer className="size-4" />}
@@ -277,7 +282,7 @@ const QuestionEditorConfig = () => {
           </ConfigField>
         )}
 
-        {!isTitle && (
+        {!isSlide && (
           <ConfigField>
             <div className="flex items-center justify-between">
               <ConfigField.Label
@@ -313,6 +318,117 @@ const QuestionEditorConfig = () => {
           </ConfigField>
         )}
       </ConfigSection>
+
+      <ConfigSection title={t("quizz:question.config.revelationTitle", "RÉVÉLATION DE L'IMAGE")} defaultOpen={false}>
+        <div className="flex flex-col gap-4">
+          <ConfigField>
+            <div className="flex items-center justify-between">
+              <ConfigField.Label
+                icon={<Grid className="size-4" />}
+                label={t("quizz:question.config.revelationEnabled", "Activer l'effet")}
+                unit=""
+              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={Boolean(currentQuestion?.revelationEnabled)}
+                onClick={() =>
+                  updateQuestion(currentIndex, {
+                    revelationEnabled: !currentQuestion?.revelationEnabled,
+                  })
+                }
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                  currentQuestion?.revelationEnabled ? "bg-primary" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                    currentQuestion?.revelationEnabled
+                      ? "translate-x-4"
+                      : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+            <ConfigField.Description>
+              {t("quizz:question.config.revelationEnabledHint", "Dévoile progressivement l'image d'arrière-plan.")}
+            </ConfigField.Description>
+          </ConfigField>
+
+          {currentQuestion?.revelationEnabled && (
+            <>
+              <ConfigField>
+                <ConfigField.Label
+                  icon={<Clock className="size-4" />}
+                  label={t("quizz:question.config.revealDuration", "Durée de révélation")}
+                />
+                <ConfigNumberInput
+                  value={currentQuestion.revealDuration ?? (isSlide ? currentQuestion.cooldown : (currentQuestion.cooldown + currentQuestion.time))}
+                  min={3}
+                  max={isSlide ? currentQuestion.cooldown : (currentQuestion.cooldown + currentQuestion.time)}
+                  onChange={handleUpdateQuestion("revealDuration")}
+                />
+                <ConfigField.Description>
+                  {t("quizz:question.config.revealDurationHint", "Temps (sec) pour dévoiler complètement l'image.")}
+                </ConfigField.Description>
+              </ConfigField>
+
+              <ConfigField>
+                <ConfigField.Label
+                  icon={<Columns className="size-4" />}
+                  label={t("quizz:question.config.revealCols", "Colonnes (largeur)")}
+                />
+                <ConfigNumberInput
+                  value={currentQuestion.gridCols ?? 8}
+                  min={2}
+                  max={30}
+                  onChange={handleUpdateQuestion("gridCols")}
+                />
+              </ConfigField>
+
+              <ConfigField>
+                <ConfigField.Label
+                  icon={<Grid className="size-4" />}
+                  label={t("quizz:question.config.revealRows", "Lignes (hauteur)")}
+                />
+                <ConfigNumberInput
+                  value={currentQuestion.gridRows ?? 6}
+                  min={2}
+                  max={30}
+                  onChange={handleUpdateQuestion("gridRows")}
+                />
+              </ConfigField>
+
+              <ConfigField>
+                <ConfigField.Label
+                  icon={<Settings className="size-4" />}
+                  label={t("quizz:question.config.revealStyle", "Type d'apparition")}
+                />
+                <select
+                  value={currentQuestion.revelationStyle ?? "random"}
+                  onChange={(e) => handleUpdateQuestion("revelationStyle")(e.target.value)}
+                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm outline-none transition-all hover:border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                >
+                  <option value="random">{t("quizz:question.config.revealStyleOpt.random", "Aléatoire")}</option>
+                  <option value="blur">{t("quizz:question.config.revealStyleOpt.blur", "Défloutage progressif")}</option>
+                  <option value="random-grid">{t("quizz:question.config.revealStyleOpt.randomGrid", "Cases aléatoires")}</option>
+                  <option value="center-out">{t("quizz:question.config.revealStyleOpt.centerOut", "Centre vers bords")}</option>
+                  <option value="diagonal-wave">{t("quizz:question.config.revealStyleOpt.diagonalWave", "Vague diagonale")}</option>
+                  <option value="spiral">{t("quizz:question.config.revealStyleOpt.spiral", "Spirale")}</option>
+                  <option value="left-to-right">{t("quizz:question.config.revealStyleOpt.leftToRight", "Gauche à droite")}</option>
+                  <option value="top-to-bottom">{t("quizz:question.config.revealStyleOpt.topToBottom", "Haut en bas")}</option>
+                </select>
+              </ConfigField>
+            </>
+          )}
+        </div>
+      </ConfigSection>
+
+      {!isSlide && (
+        <ConfigSection title="Réponse" defaultOpen={false}>
+          <QuestionEditorAnswerReveal />
+        </ConfigSection>
+      )}
 
       <ConfigSection
         title={t("quizz:question.config.layersTitle")}

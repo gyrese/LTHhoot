@@ -22,7 +22,8 @@ export class PlayerManager {
       const oldSocket = this.io.sockets.sockets.get(existingPlayer.id)
 
       if (oldSocket && oldSocket.id !== socket.id) {
-        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        // Même clientId qui se ré-inscrit : on coupe l'ancien socket orphelin
+        // sans GAME.RESET (qui éjecterait brutalement vers l'accueil).
         oldSocket.disconnect(true)
       }
 
@@ -136,6 +137,13 @@ export class PlayerManager {
 
   count(): number {
     return this.players.length
+  }
+
+  // Nombre de joueurs réellement connectés. À utiliser pour les conditions de
+  // jeu (auto-fin de manche, total de réponses attendues) : un joueur déconnecté
+  // n'est pas retiré pendant une partie en cours, mais ne répondra pas.
+  countConnected(): number {
+    return this.players.filter((p) => p.connected).length
   }
 
   broadcastCount(): void {

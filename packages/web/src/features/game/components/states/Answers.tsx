@@ -27,6 +27,7 @@ import clsx from "clsx"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
+import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 
 
 
@@ -59,6 +60,11 @@ const Answers = ({
     pinImage,
     isFrozen,
     isScrambled,
+    revelationEnabled,
+    revealDuration,
+    gridCols,
+    gridRows,
+    revelationStyle,
   },
   // eslint-disable-next-line complexity
 }: Props) => {
@@ -235,7 +241,7 @@ const Answers = ({
                 background.type === "image"
                   ? `url(${background.value})`
                   : undefined,
-              opacity: backgroundOpacity ?? 1,
+              opacity: backgroundOpacity ?? (revelationEnabled ? 1.0 : 1),
             }}
           />
         </>
@@ -246,10 +252,21 @@ const Answers = ({
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: `url(/bg-salon.png)`,
-              opacity: 0.5,
+              opacity: backgroundOpacity ?? (revelationEnabled ? 1.0 : 0.5),
             }}
           />
         </>
+      )}
+
+      {revelationEnabled && (
+        <BackgroundRevealer
+          duration={revealDuration ?? time}
+          gridCols={gridCols ?? 8}
+          gridRows={gridRows ?? 6}
+          seedString={question || background?.value}
+          startTimeOffset={0}
+          configuredStyle={revelationStyle}
+        />
       )}
 
       {elements && elements.length > 0 && (

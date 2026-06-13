@@ -5,7 +5,7 @@ import Config from "@rahoot/socket/services/config"
 import Game from "@rahoot/socket/services/game"
 import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
-import { withGame } from "@rahoot/socket/utils/game"
+import { withGame, withManagerGame } from "@rahoot/socket/utils/game"
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   const registry = Registry.getInstance()
@@ -148,19 +148,21 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   )
 
   socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.showLeaderboard()),
+    withManagerGame(gameId, socket, (game) => game.showLeaderboard()),
   )
 
   socket.on(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, ({ gameId, data }) =>
-    withGame(gameId, socket, (game) => game.validateOpenAnswer(data.text)),
+    withManagerGame(gameId, socket, (game) =>
+      game.validateOpenAnswer(data.text),
+    ),
   )
 
   socket.on(EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.finalizeOpenAnswers()),
+    withManagerGame(gameId, socket, (game) => game.finalizeOpenAnswers()),
   )
 
   socket.on(EVENTS.MANAGER.END_GAME, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.endGame()),
+    withManagerGame(gameId, socket, (game) => game.endGame()),
   )
 
   socket.on(EVENTS.EVENING.START, ({ quizIds, powerUpsEnabled }) => {
@@ -191,11 +193,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   socket.on(EVENTS.EVENING.NEXT, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.startNextEveningQuiz()),
+    withManagerGame(gameId, socket, (game) => game.startNextEveningQuiz()),
   )
 
-  socket.on(EVENTS.POWER_UP.USE, ({ gameId, powerUpId, targetIds }) => {
-    const game = registry.getGameByPlayerSocketId(socket.id) ?? registry.getGameById(gameId)
+  socket.on(EVENTS.POWER_UP.USE, ({ powerUpId, targetIds }) => {
+    // On résout la partie via le socket joueur uniquement : un power-up ne peut
+    // être joué que par un joueur réellement inscrit dans la partie. Le fallback
+    // par gameId client a été retiré (un gameId est connu de tous les joueurs).
+    const game = registry.getGameByPlayerSocketId(socket.id)
 
     if (!game) {
       return
@@ -215,7 +220,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   socket.on(EVENTS.MANAGER.GET_LOGS, ({ gameId }) =>
-    withGame(gameId, socket, (game) => {
+    withManagerGame(gameId, socket, (game) => {
       for (const entry of game.getLogs()) {
         socket.emit(EVENTS.MANAGER.LOG_ENTRY, entry)
       }

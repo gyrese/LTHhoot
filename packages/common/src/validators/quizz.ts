@@ -64,6 +64,13 @@ const slideBackgroundValidator = z.object({
   value: z.string(),
 })
 
+export const answerRevealValidator = z.object({
+  enabled: z.boolean(),
+  image: z.string().optional(),
+  videoId: z.string().optional(),
+  text: z.string().optional(),
+})
+
 const baseQuestionValidator = z.object({
   question: z.string().min(1, "errors:quizz.questionEmpty"),
   media: questionMediaValidator.optional(),
@@ -72,8 +79,14 @@ const baseQuestionValidator = z.object({
   elements: z.array(slideElementValidator).optional(),
   audio: z.string().optional(),
   showLeaderboard: z.boolean().optional(),
+  answerReveal: answerRevealValidator.optional(),
   cooldown: z.number().int().min(3).max(15),
   time: z.number().int().min(5).max(120),
+  revelationEnabled: z.boolean().optional(),
+  revealDuration: z.number().int().min(3).max(120).optional(),
+  gridCols: z.number().int().min(2).max(30).optional(),
+  gridRows: z.number().int().min(2).max(30).optional(),
+  revelationStyle: z.string().optional(),
 })
 
 const mcqValidator = baseQuestionValidator.extend({
@@ -147,8 +160,13 @@ const titleValidator = z.object({
   elements: z.array(slideElementValidator).optional(),
   audio: z.string().optional(),
   showLeaderboard: z.boolean().optional(),
-  cooldown: z.number().int().min(3).max(15),
+  cooldown: z.number().int().min(3).max(120),
   time: z.number().int().min(5).max(120),
+  revelationEnabled: z.boolean().optional(),
+  revealDuration: z.number().int().min(3).max(120).optional(),
+  gridCols: z.number().int().min(2).max(30).optional(),
+  gridRows: z.number().int().min(2).max(30).optional(),
+  revelationStyle: z.string().optional(),
 })
 
 const legacyMcqValidator = baseQuestionValidator

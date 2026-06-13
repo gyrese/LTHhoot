@@ -1,4 +1,5 @@
 import type {
+  AnswerReveal,
   DropPinZone,
   Question,
   QuestionMedia,
@@ -38,6 +39,7 @@ export type QuestionUpdate = {
   elements?: SlideElement[] | undefined
   audio?: string | undefined
   showLeaderboard?: boolean
+  answerReveal?: AnswerReveal | undefined
   cooldown?: number
   time?: number
   answers?: string[]
@@ -54,6 +56,11 @@ export type QuestionUpdate = {
   items?: string[]
   pinImage?: string
   zones?: DropPinZone[]
+  revelationEnabled?: boolean
+  revealDuration?: number
+  gridCols?: number
+  gridRows?: number
+  revelationStyle?: string
   id?: string
 }
 
@@ -121,6 +128,7 @@ const buildDefaultForType = (
     | "elements"
     | "audio"
     | "showLeaderboard"
+    | "answerReveal"
     | "cooldown"
     | "time"
   >,
@@ -514,6 +522,7 @@ export const QuizzEditorProvider = ({
           elements: q.elements,
           audio: q.audio,
           showLeaderboard: q.showLeaderboard,
+          answerReveal: q.answerReveal,
           cooldown: q.cooldown,
           time: q.time,
         }

@@ -17,6 +17,15 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(EVENTS.MANAGER.AUTH, (password) => {
     try {
+      if (manager.isRateLimited(socket)) {
+        socket.emit(
+          EVENTS.MANAGER.ERROR_MESSAGE,
+          "errors:manager.tooManyAttempts",
+        )
+
+        return
+      }
+
       const config = Config.game()
 
       if (config.managerPassword === "PASSWORD") {
@@ -29,6 +38,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
       }
 
       if (password !== config.managerPassword) {
+        manager.registerFailedAuth(socket)
         socket.emit(
           EVENTS.MANAGER.ERROR_MESSAGE,
           "errors:manager.invalidPassword",

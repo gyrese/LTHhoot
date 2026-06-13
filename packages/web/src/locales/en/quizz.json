@@ -29,7 +29,25 @@
       "timings": "Timings",
       "propertiesTitle": "Properties",
       "layersTitle": "Layers",
-      "noLayers": "No layers"
+      "noLayers": "No layers",
+      "revelationTitle": "IMAGE REVELATION",
+      "revelationEnabled": "Enable effect",
+      "revelationEnabledHint": "Reveal background image progressively.",
+      "revealDuration": "Reveal duration",
+      "revealDurationHint": "Time (sec) to completely reveal the image.",
+      "revealCols": "Columns (width)",
+      "revealRows": "Rows (height)",
+      "revealStyle": "Appearance type",
+      "revealStyleOpt": {
+        "random": "Random",
+        "blur": "Smooth blur fade",
+        "randomGrid": "Random tiles",
+        "centerOut": "Center outward",
+        "diagonalWave": "Diagonal wave",
+        "spiral": "Spiral",
+        "leftToRight": "Left to right",
+        "topToBottom": "Top to bottom"
+      }
     },
     "deleteQuestion": "Delete question",
     "deleteQuestionConfirm": "Are you sure you want to delete this question?",

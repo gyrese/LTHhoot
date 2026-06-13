@@ -115,8 +115,13 @@ class Registry {
     const now = dayjs()
     const stillEmpty = this.emptyGames.filter(
       (g) =>
+        // Garde de sécurité : ne JAMAIS purger une partie qui a encore des
+        // joueurs connectés. L'écran manager peut s'être déconnecté (partie
+        // marquée « empty ») alors que la partie est toujours jouée et pilotée
+        // depuis la télécommande — la détruire éjecterait tout le monde.
+        g.game.hasConnectedPlayers ||
         now.diff(dayjs.unix(g.since), "minute") <
-        this.EMPTY_GAME_TIMEOUT_MINUTES,
+          this.EMPTY_GAME_TIMEOUT_MINUTES,
     )
 
     if (stillEmpty.length === this.emptyGames.length) {

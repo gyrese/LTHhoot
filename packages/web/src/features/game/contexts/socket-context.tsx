@@ -68,6 +68,34 @@ const createSocketClient = (
   setIsConnected: (_v: boolean) => void,
   setIsReconnecting: (_v: boolean) => void,
 ): TypedSocket | null => {
+  // Filet de sécurité : si une reconnexion métier est lancée mais que le serveur
+  // ne répond jamais (event perdu, partie disparue silencieusement…), on libère
+  // l'overlay au bout de RECONNECT_RESOLVE_TIMEOUT plutôt que de rester bloqué.
+  const RECONNECT_RESOLVE_TIMEOUT = 5000
+  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+
+  const clearReconnectTimeout = () => {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout)
+      reconnectTimeout = null
+    }
+  }
+
+  const finishReconnecting = () => {
+    clearReconnectTimeout()
+    setIsReconnecting(false)
+  }
+
+  const armReconnectTimeout = () => {
+    clearReconnectTimeout()
+    reconnectTimeout = setTimeout(() => {
+      console.warn(
+        "[SESSION] Timeout de reconnexion : aucune réponse serveur, libération de l'overlay",
+      )
+      setIsReconnecting(false)
+    }, RECONNECT_RESOLVE_TIMEOUT)
+  }
+
   try {
     const socketClient: TypedSocket = io("/", {
       path: "/ws",
@@ -79,8 +107,11 @@ const createSocketClient = (
       reconnectionDelayMax: 8000,
       randomizationFactor: 0.5,
       timeout: 20000,
-      transports: ["polling", "websocket"],
-      upgrade: true,
+      // Doit refléter EXACTEMENT le serveur (polling only, allowUpgrades:false).
+      // Sinon le client tente une montée WebSocket systématiquement refusée →
+      // sondes d'upgrade en échec et bruit de connexion sur mobile.
+      transports: ["polling"],
+      upgrade: false,
       auth: {
         clientId,
       },
@@ -101,6 +132,7 @@ const createSocketClient = (
       if (playerGameId) {
         console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
         setIsReconnecting(true)
+        armReconnectTimeout()
         socketClient.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
       } else {
         // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
@@ -114,9 +146,10 @@ const createSocketClient = (
         if (managerGameId) {
           console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
           setIsReconnecting(true)
+          armReconnectTimeout()
           socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
         } else {
-          setIsReconnecting(false)
+          finishReconnecting()
         }
       }
     })
@@ -150,19 +183,19 @@ const createSocketClient = (
     // Listeners métiers IMMÉDIATS pour éviter les race conditions
     socketClient.on(EVENTS.PLAYER.SUCCESS_RECONNECT, () => {
       console.log("[SESSION] SUCCESS_RECONNECT reçu (global)")
-      setIsReconnecting(false)
+      finishReconnecting()
     })
     socketClient.on(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
       console.log("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
-      setIsReconnecting(false)
+      finishReconnecting()
     })
     socketClient.on(EVENTS.GAME.ERROR_MESSAGE, (msg) => {
       console.warn(`[SESSION] ERROR_MESSAGE reçu: ${msg}`)
-      setIsReconnecting(false)
+      finishReconnecting()
     })
     socketClient.on(EVENTS.GAME.RESET, (msg) => {
       console.warn(`[SESSION] GAME.RESET reçu: ${msg}`)
-      setIsReconnecting(false)
+      finishReconnecting()
     })
 
     return socketClient

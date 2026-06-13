@@ -82,6 +82,12 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
     }),
     {
       name: "rahoot-player-storage",
+      // Ne persister QUE l'identité de session. Persister `status` réaffichait un
+      // écran de question périmé/figé au rechargement avant la resync serveur.
+      partialize: (state) => ({
+        gameId: state.gameId,
+        player: state.player,
+      }),
     },
   ),
 )

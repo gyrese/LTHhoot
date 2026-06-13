@@ -29,7 +29,25 @@
       "timings": "Zeiten",
       "propertiesTitle": "Eigenschaften",
       "layersTitle": "Ebenen",
-      "noLayers": "Keine Ebenen"
+      "noLayers": "Keine Ebenen",
+      "revelationTitle": "BILDENTHÜLLUNG",
+      "revelationEnabled": "Effekt aktivieren",
+      "revelationEnabledHint": "Enthüllt das Hintergrundbild schrittweise.",
+      "revealDuration": "Enthüllungsdauer",
+      "revealDurationHint": "Zeit (Sek.) bis zur vollständigen Enthüllung des Bildes.",
+      "revealCols": "Spalten (Breite)",
+      "revealRows": "Zeilen (Höhe)",
+      "revealStyle": "Enthüllungstyp",
+      "revealStyleOpt": {
+        "random": "Zufällig",
+        "blur": "Progressive Unschärfe",
+        "randomGrid": "Zufällige Kacheln",
+        "centerOut": "Vom Zentrum nach außen",
+        "diagonalWave": "Diagonale Welle",
+        "spiral": "Spirale",
+        "leftToRight": "Links nach rechts",
+        "topToBottom": "Oben nach unten"
+      }
     },
     "deleteQuestion": "Frage löschen",
     "deleteQuestionConfirm": "Möchtest du diese Frage wirklich löschen?",

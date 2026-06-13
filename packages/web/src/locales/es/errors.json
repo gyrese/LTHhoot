@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Error al leer la configuración del juego",
     "invalidPassword": "Contraseña incorrecta",
-    "passwordNotConfigured": "La contraseña del administrador no está configurada"
+    "passwordNotConfigured": "La contraseña del administrador no está configurada",
+    "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en un minuto."
   },
   "upload": {
     "failed": "La carga falló. Asegúrese de que el servidor esté en funcionamiento."

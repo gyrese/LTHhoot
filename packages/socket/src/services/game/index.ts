@@ -359,6 +359,14 @@ class Game {
     return this.round.isStarted()
   }
 
+  // Vrai s'il reste au moins un joueur connecté. Sert de garde au nettoyage des
+  // parties « vides » : tant qu'un joueur est connecté (même si l'écran manager
+  // a sauté et que la partie est pilotée par la seule télécommande), on ne doit
+  // pas détruire la session sous lui.
+  get hasConnectedPlayers(): boolean {
+    return this.playerManager.getAll().some((p) => p.connected)
+  }
+
   getLogs() {
     return this.logger.getAll()
   }
@@ -476,7 +484,8 @@ class Game {
       const oldSocket = this.io.sockets.sockets.get(oldSocketId)
 
       if (oldSocket) {
-        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        // Même logique que pour le joueur : reconnexion du même clientId, on
+        // évite le RESET qui éjecterait l'écran manager légitime.
         oldSocket.disconnect(true)
       }
     }
@@ -541,7 +550,9 @@ class Game {
 
       if (oldSocket) {
         console.log(`[TAKEOVER] Disconnecting old socket ${oldSocketId}`)
-        oldSocket.emit(EVENTS.GAME.RESET, "errors:game.sessionTakenOver")
+        // Pas de GAME.RESET ici : c'est le MÊME clientId qui se reconnecte (même
+        // navigateur après un blip réseau). Émettre RESET renvoyait le joueur à
+        // l'accueil = « déco sauvage ». On coupe juste le socket orphelin.
         oldSocket.disconnect(true)
       } else {
         console.log(`[TAKEOVER] Old socket ${oldSocketId} already gone from memory`)

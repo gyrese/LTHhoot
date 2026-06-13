@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Failed to read game config",
     "invalidPassword": "Invalid password",
-    "passwordNotConfigured": "Manager password is not configured"
+    "passwordNotConfigured": "Manager password is not configured",
+    "tooManyAttempts": "Too many attempts. Try again in a minute."
   },
   "upload": {
     "failed": "Upload failed. Make sure the server is running."

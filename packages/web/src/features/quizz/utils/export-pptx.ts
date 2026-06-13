@@ -526,12 +526,12 @@ export const exportQuizzToPptx = async (quizz: Quizz): Promise<void> => {
     const index = i + 1
 
     if (q.type === "title") {
-      // Slide titre : une seule slide
+      // Slide titre / révélation : une seule slide
       const slide = prs.addSlide()
       await applyBackground(slide, q.background, q.backgroundOpacity, "1a1a2e")
       slide.addShape("rect", { x: 0, y: 0, w: SLIDE_W, h: SLIDE_H, fill: { color: "000000", transparency: 35 }, line: { width: 0 } })
 
-      if (q.elements?.length) {await renderElements(slide, (q as TitleQuestion).elements ?? [])}
+      if (q.elements?.length) {await renderElements(slide, q.elements ?? [])}
 
       if ((q as TitleQuestion).media?.url) {
         const data = await toDataUrl((q as TitleQuestion).media!.url)

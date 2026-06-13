@@ -3,6 +3,7 @@ import { X } from "lucide-react"
 import { useEffect, type CSSProperties } from "react"
 import SlideCanvas from "./SlideCanvas"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
+import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import {
   DateAnswer,
   McqAnswers,
@@ -50,6 +51,10 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
     maxYear,
     items,
     pinImage,
+    revealDuration,
+    gridCols,
+    gridRows,
+    revelationStyle,
   } = question as QuestionWithId & {
     answers?: string[]
     min?: number
@@ -58,6 +63,10 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
     maxYear?: number
     items?: string[]
     pinImage?: string
+    revealDuration?: number
+    gridCols?: number
+    gridRows?: number
+    revelationStyle?: string
   }
 
   let bgStyle: CSSProperties = {
@@ -84,8 +93,18 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       {/* Background */}
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? 0.5 }}
+        style={{ ...bgStyle, opacity: backgroundOpacity ?? (question.revelationEnabled ? 1.0 : 0.5) }}
       />
+
+      {question.revelationEnabled && (
+        <BackgroundRevealer
+          duration={revealDuration ?? (type === "title" ? question.cooldown : (question.cooldown + question.time))}
+          gridCols={gridCols ?? 8}
+          gridRows={gridRows ?? 6}
+          seedString={title || question.background?.value}
+          configuredStyle={revelationStyle}
+        />
+      )}
 
       {/* Slide Elements (Konva) */}
       <div className="pointer-events-none absolute inset-0">
@@ -113,25 +132,28 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       )}
 
       {/* Media Section */}
-      <div
-        className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <QuestionMedia
-          media={
-            type === "drop_pin" && pinImage
-              ? { type: "image", url: pinImage }
-              : media
-          }
-          alt={title}
-        />
-      </div>
+      {type !== "title" && (
+        <div
+          className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <QuestionMedia
+            media={
+              type === "drop_pin" && pinImage
+                ? { type: "image", url: pinImage }
+                : media
+            }
+            alt={title}
+          />
+        </div>
+      )}
 
       {/* Footer (Answers / Controls) */}
-      <div
-        className="relative z-10 w-full pb-8"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {type !== "title" && (
+        <div
+          className="relative z-10 w-full pb-8"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
           <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
             <span className="translate-y-1 text-sm opacity-60">
@@ -180,6 +202,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           )}
         </div>
       </div>
+      )}
 
       {/* Close Button */}
       <button

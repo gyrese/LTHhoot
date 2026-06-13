@@ -5,6 +5,7 @@ import { quizzSocketHandlers } from "@rahoot/socket/handlers/quizz"
 import { resultsSocketHandlers } from "@rahoot/socket/handlers/results"
 import type { SocketHandler } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
+import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
 import express from "express"
 import { existsSync, mkdirSync } from "fs"
@@ -50,8 +51,31 @@ const httpServer = createServer(app)
 
 app.use("/uploads", express.static(uploadsDir))
 
+// Garde d'authentification placée AVANT multer : on rejette les requêtes non
+// authentifiées sur les seuls headers, donc avant que le fichier ne soit écrit
+// sur disque. Le client transmet son clientId (header x-client-id) qui doit
+// figurer parmi les clients ayant validé le mot de passe manager — même
+// garantie que les events socket.
+const requireManager = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  const rawClientId = req.headers["x-client-id"]
+  const clientId = Array.isArray(rawClientId) ? rawClientId[0] : rawClientId
+
+  if (!Manager.isAuthorized(clientId)) {
+    res.status(401).json({ error: "Unauthorized" })
+
+    return
+  }
+
+  next()
+}
+
 app.post(
   "/upload",
+  requireManager,
   upload.single("image"),
   async (req: express.Request, res: express.Response) => {
     if (!req.file) {
@@ -119,14 +143,20 @@ const io: Server = new ServerIO(httpServer, {
   cors: {
     origin: process.env.ALLOWED_ORIGIN ?? "*",
     methods: ["GET", "POST"],
-    credentials: true,
+    // On n'active credentials qu'avec une origine explicite : "*" + credentials
+    // est contradictoire (rejeté par les navigateurs) et inutilement permissif.
+    credentials: Boolean(process.env.ALLOWED_ORIGIN),
   },
   // STRATÉGIE POLLING-ONLY (Stabilité maximale avant prod)
   transports: ["polling"],
   allowUpgrades: false,
-  // Hardening pour réseaux instables (mobile)
-  pingTimeout: 60000,
-  pingInterval: 25000,
+  // Hardening pour réseaux instables (mobile). Pings plus fréquents + timeout
+  // réduit : on détecte une coupure réelle en ~45s au lieu de ~85s, sans
+  // descendre assez bas pour éjecter un mobile temporairement lent. La perte de
+  // slot n'est plus un risque : la reconnexion se fait par clientId et la manche
+  // ne compte que les joueurs connectés (cf. countConnected).
+  pingTimeout: 25000,
+  pingInterval: 20000,
   connectTimeout: 45000,
   allowEIO3: false,
 })

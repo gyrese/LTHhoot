@@ -55,6 +55,7 @@ export class RoundManager {
   private currentQuestion = 0
   private playersAnswers: Answer[] = []
   private startTime = 0
+  private acceptingAnswers = false
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
   private questionsHistory: QuestionResult[] = []
@@ -155,6 +156,11 @@ export class RoundManager {
           audio: question.audio,
           cooldown: question.cooldown,
           pinImage: undefined,
+          revelationEnabled: question.revelationEnabled,
+          revealDuration: question.revealDuration,
+          gridCols: question.gridCols,
+          gridRows: question.gridRows,
+          revelationStyle: question.revelationStyle,
         })
 
         await this.opts.cooldown.start(question.cooldown)
@@ -228,6 +234,11 @@ export class RoundManager {
         audio: question.audio,
         cooldown: question.cooldown,
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
+        revelationEnabled: question.revelationEnabled,
+        revealDuration: question.revealDuration,
+        gridCols: question.gridCols,
+        gridRows: question.gridRows,
+        revelationStyle: question.revelationStyle,
       })
 
       // Send solution to manager only
@@ -241,6 +252,11 @@ export class RoundManager {
         audio: question.audio,
         cooldown: question.cooldown,
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
+        revelationEnabled: question.revelationEnabled,
+        revealDuration: question.revealDuration,
+        gridCols: question.gridCols,
+        gridRows: question.gridRows,
+        revelationStyle: question.revelationStyle,
         ...RoundManager.getQuestionSolutionData(question),
       })
 
@@ -251,6 +267,7 @@ export class RoundManager {
       }
 
       this.startTime = Date.now()
+      this.acceptingAnswers = true
 
       const selectAnswerBase = {
         question: question.question,
@@ -261,7 +278,12 @@ export class RoundManager {
         elements: question.elements,
         audio: question.audio,
         time: question.time,
-        totalPlayer: this.opts.players.count(),
+        totalPlayer: this.opts.players.countConnected(),
+        revelationEnabled: question.revelationEnabled,
+        revealDuration: question.revealDuration,
+        gridCols: question.gridCols,
+        gridRows: question.gridRows,
+        revelationStyle: question.revelationStyle,
       }
 
       const selectAnswerExtra = (() => {
@@ -319,6 +341,7 @@ export class RoundManager {
       })
 
       await this.opts.cooldown.start(question.time)
+      this.acceptingAnswers = false
 
       if (!this.started) {
         return
@@ -330,6 +353,7 @@ export class RoundManager {
         this.showResults(question)
       }
     } finally {
+      this.acceptingAnswers = false
       this.questionInProgress = false
     }
   }
@@ -499,6 +523,7 @@ export class RoundManager {
       backgroundOpacity: question.backgroundOpacity,
       elements: question.elements,
       audio: question.audio,
+      answerReveal: question.answerReveal,
     }
 
     const responsesExtra = (() => {
@@ -579,6 +604,12 @@ export class RoundManager {
       orderAnswer?: number[]
     },
   ): void {
+    // Fenêtre de réponse fermée (avant le départ ou après expiration du temps) :
+    // on ignore toute réponse tardive plutôt que de la comptabiliser au round.
+    if (!this.acceptingAnswers) {
+      return
+    }
+
     const player = this.opts.players.findById(socket.id)
     const question = this.opts.quizz.questions[this.currentQuestion]
 
@@ -614,7 +645,10 @@ export class RoundManager {
       .emit(EVENTS.GAME.PLAYER_ANSWER, this.playersAnswers.length)
     this.opts.players.broadcastCount()
 
-    if (this.playersAnswers.length === this.opts.players.count()) {
+    // On compare au nombre de joueurs CONNECTÉS : un joueur déconnecté pendant
+    // la partie reste dans la liste (pour reconnexion) mais ne répondra jamais,
+    // sinon la manche ne se termine jamais en avance et tourne le timer complet.
+    if (this.playersAnswers.length >= this.opts.players.countConnected()) {
       this.opts.cooldown.abort()
     }
   }
