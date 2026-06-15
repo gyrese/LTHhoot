@@ -666,6 +666,13 @@ export class RoundManager {
       return
     }
 
+    // Filet anti-double-avancement : si une question est déjà en cours de
+    // préparation/diffusion, on ignore tout nouveau « suivant » concurrent
+    // (écran principal + télécommande) qui ferait sauter une question.
+    if (this.questionInProgress) {
+      return
+    }
+
     if (!this.opts.quizz.questions[this.currentQuestion + 1]) {
       return
     }

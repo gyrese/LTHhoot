@@ -147,14 +147,18 @@ const io: Server = new ServerIO(httpServer, {
     // est contradictoire (rejeté par les navigateurs) et inutilement permissif.
     credentials: Boolean(process.env.ALLOWED_ORIGIN),
   },
-  // STRATÉGIE POLLING-ONLY (Stabilité maximale avant prod)
-  transports: ["polling"],
-  allowUpgrades: false,
-  // Hardening pour réseaux instables (mobile). Pings plus fréquents + timeout
-  // réduit : on détecte une coupure réelle en ~45s au lieu de ~85s, sans
-  // descendre assez bas pour éjecter un mobile temporairement lent. La perte de
-  // slot n'est plus un risque : la reconnexion se fait par clientId et la manche
-  // ne compte que les joueurs connectés (cf. countConnected).
+  // Polling d'abord, puis montée automatique en WebSocket si le réseau et le
+  // proxy le permettent. WebSocket est nettement plus stable que le long-polling
+  // sur mobile (pas une requête HTTP par message, pas de coupure de cycle de
+  // poll en veille radio). Si l'upgrade échoue (proxy qui ne relaie pas
+  // l'en-tête Upgrade), le client RESTE en polling sans rupture : pas de
+  // régression possible par rapport au mode polling-only précédent.
+  transports: ["polling", "websocket"],
+  allowUpgrades: true,
+  // Hardening pour réseaux instables (mobile). On détecte une coupure réelle en
+  // ~45s sans descendre assez bas pour éjecter un mobile temporairement lent. La
+  // perte de slot n'est plus un risque : la reconnexion se fait par clientId et
+  // la manche ne compte que les joueurs connectés (cf. countConnected).
   pingTimeout: 25000,
   pingInterval: 20000,
   connectTimeout: 45000,
@@ -180,7 +184,9 @@ io.engine.on("connection", (engineSocket) => {
 
 Config.init()
 
-console.log(`Socket server running on port ${WS_PORT} (POLLING ONLY MODE)`)
+console.log(
+  `Socket server running on port ${WS_PORT} (transports: polling + websocket)`,
+)
 httpServer.listen(WS_PORT, "0.0.0.0")
 
 const socketHandlers: SocketHandler[] = [

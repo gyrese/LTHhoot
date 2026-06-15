@@ -43,6 +43,14 @@ class Game {
 
   private managerDisconnectTimer: ReturnType<typeof setTimeout> | null = null
 
+  // Horodatage de la dernière transition d'avancement acceptée. Sert de verrou
+  // anti-double-pilotage : l'écran principal et la télécommande sont tous deux
+  // dans la room manager et peuvent émettre la même commande (« suivant »,
+  // « voir le classement »). Sans ce garde, deux clics concurrents font sauter
+  // une question. 600 ms suffisent : les étapes légitimes sont toujours séparées
+  // par plusieurs secondes d'interaction.
+  private lastAdvanceAt = 0
+
   private lastBroadcastStatus: {
     name: Status
     data: StatusDataMap[Status]
@@ -445,6 +453,11 @@ class Game {
 
   // Reconnexion depuis un appareil tiers authentifié (télécommande)
   reconnectRemote(socket: Socket) {
+    // La télécommande prend le relais : si un reset « écran principal absent »
+    // était armé (salon, partie non démarrée), on l'annule — la partie est
+    // pilotée, elle ne doit pas se fermer toute seule.
+    this.cancelManagerReset()
+
     socket.join(this.gameId)
     socket.join(`manager-${this.gameId}`)
 
@@ -637,6 +650,24 @@ class Game {
 
     this.managerDisconnectTimer = setTimeout(() => {
       this.managerDisconnectTimer = null
+
+      // Ne JAMAIS détruire la session s'il reste des joueurs connectés : l'hôte
+      // peut piloter la partie depuis la télécommande pendant que l'écran
+      // principal est tombé. Détruire ici éjecterait tout le monde alors que la
+      // soirée est bien vivante. Le nettoyage des parties réellement abandonnées
+      // reste assuré par le cleanup « empty games » (5 min, même garde).
+      if (this.hasConnectedPlayers) {
+        this.logAndEmit(
+          "warn",
+          "Écran principal absent mais joueurs connectés — session conservée",
+        )
+        console.log(
+          `[TIMEOUT] Manager game=${this.inviteCode} → joueurs présents, reset annulé`,
+        )
+
+        return
+      }
+
       this.logAndEmit("error", "Manager non reconnecté après 30s — session fermée")
       console.log(
         `[TIMEOUT] Manager game=${this.inviteCode} → reset après 30s sans reconnexion`,
@@ -748,7 +779,27 @@ class Game {
     this.round.selectAnswer(socket, payload)
   }
 
+  // Verrou anti-double-pilotage partagé par toutes les transitions d'avancement.
+  // Retourne false (et ignore l'action) si une transition a déjà été acceptée il
+  // y a moins de 600 ms, quelle que soit la source (écran principal ou
+  // télécommande).
+  private acceptAdvance(): boolean {
+    const now = Date.now()
+
+    if (now - this.lastAdvanceAt < 600) {
+      return false
+    }
+
+    this.lastAdvanceAt = now
+
+    return true
+  }
+
   nextRound(socket: Socket) {
+    if (!this.acceptAdvance()) {
+      return
+    }
+
     this.round.nextQuestion(socket)
   }
 
@@ -758,6 +809,10 @@ class Game {
   }
 
   showLeaderboard() {
+    if (!this.acceptAdvance()) {
+      return
+    }
+
     this.round.showLeaderboard()
   }
 

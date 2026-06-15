@@ -107,11 +107,11 @@ const createSocketClient = (
       reconnectionDelayMax: 8000,
       randomizationFactor: 0.5,
       timeout: 20000,
-      // Doit refléter EXACTEMENT le serveur (polling only, allowUpgrades:false).
-      // Sinon le client tente une montée WebSocket systématiquement refusée →
-      // sondes d'upgrade en échec et bruit de connexion sur mobile.
-      transports: ["polling"],
-      upgrade: false,
+      // Doit refléter le serveur : polling d'abord, puis upgrade WebSocket. Si le
+      // proxy bloque l'upgrade, Socket.IO conserve automatiquement le polling —
+      // donc aucune rupture sur les réseaux qui n'acceptent pas le WebSocket.
+      transports: ["polling", "websocket"],
+      upgrade: true,
       auth: {
         clientId,
       },
