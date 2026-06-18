@@ -1,4 +1,10 @@
-import { test, expect, type Browser, type Page } from "@playwright/test"
+import {
+  test,
+  expect,
+  devices,
+  type Browser,
+  type Page,
+} from "@playwright/test"
 import { io } from "socket.io-client"
 import { createGame, joinPlayer, loginManager } from "../helpers/gameHelpers"
 
@@ -303,6 +309,88 @@ test.describe("15D — Télécommande (connexion via PIN)", () => {
       ).toBeVisible({ timeout: 15_000 })
     } finally {
       await remoteCtx.close()
+      await playerCtx.close()
+      await managerCtx.close()
+    }
+  })
+})
+
+// ─── 15E — Joueur MOBILE + manager bureau (scénario prod réel) ─────────────────
+
+test.describe("15E — Joueur mobile avec manager bureau", () => {
+  test.skip(
+    SKIP_REAL_GAME,
+    "Ignoré — définir SKIP_REAL_GAME=false (+ MANAGER_PASSWORD) pour activer",
+  )
+  // Ces tests créent EUX-MÊMES leurs contextes (manager bureau + joueur Pixel 7),
+  // indépendamment du device du projet. On ne les exécute donc qu'une seule fois.
+  test.beforeEach(({}, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium",
+      "Contextes explicites — exécuté une seule fois (projet chromium)",
+    )
+  })
+
+  test("joueur mobile : reload puis coupure réseau → reste connecté, pas d'éjection", async ({
+    browser,
+  }) => {
+    test.setTimeout(120_000)
+
+    // Manager sur un écran de bureau, joueur sur un vrai profil mobile.
+    const managerCtx = await browser.newContext({
+      ...devices["Desktop Chrome"],
+    })
+    const playerCtx = await browser.newContext({ ...devices["Pixel 7"] })
+    const managerPage = await managerCtx.newPage()
+    const playerPage = await playerCtx.newPage()
+
+    try {
+      await loginManager(managerPage, MANAGER_PASSWORD)
+
+      const pin = await createGame(managerPage)
+      if (!pin) {
+        test.skip(true, "Aucun quiz disponible côté serveur")
+
+        return
+      }
+
+      await joinPlayer(playerPage, pin, "MobilePlayer")
+      await expect(
+        managerPage.getByText("MobilePlayer", { exact: true }),
+      ).toBeVisible({ timeout: 15_000 })
+
+      // 1) Rechargement de l'onglet mobile → session restaurée
+      await playerPage.reload()
+      await playerPage.waitForLoadState("domcontentloaded")
+      await playerPage.waitForTimeout(3000)
+      expect(playerPage.url()).toMatch(/\/party\//)
+
+      // 2) Coupure réseau mobile (passage tunnel / veille radio) → reconnexion
+      await playerPage.context().setOffline(true)
+      await playerPage.waitForTimeout(3000)
+
+      const overlay = playerPage.locator("text=Connexion interrompue")
+      const overlayShown = await overlay
+        .isVisible({ timeout: 5000 })
+        .catch(() => false)
+
+      await playerPage.context().setOffline(false)
+
+      if (overlayShown) {
+        await expect(overlay).not.toBeVisible({ timeout: 20_000 })
+      }
+
+      // Le joueur mobile est toujours dans la partie (anti « déco sauvage »)
+      expect(playerPage.url()).toMatch(/\/party\//)
+      await expect(
+        playerPage.getByText("MobilePlayer"),
+      ).toBeVisible({ timeout: 10_000 })
+
+      // Le manager le voit toujours comme connecté
+      await expect(
+        managerPage.getByText("MobilePlayer", { exact: true }),
+      ).toBeVisible({ timeout: 10_000 })
+    } finally {
       await playerCtx.close()
       await managerCtx.close()
     }
