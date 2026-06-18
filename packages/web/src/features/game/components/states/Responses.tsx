@@ -426,8 +426,8 @@ const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
   }
 
   return (
-    <div className="anim-show relative z-20 mx-auto w-full max-w-2xl px-4">
-      <div className="overflow-hidden rounded-3xl border border-white/20 bg-black/60 shadow-2xl backdrop-blur-xl">
+    <div className="anim-show relative z-20 mx-auto w-full px-2">
+      <div className="overflow-hidden rounded-3xl border border-white/20 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
         {/* Vidéo ou image */}
         {reveal.videoId ? (
           <div className="aspect-video w-full">
@@ -444,7 +444,7 @@ const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
             <img
               src={reveal.image}
               alt=""
-              className="max-h-72 w-full object-cover"
+              className="max-h-[55vh] w-full object-contain bg-black/20"
             />
           )
         )}
@@ -498,6 +498,7 @@ const Responses = ({
 
   useEffect(() => {
     stopMusic()
+    setRevealed(false)
 
     if (!isHost) {
       return () => {
@@ -515,7 +516,7 @@ const Responses = ({
       stopMusic()
       clearTimeout(revealTimer)
     }
-  }, [isHost])
+  }, [isHost, question])
 
   let bgStyle: CSSProperties = {
     background: "linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)",
@@ -530,6 +531,11 @@ const Responses = ({
   } else if (background?.type === "color") {
     bgStyle = { backgroundColor: background.value }
   }
+
+  const reveal = answerReveal
+  const hasRevealCard = Boolean(
+    revealed && reveal?.enabled && (reveal.image || reveal.videoId || reveal.text),
+  )
 
   return (
     <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
@@ -563,49 +569,64 @@ const Responses = ({
         </div>
       )}
 
-      <div className="relative z-10 mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-
-        {type === "mcq" && (
-          <McqResult
-            answers={answers}
-            responses={responses}
-            solutions={solutions}
-            percentages={percentages}
-            revealed={revealed}
-          />
+      <div
+        className={clsx(
+          "relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 py-4 items-center justify-center transition-all duration-500",
+          hasRevealCard
+            ? "grid grid-cols-1 lg:grid-cols-12 gap-8"
+            : "flex flex-col gap-5",
         )}
+      >
+        <div
+          className={clsx(
+            "flex flex-col items-center justify-center w-full transition-all duration-500",
+            hasRevealCard ? "lg:col-span-7 gap-5" : "gap-5",
+          )}
+        >
+          {type === "mcq" && (
+            <McqResult
+              answers={answers}
+              responses={responses}
+              solutions={solutions}
+              percentages={percentages}
+              revealed={revealed}
+            />
+          )}
 
-        {type === "true_false" && (
-          <TrueFalseResult
-            responses={responses}
-            solutions={solutions}
-            percentages={percentages}
-            revealed={revealed}
-          />
-        )}
+          {type === "true_false" && (
+            <TrueFalseResult
+              responses={responses}
+              solutions={solutions}
+              percentages={percentages}
+              revealed={revealed}
+            />
+          )}
 
-        {type === "open" && correctAnswers && correctAnswers.length > 0 && (
-          <OpenResult correctAnswers={correctAnswers} />
-        )}
+          {type === "open" && correctAnswers && correctAnswers.length > 0 && (
+            <OpenResult correctAnswers={correctAnswers} />
+          )}
 
-        {type === "date" && correctYear !== undefined && (
-          <DateResult correctYear={correctYear} />
-        )}
+          {type === "date" && correctYear !== undefined && (
+            <DateResult correctYear={correctYear} />
+          )}
 
-        {type === "slider" && correctValue !== undefined && (
-          <SliderResult correctValue={correctValue} min={min} max={max} />
-        )}
+          {type === "slider" && correctValue !== undefined && (
+            <SliderResult correctValue={correctValue} min={min} max={max} />
+          )}
 
-        {type === "puzzle" && items && items.length > 0 && (
-          <PuzzleResult items={items} />
-        )}
+          {type === "puzzle" && items && items.length > 0 && (
+            <PuzzleResult items={items} />
+          )}
 
-        {type === "drop_pin" && pinImage && zones && (
-          <DropPinResult pinImage={pinImage} zones={zones} />
-        )}
+          {type === "drop_pin" && pinImage && zones && (
+            <DropPinResult pinImage={pinImage} zones={zones} />
+          )}
+        </div>
 
-        {revealed && answerReveal && (
-          <AnswerRevealCard reveal={answerReveal} />
+        {hasRevealCard && (
+          <div className="lg:col-span-5 w-full flex items-center justify-center anim-show">
+            <AnswerRevealCard reveal={answerReveal} />
+          </div>
         )}
       </div>
     </div>

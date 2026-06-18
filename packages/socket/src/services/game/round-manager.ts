@@ -589,7 +589,16 @@ export class RoundManager {
       }
     }
 
-    if (question.type === "open") {
+    // Les questions ouvertes sautent normalement l'écran SHOW_RESPONSES
+    // (redondant avec la validation des réponses). On le réintroduit UNIQUEMENT
+    // s'il y a une carte « réponse » à présenter (image / texte / YouTube),
+    // sinon cette carte ne s'afficherait nulle part pour les questions ouvertes.
+    const reveal = question.answerReveal
+    const hasRevealCard = Boolean(
+      reveal?.enabled && (reveal.image || reveal.videoId || reveal.text),
+    )
+
+    if (question.type === "open" && !hasRevealCard) {
       this.showLeaderboard()
     } else {
       this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
