@@ -4,7 +4,6 @@ import {
   Droppable,
   type DropResult,
 } from "@hello-pangea/dnd"
-import Button from "@rahoot/web/components/Button"
 import QuizzEditorCard from "@rahoot/web/features/quizz/components/QuizzEditorCard"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
@@ -108,56 +107,73 @@ const QuizzEditorSidebar = () => {
   }
 
   return (
-    <aside className="z-10 flex w-72 shrink-0 flex-col gap-2 overflow-auto border-r border-gray-200 bg-white px-3 pb-3">
-      <DragDropContext
-        onDragStart={() => {
-          isDragging.current = true
-        }}
-        onDragEnd={handleDragEnd}
-      >
-        <Droppable droppableId="questions">
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className="flex flex-col gap-2"
-            >
-              {questions.map((q, index) => (
-                <Draggable key={q.id} draggableId={q.id} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className={clsx(snapshot.isDragging && "shadow-lg")}
-                    >
-                      <QuizzEditorCard
-                        question={q}
-                        index={index}
-                        isActive={currentIndex === index}
-                        canDelete={questions.length > 1}
-                        onClick={handleSlideClick(index)}
-                        onDelete={handleDelete(index)}
-                        onDuplicate={handleDuplicate(index)}
-                        onContextMenu={handleContextMenu(index)}
-                      />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+    <aside className="border-border bg-panel z-10 flex w-72 shrink-0 flex-col border-r">
+      <div className="border-border/70 flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <span className="text-ink-muted text-xs font-bold">
+          {t("quizz:slidesTitle", "Diapositives")}
+        </span>
+        <span className="bg-border/60 text-ink-muted rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums">
+          {questions.length}
+        </span>
+      </div>
 
-      <Button
-        onClick={addQuestion}
-        className="mt-1 flex items-center justify-center gap-1"
-      >
-        <Plus className="size-6" />
-        {t("quizz:addQuestion")}
-      </Button>
+      <div className="scrollbar-light flex-1 overflow-auto px-3 py-3">
+        <DragDropContext
+          onDragStart={() => {
+            isDragging.current = true
+          }}
+          onDragEnd={handleDragEnd}
+        >
+          <Droppable droppableId="questions">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex flex-col gap-2"
+              >
+                {questions.map((q, index) => (
+                  <Draggable key={q.id} draggableId={q.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={clsx(
+                          "ease-out-soft rounded-lg transition-shadow duration-150",
+                          snapshot.isDragging &&
+                            "shadow-2xl shadow-black/25",
+                        )}
+                      >
+                        <QuizzEditorCard
+                          question={q}
+                          index={index}
+                          isActive={currentIndex === index}
+                          canDelete={questions.length > 1}
+                          onClick={handleSlideClick(index)}
+                          onDelete={handleDelete(index)}
+                          onDuplicate={handleDuplicate(index)}
+                          onContextMenu={handleContextMenu(index)}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
+
+      <div className="border-border/70 shrink-0 border-t p-3">
+        <button
+          onClick={addQuestion}
+          className="focus-ring border-border-strong text-ink-muted hover:border-primary hover:bg-primary-soft hover:text-primary-ink ease-out-soft flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed py-2.5 text-sm font-semibold transition-colors duration-150 active:scale-[0.98]"
+        >
+          <Plus className="size-4" />
+          {t("quizz:addQuestion")}
+        </button>
+      </div>
 
       {contextMenu?.show && (
         <SidebarContextMenu

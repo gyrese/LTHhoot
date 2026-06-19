@@ -50,13 +50,13 @@ const QuestionEditorMedia = () => {
       </div>
 
       {!questionMedia?.type && (
-        <Card className="my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 bg-white shadow-md">
-          <ImageOff className="size-16 stroke-gray-600" />
-          <p className="text-center text-sm text-gray-600">
+        <Card className="ring-border my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 bg-surface shadow-lg shadow-black/5 ring-1">
+          <ImageOff className="stroke-ink-subtle size-16" />
+          <p className="text-ink-muted text-center text-sm">
             {t("quizz:question.addMediaHint")}
           </p>
           <input
-            className="focus:border-primary w-full max-w-md rounded-md border-2 border-gray-300 px-3 py-2 text-sm outline-none"
+            className="border-border text-ink focus:border-primary w-full max-w-md rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
             placeholder={t("quizz:question.mediaUrlPlaceholder")}
             value={questionMedia?.url || ""}
             onChange={handleChangeMedia}
@@ -64,7 +64,7 @@ const QuestionEditorMedia = () => {
           <div className="flex flex-wrap justify-center gap-2">
             <Button
               onClick={hadnleChangeMediaType("image")}
-              className={`bg-gray-200 text-gray-600 transition-colors hover:bg-gray-200`}
+              variant="secondary"
             >
               <div className="flex items-center gap-1.5">
                 <Image className="size-6" />
@@ -73,7 +73,7 @@ const QuestionEditorMedia = () => {
             </Button>
             <Button
               onClick={hadnleChangeMediaType("video")}
-              className={`bg-gray-200 text-gray-600 transition-colors hover:bg-gray-200`}
+              variant="secondary"
             >
               <div className="flex items-center gap-1.5">
                 <Video className="size-6" />
@@ -82,7 +82,7 @@ const QuestionEditorMedia = () => {
             </Button>
             <Button
               onClick={hadnleChangeMediaType("audio")}
-              className={`bg-gray-200 text-gray-600 transition-colors hover:bg-gray-200`}
+              variant="secondary"
             >
               <div className="flex items-center gap-1.5">
                 <Music className="size-6" />
@@ -96,7 +96,8 @@ const QuestionEditorMedia = () => {
       {questionMedia?.type && (
         <div className="absolute bottom-4">
           <Button
-            className="rounded-sm bg-gray-200 px-4 py-2 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
+            variant="secondary"
+            className="px-4 py-2"
             onClick={handleRemoveMedia}
           >
             {t("common:delete")}

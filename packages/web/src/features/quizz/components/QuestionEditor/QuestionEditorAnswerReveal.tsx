@@ -112,7 +112,7 @@ const QuestionEditorAnswerReveal = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">
+        <span className="text-ink text-sm font-semibold">
           Activer la carte réponse
         </span>
         <button
@@ -120,29 +120,29 @@ const QuestionEditorAnswerReveal = () => {
           role="switch"
           aria-checked={reveal.enabled}
           onClick={handleToggle}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-            reveal.enabled ? "bg-primary" : "bg-gray-300"
+          className={`focus-ring relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-150 ${
+            reveal.enabled ? "bg-primary" : "bg-border-strong"
           }`}
         >
           <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-150 ${
               reveal.enabled ? "translate-x-4" : "translate-x-0.5"
             }`}
           />
         </button>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-ink-subtle text-xs leading-relaxed">
         Affiche une carte (image, vidéo YouTube et/ou texte) centrée sur
         l'écran des résultats.
       </p>
 
       {reveal.enabled && (
-        <div className="flex flex-col gap-4 rounded-xl border-2 border-amber-100 bg-amber-50/40 p-3">
+        <div className="border-border bg-panel flex flex-col gap-4 rounded-xl border p-3">
           {/* Image */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <ImageIcon className="size-4" /> Image
+            <div className="text-ink flex items-center gap-2 text-sm font-semibold">
+              <ImageIcon className="text-ink-subtle size-4" /> Image
             </div>
 
             <input
@@ -162,7 +162,7 @@ const QuestionEditorAnswerReveal = () => {
             />
 
             {reveal.image ? (
-              <div className="relative overflow-hidden rounded-lg border border-gray-200">
+              <div className="border-border relative overflow-hidden rounded-lg border">
                 <img
                   src={reveal.image}
                   alt="Aperçu réponse"
@@ -171,7 +171,7 @@ const QuestionEditorAnswerReveal = () => {
                 <button
                   type="button"
                   onClick={() => updateReveal({ image: undefined })}
-                  className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-red-500"
+                  className="hover:bg-danger absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white transition-colors"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -183,7 +183,7 @@ const QuestionEditorAnswerReveal = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    className="focus-ring border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
                   >
                     {uploading ? (
                       <Loader2 className="size-3.5 animate-spin" />
@@ -195,10 +195,10 @@ const QuestionEditorAnswerReveal = () => {
                   <button
                     type="button"
                     onClick={() => setShowImageUrl((v) => !v)}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm transition-colors ${
+                    className={`focus-ring flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm transition-colors ${
                       showImageUrl
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                        ? "border-primary bg-primary-soft text-primary-ink"
+                        : "border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink"
                     }`}
                   >
                     <Link className="size-3.5" /> URL
@@ -222,13 +222,13 @@ const QuestionEditorAnswerReveal = () => {
                         }
                       }}
                       placeholder="https://..."
-                      className="focus:border-primary flex-1 rounded border border-gray-200 px-2 py-1.5 text-xs outline-none"
+                      className="border-border text-ink focus:border-primary flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <button
                       type="button"
                       onClick={handleAddImageUrl}
                       disabled={!imageUrl.trim()}
-                      className="bg-primary rounded px-2 text-xs font-semibold text-white disabled:opacity-40"
+                      className="bg-primary text-secondary rounded-lg px-2.5 text-xs font-semibold transition-transform hover:brightness-[0.97] active:scale-95 disabled:opacity-40"
                     >
                       OK
                     </button>
@@ -238,16 +238,16 @@ const QuestionEditorAnswerReveal = () => {
             )}
           </div>
 
-          <div className="h-px bg-amber-100" />
+          <div className="bg-border h-px" />
 
           {/* YouTube */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Play className="size-4" /> Vidéo YouTube
+            <div className="text-ink flex items-center gap-2 text-sm font-semibold">
+              <Play className="text-ink-subtle size-4" /> Vidéo YouTube
             </div>
 
             {reveal.videoId ? (
-              <div className="relative overflow-hidden rounded-lg border border-gray-200">
+              <div className="border-border relative overflow-hidden rounded-lg border">
                 <img
                   src={`https://img.youtube.com/vi/${reveal.videoId}/mqdefault.jpg`}
                   alt="Miniature vidéo"
@@ -259,7 +259,7 @@ const QuestionEditorAnswerReveal = () => {
                     updateReveal({ videoId: undefined })
                     setYoutubeUrl("")
                   }}
-                  className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-red-500"
+                  className="hover:bg-danger absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white transition-colors"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -270,22 +270,22 @@ const QuestionEditorAnswerReveal = () => {
                 value={youtubeUrl}
                 onChange={handleChangeYoutube}
                 placeholder="URL ou ID de la vidéo"
-                className="focus:border-primary w-full rounded border border-gray-200 px-2 py-1.5 text-xs outline-none"
+                className="border-border text-ink focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
               />
             )}
           </div>
 
-          <div className="h-px bg-amber-100" />
+          <div className="bg-border h-px" />
 
           {/* Texte */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-gray-700">Texte</span>
+            <span className="text-ink text-sm font-semibold">Texte</span>
             <textarea
               value={reveal.text ?? ""}
               onChange={(e) => updateReveal({ text: e.target.value })}
               rows={3}
               placeholder="Explication, anecdote, détail de la réponse..."
-              className="focus:border-primary w-full resize-none rounded border border-gray-200 px-2 py-1.5 text-xs outline-none"
+              className="border-border text-ink focus:border-primary w-full resize-none rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>

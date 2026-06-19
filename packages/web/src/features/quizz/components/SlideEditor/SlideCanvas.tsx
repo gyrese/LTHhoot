@@ -664,8 +664,8 @@ const SlideCanvas = ({
 
           {/* Drop zone overlay */}
           {isDraggingFile && (
-            <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-4 border-dashed border-blue-400 bg-blue-400/10">
-              <div className="rounded-lg bg-white/90 px-6 py-3 text-base font-semibold text-blue-600 shadow-lg">
+            <div className="border-primary bg-primary/10 pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-4 border-dashed">
+              <div className="text-primary-ink rounded-lg bg-white/90 px-6 py-3 text-base font-semibold shadow-lg">
                 Déposer l'image ici
               </div>
             </div>

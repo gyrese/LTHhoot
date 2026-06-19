@@ -126,17 +126,17 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    <div className="bg-surface text-ink fixed inset-0 z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-        <h1 className="text-lg font-bold text-gray-800">
+      <div className="border-border flex items-center justify-between border-b px-6 py-4">
+        <h1 className="text-ink text-lg font-bold">
           {t("quizz:settings.title")}
         </h1>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="focus-ring border-border text-ink-muted hover:bg-panel rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
           >
             {t("common:cancel")}
           </button>
@@ -144,7 +144,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
             type="button"
             onClick={handleDone}
             disabled={!localSubject.trim()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+            className="focus-ring bg-primary text-secondary rounded-lg px-4 py-2 text-sm font-semibold transition-transform hover:brightness-[0.97] active:scale-[0.98] disabled:opacity-40"
           >
             {t("common:done")}
           </button>
@@ -154,10 +154,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-52 border-r border-gray-200 p-4">
+        <aside className="border-border w-52 border-r p-4">
           <button
             type="button"
-            className="w-full rounded-md border-l-4 border-blue-600 bg-blue-50 px-3 py-2 text-left text-sm font-semibold text-blue-700"
+            className="bg-primary-soft text-primary-ink w-full rounded-lg px-3 py-2 text-left text-sm font-semibold"
           >
             {t("quizz:settings.generalInfo")}
           </button>
@@ -169,10 +169,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
           <div className="flex max-w-xl flex-1 flex-col gap-6">
             {/* Titre */}
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 {t("quizz:settings.titleLabel")}
               </label>
-              <p className="mb-2 text-xs text-gray-500">
+              <p className="text-ink-subtle mb-2 text-xs">
                 {t("quizz:settings.titleHint")}
               </p>
               <div className="relative">
@@ -180,10 +180,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   value={localSubject}
                   onChange={(e) => setLocalSubject(e.target.value)}
                   maxLength={90}
-                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 pr-14 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-lg border border-border px-4 py-3 pr-14 text-sm outline-none focus:border-primary"
                   placeholder={t("quizz:titleQuizzPlaceholder")}
                 />
-                <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-gray-400">
+                <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-ink-subtle">
                   {localSubject.length}/90
                 </span>
               </div>
@@ -191,13 +191,13 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
             {/* Description */}
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 {t("quizz:settings.descriptionLabel")}{" "}
-                <span className="font-normal text-gray-400">
+                <span className="text-ink-subtle font-normal">
                   ({t("common:optional")})
                 </span>
               </label>
-              <p className="mb-2 text-xs text-gray-500">
+              <p className="text-ink-subtle mb-2 text-xs">
                 {t("quizz:settings.descriptionHint")}
               </p>
               <div className="relative">
@@ -206,10 +206,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   onChange={(e) => setLocalDescription(e.target.value)}
                   maxLength={500}
                   rows={4}
-                  className="w-full resize-none rounded-lg border-2 border-gray-300 px-4 py-3 pr-14 text-sm outline-none focus:border-blue-500"
+                  className="w-full resize-none rounded-lg border border-border px-4 py-3 pr-14 text-sm outline-none focus:border-primary"
                   placeholder={t("quizz:settings.descriptionPlaceholder")}
                 />
-                <span className="absolute right-3 bottom-3 text-xs text-gray-400">
+                <span className="absolute right-3 bottom-3 text-xs text-ink-subtle">
                   {localDescription.length}/500
                 </span>
               </div>
@@ -217,33 +217,33 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
             {/* Dossier */}
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 {t("quizz:settings.folderLabel")}
               </label>
               <input
                 type="text"
                 value={localFolder}
                 onChange={(e) => setLocalFolder(e.target.value)}
-                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                className="w-full rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-primary"
                 placeholder={t("quizz:folderPlaceholder")}
               />
             </div>
 
             {/* Tags */}
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 {t("quizz:settings.tagsLabel")}
               </label>
-              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border-2 border-gray-300 px-3 py-2 focus-within:border-blue-500">
+              <div className="border-border focus-within:border-primary flex flex-wrap items-center gap-1.5 rounded-lg border px-3 py-2">
                 {localTags.map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
+                    className="bg-primary-soft text-primary-ink flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
                   >
                     {tag}
                     <button
                       type="button"
-                      className="text-blue-400 hover:text-red-500"
+                      className="text-primary-ink/60 hover:text-danger"
                       onClick={() =>
                         setLocalTags(localTags.filter((t) => t !== tag))
                       }
@@ -267,10 +267,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
           {/* Right column */}
           <div className="flex w-72 flex-col gap-6">
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 {t("quizz:settings.coverImageLabel")}
               </label>
-              <p className="mb-3 text-xs text-gray-500">
+              <p className="text-ink-subtle mb-3 text-xs">
                 {t("quizz:settings.coverImageHint")}
               </p>
 
@@ -295,7 +295,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50"
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
@@ -304,7 +304,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 </button>
 
                 {localImage && (
-                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-gray-200">
+                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-border">
                     <img
                       src={localImage}
                       alt="cover"
@@ -324,13 +324,13 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
             {/* Salon image */}
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-800">
+              <label className="text-ink mb-1 block text-sm font-bold">
                 Image du salon{" "}
-                <span className="font-normal text-gray-400">
+                <span className="text-ink-subtle font-normal">
                   ({t("common:optional")})
                 </span>
               </label>
-              <p className="mb-3 text-xs text-gray-500">
+              <p className="text-ink-subtle mb-3 text-xs">
                 Affichée en arrière-plan sur l'écran d'attente des joueurs.
               </p>
 
@@ -355,7 +355,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   type="button"
                   onClick={() => salonFileInputRef.current?.click()}
                   disabled={uploadingSalon}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50"
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
@@ -364,7 +364,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 </button>
 
                 {localSalonImage && (
-                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-gray-200">
+                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-border">
                     <img
                       src={localSalonImage}
                       alt="salon"

@@ -120,7 +120,7 @@ const SlideThumbnail = ({ question }: { question: QuestionWithId }) => {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-sm bg-black"
+      className="relative w-full overflow-hidden rounded-md bg-black"
       style={{ aspectRatio: "16/9", containerType: "size" }}
     >
       {hasBg ? (
@@ -228,59 +228,70 @@ const QuizzEditorCard = ({
     <div
       onClick={onClick}
       onContextMenu={onContextMenu}
-      className={twMerge(
-        clsx(
-          "group relative cursor-pointer overflow-hidden rounded-sm border-2 border-gray-200 bg-white",
-          { "border-primary": isActive },
-        ),
-      )}
+      className="group flex cursor-pointer items-center gap-2.5"
     >
-      <div className="absolute top-1 left-1.5 z-10 text-xs font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+      <span
+        className={clsx(
+          "w-4 shrink-0 text-center text-xs font-bold tabular-nums transition-colors",
+          isActive ? "text-primary-ink" : "text-ink-subtle group-hover:text-ink-muted",
+        )}
+      >
         {index + 1}
-      </div>
+      </span>
 
       <div
-        className="absolute top-1 right-6 z-10 flex h-4 w-4 items-center justify-center rounded bg-black/40 p-0.5 text-white"
-        title={t(`quizz:questionType.${question.type}`)}
+        className={twMerge(
+          clsx(
+            "ease-out-soft relative flex-1 overflow-hidden rounded-lg ring-1 transition-all duration-150",
+            isActive
+              ? "ring-primary shadow-[0_2px_14px_rgba(255,153,0,0.28)] ring-2"
+              : "ring-border group-hover:ring-border-strong",
+          ),
+        )}
       >
-        {isImage ? (
-          <img src={Asset} alt="" className="h-full w-full object-contain" />
-        ) : (
-          <Asset className="size-2.5" />
+        <div
+          className="absolute top-1 left-1 z-10 flex h-4 w-4 items-center justify-center rounded bg-black/45 p-0.5 text-white backdrop-blur-sm"
+          title={t(`quizz:questionType.${question.type}`)}
+        >
+          {isImage ? (
+            <img src={Asset} alt="" className="h-full w-full object-contain" />
+          ) : (
+            <Asset className="size-2.5" />
+          )}
+        </div>
+
+        <SlideThumbnail question={question} />
+
+        {canDelete && (
+          <div className="ease-out-soft absolute top-1 right-1 z-10 flex flex-col gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDuplicate()
+              }}
+              className="text-ink-muted hover:text-primary-ink rounded-md bg-white/85 p-1 shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+              title={t("quizz:question.duplicateQuestion")}
+            >
+              <Copy className="size-3" />
+            </button>
+
+            <AlertDialog
+              trigger={
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-ink-muted hover:text-danger rounded-md bg-white/85 p-1 shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              }
+              title={t("quizz:question.deleteQuestion")}
+              description={t("quizz:question.deleteQuestionConfirm")}
+              confirmLabel={t("common:delete")}
+              onConfirm={onDelete}
+            />
+          </div>
         )}
       </div>
-
-      <SlideThumbnail question={question} />
-
-      {canDelete && (
-        <div className="absolute top-1 right-1 z-10 hidden flex-col gap-1 group-hover:flex">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDuplicate()
-            }}
-            className="rounded-sm bg-white/80 p-0.5 text-gray-500 hover:bg-blue-50 hover:text-blue-500"
-            title={t("quizz:question.duplicateQuestion")}
-          >
-            <Copy className="size-3" />
-          </button>
-
-          <AlertDialog
-            trigger={
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className="rounded-sm bg-white/80 p-0.5 text-gray-500 hover:bg-red-50 hover:text-red-500"
-              >
-                <Trash2 className="size-3" />
-              </button>
-            }
-            title={t("quizz:question.deleteQuestion")}
-            description={t("quizz:question.deleteQuestionConfirm")}
-            confirmLabel={t("common:delete")}
-            onConfirm={onDelete}
-          />
-        </div>
-      )}
     </div>
   )
 }

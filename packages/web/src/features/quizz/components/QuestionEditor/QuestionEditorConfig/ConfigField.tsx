@@ -7,17 +7,17 @@ type LabelProps = {
 }
 
 const Label = ({ icon, label, unit = "sec" }: LabelProps) => (
-  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-    {icon}
+  <div className="text-ink flex items-center gap-2 text-sm font-semibold">
+    <span className="text-ink-subtle">{icon}</span>
     {label}
     {unit && (
-      <span className="text-xs font-normal text-gray-400">({unit})</span>
+      <span className="text-ink-subtle text-xs font-normal">({unit})</span>
     )}
   </div>
 )
 
 const Description = ({ children }: { children: string }) => (
-  <p className="text-xs text-gray-400">{children}</p>
+  <p className="text-ink-subtle text-xs leading-relaxed">{children}</p>
 )
 
 const ConfigField = ({ children }: PropsWithChildren) => (

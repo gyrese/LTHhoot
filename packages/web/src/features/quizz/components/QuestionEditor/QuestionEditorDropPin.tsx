@@ -242,8 +242,8 @@ const QuestionEditorDropPin = () => {
             {/* Toolbar */}
             <div className="flex shrink-0 items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-5 py-3 shadow-2xl backdrop-blur-xl">
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/20">
-                  <Crosshair className="h-5 w-5 text-blue-400" />
+                <div className="border-primary/30 bg-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border">
+                  <Crosshair className="text-primary h-5 w-5" />
                 </div>
                 <div>
                   <h4 className="text-base leading-tight font-bold text-white">
@@ -304,7 +304,7 @@ const QuestionEditorDropPin = () => {
               {zones.length === 0 && (
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
                   <div className="flex animate-pulse items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-6 py-4 text-lg font-bold text-white shadow-2xl backdrop-blur-xl">
-                    <MapPin className="h-6 w-6 text-blue-400" />
+                    <MapPin className="text-primary h-6 w-6" />
                     Cliquez pour ajouter une zone cible
                   </div>
                 </div>

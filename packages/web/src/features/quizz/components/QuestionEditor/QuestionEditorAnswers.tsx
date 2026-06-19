@@ -5,6 +5,7 @@ import {
 } from "@rahoot/web/features/game/utils/constants"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -23,6 +24,7 @@ const Checkmark = () => (
 const QuestionEditorAnswers = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
   // This component is only rendered when type === "mcq" (enforced by QuestionEditor switch)
   const mcq = currentQuestion as McqQuestion & { id: string }
 
@@ -68,25 +70,30 @@ const QuestionEditorAnswers = () => {
     }
   }
 
+  const ctrlBtn =
+    "focus-ring text-ink-muted hover:bg-panel hover:text-ink flex size-7 items-center justify-center rounded-md transition-colors active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+
   return (
     <div className="z-10 flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
-        <div className="rounded bg-white px-2 py-1 text-sm font-semibold text-gray-500">
+        <div className="bg-surface/90 text-ink-muted rounded-lg px-2.5 py-1 text-sm font-semibold shadow-sm backdrop-blur-sm">
           {mcq.answers.length}
           {t("quizz:answersCountSuffix")}
         </div>
-        <div className="flex gap-2">
+        <div className="bg-surface/90 flex gap-1 rounded-lg p-1 shadow-sm backdrop-blur-sm">
           <button
             onClick={removeAnswer}
             disabled={mcq.answers.length <= 2}
-            className="flex size-7 items-center justify-center rounded bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-40"
+            className={ctrlBtn}
+            title={t("quizz:removeAnswer", "Retirer une réponse")}
           >
             <Minus className="size-4" />
           </button>
           <button
             onClick={addAnswer}
             disabled={mcq.answers.length >= 4}
-            className="flex size-7 items-center justify-center rounded bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-40"
+            className={ctrlBtn}
+            title={t("quizz:addAnswer", "Ajouter une réponse")}
           >
             <Plus className="size-4" />
           </button>
@@ -94,42 +101,65 @@ const QuestionEditorAnswers = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {mcq.answers.map((answer, i) => {
-          const Icon = ANSWERS_ICONS[i]
-          const isSelected = mcq.solutions.includes(i)
+        <AnimatePresence mode="popLayout" initial={false}>
+          {mcq.answers.map((answer, i) => {
+            const Icon = ANSWERS_ICONS[i]
+            const isSelected = mcq.solutions.includes(i)
 
-          return (
-            <div
-              key={i}
-              className={clsx(
-                "shadow-inset flex items-center gap-3 rounded px-4 py-6",
-                ANSWERS_COLORS[i],
-              )}
-            >
-              <Icon className="h-6 w-6 shrink-0 fill-white" />
-              <div className="flex flex-1 items-center justify-between gap-1.5 drop-shadow-md">
-                <input
-                  className="w-full bg-transparent font-semibold text-white placeholder-white/70 outline-none"
-                  placeholder={t("quizz:addAnswerPlaceholder")}
-                  value={answer}
-                  onChange={(e) => updateAnswer(i, e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleSolution(i)}
-                  className={clsx(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                    isSelected
-                      ? "border-white bg-white text-green-600"
-                      : "border-white/60 bg-transparent",
-                  )}
-                >
-                  {isSelected && <Checkmark />}
-                </button>
-              </div>
-            </div>
-          )
-        })}
+            return (
+              <motion.div
+                key={i}
+                layout={!reduceMotion}
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className={clsx(
+                  "shadow-inset flex items-center gap-3 rounded-xl px-4 py-6",
+                  ANSWERS_COLORS[i],
+                )}
+              >
+                <Icon className="h-6 w-6 shrink-0 fill-white" />
+                <div className="flex flex-1 items-center justify-between gap-1.5 drop-shadow-md">
+                  <input
+                    className="w-full bg-transparent font-semibold text-white placeholder-white/70 outline-none"
+                    placeholder={t("quizz:addAnswerPlaceholder")}
+                    value={answer}
+                    onChange={(e) => updateAnswer(i, e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleSolution(i)}
+                    aria-pressed={isSelected}
+                    title={t("quizz:markCorrect", "Marquer comme correcte")}
+                    className={clsx(
+                      "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-all active:scale-90",
+                      isSelected
+                        ? "border-white bg-white text-green-600"
+                        : "border-white/60 bg-transparent hover:border-white",
+                    )}
+                  >
+                    <AnimatePresence initial={false}>
+                      {isSelected && (
+                        <motion.span
+                          initial={reduceMotion ? false : { scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={reduceMotion ? { opacity: 0 } : { scale: 0 }}
+                          transition={{
+                            duration: 0.16,
+                            ease: [0.34, 1.56, 0.64, 1],
+                          }}
+                        >
+                          <Checkmark />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </button>
+                </div>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
       </div>
     </div>
   )

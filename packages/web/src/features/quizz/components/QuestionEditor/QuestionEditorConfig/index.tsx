@@ -1,6 +1,7 @@
 import ConfigField from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField"
 import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigNumberInput"
 import ConfigSection from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection"
+import ConfigToggle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigToggle"
 import QuestionEditorAnswerReveal from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorAnswerReveal"
 import QuestionEditorTypeSelector from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTypeSelector"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
@@ -18,6 +19,11 @@ import {
   Play,
   Grid,
   Columns,
+  Shapes,
+  Layers,
+  Sparkles,
+  CheckCircle2,
+  MessageSquareReply,
 } from "lucide-react"
 import React from "react"
 import { useTranslation } from "react-i18next"
@@ -92,291 +98,276 @@ const QuestionEditorConfig = () => {
     return null
   }
 
+  const ytChip = (active: boolean) =>
+    clsx(
+      "focus-ring flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold uppercase transition-all duration-150",
+      active
+        ? "border-primary bg-primary text-secondary"
+        : "border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink",
+    )
+
   return (
-    <aside className="z-10 flex w-68 shrink-0 flex-col gap-6 overflow-auto border-l border-gray-200 bg-white px-4 pb-4">
-      <ConfigSection title="Type Slide" defaultOpen={false}>
-        <QuestionEditorTypeSelector />
-      </ConfigSection>
+    <aside className="border-border bg-surface scrollbar-light z-10 flex w-68 shrink-0 flex-col overflow-auto border-l">
+      <div className="border-border/70 bg-surface sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3">
+        <span className="text-ink-muted text-xs font-bold">Inspecteur</span>
+      </div>
 
-      {isYoutube && (
-        <ConfigSection title="📺 CONFIGURATION YOUTUBE" defaultOpen={true}>
-          <div className="flex flex-col gap-4 rounded-xl border-2 border-red-100 bg-red-50/30 p-2">
-            {/* Autoplay & Mute */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() =>
-                  handleUpdateElement(selectedId!, {
-                    autoplay: !selectedElement!.autoplay,
-                  })
-                }
-                className={clsx(
-                  "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold uppercase shadow-sm transition-all",
-                  selectedElement!.autoplay
-                    ? "border-red-600 bg-red-500 text-white"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                <Play className="size-3" /> Autoplay
-              </button>
-              <button
-                onClick={() =>
-                  handleUpdateElement(selectedId!, {
-                    mute: !selectedElement!.mute,
-                  })
-                }
-                className={clsx(
-                  "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold uppercase shadow-sm transition-all",
-                  selectedElement!.mute
-                    ? "border-red-600 bg-red-500 text-white"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                <Volume2 className="size-3" /> Muet
-              </button>
-            </div>
-
-            {/* Loop & Controls */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() =>
-                  handleUpdateElement(selectedId!, {
-                    loop: !selectedElement!.loop,
-                  })
-                }
-                className={clsx(
-                  "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold uppercase shadow-sm transition-all",
-                  selectedElement!.loop
-                    ? "border-red-600 bg-red-500 text-white"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                <Repeat className="size-3" /> Boucle
-              </button>
-              <button
-                onClick={() =>
-                  handleUpdateElement(selectedId!, {
-                    controls: !selectedElement!.controls,
-                  })
-                }
-                className={clsx(
-                  "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold uppercase shadow-sm transition-all",
-                  selectedElement!.controls
-                    ? "border-red-600 bg-red-500 text-white"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                <Settings className="size-3" /> Contrôles
-              </button>
-            </div>
-
-            <div className="my-1 h-px bg-red-100" />
-
-            {/* Start & End Time */}
-            <div className="flex flex-col gap-3">
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Clock className="size-4" />}
-                  label="Début (sec)"
-                />
-                <ConfigNumberInput
-                  value={(selectedElement as any).startTime || 0}
-                  min={0}
-                  onChange={(val) =>
-                    handleUpdateElement(selectedId!, { startTime: val })
+      <div className="flex flex-col px-4 pb-4">
+        {isYoutube && (
+          <ConfigSection
+            title="Vidéo YouTube"
+            icon={<Play className="size-4" />}
+            defaultOpen={true}
+          >
+            <div className="border-border bg-panel flex flex-col gap-4 rounded-xl border p-3">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() =>
+                    handleUpdateElement(selectedId!, {
+                      autoplay: !selectedElement!.autoplay,
+                    })
                   }
-                />
-              </ConfigField>
-
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Clock className="size-4" />}
-                  label="Fin (sec)"
-                />
-                <ConfigNumberInput
-                  value={(selectedElement as any).endTime || 0}
-                  min={0}
-                  onChange={(val) =>
-                    handleUpdateElement(selectedId!, { endTime: val })
+                  className={ytChip(Boolean(selectedElement!.autoplay))}
+                >
+                  <Play className="size-3" /> Autoplay
+                </button>
+                <button
+                  onClick={() =>
+                    handleUpdateElement(selectedId!, {
+                      mute: !selectedElement!.mute,
+                    })
                   }
-                />
-                <ConfigField.Description>
-                  0 pour désactiver
-                </ConfigField.Description>
-              </ConfigField>
+                  className={ytChip(Boolean(selectedElement!.mute))}
+                >
+                  <Volume2 className="size-3" /> Muet
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() =>
+                    handleUpdateElement(selectedId!, {
+                      loop: !selectedElement!.loop,
+                    })
+                  }
+                  className={ytChip(Boolean(selectedElement!.loop))}
+                >
+                  <Repeat className="size-3" /> Boucle
+                </button>
+                <button
+                  onClick={() =>
+                    handleUpdateElement(selectedId!, {
+                      controls: !selectedElement!.controls,
+                    })
+                  }
+                  className={ytChip(Boolean(selectedElement!.controls))}
+                >
+                  <Settings className="size-3" /> Contrôles
+                </button>
+              </div>
+
+              <div className="bg-border my-1 h-px" />
+
+              <div className="flex flex-col gap-3">
+                <ConfigField>
+                  <ConfigField.Label
+                    icon={<Clock className="size-4" />}
+                    label="Début (sec)"
+                  />
+                  <ConfigNumberInput
+                    value={(selectedElement as any).startTime || 0}
+                    min={0}
+                    onChange={(val) =>
+                      handleUpdateElement(selectedId!, { startTime: val })
+                    }
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <ConfigField.Label
+                    icon={<Clock className="size-4" />}
+                    label="Fin (sec)"
+                  />
+                  <ConfigNumberInput
+                    value={(selectedElement as any).endTime || 0}
+                    min={0}
+                    onChange={(val) =>
+                      handleUpdateElement(selectedId!, { endTime: val })
+                    }
+                  />
+                  <ConfigField.Description>
+                    0 pour désactiver
+                  </ConfigField.Description>
+                </ConfigField>
+              </div>
             </div>
-          </div>
+          </ConfigSection>
+        )}
+
+        <ConfigSection
+          title={t("quizz:question.config.typeTitle", "Type de question")}
+          icon={<Shapes className="size-4" />}
+          defaultOpen={false}
+        >
+          <QuestionEditorTypeSelector />
         </ConfigSection>
-      )}
-
-      <ConfigSection
-        title={t("quizz:question.config.propertiesTitle")}
-        defaultOpen={false}
-      >
-        <ConfigField>
-          <ConfigField.Label
-            icon={<Contrast className="size-4" />}
-            label={t("quizz:question.config.opacity")}
-            unit=""
-          />
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={(currentQuestion?.backgroundOpacity ?? 0.5) * 100}
-              onChange={(e) =>
-                handleUpdateQuestion("backgroundOpacity")(
-                  Number(e.target.value) / 100,
-                )
-              }
-              className="accent-primary h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
-            />
-            <span className="w-8 text-right text-xs font-medium text-gray-500">
-              {Math.round((currentQuestion?.backgroundOpacity ?? 0.5) * 100)}%
-            </span>
-          </div>
-          <ConfigField.Description>
-            {t("quizz:question.config.opacityHint")}
-          </ConfigField.Description>
-        </ConfigField>
-
-        <ConfigField>
-          <ConfigField.Label
-            icon={<Clock className="size-4" />}
-            label={t(
-              isSlide
-                ? "quizz:question.config.displayDuration"
-                : "quizz:question.config.questionDisplay",
-            )}
-          />
-          <ConfigNumberInput
-            value={currentQuestion?.cooldown}
-            min={3}
-            onChange={(val) => {
-              handleUpdateQuestion("cooldown")(val)
-            }}
-          />
-          <ConfigField.Description>
-            {t(
-              isSlide
-                ? "quizz:question.config.displayDurationHint"
-                : "quizz:question.config.questionDisplayHint",
-            )}
-          </ConfigField.Description>
-        </ConfigField>
 
         {!isSlide && (
+          <ConfigSection
+            title={t("quizz:question.config.answerTitle", "Réponse")}
+            icon={<CheckCircle2 className="size-4" />}
+            defaultOpen={false}
+          >
+            <QuestionEditorAnswerReveal />
+          </ConfigSection>
+        )}
+
+        <ConfigSection
+          title={t("quizz:question.config.timingTitle", "Minutage & score")}
+          icon={<Timer className="size-4" />}
+          defaultOpen={true}
+        >
           <ConfigField>
             <ConfigField.Label
-              icon={<Timer className="size-4" />}
-              label={t("quizz:question.config.answerTime")}
+              icon={<Clock className="size-4" />}
+              label={t(
+                isSlide
+                  ? "quizz:question.config.displayDuration"
+                  : "quizz:question.config.questionDisplay",
+              )}
             />
             <ConfigNumberInput
-              value={currentQuestion?.time}
-              min={5}
-              onChange={handleUpdateQuestion("time")}
+              value={currentQuestion?.cooldown}
+              min={3}
+              onChange={(val) => {
+                handleUpdateQuestion("cooldown")(val)
+              }}
             />
             <ConfigField.Description>
-              {t("quizz:question.config.answerTimeHint")}
+              {t(
+                isSlide
+                  ? "quizz:question.config.displayDurationHint"
+                  : "quizz:question.config.questionDisplayHint",
+              )}
             </ConfigField.Description>
           </ConfigField>
-        )}
 
-        {!isSlide && (
-          <ConfigField>
-            <div className="flex items-center justify-between">
+          {!isSlide && (
+            <ConfigField>
               <ConfigField.Label
-                icon={<Trophy className="size-4" />}
-                label={t("quizz:question.config.showLeaderboard")}
-                unit=""
+                icon={<Timer className="size-4" />}
+                label={t("quizz:question.config.answerTime")}
               />
-              <button
-                type="button"
-                role="switch"
-                aria-checked={Boolean(currentQuestion?.showLeaderboard)}
-                onClick={() =>
-                  updateQuestion(currentIndex, {
-                    showLeaderboard: !currentQuestion?.showLeaderboard,
-                  })
+              <ConfigNumberInput
+                value={currentQuestion?.time}
+                min={5}
+                onChange={handleUpdateQuestion("time")}
+              />
+              <ConfigField.Description>
+                {t("quizz:question.config.answerTimeHint")}
+              </ConfigField.Description>
+            </ConfigField>
+          )}
+
+          {!isSlide && (
+            <ConfigToggle
+              icon={<Trophy className="size-4" />}
+              label={t("quizz:question.config.showLeaderboard")}
+              checked={Boolean(currentQuestion?.showLeaderboard)}
+              onChange={(value) =>
+                updateQuestion(currentIndex, { showLeaderboard: value })
+              }
+              description={t("quizz:question.config.showLeaderboardHint")}
+            />
+          )}
+        </ConfigSection>
+
+        <ConfigSection
+          title={t("quizz:question.config.appearanceTitle", "Apparence & révélation")}
+          icon={<Sparkles className="size-4" />}
+          defaultOpen={false}
+        >
+          <ConfigField>
+            <ConfigField.Label
+              icon={<Contrast className="size-4" />}
+              label={t("quizz:question.config.opacity")}
+              unit=""
+            />
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={(currentQuestion?.backgroundOpacity ?? 0.5) * 100}
+                onChange={(e) =>
+                  handleUpdateQuestion("backgroundOpacity")(
+                    Number(e.target.value) / 100,
+                  )
                 }
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                  currentQuestion?.showLeaderboard ? "bg-primary" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                    currentQuestion?.showLeaderboard
-                      ? "translate-x-4"
-                      : "translate-x-0.5"
-                  }`}
-                />
-              </button>
+                className="accent-primary bg-border h-1.5 w-full cursor-pointer appearance-none rounded-lg"
+              />
+              <span className="text-ink-muted w-8 text-right text-xs font-medium tabular-nums">
+                {Math.round((currentQuestion?.backgroundOpacity ?? 0.5) * 100)}%
+              </span>
             </div>
             <ConfigField.Description>
-              {t("quizz:question.config.showLeaderboardHint")}
+              {t("quizz:question.config.opacityHint")}
             </ConfigField.Description>
           </ConfigField>
-        )}
-      </ConfigSection>
 
-      <ConfigSection title={t("quizz:question.config.revelationTitle", "RÉVÉLATION DE L'IMAGE")} defaultOpen={false}>
-        <div className="flex flex-col gap-4">
-          <ConfigField>
-            <div className="flex items-center justify-between">
-              <ConfigField.Label
-                icon={<Grid className="size-4" />}
-                label={t("quizz:question.config.revelationEnabled", "Activer l'effet")}
-                unit=""
-              />
-              <button
-                type="button"
-                role="switch"
-                aria-checked={Boolean(currentQuestion?.revelationEnabled)}
-                onClick={() =>
-                  updateQuestion(currentIndex, {
-                    revelationEnabled: !currentQuestion?.revelationEnabled,
-                  })
-                }
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                  currentQuestion?.revelationEnabled ? "bg-primary" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                    currentQuestion?.revelationEnabled
-                      ? "translate-x-4"
-                      : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-            </div>
-            <ConfigField.Description>
-              {t("quizz:question.config.revelationEnabledHint", "Dévoile progressivement l'image d'arrière-plan.")}
-            </ConfigField.Description>
-          </ConfigField>
+          <ConfigToggle
+            icon={<Grid className="size-4" />}
+            label={t("quizz:question.config.revelationEnabled", "Activer l'effet")}
+            checked={Boolean(currentQuestion?.revelationEnabled)}
+            onChange={(value) =>
+              updateQuestion(currentIndex, { revelationEnabled: value })
+            }
+            description={t(
+              "quizz:question.config.revelationEnabledHint",
+              "Dévoile progressivement l'image d'arrière-plan.",
+            )}
+          />
 
           {currentQuestion?.revelationEnabled && (
             <>
               <ConfigField>
                 <ConfigField.Label
                   icon={<Clock className="size-4" />}
-                  label={t("quizz:question.config.revealDuration", "Durée de révélation")}
+                  label={t(
+                    "quizz:question.config.revealDuration",
+                    "Durée de révélation",
+                  )}
                 />
                 <ConfigNumberInput
-                  value={currentQuestion.revealDuration ?? (isSlide ? currentQuestion.cooldown : (currentQuestion.cooldown + currentQuestion.time))}
+                  value={
+                    currentQuestion.revealDuration ??
+                    (isSlide
+                      ? currentQuestion.cooldown
+                      : currentQuestion.cooldown + currentQuestion.time)
+                  }
                   min={3}
-                  max={isSlide ? currentQuestion.cooldown : (currentQuestion.cooldown + currentQuestion.time)}
+                  max={
+                    isSlide
+                      ? currentQuestion.cooldown
+                      : currentQuestion.cooldown + currentQuestion.time
+                  }
                   onChange={handleUpdateQuestion("revealDuration")}
                 />
                 <ConfigField.Description>
-                  {t("quizz:question.config.revealDurationHint", "Temps (sec) pour dévoiler complètement l'image.")}
+                  {t(
+                    "quizz:question.config.revealDurationHint",
+                    "Temps (sec) pour dévoiler complètement l'image.",
+                  )}
                 </ConfigField.Description>
               </ConfigField>
 
               <ConfigField>
                 <ConfigField.Label
                   icon={<Columns className="size-4" />}
-                  label={t("quizz:question.config.revealCols", "Colonnes (largeur)")}
+                  label={t(
+                    "quizz:question.config.revealCols",
+                    "Colonnes (largeur)",
+                  )}
                 />
                 <ConfigNumberInput
                   value={currentQuestion.gridCols ?? 8}
@@ -389,7 +380,10 @@ const QuestionEditorConfig = () => {
               <ConfigField>
                 <ConfigField.Label
                   icon={<Grid className="size-4" />}
-                  label={t("quizz:question.config.revealRows", "Lignes (hauteur)")}
+                  label={t(
+                    "quizz:question.config.revealRows",
+                    "Lignes (hauteur)",
+                  )}
                 />
                 <ConfigNumberInput
                   value={currentQuestion.gridRows ?? 6}
@@ -402,106 +396,146 @@ const QuestionEditorConfig = () => {
               <ConfigField>
                 <ConfigField.Label
                   icon={<Settings className="size-4" />}
-                  label={t("quizz:question.config.revealStyle", "Type d'apparition")}
+                  label={t(
+                    "quizz:question.config.revealStyle",
+                    "Type d'apparition",
+                  )}
                 />
                 <select
                   value={currentQuestion.revelationStyle ?? "random"}
-                  onChange={(e) => handleUpdateQuestion("revelationStyle")(e.target.value)}
-                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm outline-none transition-all hover:border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                  onChange={(e) =>
+                    handleUpdateQuestion("revelationStyle")(e.target.value)
+                  }
+                  className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold outline-none transition-all hover:border-border-strong focus:ring-2"
                 >
-                  <option value="random">{t("quizz:question.config.revealStyleOpt.random", "Aléatoire")}</option>
-                  <option value="blur">{t("quizz:question.config.revealStyleOpt.blur", "Défloutage progressif")}</option>
-                  <option value="random-grid">{t("quizz:question.config.revealStyleOpt.randomGrid", "Cases aléatoires")}</option>
-                  <option value="center-out">{t("quizz:question.config.revealStyleOpt.centerOut", "Centre vers bords")}</option>
-                  <option value="diagonal-wave">{t("quizz:question.config.revealStyleOpt.diagonalWave", "Vague diagonale")}</option>
-                  <option value="spiral">{t("quizz:question.config.revealStyleOpt.spiral", "Spirale")}</option>
-                  <option value="left-to-right">{t("quizz:question.config.revealStyleOpt.leftToRight", "Gauche à droite")}</option>
-                  <option value="top-to-bottom">{t("quizz:question.config.revealStyleOpt.topToBottom", "Haut en bas")}</option>
+                  <option value="random">
+                    {t("quizz:question.config.revealStyleOpt.random", "Aléatoire")}
+                  </option>
+                  <option value="blur">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.blur",
+                      "Défloutage progressif",
+                    )}
+                  </option>
+                  <option value="random-grid">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.randomGrid",
+                      "Cases aléatoires",
+                    )}
+                  </option>
+                  <option value="center-out">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.centerOut",
+                      "Centre vers bords",
+                    )}
+                  </option>
+                  <option value="diagonal-wave">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.diagonalWave",
+                      "Vague diagonale",
+                    )}
+                  </option>
+                  <option value="spiral">
+                    {t("quizz:question.config.revealStyleOpt.spiral", "Spirale")}
+                  </option>
+                  <option value="left-to-right">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.leftToRight",
+                      "Gauche à droite",
+                    )}
+                  </option>
+                  <option value="top-to-bottom">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.topToBottom",
+                      "Haut en bas",
+                    )}
+                  </option>
                 </select>
               </ConfigField>
             </>
           )}
-        </div>
-      </ConfigSection>
-
-      {!isSlide && (
-        <ConfigSection title="Réponse" defaultOpen={false}>
-          <QuestionEditorAnswerReveal />
         </ConfigSection>
-      )}
 
-      <ConfigSection
-        title={t("quizz:question.config.layersTitle")}
-        defaultOpen={true}
-      >
-        <div className="flex flex-col gap-1.5">
-          {[...(currentQuestion?.elements || [])]
-            .reverse()
-            .map((el, i, arr) => {
-              const isSelected = selectedId === el.id
-              const originalIndex = arr.length - 1 - i
+        <ConfigSection
+          title={t("quizz:question.config.layersTitle")}
+          icon={<Layers className="size-4" />}
+          defaultOpen={true}
+        >
+          <div className="flex flex-col gap-1.5">
+            {[...(currentQuestion?.elements || [])]
+              .reverse()
+              .map((el, i, arr) => {
+                const isSelected = selectedId === el.id
+                const originalIndex = arr.length - 1 - i
 
-              return (
-                <div
-                  key={el.id}
-                  onClick={() => setSelectedId(el.id)}
-                  className={clsx(
-                    "flex cursor-pointer items-center justify-between rounded-md border p-2 text-[11px] shadow-sm transition-all",
-                    isSelected
-                      ? "bg-primary/5 border-primary ring-primary/20 ring-1"
-                      : "border-gray-200 bg-gray-50 hover:bg-gray-100",
-                  )}
-                >
-                  <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                    <div
-                      className={clsx(
-                        "size-1.5 rounded-full",
-                        isSelected ? "bg-primary" : "bg-gray-300",
-                      )}
-                    />
-                    <span className="shrink-0 font-bold text-gray-700 capitalize">
-                      {el.type}
-                    </span>
-                    {el.type === "text" && (
-                      <span className="truncate text-gray-500 italic">
-                        "{el.text}"
-                      </span>
+                return (
+                  <div
+                    key={el.id}
+                    onClick={() => setSelectedId(el.id)}
+                    className={clsx(
+                      "ease-out-soft flex cursor-pointer items-center justify-between rounded-lg border p-2 text-[11px] transition-all duration-150",
+                      isSelected
+                        ? "border-primary bg-primary-soft"
+                        : "border-border bg-surface hover:bg-panel",
                     )}
-                  </div>
+                  >
+                    <div className="flex flex-1 items-center gap-2 overflow-hidden">
+                      <div
+                        className={clsx(
+                          "size-1.5 rounded-full",
+                          isSelected ? "bg-primary" : "bg-border-strong",
+                        )}
+                      />
+                      <span
+                        className={clsx(
+                          "shrink-0 font-bold capitalize",
+                          isSelected ? "text-primary-ink" : "text-ink",
+                        )}
+                      >
+                        {el.type}
+                      </span>
+                      {el.type === "text" && (
+                        <span className="text-ink-subtle truncate italic">
+                          "{el.text}"
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="ml-2 flex items-center gap-0.5">
-                    <button
-                      onClick={handleMoveLayer(el.id, "up")}
-                      disabled={originalIndex === arr.length - 1}
-                      className="hover:text-primary rounded p-1 text-gray-400 hover:bg-white disabled:opacity-20"
-                    >
-                      <ChevronUp className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={handleMoveLayer(el.id, "down")}
-                      disabled={originalIndex === 0}
-                      className="hover:text-primary rounded p-1 text-gray-400 hover:bg-white disabled:opacity-20"
-                    >
-                      <ChevronDown className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={handleDeleteLayer(el.id)}
-                      className="ml-1 rounded p-1 text-gray-400 hover:bg-white hover:text-red-500"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                    <div className="ml-2 flex items-center gap-0.5">
+                      <button
+                        onClick={handleMoveLayer(el.id, "up")}
+                        disabled={originalIndex === arr.length - 1}
+                        className="text-ink-subtle hover:text-primary-ink rounded p-1 hover:bg-white disabled:opacity-20"
+                      >
+                        <ChevronUp className="size-3.5" />
+                      </button>
+                      <button
+                        onClick={handleMoveLayer(el.id, "down")}
+                        disabled={originalIndex === 0}
+                        className="text-ink-subtle hover:text-primary-ink rounded p-1 hover:bg-white disabled:opacity-20"
+                      >
+                        <ChevronDown className="size-3.5" />
+                      </button>
+                      <button
+                        onClick={handleDeleteLayer(el.id)}
+                        className="text-ink-subtle hover:text-danger ml-1 rounded p-1 hover:bg-white"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )
-            })}
-          {(!currentQuestion?.elements ||
-            currentQuestion.elements.length === 0) && (
-            <p className="py-4 text-center text-xs text-gray-400 italic">
-              {t("quizz:question.config.noLayers")}
-            </p>
-          )}
-        </div>
-      </ConfigSection>
+                )
+              })}
+            {(!currentQuestion?.elements ||
+              currentQuestion.elements.length === 0) && (
+              <div className="text-ink-subtle flex flex-col items-center gap-2 py-6 text-center">
+                <MessageSquareReply className="size-5 opacity-50" />
+                <p className="text-xs">{t("quizz:question.config.noLayers")}</p>
+              </div>
+            )}
+          </div>
+        </ConfigSection>
+      </div>
     </aside>
   )
 }

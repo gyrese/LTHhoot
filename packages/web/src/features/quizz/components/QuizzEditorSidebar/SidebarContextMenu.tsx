@@ -1,6 +1,10 @@
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Palette } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { motion, useReducedMotion } from "motion/react"
 import { type CSSProperties, useEffect, useRef } from "react"
+
+const itemClass =
+  "focus-ring flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left font-medium transition-colors duration-150 hover:bg-panel"
 
 export type SidebarAction =
   | "add"
@@ -32,6 +36,7 @@ const SidebarContextMenu = ({
   onAction,
 }: SidebarContextMenuProps) => {
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,69 +64,67 @@ const SidebarContextMenu = ({
   const menuStyle: CSSProperties = {
     top: Math.min(y, window.innerHeight - 250),
     left: Math.min(x, window.innerWidth - 200),
+    transformOrigin: "top left",
   }
 
   return (
-    <div
+    <motion.div
       ref={menuRef}
-      className="pointer-events-auto fixed z-[100] w-56 rounded-xl border border-gray-200 bg-white py-1.5 text-sm text-gray-700 shadow-2xl"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+      className="border-border bg-elevated text-ink pointer-events-auto fixed z-[100] w-56 rounded-xl border p-1.5 text-sm shadow-2xl shadow-black/20"
       style={menuStyle}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button
-        onClick={() => handleAction("add")}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors hover:bg-gray-100"
-      >
-        <Plus className="size-4 text-gray-500" />{" "}
+      <button onClick={() => handleAction("add")} className={itemClass}>
+        <Plus className="text-ink-subtle size-4" />{" "}
         {t("quizz:addQuestion", "Nouvelle slide")}
       </button>
-      <button
-        onClick={() => handleAction("duplicate")}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors hover:bg-gray-100"
-      >
-        <Copy className="size-4 text-gray-500" />{" "}
+      <button onClick={() => handleAction("duplicate")} className={itemClass}>
+        <Copy className="text-ink-subtle size-4" />{" "}
         {t("quizz:question.duplicateQuestion", "Dupliquer")}
       </button>
 
-      <div className="mx-2 my-1.5 h-px bg-gray-100" />
+      <div className="bg-border/70 mx-1.5 my-1.5 h-px" />
 
       <button
         onClick={() => handleAction("moveUp")}
         disabled={!canMoveUp}
-        className={`flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors ${canMoveUp ? "hover:bg-gray-100" : "cursor-not-allowed opacity-30"}`}
+        className={`${itemClass} ${!canMoveUp && "cursor-not-allowed opacity-30 hover:bg-transparent"}`}
       >
-        <ArrowUp className="size-4 text-gray-500" />{" "}
+        <ArrowUp className="text-ink-subtle size-4" />{" "}
         {t("common:moveUp", "Monter")}
       </button>
       <button
         onClick={() => handleAction("moveDown")}
         disabled={!canMoveDown}
-        className={`flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors ${canMoveDown ? "hover:bg-gray-100" : "cursor-not-allowed opacity-30"}`}
+        className={`${itemClass} ${!canMoveDown && "cursor-not-allowed opacity-30 hover:bg-transparent"}`}
       >
-        <ArrowDown className="size-4 text-gray-500" />{" "}
+        <ArrowDown className="text-ink-subtle size-4" />{" "}
         {t("common:moveDown", "Descendre")}
       </button>
 
-      <div className="mx-2 my-1.5 h-px bg-gray-100" />
+      <div className="bg-border/70 mx-1.5 my-1.5 h-px" />
 
       <button
         onClick={() => handleAction("changeBackground")}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors hover:bg-gray-100"
+        className={itemClass}
       >
-        <Palette className="size-4 text-gray-500" />{" "}
+        <Palette className="text-ink-subtle size-4" />{" "}
         {t("quizz:question.config.propertiesTitle", "Arrière-plan...")}
       </button>
 
-      <div className="mx-2 my-1.5 h-px bg-gray-100" />
+      <div className="bg-border/70 mx-1.5 my-1.5 h-px" />
 
       <button
         onClick={() => handleAction("delete")}
         disabled={!canDelete}
-        className={`flex w-full items-center gap-3 px-3 py-2 text-left font-medium transition-colors ${canDelete ? "text-red-600 hover:bg-red-50" : "cursor-not-allowed opacity-30"}`}
+        className={`focus-ring flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left font-medium transition-colors duration-150 ${canDelete ? "text-danger hover:bg-danger-soft" : "cursor-not-allowed opacity-30"}`}
       >
         <Trash2 className="size-4" /> {t("common:delete", "Supprimer")}
       </button>
-    </div>
+    </motion.div>
   )
 }
 

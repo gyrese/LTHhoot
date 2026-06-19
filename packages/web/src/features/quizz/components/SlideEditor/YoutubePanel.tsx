@@ -1,5 +1,6 @@
 import type { YoutubeElement } from "@rahoot/common/types/game"
 import { X } from "lucide-react"
+import clsx from "clsx"
 import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 
@@ -74,26 +75,37 @@ const YoutubePanel = ({ onAdd, onClose }: YoutubePanelProps) => {
     value: boolean
     onChange: (_v: boolean) => void
   }) => (
-    <label className="flex items-center justify-between gap-2 text-xs text-gray-700">
+    <label className="text-ink flex items-center justify-between gap-2 text-xs">
       {label}
       <button
         type="button"
+        role="switch"
+        aria-checked={value}
         onClick={() => onChange(!value)}
-        className={`h-5 w-9 rounded-full transition-colors ${value ? "bg-red-500" : "bg-gray-300"}`}
+        className={clsx(
+          "focus-ring h-5 w-9 rounded-full transition-colors duration-150",
+          value ? "bg-primary" : "bg-border-strong",
+        )}
       >
         <span
-          className={`mx-0.5 block h-4 w-4 rounded-full bg-white shadow transition-transform ${value ? "translate-x-4" : "translate-x-0"}`}
+          className={clsx(
+            "mx-0.5 block h-4 w-4 rounded-full bg-white shadow transition-transform duration-150",
+            value ? "translate-x-4" : "translate-x-0",
+          )}
         />
       </button>
     </label>
   )
 
   return (
-    <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
+    <div className="border-border bg-elevated w-72 rounded-xl border p-4 shadow-xl shadow-black/10">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-800">YouTube</span>
-        <button onClick={onClose} className="rounded p-1 hover:bg-gray-100">
-          <X className="size-4 text-gray-500" />
+        <span className="text-ink text-sm font-semibold">YouTube</span>
+        <button
+          onClick={onClose}
+          className="focus-ring hover:bg-panel rounded-lg p-1 transition-colors"
+        >
+          <X className="text-ink-subtle size-4" />
         </button>
       </div>
 
@@ -103,14 +115,14 @@ const YoutubePanel = ({ onAdd, onClose }: YoutubePanelProps) => {
         placeholder="URL ou ID de la vidéo"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="mb-3 w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-red-400"
+        className="border-border text-ink focus:border-primary mb-3 w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/30"
       />
 
       {videoId && (
         <img
           src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
           alt="thumbnail"
-          className="mb-3 w-full rounded object-cover"
+          className="mb-3 w-full rounded-lg object-cover"
         />
       )}
 
@@ -122,24 +134,24 @@ const YoutubePanel = ({ onAdd, onClose }: YoutubePanelProps) => {
       </div>
 
       <div className="mb-4 flex gap-2">
-        <label className="flex-1 text-xs text-gray-600">
+        <label className="text-ink-muted flex-1 text-xs">
           Début (s)
           <input
             type="number"
             min={0}
             value={startTime}
             onChange={(e) => setStartTime(Number(e.target.value))}
-            className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs outline-none"
+            className="border-border text-ink focus:border-primary mt-1 w-full rounded-lg border px-2 py-1 text-xs outline-none"
           />
         </label>
-        <label className="flex-1 text-xs text-gray-600">
+        <label className="text-ink-muted flex-1 text-xs">
           Fin (s, 0 = fin)
           <input
             type="number"
             min={0}
             value={endTime}
             onChange={(e) => setEndTime(Number(e.target.value))}
-            className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs outline-none"
+            className="border-border text-ink focus:border-primary mt-1 w-full rounded-lg border px-2 py-1 text-xs outline-none"
           />
         </label>
       </div>
@@ -148,7 +160,7 @@ const YoutubePanel = ({ onAdd, onClose }: YoutubePanelProps) => {
         type="button"
         disabled={!videoId}
         onClick={handleAdd}
-        className="w-full rounded bg-red-500 py-1.5 text-sm font-semibold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+        className="bg-primary text-secondary w-full rounded-lg py-2 text-sm font-semibold transition-transform duration-150 hover:brightness-[0.97] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Insérer la vidéo
       </button>

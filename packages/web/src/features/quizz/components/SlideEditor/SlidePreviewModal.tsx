@@ -1,5 +1,6 @@
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { X } from "lucide-react"
+import { motion, useReducedMotion } from "motion/react"
 import { useEffect, type CSSProperties } from "react"
 import SlideCanvas from "./SlideCanvas"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
@@ -25,6 +26,7 @@ type Props = {
 
 const SlidePreviewModal = ({ question, onClose }: Props) => {
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -86,7 +88,10 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
   }
 
   return (
-    <div
+    <motion.div
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
       className="fixed inset-0 z-[9999] flex flex-col bg-black text-white"
       onClick={onClose}
     >
@@ -211,7 +216,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       >
         <X className="size-6" />
       </button>
-    </div>
+    </motion.div>
   )
 }
 

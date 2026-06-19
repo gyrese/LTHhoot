@@ -38,13 +38,18 @@ const QuestionEditorTypeSelector = () => {
           type="button"
           onClick={() => changeQuestionType(currentIndex, type)}
           className={clsx(
-            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition-all",
+            "focus-ring ease-out-soft flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-[0.99]",
             currentQuestion.type === type
-              ? "bg-primary scale-[1.02] text-white shadow-lg"
-              : "border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100",
+              ? "bg-primary text-secondary shadow-[0_2px_12px_rgba(255,153,0,0.3)]"
+              : "border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink border",
           )}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
+          <div
+            className={clsx(
+              "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg",
+              currentQuestion.type === type ? "bg-black/10" : "bg-panel",
+            )}
+          >
             {img ? (
               <img
                 src={img}

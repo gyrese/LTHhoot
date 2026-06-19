@@ -23,6 +23,7 @@ import {
   Redo2,
 } from "lucide-react"
 import clsx from "clsx"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -51,6 +52,7 @@ const SlideToolbar = () => {
     canRedo,
   } = useQuizzEditor()
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [showYoutubePanel, setShowYoutubePanel] = useState(false)
@@ -190,7 +192,7 @@ const SlideToolbar = () => {
     el.type === "text" || el.type === "shape"
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 shadow-sm">
+    <div className="border-border bg-surface flex items-center gap-0.5 rounded-xl border px-1.5 py-1 shadow-sm shadow-black/5">
       <input
         ref={fileInputRef}
         type="file"
@@ -215,8 +217,8 @@ const SlideToolbar = () => {
           className={clsx(
             "rounded p-1.5 transition-colors",
             canUndo
-              ? "text-gray-700 hover:bg-gray-100"
-              : "cursor-not-allowed text-gray-300",
+              ? "text-ink-muted hover:bg-panel hover:text-ink"
+              : "text-ink-subtle/40 cursor-not-allowed",
           )}
           title="Annuler (Ctrl+Z)"
         >
@@ -228,8 +230,8 @@ const SlideToolbar = () => {
           className={clsx(
             "rounded p-1.5 transition-colors",
             canRedo
-              ? "text-gray-700 hover:bg-gray-100"
-              : "cursor-not-allowed text-gray-300",
+              ? "text-ink-muted hover:bg-panel hover:text-ink"
+              : "text-ink-subtle/40 cursor-not-allowed",
           )}
           title="Rétablir (Ctrl+Y)"
         >
@@ -237,20 +239,20 @@ const SlideToolbar = () => {
         </button>
       </div>
 
-      <div className="mx-1.5 h-6 w-px bg-gray-200" />
+      <div className="bg-border mx-1 h-6 w-px" />
 
       {/* Add tools */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={addText}
-          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+          className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors duration-150"
           title={t("quizz:addText")}
         >
           <Type className="size-4" />
         </button>
         <button
           onClick={addShape}
-          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+          className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors duration-150"
           title={t("quizz:addShape")}
         >
           <Square className="size-4" />
@@ -259,7 +261,7 @@ const SlideToolbar = () => {
         {/* Upload image depuis fichier */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+          className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors duration-150"
           title={t("quizz:uploadImage")}
         >
           <Upload className="size-4" />
@@ -272,53 +274,72 @@ const SlideToolbar = () => {
               setShowUrlInput(!showUrlInput)
               setUrlValue("")
             }}
-            className={`rounded-lg p-1.5 text-gray-700 transition-colors ${showUrlInput ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"}`}
+            className={clsx(
+              "focus-ring rounded-lg p-1.5 transition-colors duration-150",
+              showUrlInput
+                ? "bg-primary-soft text-primary-ink"
+                : "text-ink-muted hover:bg-panel hover:text-ink",
+            )}
             title={t("quizz:addImage")}
           >
             <Link className="size-4" />
           </button>
 
-          {showUrlInput && (
-            <div className="absolute top-full left-0 z-50 mt-1 flex min-w-72 gap-1.5 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-              <input
-                autoFocus
-                type="text"
-                value={urlValue}
-                onChange={(e) => setUrlValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    addImageFromUrl()
-                  }
+          <AnimatePresence>
+            {showUrlInput && (
+              <motion.div
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+                style={{ transformOrigin: "top left" }}
+                className="border-border bg-elevated absolute top-full left-0 z-50 mt-1.5 flex min-w-72 gap-1.5 rounded-xl border p-2 shadow-xl shadow-black/10"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      addImageFromUrl()
+                    }
 
-                  if (e.key === "Escape") {
-                    setShowUrlInput(false)
-                  }
-                }}
-                placeholder="https://..."
-                className="flex-1 rounded border border-gray-200 px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-400"
-              />
-              <button
-                onClick={addImageFromUrl}
-                disabled={!urlValue.trim()}
-                className="rounded bg-blue-600 p-1.5 text-white hover:bg-blue-700 disabled:opacity-40"
-              >
-                <Check className="size-3.5" />
-              </button>
-              <button
-                onClick={() => setShowUrlInput(false)}
-                className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
-              >
-                <X className="size-3.5" />
-              </button>
-            </div>
-          )}
+                    if (e.key === "Escape") {
+                      setShowUrlInput(false)
+                    }
+                  }}
+                  placeholder="https://..."
+                  className="border-border text-ink focus:border-primary flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/40"
+                />
+                <button
+                  onClick={addImageFromUrl}
+                  disabled={!urlValue.trim()}
+                  className="bg-primary text-secondary rounded-lg p-1.5 transition-transform duration-150 hover:brightness-[1.03] active:scale-95 disabled:opacity-40"
+                >
+                  <Check className="size-3.5" />
+                </button>
+                <button
+                  onClick={() => setShowUrlInput(false)}
+                  className="text-ink-muted hover:bg-panel rounded-lg p-1.5 transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* YouTube */}
         <div className="relative">
           <button
             onClick={() => setShowYoutubePanel(!showYoutubePanel)}
-            className={`rounded-lg p-1.5 text-gray-700 transition-colors ${showYoutubePanel ? "bg-red-50 text-red-600" : "hover:bg-gray-100"}`}
+            className={clsx(
+              "focus-ring rounded-lg p-1.5 transition-colors duration-150",
+              showYoutubePanel
+                ? "bg-primary-soft text-primary-ink"
+                : "text-ink-muted hover:bg-panel hover:text-ink",
+            )}
             title="YouTube"
           >
             <Play className="size-4" />
@@ -335,7 +356,7 @@ const SlideToolbar = () => {
         </div>
       </div>
 
-      <div className="mx-1.5 h-6 w-px bg-gray-200" />
+      <div className="bg-border mx-1 h-6 w-px" />
 
       {/* Background & Audio */}
       <div className="mr-1 flex items-center gap-2">
@@ -343,33 +364,40 @@ const SlideToolbar = () => {
         <AudioButton />
       </div>
 
-      <div className="mx-1.5 h-6 w-px bg-gray-200" />
+      <div className="bg-border mx-1 h-6 w-px" />
 
       <button
         onClick={() => setShowPreview(true)}
-        className="rounded-lg p-1.5 text-gray-700 transition-colors hover:bg-gray-100"
+        className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors duration-150"
         title="Aperçu"
       >
         <Expand className="size-4" />
       </button>
 
       {/* Outils élément sélectionné */}
-      {selectedElement && (
-        <>
-          <div className="mx-1.5 h-6 w-px bg-gray-200" />
+      <AnimatePresence>
+        {selectedElement && (
+          <motion.div
+            key="element-tools"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+            className="flex items-center gap-0.5"
+          >
+            <div className="bg-border mx-1 h-6 w-px" />
 
-          <div className="animate-in fade-in slide-in-from-left-2 flex items-center gap-0.5 duration-200">
             {selectedElement.type === "text" && (
               <>
                 <input
                   type="text"
                   value={(selectedElement as TextElement).text}
                   onChange={(e) => updateSelected({ text: e.target.value })}
-                  className="focus:ring-primary/30 w-32 rounded border-none bg-gray-100 px-2 py-1 text-xs outline-none focus:ring-1"
+                  className="bg-panel text-ink focus:ring-primary/40 w-32 rounded-lg border-none px-2 py-1 text-xs outline-none focus:ring-2"
                   placeholder="Texte..."
                 />
 
-                <div className="mr-1 ml-1 flex items-center gap-1 border-r border-gray-100 pr-1">
+                <div className="border-border mr-1 ml-1 flex items-center gap-1 border-r pr-1">
                   <select
                     value={
                       (selectedElement as TextElement).fontFamily || "Arial"
@@ -377,7 +405,7 @@ const SlideToolbar = () => {
                     onChange={(e) =>
                       updateSelected({ fontFamily: e.target.value })
                     }
-                    className="max-w-[120px] cursor-pointer rounded border-none bg-transparent px-1 py-1 text-xs font-medium outline-none hover:bg-gray-100"
+                    className="text-ink hover:bg-panel max-w-[120px] cursor-pointer rounded-lg border-none bg-transparent px-1 py-1 text-xs font-medium outline-none"
                   >
                     {AVAILABLE_FONTS.map((font) => (
                       <option
@@ -391,7 +419,7 @@ const SlideToolbar = () => {
                   </select>
                 </div>
 
-                <div className="mr-1 flex items-center gap-1 border-r border-gray-100 pr-1">
+                <div className="border-border mr-1 flex items-center gap-1 border-r pr-1">
                   <button
                     onClick={() =>
                       updateSelected({
@@ -401,7 +429,7 @@ const SlideToolbar = () => {
                         ),
                       })
                     }
-                    className="rounded p-1 text-xs font-bold hover:bg-gray-100"
+                    className="text-ink-muted hover:bg-panel hover:text-ink rounded-md p-1 text-xs font-bold transition-colors active:scale-95"
                   >
                     -
                   </button>
@@ -411,7 +439,7 @@ const SlideToolbar = () => {
                     onChange={(e) =>
                       updateSelected({ fontSize: Number(e.target.value) })
                     }
-                    className="w-10 bg-transparent text-center text-xs font-medium outline-none"
+                    className="text-ink w-10 bg-transparent text-center text-xs font-medium outline-none"
                   />
                   <button
                     onClick={() =>
@@ -422,7 +450,7 @@ const SlideToolbar = () => {
                         ),
                       })
                     }
-                    className="rounded p-1 text-xs font-bold hover:bg-gray-100"
+                    className="text-ink-muted hover:bg-panel hover:text-ink rounded-md p-1 text-xs font-bold transition-colors active:scale-95"
                   >
                     +
                   </button>
@@ -437,13 +465,23 @@ const SlideToolbar = () => {
                           : "bold",
                     })
                   }
-                  className={`rounded p-1.5 hover:bg-gray-100 ${(selectedElement as TextElement).fontStyle === "bold" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
+                  className={clsx(
+                    "focus-ring rounded-lg p-1.5 transition-colors active:scale-95",
+                    (selectedElement as TextElement).fontStyle === "bold"
+                      ? "bg-primary-soft text-primary-ink"
+                      : "text-ink-muted hover:bg-panel hover:text-ink",
+                  )}
                 >
                   <Bold className="size-4" />
                 </button>
                 <button
                   onClick={() => updateSelected({ align: "center" })}
-                  className={`rounded p-1.5 hover:bg-gray-100 ${(selectedElement as TextElement).align === "center" ? "bg-blue-50 text-blue-600" : "text-gray-600"}`}
+                  className={clsx(
+                    "focus-ring rounded-lg p-1.5 transition-colors active:scale-95",
+                    (selectedElement as TextElement).align === "center"
+                      ? "bg-primary-soft text-primary-ink"
+                      : "text-ink-muted hover:bg-panel hover:text-ink",
+                  )}
                 >
                   <AlignCenter className="size-4" />
                 </button>
@@ -453,7 +491,7 @@ const SlideToolbar = () => {
             {hasColor(selectedElement) && (
               <div className="group relative mx-1">
                 <div
-                  className="size-5 cursor-pointer rounded border border-gray-300 shadow-sm"
+                  className="border-border-strong size-5 cursor-pointer rounded-md border shadow-sm"
                   style={{ backgroundColor: selectedElement.fill }}
                 />
                 <input
@@ -465,32 +503,32 @@ const SlideToolbar = () => {
               </div>
             )}
 
-            <div className="mx-1.5 h-6 w-px bg-gray-200" />
+            <div className="bg-border mx-1 h-6 w-px" />
 
             <button
               onClick={bringToFront}
-              className="rounded p-1.5 text-gray-600 hover:bg-gray-100"
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
               title="Avancer"
             >
               <BringToFront className="size-4" />
             </button>
             <button
               onClick={sendToBack}
-              className="rounded p-1.5 text-gray-600 hover:bg-gray-100"
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
               title="Reculer"
             >
               <SendToBack className="size-4" />
             </button>
             <button
               onClick={removeSelected}
-              className="ml-1 rounded p-1.5 text-red-500 hover:bg-red-50"
+              className="focus-ring text-danger hover:bg-danger-soft ml-1 rounded-lg p-1.5 transition-colors active:scale-95"
               title="Supprimer"
             >
               <Trash2 className="size-4" />
             </button>
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {showPreview && (
         <SlidePreviewModal

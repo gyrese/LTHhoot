@@ -33,13 +33,13 @@ const QuestionEditorPuzzle = () => {
   return (
     <div className="z-10 flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
-        <span className="rounded bg-white px-2 py-1 text-sm font-semibold text-gray-500">
+        <span className="bg-surface/90 text-ink-muted rounded-lg px-2.5 py-1 text-sm font-semibold shadow-sm backdrop-blur-sm">
           {t("quizz:puzzle.itemsLabel")}
         </span>
         <button
           type="button"
           onClick={addItem}
-          className="flex size-7 items-center justify-center rounded bg-gray-200 text-gray-600 hover:bg-gray-300"
+          className="focus-ring bg-surface/90 text-ink-muted hover:bg-panel hover:text-ink flex size-7 items-center justify-center rounded-lg shadow-sm backdrop-blur-sm transition-colors active:scale-95"
         >
           <Plus className="size-4" />
         </button>
