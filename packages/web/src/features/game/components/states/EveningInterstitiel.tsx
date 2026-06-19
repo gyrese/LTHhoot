@@ -85,6 +85,55 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
     onContinue()
   }
 
+  useEffect(() => {
+    if (!isHost) {
+      return undefined
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault()
+        handleNext()
+      }
+    }
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      // Ignorer si ce n'est pas un clic gauche
+      if (e.button !== 0) {
+        return
+      }
+
+      const target = e.target as HTMLElement | null
+      if (!target) {
+        return
+      }
+
+      console.log("[EveningInterstitiel] Global click captured, target:", target)
+
+      // Ignorer les clics sur les éléments interactifs
+      if (
+        target.closest("button") ||
+        target.closest("input") ||
+        target.closest("textarea") ||
+        target.closest("a") ||
+        target.closest("[role='button']") ||
+        target.closest(".cursor-pointer")
+      ) {
+        return
+      }
+
+      handleNext()
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("click", handleGlobalClick)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("click", handleGlobalClick)
+    }
+  }, [isHost, handleNext])
+
   return (
     <AnimatePresence>
       {visible && (

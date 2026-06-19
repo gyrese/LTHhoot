@@ -198,10 +198,42 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       }
     }
 
+    const handleGlobalClick = (e: MouseEvent) => {
+      // Ignorer si ce n'est pas un clic gauche
+      if (e.button !== 0) {
+        return
+      }
+
+      const target = e.target as HTMLElement | null
+      if (!target) {
+        return
+      }
+
+      console.log("[GameWrapper] Global click captured, target:", target)
+
+      // Ignorer les clics sur les éléments interactifs
+      if (
+        target.closest("button") ||
+        target.closest("input") ||
+        target.closest("textarea") ||
+        target.closest("a") ||
+        target.closest("[role='button']") ||
+        target.closest(".pointer-events-auto") ||
+        target.closest(".bg-primary") ||
+        target.closest(".cursor-pointer")
+      ) {
+        return
+      }
+
+      handleNext()
+    }
+
     window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("click", handleGlobalClick)
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("click", handleGlobalClick)
     }
   }, [manager, next, isDisabled, handleNext])
 
