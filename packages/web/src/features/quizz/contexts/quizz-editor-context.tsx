@@ -411,72 +411,6 @@ export const QuizzEditorProvider = ({
     refreshHistoryFlags()
   }, [flushPendingHistoryPush])
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null
-      const tag = target?.tagName.toLowerCase()
-      const inTextField =
-        tag === "input" ||
-        tag === "textarea" ||
-        target?.isContentEditable === true
-
-      if (inTextField) {
-        return
-      }
-
-      const ctrl = e.ctrlKey || e.metaKey
-      const key = e.key.toLowerCase()
-
-      // ─── Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ───
-      if (ctrl && key === "z" && !e.shiftKey) {
-        e.preventDefault()
-        undo()
-        return
-      }
-      if ((ctrl && key === "y") || (ctrl && key === "z" && e.shiftKey)) {
-        e.preventDefault()
-        redo()
-        return
-      }
-
-      // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
-      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && (ctrl || e.altKey)) {
-        if (currentIndex > 0) {
-          e.preventDefault()
-          reorderQuestions(currentIndex, currentIndex - 1)
-        }
-        return
-      }
-      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && (ctrl || e.altKey)) {
-        if (currentIndex < questions.length - 1) {
-          e.preventDefault()
-          reorderQuestions(currentIndex, currentIndex + 1)
-        }
-        return
-      }
-
-      // ─── Navigation entre slides (Flèches simples) ───
-      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && !ctrl && !e.altKey && !e.shiftKey) {
-        if (currentIndex > 0) {
-          e.preventDefault()
-          handleSetCurrentIndex(currentIndex - 1)
-        }
-        return
-      }
-      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && !ctrl && !e.altKey && !e.shiftKey) {
-        if (currentIndex < questions.length - 1) {
-          e.preventDefault()
-          handleSetCurrentIndex(currentIndex + 1)
-        }
-        return
-      }
-    }
-
-    window.addEventListener("keydown", handler)
-
-    return () => window.removeEventListener("keydown", handler)
-  }, [undo, redo, currentIndex, questions.length, reorderQuestions, handleSetCurrentIndex])
-
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
     handleSetCurrentIndex(questions.length)
@@ -689,6 +623,72 @@ export const QuizzEditorProvider = ({
 
     return () => window.removeEventListener("beforeunload", handler)
   }, [isDirty])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName.toLowerCase()
+      const inTextField =
+        tag === "input" ||
+        tag === "textarea" ||
+        target?.isContentEditable === true
+
+      if (inTextField) {
+        return
+      }
+
+      const ctrl = e.ctrlKey || e.metaKey
+      const key = e.key.toLowerCase()
+
+      // ─── Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ───
+      if (ctrl && key === "z" && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if ((ctrl && key === "y") || (ctrl && key === "z" && e.shiftKey)) {
+        e.preventDefault()
+        redo()
+        return
+      }
+
+      // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
+      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && (ctrl || e.altKey)) {
+        if (currentIndex > 0) {
+          e.preventDefault()
+          reorderQuestions(currentIndex, currentIndex - 1)
+        }
+        return
+      }
+      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && (ctrl || e.altKey)) {
+        if (currentIndex < questions.length - 1) {
+          e.preventDefault()
+          reorderQuestions(currentIndex, currentIndex + 1)
+        }
+        return
+      }
+
+      // ─── Navigation entre slides (Flèches simples) ───
+      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && !ctrl && !e.altKey && !e.shiftKey) {
+        if (currentIndex > 0) {
+          e.preventDefault()
+          handleSetCurrentIndex(currentIndex - 1)
+        }
+        return
+      }
+      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && !ctrl && !e.altKey && !e.shiftKey) {
+        if (currentIndex < questions.length - 1) {
+          e.preventDefault()
+          handleSetCurrentIndex(currentIndex + 1)
+        }
+        return
+      }
+    }
+
+    window.addEventListener("keydown", handler)
+
+    return () => window.removeEventListener("keydown", handler)
+  }, [undo, redo, currentIndex, questions.length, reorderQuestions, handleSetCurrentIndex])
 
   return (
     <QuizzEditorContext.Provider
