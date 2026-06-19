@@ -9,3 +9,8 @@ save
 tasks
 *.log
 .DS_Store
+
+# Skills d'assistance IA (tooling local, hors app/VPS)
+/.agents
+/.claude
+/skills-lock.json
