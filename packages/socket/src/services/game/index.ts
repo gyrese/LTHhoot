@@ -580,6 +580,10 @@ class Game {
 
     socket.join(this.gameId)
     this.playerManager.updateSocketId(oldSocketId, newSocketId)
+    // Réassocier une éventuelle réponse en attente au nouveau socket id, sinon
+    // le joueur reconnecté n'est pas crédité au scoring (cf. questions ouvertes
+    // et leur fenêtre de repêchage).
+    this.round.remapPlayerAnswer(oldSocketId, newSocketId)
     player.connected = true
 
     const MANAGER_ONLY_STATUSES: Status[] = [STATUS.SHOW_ROOM, STATUS.SHOW_LEADERBOARD]

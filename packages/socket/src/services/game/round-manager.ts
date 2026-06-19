@@ -666,6 +666,28 @@ export class RoundManager {
     }
   }
 
+  /**
+   * Réassocie une réponse déjà soumise au nouveau socket id d'un joueur qui se
+   * reconnecte. Les réponses sont indexées par `playerId` = id du socket au
+   * moment de la réponse ; or `PlayerManager.updateSocketId` fait muter
+   * `player.id` lors d'une reconnexion. Sans ce remap, la réponse reste
+   * orpheline et le joueur n'est pas crédité au scoring (`showResults` ne
+   * retrouve plus sa réponse → 0 point). Le cas est surtout visible sur les
+   * questions ouvertes : la fenêtre de repêchage laisse largement le temps à un
+   * client mobile de se reconnecter avant la finalisation.
+   */
+  remapPlayerAnswer(oldId: string, newId: string): void {
+    if (oldId === newId) {
+      return
+    }
+
+    for (const answer of this.playersAnswers) {
+      if (answer.playerId === oldId) {
+        answer.playerId = newId
+      }
+    }
+  }
+
   nextQuestion(socket: Socket): void {
     if (!this.started) {
       return
