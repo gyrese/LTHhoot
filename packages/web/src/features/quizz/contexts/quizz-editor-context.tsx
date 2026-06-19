@@ -90,6 +90,9 @@ type QuizzEditorContextType = {
   changeQuestionType: (_index: number, _type: QuestionType) => void
   selectedId: string | undefined
   setSelectedId: (_id: string | undefined) => void
+  selectedQuestionIds: string[]
+  setSelectedQuestionIds: (_ids: string[]) => void
+  selectSlide: (_index: number, _ctrlKey: boolean, _shiftKey: boolean) => void
   saveQuizz: (_options?: { silent?: boolean; navigate?: boolean }) => void
   isDirty: boolean
   isSaving: boolean
@@ -211,6 +214,9 @@ export const QuizzEditorProvider = ({
       : [defaultQuestion()],
   )
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(() => [
+    questions[0]?.id || ""
+  ])
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [quizzId, setQuizzId] = useState<string | null>(initialData?.id ?? null)
   const [isDirty, setIsDirty] = useState(false)
@@ -251,6 +257,34 @@ export const QuizzEditorProvider = ({
     setSelectedId(undefined)
   }
 
+  const selectSlide = useCallback((index: number, ctrlKey: boolean, shiftKey: boolean) => {
+    const clickedId = questions[index]?.id
+    if (!clickedId) return
+
+    setSelectedQuestionIds((prevSelected) => {
+      if (ctrlKey) {
+        if (prevSelected.includes(clickedId)) {
+          const nextSelected = prevSelected.filter((id) => id !== clickedId)
+          if (nextSelected.length === 0) {
+            return [clickedId]
+          }
+          return nextSelected
+        } else {
+          return [...prevSelected, clickedId]
+        }
+      } else if (shiftKey) {
+        const start = Math.min(currentIndex, index)
+        const end = Math.max(currentIndex, index)
+        const rangeIds = questions.slice(start, end + 1).map((q) => q.id)
+        return rangeIds
+      } else {
+        return [clickedId]
+      }
+    })
+
+    handleSetCurrentIndex(index)
+  }, [questions, currentIndex, handleSetCurrentIndex])
+
   // ─── Undo / Redo ────────────────────────────────────────────────────────────
 
   type Snapshot = {
@@ -262,6 +296,7 @@ export const QuizzEditorProvider = ({
     salonImage?: string
     listingImage?: string
     currentIndex: number
+    selectedQuestionIds: string[]
   }
 
   const HISTORY_LIMIT = 50
@@ -292,6 +327,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       currentIndex,
+      selectedQuestionIds,
     }),
     [
       questions,
@@ -302,6 +338,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       currentIndex,
+      selectedQuestionIds,
     ],
   )
 
@@ -360,6 +397,7 @@ export const QuizzEditorProvider = ({
     salonImage,
     listingImage,
     currentIndex,
+    selectedQuestionIds,
     takeSnapshot,
   ])
 
@@ -377,6 +415,7 @@ export const QuizzEditorProvider = ({
         ? 0
         : Math.min(s.currentIndex, s.questions.length - 1),
     )
+    setSelectedQuestionIds(s.selectedQuestionIds || [])
     setSelectedId(undefined)
     setIsDirty(true)
   }
@@ -412,37 +451,66 @@ export const QuizzEditorProvider = ({
   }, [flushPendingHistoryPush])
 
   const addQuestion = () => {
-    setQuestions((prev) => [...prev, defaultQuestion()])
+    const newQ = defaultQuestion()
+    setQuestions((prev) => [...prev, newQ])
     handleSetCurrentIndex(questions.length)
+    setSelectedQuestionIds([newQ.id])
     markDirty()
   }
 
   const removeQuestion = (index: number) => {
-    const nextQuestions = questions.filter((_, i) => i !== index)
+    const clickedId = questions[index]?.id
+    const idsToDelete = clickedId && selectedQuestionIds.includes(clickedId)
+      ? selectedQuestionIds
+      : [clickedId].filter(Boolean)
+
+    if (questions.length <= idsToDelete.length) {
+      return
+    }
+
+    const nextQuestions = questions.filter((q) => !idsToDelete.includes(q.id))
     setQuestions(nextQuestions)
 
-    const nextIndex = Math.max(
-      0,
-      currentIndex >= index ? currentIndex - 1 : currentIndex,
-    )
-    const finalIndex =
-      nextQuestions.length === 0
-        ? 0
-        : Math.min(nextIndex, nextQuestions.length - 1)
+    let newActiveIndex = 0
+    const remainingActive = questions.find((q, i) => !idsToDelete.includes(q.id) && i >= index)
+    if (remainingActive) {
+      newActiveIndex = nextQuestions.findIndex((q) => q.id === remainingActive.id)
+    } else {
+      newActiveIndex = Math.max(0, nextQuestions.length - 1)
+    }
 
-    handleSetCurrentIndex(finalIndex)
+    handleSetCurrentIndex(newActiveIndex)
+    setSelectedQuestionIds([nextQuestions[newActiveIndex].id])
     markDirty()
   }
 
   const reorderQuestions = (from: number, to: number) => {
+    const draggedId = questions[from]?.id
+    if (!draggedId) return
+
+    const idsToMove = selectedQuestionIds.includes(draggedId)
+      ? questions.filter((q) => selectedQuestionIds.includes(q.id)).map((q) => q.id)
+      : [draggedId]
+
     setQuestions((prev) => {
-      const next = [...prev]
-      const [moved] = next.splice(from, 1)
-      next.splice(to, 0, moved)
+      const movingQuestions = prev.filter((q) => idsToMove.includes(q.id))
+      const remaining = prev.filter((q) => !idsToMove.includes(q.id))
+      const numMovedBeforeTo = prev.slice(0, to).filter((q) => idsToMove.includes(q.id)).length
+      const insertIndex = Math.max(0, Math.min(remaining.length, to - numMovedBeforeTo))
+
+      const next = [...remaining]
+      next.splice(insertIndex, 0, ...movingQuestions)
+
+      const newDraggedIndex = next.findIndex((q) => q.id === draggedId)
+      if (newDraggedIndex !== -1) {
+        setTimeout(() => {
+          handleSetCurrentIndex(newDraggedIndex)
+        }, 0)
+      }
 
       return next
     })
-    handleSetCurrentIndex(to)
+
     markDirty()
   }
 
@@ -451,7 +519,7 @@ export const QuizzEditorProvider = ({
       const next = [...prev]
       const duplicated = { ...next[index], id: generateId() }
       next.splice(index + 1, 0, duplicated)
-
+      setSelectedQuestionIds([duplicated.id])
       return next
     })
     handleSetCurrentIndex(index + 1)
@@ -718,6 +786,9 @@ export const QuizzEditorProvider = ({
         changeQuestionType,
         selectedId,
         setSelectedId,
+        selectedQuestionIds,
+        setSelectedQuestionIds,
+        selectSlide,
         saveQuizz,
         isDirty,
         isSaving,

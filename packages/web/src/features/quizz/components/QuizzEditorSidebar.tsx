@@ -19,6 +19,8 @@ const QuizzEditorSidebar = () => {
     questions,
     currentIndex,
     setCurrentIndex,
+    selectedQuestionIds,
+    selectSlide,
     addQuestion,
     removeQuestion,
     reorderQuestions,
@@ -34,9 +36,9 @@ const QuizzEditorSidebar = () => {
 
   const isDragging = useRef(false)
 
-  const handleSlideClick = (index: number) => () => {
+  const handleSlideClick = (index: number) => (e: React.MouseEvent) => {
     if (!isDragging.current) {
-      setCurrentIndex(index)
+      selectSlide(index, e.ctrlKey || e.metaKey, e.shiftKey)
     }
   }
 
@@ -148,6 +150,7 @@ const QuizzEditorSidebar = () => {
                           question={q}
                           index={index}
                           isActive={currentIndex === index}
+                          isSelected={selectedQuestionIds.includes(q.id)}
                           canDelete={questions.length > 1}
                           onClick={handleSlideClick(index)}
                           onDelete={handleDelete(index)}

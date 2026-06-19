@@ -203,8 +203,9 @@ type Props = {
   question: QuestionWithId
   index: number
   isActive: boolean
+  isSelected?: boolean
   canDelete: boolean
-  onClick: () => void
+  onClick: (_e: React.MouseEvent) => void
   onDelete: () => void
   onDuplicate: () => void
   onContextMenu?: (_e: MouseEvent) => void
@@ -214,6 +215,7 @@ const QuizzEditorCard = ({
   question,
   index,
   isActive,
+  isSelected,
   canDelete,
   onClick,
   onDelete,
@@ -233,7 +235,7 @@ const QuizzEditorCard = ({
       <span
         className={clsx(
           "w-4 shrink-0 text-center text-xs font-bold tabular-nums transition-colors",
-          isActive ? "text-primary-ink" : "text-ink-subtle group-hover:text-ink-muted",
+          isActive || isSelected ? "text-primary-ink" : "text-ink-subtle group-hover:text-ink-muted",
         )}
       >
         {index + 1}
@@ -245,7 +247,9 @@ const QuizzEditorCard = ({
             "ease-out-soft relative flex-1 overflow-hidden rounded-lg ring-1 transition-all duration-150",
             isActive
               ? "ring-primary shadow-[0_2px_14px_rgba(255,153,0,0.28)] ring-2"
-              : "ring-border group-hover:ring-border-strong",
+              : isSelected
+                ? "ring-primary/50 shadow-[0_1px_8px_rgba(255,153,0,0.15)] ring-2"
+                : "ring-border group-hover:ring-border-strong",
           ),
         )}
       >
