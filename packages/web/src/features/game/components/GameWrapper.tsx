@@ -160,6 +160,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
   useEffect(() => {
     setIsDisabled(false)
+    setCooldown(null)
 
     if (statusName === STATUS.SHOW_START || statusName === STATUS.SHOW_ROOM) {
       setEveningData(null)
@@ -168,7 +169,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     if (statusName === STATUS.SHOW_ROOM) {
       setQuestionStates(null)
     }
-  }, [statusName, setQuestionStates])
+  }, [statusName, setQuestionStates, setCooldown])
 
   const handleNext = () => {
     if (isDisabled) {

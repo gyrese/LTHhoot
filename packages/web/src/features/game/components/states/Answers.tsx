@@ -73,7 +73,12 @@ const Answers = ({
   const { cooldown: storeCooldown } = useQuestionStore()
   const [answered, setAnswered] = useState(false)
 
-  const [cooldown, setCooldown] = useState(() => storeCooldown ?? time)
+  const [endTime, setEndTime] = useState(() => {
+    const initialCooldown = storeCooldown && storeCooldown > 0 ? storeCooldown : time
+    return Date.now() + initialCooldown * 1000
+  })
+  const [cooldown, setCooldown] = useState(() => storeCooldown && storeCooldown > 0 ? storeCooldown : time)
+  const [progress, setProgress] = useState(100)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const { t } = useTranslation()
   const slideAudioRef = useRef<HTMLAudioElement>(null)
@@ -197,8 +202,26 @@ const Answers = ({
     }
   }
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remainingMs = endTime - Date.now()
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000))
+      setCooldown(remainingSec)
+
+      const pct = time > 0 ? Math.max(0, Math.min(100, (remainingMs / (time * 1000)) * 100)) : 0
+      setProgress(pct)
+    }, 50)
+
+    return () => clearInterval(interval)
+  }, [endTime, time])
+
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
-    setCooldown(sec)
+    // Si dérive significative (> 1.2 seconde), on resynchronise la date de fin
+    const currentRemainingMs = endTime - Date.now()
+    const targetRemainingMs = sec * 1000
+    if (Math.abs(currentRemainingMs - targetRemainingMs) > 1200) {
+      setEndTime(Date.now() + targetRemainingMs)
+    }
 
     if (isHost && sec <= 5 && sec > 0) {
       playTick(sec <= 3)
@@ -212,8 +235,6 @@ const Answers = ({
       sfxPop()
     }
   })
-
-  const progress = time > 0 ? (cooldown / time) * 100 : 0
 
   function getProgressColor(pct: number) {
     if (pct > 50) {
@@ -286,7 +307,7 @@ const Answers = ({
       {/* Barre de progression du temps */}
       <div className="absolute top-0 right-0 left-0 z-20 h-2 bg-white/10">
         <div
-          className="h-full rounded-r-full transition-all duration-1000 ease-linear"
+          className="h-full rounded-r-full transition-all duration-100 ease-linear"
           style={{
             width: `${progress}%`,
             backgroundColor: getProgressColor(progress),
