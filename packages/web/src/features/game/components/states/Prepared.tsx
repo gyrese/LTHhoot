@@ -15,6 +15,7 @@ type Props = {
 
 const TYPE_ASSETS = new Map<string, string>([
   ["open", openImg],
+  ["image_sequence", openImg],
   ["date", dateImg],
   ["slider", sliderImg],
   ["mcq", mcqImg],

@@ -29,6 +29,21 @@ export type MessageGameId = {
   gameId?: string
 }
 
+// Accusé de réception d'une réponse joueur. Le serveur répond TOUJOURS l'un de
+// ces statuts pour que le client sache si sa réponse est réellement arrivée :
+//  - ok        : réponse acceptée et comptabilisée
+//  - duplicate : déjà reçue (renvoi après retry) → succès idempotent
+//  - closed    : fenêtre de réponse fermée (trop tard / pas encore ouverte)
+//  - no_player : socket non rattaché à un joueur de la partie
+//  - not_found : partie introuvable (expirée / supprimée)
+export type AnswerAckStatus =
+  | "ok"
+  | "duplicate"
+  | "closed"
+  | "no_player"
+  | "not_found"
+export type AnswerAck = { status: AnswerAckStatus }
+
 export interface ServerToClientEvents {
   connect: () => void
 
@@ -145,6 +160,9 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.VALIDATE_OPEN_ANSWER]: (
     _message: MessageWithoutStatus<{ text: string }>,
   ) => void
+  [EVENTS.MANAGER.INVALIDATE_OPEN_ANSWER]: (
+    _message: MessageWithoutStatus<{ text: string }>,
+  ) => void
   [EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS]: (_message: MessageGameId) => void
 
   // Quizz actions
@@ -170,6 +188,7 @@ export interface ClientToServerEvents {
       numberAnswer?: number
       orderAnswer?: number[]
     }>,
+    _ack: (_res: AnswerAck) => void,
   ) => void
 
   // Manager actions supplémentaires

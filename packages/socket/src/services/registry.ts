@@ -1,4 +1,7 @@
+import type { Server } from "@rahoot/common/types/game/socket"
 import Game from "@rahoot/socket/services/game"
+import Persistence from "@rahoot/socket/services/persistence"
+import { logHandlerError } from "@rahoot/socket/utils/safe-handler"
 import dayjs from "dayjs"
 
 interface EmptyGame {
@@ -14,8 +17,16 @@ class Registry {
   private readonly EMPTY_GAME_TIMEOUT_MINUTES = 5
   private readonly CLEANUP_INTERVAL_MS = 60_000
 
+  // Persistance : instantané périodique de toutes les parties sur disque, pour
+  // survivre à un crash/redéploiement (cf. services/persistence).
+  private readonly persistence = new Persistence()
+  private persistInterval: ReturnType<typeof setTimeout> | null = null
+  private lastSerialized = ""
+  private readonly PERSIST_INTERVAL_MS = 3_000
+
   private constructor() {
     this.startCleanupTask()
+    this.startPersistTask()
   }
 
   static getInstance(): Registry {
@@ -155,8 +166,73 @@ class Registry {
     }
   }
 
+  // ── Persistance ────────────────────────────────────────────────────────────
+
+  private startPersistTask(): void {
+    this.persistInterval = setInterval(() => {
+      this.persistSnapshot()
+    }, this.PERSIST_INTERVAL_MS)
+  }
+
+  private stopPersistTask(): void {
+    if (this.persistInterval) {
+      clearInterval(this.persistInterval)
+      this.persistInterval = null
+    }
+  }
+
+  // Écrit un instantané de toutes les parties — uniquement si l'état a changé
+  // depuis le dernier write (évite des écritures disque inutiles).
+  private persistSnapshot(): void {
+    try {
+      const snapshots = this.games.map((g) => g.serialize())
+      const json = JSON.stringify(snapshots)
+
+      if (json === this.lastSerialized) {
+        return
+      }
+
+      this.lastSerialized = json
+      this.persistence.write(json)
+    } catch (err) {
+      logHandlerError("registry.persistSnapshot", err)
+    }
+  }
+
+  // Recharge les parties depuis le disque au démarrage du serveur. Les parties
+  // restaurées sont marquées « empty » : si personne ne se reconnecte, elles sont
+  // purgées par le nettoyage habituel (5 min) ; toute reconnexion les réactive.
+  loadFromDisk(io: Server): void {
+    const snapshots = this.persistence.read()
+
+    if (snapshots.length === 0) {
+      return
+    }
+
+    let restored = 0
+
+    for (const snapshot of snapshots) {
+      try {
+        const game = Game.restore(io, snapshot)
+
+        if (game) {
+          this.games.push(game)
+          this.markGameAsEmpty(game)
+          restored += 1
+        }
+      } catch (err) {
+        logHandlerError(`registry.loadFromDisk game=${snapshot.gameId}`, err)
+      }
+    }
+
+    console.log(
+      `Restored ${restored} game(s) from disk (out of ${snapshots.length} snapshot(s))`,
+    )
+  }
+
   cleanup(): void {
     this.stopCleanupTask()
+    this.stopPersistTask()
     this.games = []
     this.emptyGames = []
     console.log("Registry cleaned up")

@@ -8,6 +8,7 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
+    "test:recovery": "playwright test --config playwright.recovery.config.ts",
     "report": "playwright show-report"
   },
   "devDependencies": {

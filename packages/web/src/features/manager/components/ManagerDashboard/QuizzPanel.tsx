@@ -24,6 +24,7 @@ import {
   exportQuizzWithMedia,
 } from "@rahoot/web/features/quizz/utils/export"
 import { exportQuizzToPptx } from "@rahoot/web/features/quizz/utils/export-pptx"
+import { parseQuestionsCsv } from "@rahoot/web/features/quizz/utils/import-csv"
 import { isArchived } from "@rahoot/web/features/manager/utils/folders"
 import toast from "react-hot-toast"
 import clsx from "clsx"
@@ -102,16 +103,56 @@ const QuizzPanel = ({
       return
     }
 
+    const isCsv = file.name.endsWith(".csv")
     const reader = new FileReader()
+
     reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string)
-        socket?.emit(EVENTS.QUIZZ.SAVE, data)
-        toast.success(t("manager:quizz.imported"))
-      } catch {
-        toast.error("Invalid JSON file")
+      const text = event.target?.result as string
+
+      if (isCsv) {
+        try {
+          const parsed = parseQuestionsCsv(text)
+
+          if (parsed.questions.length === 0) {
+            toast.error(parsed.errors[0] || t("quizz:importCsvEmpty"))
+
+            return
+          }
+
+          const quizzSubject = file.name.replace(/\.[^/.]+$/u, "")
+          const quizzPayload = {
+            subject: quizzSubject,
+            questions: parsed.questions,
+            tags: [],
+            folder: "",
+          }
+
+          socket?.emit(EVENTS.QUIZZ.SAVE, quizzPayload)
+
+          if (parsed.errors.length > 0) {
+            toast.success(
+              `${t("quizz:importCsvSuccess", { count: parsed.questions.length })}. ${t("quizz:importCsvIgnored", { count: parsed.errors.length })}`,
+            )
+          } else {
+            toast.success(
+              t("quizz:importCsvSuccess", { count: parsed.questions.length }),
+            )
+          }
+        } catch (err) {
+          console.error("CSV import parse error:", err)
+          toast.error(t("quizz:importCsvFailed"))
+        }
+      } else {
+        try {
+          const data = JSON.parse(text)
+          socket?.emit(EVENTS.QUIZZ.SAVE, data)
+          toast.success(t("manager:quizz.imported"))
+        } catch {
+          toast.error("Invalid JSON file")
+        }
       }
     }
+
     reader.readAsText(file)
     e.target.value = ""
   }
@@ -192,7 +233,7 @@ const QuizzPanel = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json"
+          accept=".json,.csv"
           className="hidden"
           onChange={handleImport}
         />

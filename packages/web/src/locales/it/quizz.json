@@ -17,6 +17,9 @@
     "config": {
       "answerTime": "Tempo di risposta",
       "answerTimeHint": "Tempo che i giocatori hanno per rispondere",
+      "applyBackgroundToAll": "Applica questo sfondo a tutte le slide",
+      "applyTimingToAll": "Applica questi tempi a tutte le slide",
+      "appliedToAll": "Applicato a tutte le slide",
       "background": "Sfondo",
       "displayDuration": "Durata di visualizzazione",
       "displayDurationHint": "Per quanto tempo viene mostrata la slide titolo",
@@ -65,6 +68,7 @@
     "drop_pin": "Segna punto",
     "mcq": "Scelta multipla",
     "open": "Risposta aperta",
+    "image_sequence": "Sequenza di immagini",
     "puzzle": "Puzzle",
     "slider": "Cursore",
     "title_slide": "Titolo",
@@ -74,6 +78,12 @@
     "hint": "Ordina gli elementi nell'ordine corretto. I giocatori riceveranno una versione mescolata.",
     "itemPlaceholder": "Aggiungi elemento...",
     "itemsLabel": "Elementi (nell'ordine corretto)"
+  },
+  "imageSequence": {
+    "imagesLabel": "Immagini (ordine di rivelazione)",
+    "urlPlaceholder": "URL dell'immagine...",
+    "intervalLabel": "Intervallo (secondi)",
+    "intervalHint": "Tempo tra ogni immagine (min 2s)"
   },
   "dropPin": {
     "correct": "Corretto",
@@ -86,6 +96,12 @@
     "pan": "Sposta"
   },
   "quizzSaved": "Quiz salvato con successo",
+  "importCsv": "Importa",
+  "importCsvTemplate": "Scarica il modello CSV",
+  "importCsvEmpty": "Nessuna domanda valida trovata. Controlla il formato del CSV.",
+  "importCsvSuccess": "{{count}} domanda/e importata/e",
+  "importCsvIgnored": "{{count}} riga/he ignorata/e (formato non valido)",
+  "importCsvFailed": "Impossibile leggere il file CSV",
   "quizzUpdated": "Quiz aggiornato con successo",
   "slideAudio": "Audio",
   "slideBackground": "Sfondo",
@@ -118,7 +134,9 @@
     "tagsLabel": "Tag",
     "coverImageLabel": "Immagine di copertina",
     "coverImageHint": "Aggiungi un'immagine di copertina per distinguerti.",
-    "upload": "Carica"
+    "upload": "Carica",
+    "aiGenerate": "Genera",
+    "aiGenerateTooltip": "Genera automaticamente un'immagine dal titolo"
   },
   "titleQuizzPlaceholder": "Titolo del quiz...",
   "tolerance": "Tolleranza",

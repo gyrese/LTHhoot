@@ -274,6 +274,20 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     [socket, gameId],
   )
 
+  const handleInvalidateOpenAnswer = useCallback(
+    (text: string) => {
+      if (!socket) {
+        return
+      }
+
+      socket?.emit(EVENTS.MANAGER.INVALIDATE_OPEN_ANSWER, {
+        gameId,
+        data: { text },
+      })
+    },
+    [socket, gameId],
+  )
+
   const handleKick = useCallback(
     (playerId: string) => {
       if (!socket) {
@@ -338,6 +352,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             answerCount={answerCount}
             players={players}
             onValidateOpenAnswer={handleValidateOpenAnswer}
+            onInvalidateOpenAnswer={handleInvalidateOpenAnswer}
             questionStates={questionStates}
             timer={timer}
             maxTime={maxTime}

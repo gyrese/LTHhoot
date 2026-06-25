@@ -602,9 +602,11 @@ const Responses = ({
             />
           )}
 
-          {type === "open" && correctAnswers && correctAnswers.length > 0 && (
-            <OpenResult correctAnswers={correctAnswers} />
-          )}
+          {(type === "open" || type === "image_sequence") &&
+            correctAnswers &&
+            correctAnswers.length > 0 && (
+              <OpenResult correctAnswers={correctAnswers} />
+            )}
 
           {type === "date" && correctYear !== undefined && (
             <DateResult correctYear={correctYear} />

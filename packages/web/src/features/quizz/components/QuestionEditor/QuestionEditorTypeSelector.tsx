@@ -8,7 +8,7 @@ import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
-import { Presentation } from "lucide-react"
+import { Film, Presentation } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 const TYPES: { type: QuestionType; icon?: any; img?: string; key: string }[] = [
@@ -20,6 +20,7 @@ const TYPES: { type: QuestionType; icon?: any; img?: string; key: string }[] = [
     key: "quizz:questionType.true_false",
   },
   { type: "open", img: openImg, key: "quizz:questionType.open" },
+  { type: "image_sequence", icon: Film, key: "quizz:questionType.image_sequence" },
   { type: "date", img: dateImg, key: "quizz:questionType.date" },
   { type: "slider", img: sliderImg, key: "quizz:questionType.slider" },
   { type: "puzzle", img: puzzleImg, key: "quizz:questionType.puzzle" },

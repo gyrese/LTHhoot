@@ -52,7 +52,7 @@ const Room = ({ data }: Props) => {
     <section className="relative mx-auto flex w-full flex-1 flex-col items-center justify-center overflow-hidden">
       <button
         onClick={handleEndGame}
-        className="absolute top-4 right-4 z-50 rounded-md bg-red-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-700"
+        className="absolute top-4 left-4 z-50 rounded-md bg-red-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-700"
       >
         {t("game:closeSession", "Fermer la session")}
       </button>

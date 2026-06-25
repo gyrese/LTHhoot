@@ -17,6 +17,9 @@
     "config": {
       "answerTime": "Answer time",
       "answerTimeHint": "Time players have to answer",
+      "applyBackgroundToAll": "Apply this background to all slides",
+      "applyTimingToAll": "Apply this timing to all slides",
+      "appliedToAll": "Applied to all slides",
       "background": "Background",
       "displayDuration": "Display duration",
       "displayDurationHint": "How long the title slide is shown",
@@ -65,6 +68,7 @@
     "drop_pin": "Drop Pin",
     "mcq": "Multiple Choice",
     "open": "Open Answer",
+    "image_sequence": "Image Sequence",
     "puzzle": "Puzzle",
     "slider": "Slider",
     "title_slide": "Title",
@@ -74,6 +78,12 @@
     "hint": "Order the items correctly. Players will receive a shuffled version.",
     "itemPlaceholder": "Add an item...",
     "itemsLabel": "Items (in correct order)"
+  },
+  "imageSequence": {
+    "imagesLabel": "Images (reveal order)",
+    "urlPlaceholder": "Image URL...",
+    "intervalLabel": "Interval (seconds)",
+    "intervalHint": "Time between each image (min 2s)"
   },
   "dropPin": {
     "correct": "Correct",
@@ -86,6 +96,12 @@
     "pan": "Pan"
   },
   "quizzSaved": "Quizz saved successfully",
+  "importCsv": "Import",
+  "importCsvTemplate": "Download the CSV template",
+  "importCsvEmpty": "No valid question found. Check the CSV format.",
+  "importCsvSuccess": "{{count}} question(s) imported",
+  "importCsvIgnored": "{{count}} row(s) ignored (invalid format)",
+  "importCsvFailed": "Failed to read the CSV file",
   "quizzUpdated": "Quizz updated successfully",
   "slideAudio": "Audio",
   "slideBackground": "Background",
@@ -118,7 +134,9 @@
     "tagsLabel": "Tags",
     "coverImageLabel": "Cover image",
     "coverImageHint": "Add a cover image to make your kahoot stand out.",
-    "upload": "Upload"
+    "upload": "Upload",
+    "aiGenerate": "Generate",
+    "aiGenerateTooltip": "Automatically generate an image from the title"
   },
   "titleQuizzPlaceholder": "Quizz title...",
   "tolerance": "Tolerance",

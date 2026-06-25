@@ -1,5 +1,6 @@
 {
   "answerSent": "Answer sent!",
+  "answerSendFailed": "Answer not sent — tap to retry",
   "correct": "Nice!",
   "false": "False",
   "gamePinLabel": "Game PIN:",
@@ -43,5 +44,8 @@
     "players": "players",
     "clickToValidate": "Click an answer to validate it",
     "noAnswer": "No answer"
+  },
+  "imageSequence": {
+    "indicator": "Image {{current}} / {{total}}"
   }
 }

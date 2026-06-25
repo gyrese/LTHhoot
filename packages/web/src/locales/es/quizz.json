@@ -17,6 +17,9 @@
     "config": {
       "answerTime": "Tiempo de respuesta",
       "answerTimeHint": "Tiempo que tienen los jugadores para responder",
+      "applyBackgroundToAll": "Aplicar este fondo a todas las diapositivas",
+      "applyTimingToAll": "Aplicar estos tiempos a todas las diapositivas",
+      "appliedToAll": "Aplicado a todas las diapositivas",
       "background": "Fondo",
       "displayDuration": "Duración de visualización",
       "displayDurationHint": "Duración de la diapositiva de título",
@@ -65,6 +68,7 @@
     "drop_pin": "Fijar pin",
     "mcq": "Opción múltiple",
     "open": "Respuesta abierta",
+    "image_sequence": "Secuencia de imágenes",
     "puzzle": "Puzzle",
     "slider": "Deslizador",
     "title_slide": "Título",
@@ -74,6 +78,12 @@
     "hint": "Ordena los elementos en el orden correcto. Los jugadores recibirán una versión mezclada.",
     "itemPlaceholder": "Añadir elemento...",
     "itemsLabel": "Elementos (en orden correcto)"
+  },
+  "imageSequence": {
+    "imagesLabel": "Imágenes (orden de revelación)",
+    "urlPlaceholder": "URL de la imagen...",
+    "intervalLabel": "Intervalo (segundos)",
+    "intervalHint": "Tiempo entre cada imagen (mín 2s)"
   },
   "dropPin": {
     "correct": "Correcto",
@@ -86,6 +96,12 @@
     "pan": "Desplazar"
   },
   "quizzSaved": "Cuestionario guardado con éxito",
+  "importCsv": "Importar",
+  "importCsvTemplate": "Descargar la plantilla CSV",
+  "importCsvEmpty": "No se encontró ninguna pregunta válida. Verifica el formato del CSV.",
+  "importCsvSuccess": "{{count}} pregunta(s) importada(s)",
+  "importCsvIgnored": "{{count}} fila(s) ignorada(s) (formato inválido)",
+  "importCsvFailed": "Error al leer el archivo CSV",
   "quizzUpdated": "Cuestionario actualizado con éxito",
   "slideAudio": "Audio",
   "slideBackground": "Fondo",
@@ -118,7 +134,9 @@
     "tagsLabel": "Etiquetas",
     "coverImageLabel": "Imagen de portada",
     "coverImageHint": "Añade una imagen de portada para destacar tu kahoot.",
-    "upload": "Subir"
+    "upload": "Subir",
+    "aiGenerate": "Generar",
+    "aiGenerateTooltip": "Generar una imagen automáticamente desde el título"
   },
   "titleQuizzPlaceholder": "Título del cuestionario...",
   "tolerance": "Tolerancia",

@@ -6,7 +6,7 @@ import {
   mmssToSeconds,
   secondsToMmss,
 } from "@rahoot/web/features/game/utils/audio"
-import { Image, Music, X } from "lucide-react"
+import { Image, Layers, Music, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useState, useRef, type MouseEvent, type ReactNode } from "react"
 import toast from "react-hot-toast"
@@ -62,7 +62,8 @@ const Popover = ({
 )
 
 export const BackgroundButton = () => {
-  const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
+  const { currentQuestion, currentIndex, updateQuestion, applyToAllQuestions } =
+    useQuizzEditor()
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   const [open, setOpen] = useState(false)
@@ -260,6 +261,26 @@ export const BackgroundButton = () => {
                     {t("common:save")}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {bg && (
+              <div className="border-border mt-3 border-t pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    applyToAllQuestions({
+                      background: currentQuestion.background,
+                      backgroundOpacity: currentQuestion.backgroundOpacity,
+                    })
+                    toast.success(t("quizz:question.config.appliedToAll"))
+                    setOpen(false)
+                  }}
+                  className="text-ink-muted hover:bg-panel hover:text-ink flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-colors"
+                >
+                  <Layers className="size-3.5" />
+                  {t("quizz:question.config.applyBackgroundToAll")}
+                </button>
               </div>
             )}
           </Popover>

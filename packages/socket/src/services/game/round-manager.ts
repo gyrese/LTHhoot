@@ -7,7 +7,11 @@ import type {
   QuestionResult,
   Quizz,
 } from "@rahoot/common/types/game"
-import type { Server, Socket } from "@rahoot/common/types/game/socket"
+import type {
+  AnswerAckStatus,
+  Server,
+  Socket,
+} from "@rahoot/common/types/game/socket"
 import {
   type Status,
   STATUS,
@@ -46,6 +50,11 @@ export interface RoundManagerOptions {
   onEveningQuizFinished?: (_result: GameResult, _leaderboard: Player[]) => void
   powerUpManager?: PowerUpManager
   onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
+}
+
+/** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
+function isOpenLike(type: string): boolean {
+  return type === "open" || type === "image_sequence"
 }
 
 export class RoundManager {
@@ -90,6 +99,38 @@ export class RoundManager {
     const { current, total } = this.getNonTitleCount()
 
     return { current, total }
+  }
+
+  // ── Persistance ───────────────────────────────────────────────────────────
+
+  // Instantané sérialisable de la progression. `resumeIndex` = nombre de
+  // questions déjà traitées (= prochaine question NON scorée). Le scoring n'a
+  // lieu qu'à `showResults` (qui pousse dans `questionsHistory`), donc reprendre
+  // à cet index ne peut jamais recompter une question.
+  getCheckpoint() {
+    return {
+      quizz: this.opts.quizz,
+      resumeIndex: this.questionsHistory.length,
+      questionsHistory: this.questionsHistory,
+    }
+  }
+
+  // Réinjecte une progression restaurée. La partie repart en état « non démarrée »
+  // (started=false) : l'hôte relance via le flux Start habituel, qui repose la
+  // question `resumeIndex` avec les scores cumulés intacts.
+  restoreCheckpoint(state: {
+    resumeIndex: number
+    questionsHistory: QuestionResult[]
+    leaderboard: Player[]
+  }): void {
+    const maxIndex = Math.max(0, this.opts.quizz.questions.length - 1)
+    this.currentQuestion = Math.min(state.resumeIndex, maxIndex)
+    this.questionsHistory = state.questionsHistory
+    this.leaderboard = state.leaderboard
+    this.started = false
+    this.playersAnswers = []
+    this.acceptingAnswers = false
+    this.questionInProgress = false
   }
 
   async start(socket: Socket): Promise<void> {
@@ -239,6 +280,8 @@ export class RoundManager {
         gridCols: question.gridCols,
         gridRows: question.gridRows,
         revelationStyle: question.revelationStyle,
+        images: question.type === "image_sequence" ? question.images : undefined,
+        imageInterval: question.type === "image_sequence" ? (question.imageInterval ?? 5) : undefined,
       })
 
       // Send solution to manager only
@@ -257,6 +300,8 @@ export class RoundManager {
         gridCols: question.gridCols,
         gridRows: question.gridRows,
         revelationStyle: question.revelationStyle,
+        images: question.type === "image_sequence" ? question.images : undefined,
+        imageInterval: question.type === "image_sequence" ? (question.imageInterval ?? 5) : undefined,
         ...RoundManager.getQuestionSolutionData(question),
       })
 
@@ -296,6 +341,12 @@ export class RoundManager {
 
           case "open":
             return {}
+
+          case "image_sequence":
+            return {
+              images: question.images,
+              imageInterval: question.imageInterval ?? 5,
+            }
 
           case "date":
             return {
@@ -347,7 +398,7 @@ export class RoundManager {
         return
       }
 
-      if (question.type === "open") {
+      if (isOpenLike(question.type)) {
         this.showOpenAnswers(question)
       } else {
         this.showResults(question)
@@ -362,8 +413,9 @@ export class RoundManager {
     this.pendingOpenQuestion = question
 
     if (
-      question.type === "open" &&
-      this.pendingOpenCorrectAnswers.length === 0
+      isOpenLike(question.type) &&
+      this.pendingOpenCorrectAnswers.length === 0 &&
+      "correctAnswers" in question
     ) {
       this.pendingOpenCorrectAnswers = [...question.correctAnswers]
     }
@@ -382,9 +434,15 @@ export class RoundManager {
 
     this.opts.broadcast(STATUS.SHOW_OPEN_ANSWERS, baseData)
 
+    const originalCorrectAnswers =
+      isOpenLike(question.type) && "correctAnswers" in question
+        ? question.correctAnswers
+        : []
+
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_OPEN_ANSWERS, {
       ...baseData,
       correctAnswers: this.pendingOpenCorrectAnswers,
+      originalCorrectAnswers,
     })
   }
 
@@ -406,8 +464,37 @@ export class RoundManager {
     this.showOpenAnswers(this.pendingOpenQuestion)
   }
 
+  invalidateOpenAnswer(text: string): void {
+    if (!this.pendingOpenQuestion) {
+      return
+    }
+
+    const normalized = text.trim().toLowerCase()
+
+    // Les réponses d'origine du quiz sont verrouillées — on ne peut pas les désélectionner
+    if (isOpenLike(this.pendingOpenQuestion.type) && "correctAnswers" in this.pendingOpenQuestion) {
+      const isOrigin = this.pendingOpenQuestion.correctAnswers.some(
+        (ca) => ca.trim().toLowerCase() === normalized,
+      )
+
+      if (isOrigin) {
+        return
+      }
+    }
+
+    const before = this.pendingOpenCorrectAnswers.length
+    this.pendingOpenCorrectAnswers = this.pendingOpenCorrectAnswers.filter(
+      (ca) => ca.trim().toLowerCase() !== normalized,
+    )
+
+    // Re-broadcaster uniquement si un élément a été retiré
+    if (this.pendingOpenCorrectAnswers.length < before) {
+      this.showOpenAnswers(this.pendingOpenQuestion)
+    }
+  }
+
   finalizeOpenAnswers(): void {
-    if (!this.pendingOpenQuestion || this.pendingOpenQuestion.type !== "open") {
+    if (!this.pendingOpenQuestion || !isOpenLike(this.pendingOpenQuestion.type)) {
       return
     }
 
@@ -537,6 +624,9 @@ export class RoundManager {
         case "open":
           return { correctAnswers: question.correctAnswers }
 
+        case "image_sequence":
+          return { correctAnswers: question.correctAnswers }
+
         case "date":
           return { correctYear: question.correctYear }
 
@@ -598,7 +688,7 @@ export class RoundManager {
       reveal?.enabled && (reveal.image || reveal.videoId || reveal.text),
     )
 
-    if (question.type === "open" && !hasRevealCard) {
+    if (isOpenLike(question.type) && !hasRevealCard) {
       this.showLeaderboard()
     } else {
       this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
@@ -616,22 +706,25 @@ export class RoundManager {
       numberAnswer?: number
       orderAnswer?: number[]
     },
-  ): void {
+  ): AnswerAckStatus {
     // Fenêtre de réponse fermée (avant le départ ou après expiration du temps) :
     // on ignore toute réponse tardive plutôt que de la comptabiliser au round.
     if (!this.acceptingAnswers) {
-      return
+      return "closed"
     }
 
     const player = this.opts.players.findById(socket.id)
     const question = this.opts.quizz.questions[this.currentQuestion]
 
     if (!player) {
-      return
+      return "no_player"
     }
 
+    // Idempotence : un renvoi de la même réponse (retry réseau côté client) ne
+    // doit pas être recompté, mais doit confirmer le succès au client pour qu'il
+    // arrête de réessayer.
     if (this.playersAnswers.find((a) => a.playerId === socket.id)) {
-      return
+      return "duplicate"
     }
 
     const isFrozen = this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
@@ -664,6 +757,8 @@ export class RoundManager {
     if (this.playersAnswers.length >= this.opts.players.countConnected()) {
       this.opts.cooldown.abort()
     }
+
+    return "ok"
   }
 
   /**
@@ -815,6 +910,9 @@ export class RoundManager {
         return { solutions: [question.solution] }
 
       case "open":
+        return { correctAnswers: question.correctAnswers }
+
+      case "image_sequence":
         return { correctAnswers: question.correctAnswers }
 
       case "date":

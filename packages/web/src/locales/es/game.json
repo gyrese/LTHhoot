@@ -1,5 +1,6 @@
 {
   "answerSent": "¡Respuesta enviada!",
+  "answerSendFailed": "Respuesta no enviada: toca para reintentar",
   "correct": "¡Bien!",
   "false": "Falso",
   "gamePinLabel": "PIN del juego:",
@@ -43,5 +44,8 @@
     "players": "jugadores",
     "clickToValidate": "Haz clic en una respuesta para validarla",
     "noAnswer": "Sin respuesta"
+  },
+  "imageSequence": {
+    "indicator": "Imagen {{current}} / {{total}}"
   }
 }

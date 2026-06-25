@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import React from "react"
 import { useTranslation } from "react-i18next"
+import toast from "react-hot-toast"
 import clsx from "clsx"
 
 const QuestionEditorConfig = () => {
@@ -34,6 +35,7 @@ const QuestionEditorConfig = () => {
     currentQuestion,
     currentIndex,
     updateQuestion,
+    applyToAllQuestions,
     selectedId,
     setSelectedId,
   } = useQuizzEditor()
@@ -280,6 +282,21 @@ const QuestionEditorConfig = () => {
               description={t("quizz:question.config.showLeaderboardHint")}
             />
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              applyToAllQuestions({
+                time: currentQuestion.time,
+                cooldown: currentQuestion.cooldown,
+              })
+              toast.success(t("quizz:question.config.appliedToAll"))
+            }}
+            className="border-border text-ink-muted hover:bg-panel hover:text-ink mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors"
+          >
+            <Timer className="size-3.5" />
+            {t("quizz:question.config.applyTimingToAll")}
+          </button>
         </ConfigSection>
 
         <ConfigSection

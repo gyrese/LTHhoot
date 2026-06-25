@@ -4,8 +4,8 @@ import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
 import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
 import { useNavigate } from "@tanstack/react-router"
-import { Download, LogOut, Settings } from "lucide-react"
-import { useState } from "react"
+import { Download, LogOut, Settings, Upload } from "lucide-react"
+import { useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
@@ -13,6 +13,10 @@ import {
   downloadJson,
   exportQuizzWithMedia,
 } from "@rahoot/web/features/quizz/utils/export"
+import {
+  downloadCsvTemplate,
+  parseQuestionsCsv,
+} from "@rahoot/web/features/quizz/utils/import-csv"
 import clsx from "clsx"
 
 type SaveStatus = "saving" | "dirty" | "saved"
@@ -26,6 +30,7 @@ const QuizzEditorHeader = () => {
     salonImage,
     listingImage,
     questions,
+    importQuestions,
     saveQuizz,
     isDirty,
     isSaving,
@@ -35,6 +40,64 @@ const QuizzEditorHeader = () => {
   const { t, i18n } = useTranslation()
   const [showSettings, setShowSettings] = useState(false)
   const reduceMotion = useReducedMotion()
+  const csvInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImportCsv = async (file: File) => {
+    try {
+      const text = await file.text()
+      const { questions: imported, errors } = parseQuestionsCsv(text)
+
+      if (imported.length === 0) {
+        toast(
+          (tst) => (
+            <div className="flex flex-col items-start gap-2">
+              <span>
+                {t(
+                  "quizz:importCsvEmpty",
+                  "Aucune question valide trouvée. Vérifiez le format du CSV.",
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  downloadCsvTemplate()
+                  toast.dismiss(tst.id)
+                }}
+                className="text-primary text-sm font-semibold underline"
+              >
+                {t("quizz:importCsvTemplate", "Télécharger le modèle CSV")}
+              </button>
+            </div>
+          ),
+          { duration: 6000 },
+        )
+
+        return
+      }
+
+      importQuestions(imported)
+      toast.success(
+        t("quizz:importCsvSuccess", {
+          count: imported.length,
+          defaultValue: "{{count}} question(s) importée(s)",
+        }),
+      )
+
+      if (errors.length > 0) {
+        toast(
+          t("quizz:importCsvIgnored", {
+            count: errors.length,
+            defaultValue: "{{count}} ligne(s) ignorée(s) (format invalide)",
+          }),
+          { icon: "⚠️" },
+        )
+      }
+    } catch {
+      toast.error(
+        t("quizz:importCsvFailed", "Échec de la lecture du fichier CSV"),
+      )
+    }
+  }
 
   const handleExport = async () => {
     const loadingToast = toast.loading(
@@ -151,6 +214,32 @@ const QuizzEditorHeader = () => {
           >
             <LogOut className="size-4" />
             <span className="hidden md:inline">{t("common:exit")}</span>
+          </Button>
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+
+              if (file) {
+                void handleImportCsv(file)
+              }
+
+              e.target.value = ""
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-ink-muted gap-2"
+            onClick={() => csvInputRef.current?.click()}
+          >
+            <Upload className="size-4" />
+            <span className="hidden md:inline">
+              {t("quizz:importCsv", "Importer")}
+            </span>
           </Button>
           <Button variant="secondary" size="sm" onClick={handleExport}>
             <Download className="size-4" />

@@ -18,6 +18,7 @@ export const QUESTION_TYPE_LABELS = new Map<string, string>([
   ["mcq", "QCM"],
   ["true_false", "Vrai / Faux"],
   ["open", "Réponse libre"],
+  ["image_sequence", "Séquence d'images"],
   ["date", "Date"],
   ["slider", "Curseur"],
   ["puzzle", "Puzzle"],

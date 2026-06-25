@@ -46,6 +46,8 @@ export type QuestionUpdate = {
   solutions?: number[]
   solution?: 0 | 1
   correctAnswers?: string[]
+  images?: string[]
+  imageInterval?: number
   correctYear?: number
   minYear?: number
   maxYear?: number
@@ -87,12 +89,14 @@ type QuizzEditorContextType = {
   reorderQuestions: (_from: number, _to: number) => void
   duplicateQuestion: (_index: number) => void
   updateQuestion: (_index: number, _updates: QuestionUpdate) => void
+  applyToAllQuestions: (_patch: QuestionUpdate) => void
   changeQuestionType: (_index: number, _type: QuestionType) => void
   selectedId: string | undefined
   setSelectedId: (_id: string | undefined) => void
   selectedQuestionIds: string[]
   setSelectedQuestionIds: (_ids: string[]) => void
   selectSlide: (_index: number, _ctrlKey: boolean, _shiftKey: boolean) => void
+  importQuestions: (_imported: Question[]) => void
   saveQuizz: (_options?: { silent?: boolean; navigate?: boolean }) => void
   isDirty: boolean
   isSaving: boolean
@@ -146,6 +150,9 @@ const buildDefaultForType = (
 
     case "open":
       return { ...base, type: "open", correctAnswers: [""] }
+
+    case "image_sequence":
+      return { ...base, type: "image_sequence", images: [], correctAnswers: [""], imageInterval: 5 }
 
     case "date": {
       const year = new Date().getFullYear()
@@ -515,14 +522,42 @@ export const QuizzEditorProvider = ({
   }
 
   const duplicateQuestion = (index: number) => {
-    setQuestions((prev) => {
-      const next = [...prev]
-      const duplicated = { ...next[index], id: generateId() }
-      next.splice(index + 1, 0, duplicated)
-      setSelectedQuestionIds([duplicated.id])
-      return next
-    })
-    handleSetCurrentIndex(index + 1)
+    const clickedId = questions[index]?.id
+    const isMultiSelection =
+      clickedId !== undefined && selectedQuestionIds.includes(clickedId) && selectedQuestionIds.length > 1
+
+    if (isMultiSelection) {
+      // Duplique tous les slides sélectionnés, dans leur ordre d'apparition
+      const orderedSelected = questions.filter((q) => selectedQuestionIds.includes(q.id))
+      const newCopies = orderedSelected.map((q) => ({ ...q, id: generateId() }))
+
+      // Détermine l'index du dernier slide sélectionné pour insérer les copies juste après
+      const lastSelectedIndex = questions.reduce((acc, q, i) =>
+        selectedQuestionIds.includes(q.id) ? i : acc, -1)
+
+      setQuestions((prev) => {
+        const next = [...prev]
+        next.splice(lastSelectedIndex + 1, 0, ...newCopies)
+
+        return next
+      })
+
+      const firstCopyIndex = lastSelectedIndex + 1
+      setSelectedQuestionIds(newCopies.map((c) => c.id))
+      handleSetCurrentIndex(firstCopyIndex)
+    } else {
+      // Comportement d'origine : duplique un seul slide
+      setQuestions((prev) => {
+        const next = [...prev]
+        const duplicated = { ...next[index], id: generateId() }
+        next.splice(index + 1, 0, duplicated)
+        setSelectedQuestionIds([duplicated.id])
+
+        return next
+      })
+      handleSetCurrentIndex(index + 1)
+    }
+
     markDirty()
   }
 
@@ -532,6 +567,32 @@ export const QuizzEditorProvider = ({
         i === index ? ({ ...q, ...updates } as QuestionWithId) : q,
       ),
     )
+    markDirty()
+  }
+
+  const importQuestions = (imported: Question[]) => {
+    if (imported.length === 0) {
+      return
+    }
+
+    const newWithIds = imported.map((q) => ({ ...q, id: generateId() })) as QuestionWithId[]
+
+    setQuestions((prev) => {
+      const firstNewIndex = prev.length
+
+      setTimeout(() => {
+        handleSetCurrentIndex(firstNewIndex)
+        setSelectedQuestionIds([newWithIds[0].id])
+      }, 0)
+
+      return [...prev, ...newWithIds]
+    })
+
+    markDirty()
+  }
+
+  const applyToAllQuestions = (patch: QuestionUpdate) => {
+    setQuestions((prev) => prev.map((q) => ({ ...q, ...patch } as QuestionWithId)))
     markDirty()
   }
 
@@ -783,6 +844,8 @@ export const QuizzEditorProvider = ({
         reorderQuestions,
         duplicateQuestion,
         updateQuestion,
+        importQuestions,
+        applyToAllQuestions,
         changeQuestionType,
         selectedId,
         setSelectedId,

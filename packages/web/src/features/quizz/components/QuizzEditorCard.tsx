@@ -10,7 +10,7 @@ import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
-import { Presentation, Trash2, Copy } from "lucide-react"
+import { Presentation, Trash2, Copy, Film } from "lucide-react"
 import { type CSSProperties, type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
@@ -24,6 +24,7 @@ const TYPE_ASSETS = new Map<QuestionType, any>([
   ["slider", sliderImg],
   ["puzzle", puzzleImg],
   ["drop_pin", dropPinImg],
+  ["image_sequence", Film],
 ])
 
 const SlideElementPreview = ({ el }: { el: SlideElement }) => {

@@ -34,6 +34,7 @@
     "subjectEmpty": "Das Thema darf nicht leer sein",
     "tooFewAnswers": "Eine Frage muss mindestens 2 Antworten haben",
     "tooFewCorrectAnswers": "Mindestens eine richtige Antwort ist erforderlich",
+    "tooFewImages": "Mindestens ein Bild ist erforderlich",
     "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben"
   }
 }

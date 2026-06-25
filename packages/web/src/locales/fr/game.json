@@ -1,5 +1,6 @@
 {
   "answerSent": "Réponse envoyée !",
+  "answerSendFailed": "Réponse non envoyée — touche pour réessayer",
   "correct": "Bravo !",
   "false": "Faux",
   "gamePinLabel": "PIN de la partie :",
@@ -43,6 +44,9 @@
     "players": "joueurs",
     "clickToValidate": "Clique sur une réponse pour la valider",
     "noAnswer": "Sans réponse"
+  },
+  "imageSequence": {
+    "indicator": "Image {{current}} / {{total}}"
   },
   "sessionClosedByManager": "La session a été fermée par le manager.",
   "confirmEndGame": "Voulez-vous vraiment fermer cette session ? Tous les joueurs seront déconnectés.",

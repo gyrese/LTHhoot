@@ -44,6 +44,7 @@ export const EVENTS = {
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
     VALIDATE_OPEN_ANSWER: "manager:validateOpenAnswer",
+    INVALIDATE_OPEN_ANSWER: "manager:invalidateOpenAnswer",
     FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
     START_DEMO: "manager:startDemo",
     END_GAME: "manager:endGame",

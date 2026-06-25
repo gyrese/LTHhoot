@@ -28,6 +28,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
+import ImageSequenceReveal from "@rahoot/web/features/game/components/states/ImageSequenceReveal"
 
 
 
@@ -65,6 +66,8 @@ const Answers = ({
     gridCols,
     gridRows,
     revelationStyle,
+    images,
+    imageInterval,
   },
   // eslint-disable-next-line complexity
 }: Props) => {
@@ -72,6 +75,7 @@ const Answers = ({
   const { player, gameId } = usePlayerStore()
   const { cooldown: storeCooldown } = useQuestionStore()
   const [answered, setAnswered] = useState(false)
+  const [sendError, setSendError] = useState(false)
 
   const [endTime, setEndTime] = useState(() => {
     const initialCooldown = storeCooldown && storeCooldown > 0 ? storeCooldown : time
@@ -140,18 +144,74 @@ const Answers = ({
     loop: true,
   })
 
+  // Envoi fiabilisé d'une réponse : accusé de réception serveur + retry borné.
+  // L'ancien envoi était « fire-and-forget » + `setAnswered(true)` inconditionnel :
+  // si le paquet ne partait pas (socket null, reconnexion en cours, perte réseau),
+  // la réponse disparaissait silencieusement mais l'UI restait verrouillée sur
+  // « répondu ». Désormais on ne verrouille que sur confirmation, et un échec
+  // définitif rouvre la saisie avec une bannière d'erreur.
+  const ANSWER_ACK_TIMEOUT = 4000
+  const MAX_ANSWER_RETRIES = 2
+  const sendingRef = useRef(false)
+
+  const sendAnswer = (
+    payload: {
+      answerId?: number
+      textAnswer?: string
+      numberAnswer?: number
+      orderAnswer?: number[]
+    },
+    attempt: number,
+  ) => {
+    if (!socket || !gameId) {
+      return
+    }
+
+    socket
+      .timeout(ANSWER_ACK_TIMEOUT)
+      .emit(
+        EVENTS.PLAYER.SELECTED_ANSWER,
+        { gameId, data: payload },
+        (err, _res) => {
+          if (err) {
+            // Pas d'accusé reçu (réseau coupé ou serveur indisponible).
+            if (attempt < MAX_ANSWER_RETRIES) {
+              sendAnswer(payload, attempt + 1)
+
+              return
+            }
+
+            // Échec définitif : on rouvre la saisie pour permettre un nouvel essai.
+            sendingRef.current = false
+            setAnswered(false)
+            setSendError(true)
+
+            return
+          }
+
+          // Accusé reçu : ok / duplicate / closed / no_player / not_found.
+          // Tous sont terminaux côté client (plus de retry). On garde « répondu ».
+          sendingRef.current = false
+          setSendError(false)
+        },
+      )
+  }
+
   const emit = (payload: {
     answerId?: number
     textAnswer?: string
     numberAnswer?: number
     orderAnswer?: number[]
   }) => {
-    if (!player || !gameId || answered || isFreezeBlocked) {
+    if (!player || !gameId || answered || sendingRef.current || isFreezeBlocked) {
       return
     }
 
-    socket?.emit(EVENTS.PLAYER.SELECTED_ANSWER, { gameId, data: payload })
+    sendingRef.current = true
+    setSendError(false)
+    // Feedback immédiat ; rétabli (answered=false) en cas d'échec définitif.
     setAnswered(true)
+    sendAnswer(payload, 0)
   }
 
   useEffect(() => {
@@ -304,6 +364,13 @@ const Answers = ({
         </div>
       )}
 
+      {type === "image_sequence" && images && images.length > 0 && (
+        <ImageSequenceReveal
+          images={images}
+          imageInterval={imageInterval ?? 5}
+        />
+      )}
+
       {/* Barre de progression du temps */}
       <div className="absolute top-0 right-0 left-0 z-20 h-2 bg-white/10">
         <div
@@ -356,11 +423,20 @@ const Answers = ({
           </div>
         </div>
 
+        {isPlayer && sendError && (
+          <div className="mx-auto mb-3 w-full max-w-7xl px-2">
+            <div className="rounded-xl border border-red-400/40 bg-red-600/30 px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur-sm">
+              {t("game:answerSendFailed")}
+            </div>
+          </div>
+        )}
+
         {!isPlayer && type === "mcq" && answers && (
           <McqAnswers answers={answers} onAnswer={() => undefined} />
         )}
         {!isPlayer && type === "true_false" && <TrueFalseAnswers />}
         {!isPlayer && type === "open" && <OpenAnswerPlaceholder />}
+        {!isPlayer && type === "image_sequence" && <OpenAnswerPlaceholder />}
         {isPlayer && !answered && type === "mcq" && answers && (
           <McqAnswers
             key={question}
@@ -378,6 +454,12 @@ const Answers = ({
           />
         )}
         {isPlayer && !answered && type === "open" && (
+          <OpenAnswer
+            key={question}
+            onTextAnswer={(text) => emit({ textAnswer: text })}
+          />
+        )}
+        {isPlayer && !answered && type === "image_sequence" && (
           <OpenAnswer
             key={question}
             onTextAnswer={(text) => emit({ textAnswer: text })}

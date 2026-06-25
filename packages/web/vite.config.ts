@@ -4,6 +4,12 @@ import react from "@vitejs/plugin-react"
 import { fileURLToPath } from "url"
 import { defineConfig } from "vite"
 
+// Cible du proxy temps-réel. Par défaut le socket local (:3001). Surchargeable
+// par env (WS_PROXY_TARGET) pour servir un build de test contre un socket isolé
+// sur un autre port — utile aux tests e2e de reprise après crash, sans toucher
+// à la stack de dev qui tourne déjà sur 3000/3001.
+const wsTarget = process.env.WS_PROXY_TARGET ?? "http://localhost:3001"
+
 export default defineConfig({
   plugins: [
     tanstackRouter({
@@ -31,14 +37,17 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/ws": {
-        target: "http://localhost:3001",
+        target: wsTarget,
         ws: true,
       },
       "/upload": {
-        target: "http://localhost:3001",
+        target: wsTarget,
+      },
+      "/ai-image": {
+        target: wsTarget,
       },
       "/uploads": {
-        target: "http://localhost:3001",
+        target: wsTarget,
       },
     },
   },
@@ -49,14 +58,17 @@ export default defineConfig({
     // Sans effet sur la prod : `vite preview` n'est utilisé qu'en local.
     proxy: {
       "/ws": {
-        target: "http://localhost:3001",
+        target: wsTarget,
         ws: true,
       },
       "/upload": {
-        target: "http://localhost:3001",
+        target: wsTarget,
+      },
+      "/ai-image": {
+        target: wsTarget,
       },
       "/uploads": {
-        target: "http://localhost:3001",
+        target: wsTarget,
       },
     },
   },

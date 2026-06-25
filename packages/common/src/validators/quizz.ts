@@ -112,6 +112,17 @@ const openValidator = baseQuestionValidator.extend({
     .min(1, "errors:quizz.tooFewCorrectAnswers"),
 })
 
+const imageSequenceValidator = baseQuestionValidator.extend({
+  type: z.literal("image_sequence"),
+  images: z
+    .array(z.string().min(1))
+    .min(1, "errors:quizz.tooFewImages"),
+  correctAnswers: z
+    .array(z.string().min(1, "errors:quizz.answerEmpty"))
+    .min(1, "errors:quizz.tooFewCorrectAnswers"),
+  imageInterval: z.number().int().min(2).max(60).optional(),
+})
+
 const dateValidator = baseQuestionValidator.extend({
   type: z.literal("date"),
   correctYear: z.number().int().min(-9999).max(2200),
@@ -193,6 +204,7 @@ const questionValidator = z.preprocess(
     mcqValidator,
     trueFalseValidator,
     openValidator,
+    imageSequenceValidator,
     dateValidator,
     sliderValidator,
     puzzleValidator,
@@ -217,6 +229,7 @@ export {
   mcqValidator,
   trueFalseValidator,
   openValidator,
+  imageSequenceValidator,
   dateValidator,
   sliderValidator,
   puzzleValidator,

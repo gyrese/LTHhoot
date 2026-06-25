@@ -7,6 +7,7 @@ import type { SocketHandler } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
+import { logHandlerError, wrapListener } from "@rahoot/socket/utils/safe-handler"
 import express from "express"
 import { existsSync, mkdirSync } from "fs"
 import { createServer } from "http"
@@ -16,7 +17,7 @@ import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
 import { unlink, copyFile } from "fs/promises"
 
-const WS_PORT = 3001
+const WS_PORT = Number(process.env.WS_PORT) || 3001
 
 const configPath = process.env.CONFIG_PATH
   ? resolve(process.env.CONFIG_PATH)
@@ -49,6 +50,7 @@ const upload = multer({
 const app = express()
 const httpServer = createServer(app)
 
+app.use(express.json())
 app.use("/uploads", express.static(uploadsDir))
 
 // Garde d'authentification placée AVANT multer : on rejette les requêtes non
@@ -136,6 +138,52 @@ app.post(
   },
 )
 
+app.post(
+  "/ai-image",
+  requireManager,
+  async (req: express.Request, res: express.Response) => {
+    const { subject } = req.body as { subject?: string }
+
+    if (!subject || typeof subject !== "string" || !subject.trim()) {
+      res.status(400).json({ error: "Sujet requis pour la génération d'image" })
+
+      return
+    }
+
+    console.log(`Génération d'image par IA pour le sujet : "${subject}"`)
+
+    const prompt = encodeURIComponent(
+      `${subject}, Pixar style, vibrant colors, 3D render, studio lighting --ar 4:5`,
+    )
+    const url = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=1000&nologo=true&seed=${Date.now()}`
+
+    try {
+      const imgRes = await fetch(url)
+
+      if (!imgRes.ok) {
+        throw new Error(`Pollinations error ${imgRes.status}`)
+      }
+
+      const buffer = await imgRes.arrayBuffer()
+      const outName = `img-ai-${Date.now()}.webp`
+      const outPath = resolve(uploadsDir, outName)
+
+      // Conversion WebP
+      sharp.concurrency(1)
+      await sharp(Buffer.from(buffer))
+        .webp({ quality: 82 })
+        .toFile(outPath)
+
+      res.json({ url: `/uploads/${outName}` })
+    } catch (err) {
+      console.error("Échec de la génération d'image par IA :", err)
+      res.status(500).json({
+        error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
+      })
+    }
+  },
+)
+
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
   // 100MB
@@ -182,12 +230,86 @@ io.engine.on("connection", (engineSocket) => {
   })
 })
 
+// ── Observabilité (Palier 1) ─────────────────────────────────────────────────
+// Répartition des sockets connectés par transport. Permet de voir EN PROD si les
+// clients montent bien en WebSocket ou restent bloqués en polling (signal de
+// qualité réseau du lieu : c'est souvent la racine d'un « jamais réussi à se
+// connecter » sur un Wi-Fi de salle saturé).
+const transportBreakdown = () => {
+  let websocket = 0
+  let polling = 0
+
+  for (const s of io.sockets.sockets.values()) {
+    if (s.conn.transport.name === "websocket") {
+      websocket += 1
+    } else {
+      polling += 1
+    }
+  }
+
+  return { websocket, polling }
+}
+
+// Endpoint de santé : un moniteur d'uptime (ou l'hôte) peut vérifier que le
+// serveur répond AVANT un événement et diagnostiquer en direct (parties, joueurs,
+// transports). Léger, sans authentification (aucune donnée sensible).
+app.get("/health", (_req, res) => {
+  const games = Registry.getInstance().getAllGames()
+  const players = games.reduce((sum, g) => sum + g.players.length, 0)
+
+  res.json({
+    status: "ok",
+    uptime: Math.round(process.uptime()),
+    games: games.length,
+    players,
+    sockets: io.engine.clientsCount,
+    transports: transportBreakdown(),
+  })
+})
+
+// Résumé périodique des transports : visibilité prod sur le taux d'upgrade WS.
+// Silencieux quand personne n'est connecté (pas de bruit de log au repos).
+setInterval(() => {
+  const { websocket, polling } = transportBreakdown()
+
+  if (websocket + polling > 0) {
+    console.log(
+      `[METRICS] sockets=${websocket + polling} ws=${websocket} polling=${polling} games=${Registry.getInstance().getGameCount()}`,
+    )
+  }
+}, 30_000)
+
+// Filet de dernier recours : une exception/rejet qui aurait échappé au garde-fou
+// par-listener (timers, callbacks tiers…) ne doit PAS tuer le process et vider la
+// RAM (= toutes les parties perdues). On log et on reste debout. Sûr car l'état
+// des parties est aussi persisté sur disque (cf. services/persistence) : même un
+// crash franc redevient récupérable.
+process.on("uncaughtException", (err) => {
+  logHandlerError("uncaughtException", err)
+})
+
+process.on("unhandledRejection", (reason) => {
+  logHandlerError("unhandledRejection", reason)
+})
+
 Config.init()
+
+// Reprise après crash/redéploiement : on recharge les parties persistées avant
+// d'accepter des connexions. Les clients se rebrancheront par clientId.
+Registry.getInstance().loadFromDisk(io)
 
 console.log(
   `Socket server running on port ${WS_PORT} (transports: polling + websocket)`,
 )
 httpServer.listen(WS_PORT, "0.0.0.0")
+
+// Exception au garde-fou « ne jamais exit » : un échec de bind (port occupé…)
+// rend le serveur inutilisable. On laisse alors le superviseur le relancer
+// proprement plutôt que de rester debout sans écouter aucune connexion.
+httpServer.on("error", (err) => {
+  logHandlerError("httpServer", err)
+  process.exit(1)
+})
 
 const socketHandlers: SocketHandler[] = [
   managerSocketHandlers,
@@ -202,6 +324,14 @@ io.on("connection", (socket) => {
     `[IO] Client connecté: socketId=${socket.id} clientId=${socket.handshake.auth.clientId} transport=${transport}`,
   )
 
+  // Garde-fou : on enveloppe socket.on pour que TOUT listener enregistré
+  // ensuite (handlers métiers + "disconnect"/"error") soit protégé par un
+  // try/catch. Une exception applicative est ainsi isolée au lieu de remonter
+  // au process et d'éjecter toute la salle. cf. utils/safe-handler.
+  const rawOn = socket.on.bind(socket)
+  socket.on = ((event: string | symbol, listener: (..._a: unknown[]) => unknown) =>
+    rawOn(event as never, wrapListener(event, listener) as never)) as typeof socket.on
+
   socket.on("error", (err) => {
     console.error(`[IO_ERR] socketId=${socket.id}: ${err.message}`)
   })
@@ -209,6 +339,23 @@ io.on("connection", (socket) => {
   socketHandlers.forEach((handler) => {
     handler({ io, socket })
   })
+
+  // Hooks de test (gated par env, JAMAIS actifs en prod) : permettent de vérifier
+  // en e2e que le garde-fou isole une exception de handler — sync ET async —
+  // sans tuer le process ni déconnecter les autres clients. cf. utils/safe-handler.
+  if (process.env.ENABLE_TEST_HOOKS === "1") {
+    const testSocket = socket as unknown as {
+      on: (_event: string, _cb: (..._a: unknown[]) => unknown) => void
+    }
+
+    testSocket.on("__test_throw_sync", () => {
+      throw new Error("[TEST] throw synchrone intentionnel")
+    })
+
+    testSocket.on("__test_throw_async", () =>
+      Promise.reject(new Error("[TEST] rejet async intentionnel")),
+    )
+  }
 })
 
 process.on("SIGINT", () => {

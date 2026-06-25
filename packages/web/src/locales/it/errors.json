@@ -34,6 +34,7 @@
     "subjectEmpty": "Il soggetto non può essere vuoto",
     "tooFewAnswers": "Una domanda deve avere almeno 2 risposte",
     "tooFewCorrectAnswers": "È richiesta almeno una risposta corretta",
+    "tooFewImages": "È richiesta almeno un'immagine",
     "tooManyAnswers": "Una domanda non può avere più di 4 risposte"
   }
 }

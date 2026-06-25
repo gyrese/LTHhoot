@@ -86,7 +86,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz, powerUpsEnabled)
+    const game = new Game(io, socket, quizz, { powerUpsEnabled })
     registry.addGame(game)
   })
 
@@ -128,16 +128,26 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     withGame(gameId, socket, (game) => game.startDemo(socket)),
   )
 
-  socket.on(EVENTS.PLAYER.SELECTED_ANSWER, ({ gameId, data }) =>
-    withGame(gameId, socket, (game) =>
-      game.selectAnswer(socket, {
-        answerId: data.answerId,
-        textAnswer: data.textAnswer,
-        numberAnswer: data.numberAnswer,
-        orderAnswer: data.orderAnswer,
-      }),
-    ),
-  )
+  socket.on(EVENTS.PLAYER.SELECTED_ANSWER, ({ gameId, data }, ack) => {
+    // On répond TOUJOURS un accusé : le client n'affiche « répondu » que sur
+    // confirmation et réessaie tant qu'il n'a rien reçu (cf. Answers.tsx).
+    const game = gameId ? registry.getGameById(gameId) : undefined
+
+    if (!game) {
+      ack({ status: "not_found" })
+
+      return
+    }
+
+    const status = game.selectAnswer(socket, {
+      answerId: data.answerId,
+      textAnswer: data.textAnswer,
+      numberAnswer: data.numberAnswer,
+      orderAnswer: data.orderAnswer,
+    })
+
+    ack({ status })
+  })
 
   socket.on(EVENTS.MANAGER.ABORT_QUIZ, ({ gameId }) =>
     withGame(gameId, socket, (game) => game.abortRound(socket)),
@@ -154,6 +164,12 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, ({ gameId, data }) =>
     withManagerGame(gameId, socket, (game) =>
       game.validateOpenAnswer(data.text),
+    ),
+  )
+
+  socket.on(EVENTS.MANAGER.INVALIDATE_OPEN_ANSWER, ({ gameId, data }) =>
+    withManagerGame(gameId, socket, (game) =>
+      game.invalidateOpenAnswer(data.text),
     ),
   )
 

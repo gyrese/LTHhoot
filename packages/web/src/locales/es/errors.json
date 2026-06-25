@@ -34,6 +34,7 @@
     "subjectEmpty": "El tema no puede estar vacío",
     "tooFewAnswers": "Una pregunta debe tener al menos 2 respuestas",
     "tooFewCorrectAnswers": "Se requiere al menos una respuesta correcta",
+    "tooFewImages": "Se requiere al menos una imagen",
     "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas"
   }
 }

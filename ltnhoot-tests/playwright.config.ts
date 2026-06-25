@@ -22,7 +22,19 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        // Empêche Chromium de geler les onglets en arrière-plan : indispensable
+        // aux tests temps-réel multi-contextes (manager + joueurs), sinon le
+        // socket de l'onglet inactif tombe en ping timeout et la partie se reset.
+        launchOptions: {
+          args: [
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+          ],
+        },
+      },
     },
     {
       name: "mobile-chrome",

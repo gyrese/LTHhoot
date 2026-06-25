@@ -98,6 +98,7 @@ export type QuestionType =
   | "mcq"
   | "true_false"
   | "open"
+  | "image_sequence"
   | "date"
   | "slider"
   | "puzzle"
@@ -138,6 +139,13 @@ export type TrueFalseQuestion = BaseQuestion & {
 export type OpenQuestion = BaseQuestion & {
   type: "open"
   correctAnswers: string[]
+}
+
+export type ImageSequenceQuestion = BaseQuestion & {
+  type: "image_sequence"
+  images: string[]
+  correctAnswers: string[]
+  imageInterval?: number
 }
 
 export type DateQuestion = BaseQuestion & {
@@ -185,6 +193,7 @@ export type Question =
   | McqQuestion
   | TrueFalseQuestion
   | OpenQuestion
+  | ImageSequenceQuestion
   | DateQuestion
   | SliderQuestion
   | PuzzleQuestion

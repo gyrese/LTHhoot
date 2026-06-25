@@ -17,6 +17,9 @@
     "config": {
       "answerTime": "Antwortzeit",
       "answerTimeHint": "Zeit, die Spieler zum Antworten haben",
+      "applyBackgroundToAll": "Diesen Hintergrund auf alle Folien anwenden",
+      "applyTimingToAll": "Diese Zeiten auf alle Folien anwenden",
+      "appliedToAll": "Auf alle Folien angewendet",
       "background": "Hintergrund",
       "displayDuration": "Anzeigedauer",
       "displayDurationHint": "Wie lange die Titelfolie angezeigt wird",
@@ -65,6 +68,7 @@
     "drop_pin": "Nadel setzen",
     "mcq": "Multiple Choice",
     "open": "Offene Antwort",
+    "image_sequence": "Bilderfolge",
     "puzzle": "Puzzle",
     "slider": "Schieberegler",
     "title_slide": "Titel",
@@ -74,6 +78,12 @@
     "hint": "Ordne die Elemente in die richtige Reihenfolge. Spieler erhalten eine gemischte Version.",
     "itemPlaceholder": "Element hinzufügen...",
     "itemsLabel": "Elemente (in richtiger Reihenfolge)"
+  },
+  "imageSequence": {
+    "imagesLabel": "Bilder (Reihenfolge der Enthüllung)",
+    "urlPlaceholder": "Bild-URL...",
+    "intervalLabel": "Intervall (Sekunden)",
+    "intervalHint": "Zeit zwischen jedem Bild (min 2s)"
   },
   "dropPin": {
     "correct": "Richtig",
@@ -86,6 +96,12 @@
     "pan": "Verschieben"
   },
   "quizzSaved": "Quiz erfolgreich gespeichert",
+  "importCsv": "Importieren",
+  "importCsvTemplate": "CSV-Vorlage herunterladen",
+  "importCsvEmpty": "Keine gültige Frage gefunden. Überprüfe das CSV-Format.",
+  "importCsvSuccess": "{{count}} Frage(n) importiert",
+  "importCsvIgnored": "{{count}} Zeile(n) ignoriert (ungültiges Format)",
+  "importCsvFailed": "CSV-Datei konnte nicht gelesen werden",
   "quizzUpdated": "Quiz erfolgreich aktualisiert",
   "slideAudio": "Audio",
   "slideBackground": "Hintergrund",
@@ -118,7 +134,9 @@
     "tagsLabel": "Tags",
     "coverImageLabel": "Titelbild",
     "coverImageHint": "Füge ein Titelbild hinzu, damit dein Kahoot auffällt.",
-    "upload": "Hochladen"
+    "upload": "Hochladen",
+    "aiGenerate": "Generieren",
+    "aiGenerateTooltip": "Bild automatisch aus dem Titel generieren"
   },
   "titleQuizzPlaceholder": "Quiz-Titel...",
   "tolerance": "Toleranz",

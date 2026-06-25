@@ -53,6 +53,21 @@ export const IconDisplay = ({ className }: { className?: string }) => (
   </svg>
 )
 
+export const IconX = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+)
+
 export const IconCheck = ({ className }: { className?: string }) => (
   <svg
     className={className}
@@ -283,6 +298,7 @@ export function GamePanel({
   answerCount,
   players,
   onValidateOpenAnswer,
+  onInvalidateOpenAnswer,
   questionStates,
   timer,
   maxTime,
@@ -291,6 +307,7 @@ export function GamePanel({
   answerCount: number
   players: Player[]
   onValidateOpenAnswer: (_text: string) => void
+  onInvalidateOpenAnswer: (_text: string) => void
   questionStates: QuestionStates | null
   timer: number | null
   maxTime: number
@@ -334,6 +351,7 @@ export function GamePanel({
         <OpenAnswersManagerPanel
           data={status.data}
           onValidate={onValidateOpenAnswer}
+          onInvalidate={onInvalidateOpenAnswer}
           questionStates={questionStates}
           timer={timer}
           maxTime={maxTime}
@@ -407,12 +425,14 @@ function TimerBar({ timer, maxTime }: { timer: number; maxTime: number }) {
 function OpenAnswersManagerPanel({
   data,
   onValidate,
+  onInvalidate,
   questionStates,
   timer,
   maxTime,
 }: {
   data: Record<string, unknown>
   onValidate: (_text: string) => void
+  onInvalidate: (_text: string) => void
   questionStates: QuestionStates | null
   timer: number | null
   maxTime: number
@@ -422,6 +442,7 @@ function OpenAnswersManagerPanel({
   const answers = (data.answers as AnswerEntry[]) ?? []
   const totalPlayers = Number(data.totalPlayers ?? 0)
   const correctAnswers = (data.correctAnswers as string[]) ?? []
+  const originalCorrectAnswers = (data.originalCorrectAnswers as string[]) ?? []
   const [validating, setValidating] = useState<string | null>(null)
 
   const unique = Array.from(
@@ -434,6 +455,16 @@ function OpenAnswersManagerPanel({
     setValidating(text)
     onValidate(text)
   }
+
+  const handleInvalidate = (text: string) => {
+    setValidating(text)
+    onInvalidate(text)
+  }
+
+  const isOriginal = (text: string) =>
+    originalCorrectAnswers.some(
+      (ca) => ca.trim().toLowerCase() === text.trim().toLowerCase(),
+    )
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -477,7 +508,7 @@ function OpenAnswersManagerPanel({
           </p>
         </div>
         <p className="px-4 pt-2.5 pb-1 text-[11px] text-white/30">
-          Appuyer pour valider une réponse
+          Appuyer pour valider · appuyer sur ✓ pour annuler (repêchées)
         </p>
         <div className="flex flex-col gap-1.5 p-3">
           {unique.map((answer) => {
@@ -494,25 +525,43 @@ function OpenAnswersManagerPanel({
               )
               .map((a) => a.playerName)
 
+            const rescued = answer.isCorrect && !isOriginal(answer.text)
+
             return (
               <button
                 key={answer.text}
-                disabled={answer.isCorrect || validating === answer.text}
+                disabled={
+                  (answer.isCorrect && !rescued) ||
+                  validating === answer.text
+                }
                 onClick={() => {
-                  handleValidate(answer.text)
+                  if (rescued) {
+                    handleInvalidate(answer.text)
+                  } else if (!answer.isCorrect) {
+                    handleValidate(answer.text)
+                  }
                 }}
                 className={clsx(
                   "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all active:scale-98",
-                  answer.isCorrect
+                  answer.isCorrect && !rescued
                     ? "cursor-default border-green-500/30 bg-green-500/15"
-                    : "border-white/8 bg-white/5 hover:border-orange-500/20 hover:bg-white/10",
-                  validating === answer.text &&
-                    !answer.isCorrect &&
-                    "opacity-50",
+                    : answer.isCorrect && rescued
+                      ? "border-green-500/40 bg-green-500/15 hover:border-red-500/30 hover:bg-red-500/10"
+                      : "border-white/8 bg-white/5 hover:border-orange-500/20 hover:bg-white/10",
+                  validating === answer.text && "opacity-50",
                 )}
               >
-                {answer.isCorrect && (
+                {answer.isCorrect && !rescued && (
                   <IconCheck className="h-4 w-4 shrink-0 text-green-400" />
+                )}
+                {rescued && (
+                  <span
+                    className="group relative shrink-0"
+                    title="Annuler la validation"
+                  >
+                    <IconCheck className="h-4 w-4 text-green-400 group-hover:hidden" />
+                    <IconX className="hidden h-4 w-4 text-red-400 group-hover:block" />
+                  </span>
                 )}
                 <div className="min-w-0 flex-1">
                   <p
@@ -525,6 +574,9 @@ function OpenAnswersManagerPanel({
                   </p>
                   <p className="truncate text-xs text-white/35">
                     {playerNames.join(", ")}
+                    {rescued && (
+                      <span className="ml-1 text-orange-400/70">· repêchée</span>
+                    )}
                   </p>
                 </div>
                 {count > 1 && (
@@ -1022,7 +1074,7 @@ function ResponsesPanel({ data }: { data: Record<string, unknown> }) {
         </div>
       )}
 
-      {type === "open" && (
+      {(type === "open" || type === "image_sequence") && (
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm">
           <div className="border-b border-white/5 px-4 py-2.5">
             <p className="text-xs font-semibold tracking-wider text-white/35 uppercase">
@@ -1171,7 +1223,7 @@ function SolutionDisplay({ data }: { data: Record<string, unknown> }) {
             {solutions[0] === 0 ? "Vrai" : "Faux"}
           </span>
         )}
-        {type === "open" && (
+        {(type === "open" || type === "image_sequence") && (
           <div className="flex flex-wrap gap-2">
             {correctAnswers.map((ans, i) => (
               <span

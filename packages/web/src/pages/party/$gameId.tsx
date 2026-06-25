@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next"
 
 const PlayerGamePage = () => {
   const navigate = useNavigate()
-  const { isReconnecting } = useSocket()
+  const { isReconnecting, socket } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
   const { status, setStatus, reset } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -52,6 +52,15 @@ const PlayerGamePage = () => {
       setStatus(name, data)
     }
   })
+
+  // Au montage, si DÉJÀ connecté : redemander l'état (l'event "connect" ne se
+  // redéclenche pas). Le serveur renvoie l'écran d'attente (WAIT) — sinon le
+  // joueur reste sur le fond de base après avoir choisi pseudo + avatar.
+  useEffect(() => {
+    if (socket?.connected && gameIdParam) {
+      socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
+    }
+  }, [socket, gameIdParam])
 
   // UseSocket déplacé en haut
 

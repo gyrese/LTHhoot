@@ -1,6 +1,10 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
-import type { Server, Socket } from "@rahoot/common/types/game/socket"
+import type {
+  AnswerAckStatus,
+  Server,
+  Socket,
+} from "@rahoot/common/types/game/socket"
 import {
   STATUS,
   type Status,
@@ -13,6 +17,12 @@ import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
 import { RoundManager } from "@rahoot/socket/services/game/round-manager"
 import Registry from "@rahoot/socket/services/registry"
+import {
+  type GameSnapshot,
+  SNAPSHOT_VERSION,
+  playerToSnapshot,
+  snapshotToPlayer,
+} from "@rahoot/socket/services/persistence"
 import { createInviteCode } from "@rahoot/socket/utils/game"
 import { v4 as uuid } from "uuid"
 
@@ -64,19 +74,31 @@ class Game {
     { name: Status; data: StatusDataMap[Status] }
   > = new Map()
 
-  constructor(io: Server, socket: Socket, quizz: Quizz, powerUpsEnabled = false) {
+  constructor(
+    io: Server,
+    socket: Socket | null,
+    quizz: Quizz,
+    options?: {
+      powerUpsEnabled?: boolean
+      restore?: { gameId: string; inviteCode: string; managerClientId: string }
+    },
+  ) {
     if (!io) {
       throw new Error("Socket server not initialized")
     }
 
+    const powerUpsEnabled = options?.powerUpsEnabled ?? false
+    const restore = options?.restore
+
     this.io = io
-    this.gameId = uuid()
-    this.inviteCode = createInviteCode()
+    this.gameId = restore?.gameId ?? uuid()
+    this.inviteCode = restore?.inviteCode ?? createInviteCode()
     this.logger = new GameLogger()
     this._manager = {
-      id: socket.id,
-      clientId: socket.handshake.auth.clientId,
-      connected: true,
+      // En restauration : pas de socket, le manager se rebranchera par clientId.
+      id: socket?.id ?? "",
+      clientId: restore?.managerClientId ?? socket!.handshake.auth.clientId,
+      connected: !restore,
     }
     this.singleQuizPowerUpsEnabled = powerUpsEnabled
 
@@ -95,9 +117,19 @@ class Game {
       },
     }
 
-    socket.join(this.gameId)
-    socket.join(`manager-${this.gameId}`)
-    socket.emit(EVENTS.MANAGER.GAME_CREATED, {
+    // Chemin restauration : aucun socket à rejoindre/notifier ici. La partie
+    // attend que l'hôte et les joueurs se reconnectent par clientId.
+    if (restore) {
+      console.log(
+        `Game restored: ${this.inviteCode} subject: ${quizz.subject}`,
+      )
+
+      return
+    }
+
+    socket!.join(this.gameId)
+    socket!.join(`manager-${this.gameId}`)
+    socket!.emit(EVENTS.MANAGER.GAME_CREATED, {
       gameId: this.gameId,
       inviteCode: this.inviteCode,
       salonImage: quizz.salonImage || quizz.listingImage,
@@ -107,6 +139,72 @@ class Game {
     console.log(
       `New game created: ${this.inviteCode} subject: ${quizz.subject}`,
     )
+  }
+
+  // ── Persistance ──────────────────────────────────────────────────────────────
+
+  serialize(): GameSnapshot {
+    const checkpoint = this.round.getCheckpoint()
+
+    return {
+      version: SNAPSHOT_VERSION,
+      gameId: this.gameId,
+      inviteCode: this.inviteCode,
+      managerClientId: this._manager.clientId,
+      quizz: checkpoint.quizz,
+      resumeIndex: checkpoint.resumeIndex,
+      questionsHistory: checkpoint.questionsHistory,
+      players: this.playerManager.getAll().map(playerToSnapshot),
+      eveningSession: this.eveningSession
+        ? {
+            quizIds: this.eveningSession.quizIds,
+            currentIndex: this.eveningSession.currentIndex,
+            powerUpsEnabled: this.eveningSession.powerUpsEnabled,
+          }
+        : null,
+      singleQuizPowerUpsEnabled: this.singleQuizPowerUpsEnabled,
+      savedAt: Date.now(),
+    }
+  }
+
+  // Reconstruit une partie depuis un instantané (au démarrage du serveur). Aucun
+  // socket : la partie repart en lobby et attend les reconnexions par clientId.
+  // Retourne null si l'instantané correspond à une partie déjà terminée.
+  static restore(io: Server, snapshot: GameSnapshot): Game | null {
+    const totalQuestions = snapshot.quizz.questions.length
+
+    if (totalQuestions === 0 || snapshot.resumeIndex >= totalQuestions) {
+      // Partie terminée (ou quiz vide) → rien à reprendre.
+      return null
+    }
+
+    const game = new Game(io, null, snapshot.quizz, {
+      powerUpsEnabled: snapshot.singleQuizPowerUpsEnabled,
+      restore: {
+        gameId: snapshot.gameId,
+        inviteCode: snapshot.inviteCode,
+        managerClientId: snapshot.managerClientId,
+      },
+    })
+
+    // Mode soirée : restaurer la session et recâbler le RoundManager soirée.
+    if (snapshot.eveningSession) {
+      game.eveningSession = { ...snapshot.eveningSession }
+      game.round = game.createRoundManager(snapshot.quizz, true)
+    }
+
+    // Joueurs : points/streak conservés, marqués déconnectés (id placeholder).
+    const players = snapshot.players.map(snapshotToPlayer)
+    game.playerManager.replace(players)
+
+    // Progression : on repart à la prochaine question non scorée.
+    game.round.restoreCheckpoint({
+      resumeIndex: snapshot.resumeIndex,
+      questionsHistory: snapshot.questionsHistory,
+      leaderboard: [...players].sort((a, b) => b.points - a.points),
+    })
+
+    return game
   }
 
   // ── Factory RoundManager ────────────────────────────────────────────────────
@@ -779,8 +877,8 @@ class Game {
       numberAnswer?: number
       orderAnswer?: number[]
     },
-  ) {
-    this.round.selectAnswer(socket, payload)
+  ): AnswerAckStatus {
+    return this.round.selectAnswer(socket, payload)
   }
 
   // Verrou anti-double-pilotage partagé par toutes les transitions d'avancement.
@@ -822,6 +920,10 @@ class Game {
 
   validateOpenAnswer(text: string) {
     this.round.validateOpenAnswer(text)
+  }
+
+  invalidateOpenAnswer(text: string) {
+    this.round.invalidateOpenAnswer(text)
   }
 
   finalizeOpenAnswers() {

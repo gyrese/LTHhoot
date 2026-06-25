@@ -64,6 +64,15 @@ return
     }
   })
 
+  // Au montage, si DÉJÀ connecté : redemander l'état. L'event "connect" ne se
+  // redéclenche pas dans ce cas, et le reset() de démontage (rejoué par
+  // StrictMode en dev) efface le SHOW_ROOM posé par config.tsx → salon vide.
+  useEffect(() => {
+    if (socket?.connected && gameIdParam) {
+      socket.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+    }
+  }, [socket, gameIdParam])
+
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
     (data) => {

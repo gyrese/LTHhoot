@@ -46,6 +46,8 @@ export type CommonStatusDataMap = {
     gridCols?: number
     gridRows?: number
     revelationStyle?: string
+    images?: string[]
+    imageInterval?: number
   }
   SELECT_ANSWER: {
     question: string
@@ -71,6 +73,8 @@ export type CommonStatusDataMap = {
     gridCols?: number
     gridRows?: number
     revelationStyle?: string
+    images?: string[]
+    imageInterval?: number
   }
   SHOW_RESULT: {
     correct: boolean
@@ -85,6 +89,7 @@ export type CommonStatusDataMap = {
     answers: Array<{ text: string; playerName: string; isCorrect: boolean }>
     totalPlayers: number
     correctAnswers?: string[]
+    originalCorrectAnswers?: string[]
   }
   WAIT: { text: string }
   FINISHED: {

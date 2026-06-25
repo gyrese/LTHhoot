@@ -1,5 +1,5 @@
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { X, Upload } from "lucide-react"
+import { X, Upload, Sparkles } from "lucide-react"
 import { useRef, useState, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
@@ -26,6 +26,8 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
   const [uploadingSalon, setUploadingSalon] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generatingSalon, setGeneratingSalon] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const salonFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,6 +108,41 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     }
 
     setUploadingSalon(false)
+  }
+
+  const handleAiGenerate = async (
+    subject: string,
+    setImage: (url: string) => void,
+    setBusy: (v: boolean) => void,
+  ) => {
+    setBusy(true)
+    try {
+      const res = await fetch("/ai-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-id": localStorage.getItem("client_id") ?? "",
+        },
+        body: JSON.stringify({ subject }),
+      })
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as {
+          error?: string
+        }
+        throw new Error(errorData.error || `Erreur serveur ${res.status}`)
+      }
+
+      const data = (await res.json()) as { url: string }
+      if (data.url) {
+        setImage(data.url)
+      }
+    } catch (err) {
+      console.error("Génération IA échouée :", err)
+      toast.error(t("errors:upload.failed"))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -290,16 +327,35 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 }}
               />
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
+                  disabled={uploading || generating}
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
                     {uploading ? "…" : t("quizz:settings.upload")}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleAiGenerate(
+                      localSubject,
+                      setLocalImage,
+                      setGenerating,
+                    )
+                  }
+                  disabled={!localSubject.trim() || generating || uploading}
+                  title={t("quizz:settings.aiGenerateTooltip")}
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft disabled:opacity-50"
+                >
+                  <Sparkles className="size-5" />
+                  <span className="text-xs font-medium">
+                    {generating ? "…" : t("quizz:settings.aiGenerate")}
                   </span>
                 </button>
 
@@ -350,16 +406,35 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 }}
               />
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => salonFileInputRef.current?.click()}
-                  disabled={uploadingSalon}
+                  disabled={uploadingSalon || generatingSalon}
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
                     {uploadingSalon ? "…" : t("quizz:settings.upload")}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleAiGenerate(
+                      localSubject,
+                      setLocalSalonImage,
+                      setGeneratingSalon,
+                    )
+                  }
+                  disabled={!localSubject.trim() || generatingSalon || uploadingSalon}
+                  title={t("quizz:settings.aiGenerateTooltip")}
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft disabled:opacity-50"
+                >
+                  <Sparkles className="size-5" />
+                  <span className="text-xs font-medium">
+                    {generatingSalon ? "…" : t("quizz:settings.aiGenerate")}
                   </span>
                 </button>
 

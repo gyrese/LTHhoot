@@ -1,5 +1,6 @@
 {
   "answerSent": "Antwort gesendet!",
+  "answerSendFailed": "Antwort nicht gesendet – zum Wiederholen tippen",
   "correct": "Richtig!",
   "false": "Falsch",
   "gamePinLabel": "Spiel-PIN:",
@@ -43,5 +44,8 @@
     "players": "Spieler",
     "clickToValidate": "Klicke eine Antwort zum Bestätigen",
     "noAnswer": "Keine Antwort"
+  },
+  "imageSequence": {
+    "indicator": "Bild {{current}} / {{total}}"
   }
 }

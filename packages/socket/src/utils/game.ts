@@ -122,6 +122,15 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
         )
       )
 
+    case "image_sequence":
+      return (
+        answer.textAnswer !== undefined &&
+        question.correctAnswers.some(
+          (ca) =>
+            ca.trim().toLowerCase() === answer.textAnswer!.trim().toLowerCase(),
+        )
+      )
+
     case "date":
       return (
         answer.numberAnswer !== undefined &&
