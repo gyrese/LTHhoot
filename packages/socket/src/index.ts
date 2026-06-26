@@ -8,6 +8,7 @@ import Config from "@rahoot/socket/services/config"
 import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
 import { logHandlerError, wrapListener } from "@rahoot/socket/utils/safe-handler"
+import { GoogleGenAI } from "@google/genai"
 import express from "express"
 import { existsSync, mkdirSync } from "fs"
 import { createServer } from "http"
@@ -146,41 +147,52 @@ app.post(
 
     if (!subject || typeof subject !== "string" || !subject.trim()) {
       res.status(400).json({ error: "Sujet requis pour la génération d'image" })
-
       return
     }
 
-    console.log(`Génération d'image par IA pour le sujet : "${subject}"`)
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY manquante dans les variables d'environnement")
+      res.status(500).json({ error: "Clé API Gemini non configurée sur le serveur" })
+      return
+    }
 
-    const prompt = encodeURIComponent(
-      `${subject}, Pixar style, vibrant colors, 3D render, studio lighting --ar 4:5`,
-    )
-    const url = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=1000&nologo=true&seed=${Date.now()}`
+    console.log(`Génération d'image par Gemini Imagen pour le sujet : "${subject}"`)
+
+    const genAI = new GoogleGenAI({ apiKey })
+
+    const prompt = `${subject}, Pixar style, vibrant colors, 3D render, studio lighting, square format`
 
     try {
-      const imgRes = await fetch(url)
+      const response = await genAI.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: prompt,
+      })
 
-      if (!imgRes.ok) {
-        throw new Error(`Pollinations error ${imgRes.status}`)
+      const part = response.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)
+      const imageData = part?.inlineData?.data
+      if (!imageData) {
+        throw new Error("Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.")
       }
 
-      const buffer = await imgRes.arrayBuffer()
+      const buffer = Buffer.from(imageData, "base64")
       const outName = `img-ai-${Date.now()}.webp`
       const outPath = resolve(uploadsDir, outName)
 
       // Conversion WebP
       sharp.concurrency(1)
-      await sharp(Buffer.from(buffer))
+      await sharp(buffer)
         .webp({ quality: 82 })
         .toFile(outPath)
 
       res.json({ url: `/uploads/${outName}` })
     } catch (err) {
-      console.error("Échec de la génération d'image par IA :", err)
+      console.error("Échec de la génération d'image par Gemini :", err)
       res.status(500).json({
         error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
       })
     }
+
   },
 )
 

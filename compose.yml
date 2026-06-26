@@ -3,6 +3,8 @@ services:
     image: gyrese/lthoot:latest
     container_name: ltnhoot
     restart: unless-stopped
+    environment:
+      - GEMINI_API_KEY
     networks:
       - nginx-proxy-network
     volumes:
