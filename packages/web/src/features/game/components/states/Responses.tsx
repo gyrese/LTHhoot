@@ -490,14 +490,10 @@ const Responses = ({
   const [percentages, setPercentages] = useState<Record<string, string>>({})
   const [revealed, setRevealed] = useState(false)
   const [sfxResults] = useSound(SFX.RESULTS_SOUND, { volume: 0.2 })
-  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
-    volume: 0.2,
-  })
 
   const { isHost } = useGameConfig()
 
   useEffect(() => {
-    stopMusic()
     setRevealed(false)
 
     if (!isHost) {
@@ -508,12 +504,10 @@ const Responses = ({
 
     sfxResults()
     setPercentages(calculatePercentages(responses))
-    playMusic()
 
     const revealTimer = setTimeout(() => setRevealed(true), 1500)
 
     return () => {
-      stopMusic()
       clearTimeout(revealTimer)
     }
   }, [isHost, question])

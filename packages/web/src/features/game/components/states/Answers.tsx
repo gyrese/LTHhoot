@@ -1,6 +1,6 @@
-import { EVENTS, MEDIA_TYPES } from "@rahoot/common/constants"
+import { EVENTS } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
-import type { QuestionMediaType, SlideElement } from "@rahoot/common/types/game"
+import type { SlideElement } from "@rahoot/common/types/game"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
@@ -46,7 +46,6 @@ const Answers = ({
     question,
     type,
     answers,
-    media,
     background,
     backgroundOpacity,
     elements,
@@ -138,11 +137,6 @@ const Answers = ({
   }, [isScrambled, isPlayer, question, type])
 
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.1 })
-  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
-    volume: 0.2,
-    interrupt: true,
-    loop: true,
-  })
 
   // Envoi fiabilisé d'une réponse : accusé de réception serveur + retry borné.
   // L'ancien envoi était « fire-and-forget » + `setAnswered(true)` inconditionnel :
@@ -213,27 +207,6 @@ const Answers = ({
     setAnswered(true)
     sendAnswer(payload, 0)
   }
-
-  useEffect(() => {
-    const disabledMusicMedia = [
-      MEDIA_TYPES.AUDIO,
-      MEDIA_TYPES.VIDEO,
-    ] as QuestionMediaType[]
-
-    const hasYoutube = elements?.some((el) => el.type === "youtube") ?? false
-
-    // Musique autoris├®e uniquement sur Host et si pas d'autre m├®dia audio/vid├®o
-    if (!isHost || disabledMusicMedia.includes(media?.type) || audio || hasYoutube) {
-      return
-    }
-
-    playMusic()
-
-    // eslint-disable-next-line consistent-return
-    return () => {
-      stopMusic()
-    }
-  }, [playMusic, isHost])
 
   const audioCtxRef = useRef<AudioContext | null>(null)
 
