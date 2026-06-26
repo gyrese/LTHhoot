@@ -4,7 +4,7 @@ services:
     container_name: ltnhoot
     restart: unless-stopped
     environment:
-      - GEMINI_API_KEY
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     networks:
       - nginx-proxy-network
     volumes:
