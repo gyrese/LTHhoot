@@ -625,9 +625,9 @@ const Responses = ({
           )}
         </div>
 
-        {hasRevealCard && (
+        {hasRevealCard && reveal && (
           <div className="lg:col-span-5 w-full flex items-center justify-center anim-show">
-            <AnswerRevealCard reveal={answerReveal} />
+            <AnswerRevealCard reveal={reveal} />
           </div>
         )}
       </div>

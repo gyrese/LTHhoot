@@ -30,9 +30,6 @@ const Question = ({
     cooldown,
     pinImage,
     revelationEnabled,
-    revealDuration,
-    gridCols,
-    gridRows,
   },
 }: Props) => {
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })

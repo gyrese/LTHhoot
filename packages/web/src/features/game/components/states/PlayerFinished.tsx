@@ -27,7 +27,7 @@ const WAITING_ANIMATION_STATES = ["waiting"] as const
 const FAILED_ANIMATION_STATES = ["failed"] as const
 
 const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
-  const { player, reset } = usePlayerStore()
+  const { player } = usePlayerStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [showQuit, setShowQuit] = useState(false)

@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import Loader from "@rahoot/web/components/Loader"
 import { LogOut } from "lucide-react"
-import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useNavigate } from "@tanstack/react-router"
 
 type Props = {
@@ -14,7 +13,6 @@ type Props = {
 
 const Wait = ({ data: { text } }: Props) => {
   const { t } = useTranslation()
-  const { reset } = usePlayerStore()
   const navigate = useNavigate()
   const [totalPlayers, setTotalPlayers] = useState(0)
 
