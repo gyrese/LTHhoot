@@ -2,6 +2,7 @@ import { EVENTS } from "@rahoot/common/constants"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import manager, { emitConfig } from "@rahoot/socket/services/manager"
+import { AIService } from "@rahoot/socket/services/ai"
 
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -75,6 +76,27 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
       } catch (error) {
         console.error("Failed to move quizz to folder:", error)
         socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.failedToUpdate")
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.QUIZZ.AI_GENERATE,
+    manager.withAuth(socket, async ({ prompt, count, questionTypes, level }) => {
+      try {
+        const questions = await AIService.generateQuestions({
+          prompt,
+          count,
+          questionTypes,
+          level,
+        })
+
+        socket.emit(EVENTS.QUIZZ.AI_GENERATE_SUCCESS, { questions })
+      } catch (error) {
+        console.error("Failed to generate quiz with AI:", error)
+        const message =
+          error instanceof Error ? error.message : "errors:quizz.aiGenerationFailed"
+        socket.emit(EVENTS.QUIZZ.ERROR, message)
       }
     }),
   )

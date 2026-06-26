@@ -24,8 +24,10 @@ import {
   Sparkles,
   CheckCircle2,
   MessageSquareReply,
+  Lock,
+  Unlock,
 } from "lucide-react"
-import React from "react"
+import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
 import clsx from "clsx"
@@ -89,6 +91,31 @@ const QuestionEditorConfig = () => {
 
       updateQuestion(currentIndex, { elements })
     }
+
+  const [editingLayerId, setEditingLayerId] = useState<string | null>(null)
+  const [editingLayerName, setEditingLayerName] = useState("")
+
+  const handleToggleLock = (id: string, isLocked: boolean) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const elements = (currentQuestion?.elements || []).map((el) =>
+      el.id === id ? { ...el, isLocked } : el,
+    )
+    updateQuestion(currentIndex, { elements })
+  }
+
+  const handleStartRename = (id: string, currentName: string) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingLayerId(id)
+    setEditingLayerName(currentName)
+  }
+
+  const handleFinishRename = (id: string) => {
+    const elements = (currentQuestion?.elements || []).map((el) =>
+      el.id === id ? { ...el, name: editingLayerName.trim() || undefined } : el,
+    )
+    updateQuestion(currentIndex, { elements })
+    setEditingLayerId(null)
+  }
 
   const isSlide = currentQuestion?.type === "title"
   const selectedElement = currentQuestion?.elements?.find(
@@ -496,29 +523,66 @@ const QuestionEditorConfig = () => {
                         : "border-border bg-surface hover:bg-panel",
                     )}
                   >
-                    <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                      <div
-                        className={clsx(
-                          "size-1.5 rounded-full",
-                          isSelected ? "bg-primary" : "bg-border-strong",
-                        )}
+                    {editingLayerId === el.id ? (
+                      <input
+                        type="text"
+                        value={editingLayerName}
+                        onChange={(e) => setEditingLayerName(e.target.value)}
+                        onBlur={() => handleFinishRename(el.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleFinishRename(el.id)
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-transparent text-ink border-primary focus:border-primary border-b outline-none font-medium flex-1 text-[11px] py-0.5"
+                        autoFocus
                       />
-                      <span
-                        className={clsx(
-                          "shrink-0 font-bold capitalize",
-                          isSelected ? "text-primary-ink" : "text-ink",
-                        )}
+                    ) : (
+                      <div
+                        className="flex flex-1 items-center gap-2 overflow-hidden"
+                        onDoubleClick={handleStartRename(el.id, el.name || el.type)}
                       >
-                        {el.type}
-                      </span>
-                      {el.type === "text" && (
-                        <span className="text-ink-subtle truncate italic">
-                          "{el.text}"
+                        <div
+                          className={clsx(
+                            "size-1.5 rounded-full",
+                            isSelected ? "bg-primary" : "bg-border-strong",
+                          )}
+                        />
+                        <span
+                          className={clsx(
+                            "shrink-0 font-bold capitalize truncate max-w-[90px]",
+                            isSelected ? "text-primary-ink" : "text-ink",
+                          )}
+                          title="Double-cliquer pour renommer"
+                        >
+                          {el.name || el.type}
                         </span>
-                      )}
-                    </div>
+                        {el.type === "text" && !el.name && (
+                          <span className="text-ink-subtle truncate italic">
+                            "{el.text}"
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="ml-2 flex items-center gap-0.5">
+                      <button
+                        onClick={handleToggleLock(el.id, !el.isLocked)}
+                        className={clsx(
+                          "rounded p-1 hover:bg-white",
+                          el.isLocked
+                            ? "text-primary"
+                            : "text-ink-subtle hover:text-primary-ink",
+                        )}
+                        title={el.isLocked ? "Déverrouiller" : "Verrouiller"}
+                      >
+                        {el.isLocked ? (
+                          <Lock className="size-3.5" />
+                        ) : (
+                          <Unlock className="size-3.5" />
+                        )}
+                      </button>
                       <button
                         onClick={handleMoveLayer(el.id, "up")}
                         disabled={originalIndex === arr.length - 1}

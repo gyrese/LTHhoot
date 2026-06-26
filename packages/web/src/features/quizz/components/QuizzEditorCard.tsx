@@ -10,10 +10,11 @@ import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { ANSWERS_COLORS } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
-import { Presentation, Trash2, Copy, Film } from "lucide-react"
+import { Presentation, Trash2, Copy, Film, AlertTriangle } from "lucide-react"
 import { type CSSProperties, type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
+import { validateQuestion } from "@rahoot/web/features/quizz/utils/validation"
 
 const TYPE_ASSETS = new Map<QuestionType, any>([
   ["title", Presentation],
@@ -226,6 +227,7 @@ const QuizzEditorCard = ({
   const { t } = useTranslation()
   const Asset = TYPE_ASSETS.get(question.type)
   const isImage = typeof Asset === "string"
+  const validationErrors = validateQuestion(question)
 
   return (
     <div
@@ -266,6 +268,15 @@ const QuizzEditorCard = ({
         </div>
 
         <SlideThumbnail question={question} />
+
+        {validationErrors.length > 0 && (
+          <div
+            className="absolute bottom-1 left-1 z-10 flex h-4.5 w-4.5 items-center justify-center rounded bg-danger text-white shadow-sm cursor-help"
+            title={validationErrors.join("\n")}
+          >
+            <AlertTriangle className="size-3 animate-pulse" />
+          </div>
+        )}
 
         {canDelete && (
           <div className="ease-out-soft absolute top-1 right-1 z-10 flex flex-col gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">

@@ -59,6 +59,8 @@ export const EVENTS = {
     DELETE: "quizz:delete",
     MOVE_FOLDER: "quizz:moveFolder",
     ERROR: "quizz:error",
+    AI_GENERATE: "quizz:aiGenerate",
+    AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",
   },
   RESULTS: {
     GET: "results:get",

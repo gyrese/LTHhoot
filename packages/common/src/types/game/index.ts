@@ -38,6 +38,8 @@ type SlideElementBase = {
   height: number
   rotation: number
   opacity: number
+  isLocked?: boolean
+  name?: string
 }
 
 export type TextElement = SlideElementBase & {

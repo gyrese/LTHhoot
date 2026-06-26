@@ -25,8 +25,11 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { EVENTS } from "@rahoot/common/constants"
 import toast from "react-hot-toast"
-import { useNavigate } from "@tanstack/react-router"
+import { useNavigate, useBlocker } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import Button from "@rahoot/web/components/Button"
+import { validateQuestion } from "@rahoot/web/features/quizz/utils/validation"
+import { AlertTriangle, RotateCcw } from "lucide-react"
 
 export type QuestionWithId = Question & { id: string }
 
@@ -229,6 +232,14 @@ export const QuizzEditorProvider = ({
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [pendingRestore, setPendingRestore] = useState<any | null>(null)
+
+  const blocker = useBlocker({
+    shouldBlockFn: ({ current, next }) => {
+      return isDirty && current.pathname !== next.pathname
+    },
+    withResolver: true,
+  })
 
   const currentQuestion = questions[currentIndex] || questions[Math.max(0, questions.length - 1)] || questions[0]
 
@@ -637,6 +648,26 @@ export const QuizzEditorProvider = ({
         return
       }
 
+      // Client-side slide validation check
+      if (!options?.silent) {
+        const allErrors: { index: number; errors: string[] }[] = []
+        questions.forEach((q, i) => {
+          const errs = validateQuestion(q)
+          if (errs.length > 0) {
+            allErrors.push({ index: i + 1, errors: errs })
+          }
+        })
+
+        if (allErrors.length > 0) {
+          const first = allErrors[0]
+          toast.error(
+            `Veuillez corriger les erreurs sur la diapositive ${first.index} : ${first.errors[0]}`,
+            { id: "quizz-save" }
+          )
+          return
+        }
+      }
+
       const payload = {
         subject,
         description: description || undefined,
@@ -697,6 +728,7 @@ export const QuizzEditorProvider = ({
     setIsDirty(false)
     setIsSaving(false)
     setLastSaved(new Date())
+    localStorage.removeItem(`rahoot-backup-${id}`)
     toast.success(t("quizz:quizzSaved"), { id: "quizz-save" })
 
     if (pendingNavigation) {
@@ -708,6 +740,9 @@ export const QuizzEditorProvider = ({
     setIsDirty(false)
     setIsSaving(false)
     setLastSaved(new Date())
+    if (quizzId) {
+      localStorage.removeItem(`rahoot-backup-${quizzId}`)
+    }
     toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
 
     if (pendingNavigation) {
@@ -720,6 +755,64 @@ export const QuizzEditorProvider = ({
     setPendingNavigation(false)
     setIsSaving(false)
   })
+
+  // Recovery check on load
+  useEffect(() => {
+    if (!quizzId) return
+    const backupStr = localStorage.getItem(`rahoot-backup-${quizzId}`)
+    if (backupStr) {
+      try {
+        const backup = JSON.parse(backupStr)
+        setPendingRestore(backup)
+      } catch (err) {
+        console.error("Failed to parse local backup:", err)
+      }
+    }
+  }, [quizzId])
+
+  const handleApplyRestore = () => {
+    if (pendingRestore) {
+      if (pendingRestore.subject !== undefined) setSubject(pendingRestore.subject)
+      if (pendingRestore.description !== undefined) setDescription(pendingRestore.description)
+      if (pendingRestore.folder !== undefined) setFolder(pendingRestore.folder)
+      if (pendingRestore.tags !== undefined) setTags(pendingRestore.tags)
+      if (pendingRestore.salonImage !== undefined) setSalonImage(pendingRestore.salonImage)
+      if (pendingRestore.listingImage !== undefined) setListingImage(pendingRestore.listingImage)
+      if (pendingRestore.questions !== undefined) {
+        setQuestions(pendingRestore.questions.map(toQuestionWithId))
+      }
+      setIsDirty(true)
+      toast.success("Modifications restaurées depuis le cache local.")
+    }
+    setPendingRestore(null)
+  }
+
+  const handleDiscardRestore = () => {
+    if (quizzId) {
+      localStorage.removeItem(`rahoot-backup-${quizzId}`)
+    }
+    setPendingRestore(null)
+  }
+
+  // Autosave to localStorage backup
+  useEffect(() => {
+    if (!quizzId || !isDirty) return
+
+    const timer = setTimeout(() => {
+      const backupData = {
+        subject,
+        description,
+        folder,
+        tags,
+        salonImage,
+        listingImage,
+        questions: questions.map(({ id, ...q }) => q),
+      }
+      localStorage.setItem(`rahoot-backup-${quizzId}`, JSON.stringify(backupData))
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [isDirty, subject, description, folder, tags, salonImage, listingImage, questions, quizzId])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -863,6 +956,78 @@ export const QuizzEditorProvider = ({
       }}
     >
       {children}
+
+      {/* TanStack Router Navigation Guard Confirmation Modal */}
+      {blocker.status === "blocked" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-panel border-border flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="border-border flex items-center gap-2 border-b px-6 py-4 text-danger">
+              <AlertTriangle className="size-5 shrink-0" />
+              <h3 className="text-ink text-base font-bold">Modifications non sauvegardées</h3>
+            </div>
+            {/* Body */}
+            <div className="p-6 text-sm">
+              <p className="text-ink-muted">
+                Vous avez apporté des modifications à ce quiz. Si vous quittez cette page maintenant, toutes vos modifications non sauvegardées seront perdues.
+              </p>
+            </div>
+            {/* Footer */}
+            <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => blocker.reset()}
+              >
+                Rester ici
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => blocker.proceed()}
+              >
+                Quitter quand même
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Cache Recovery Prompt Modal */}
+      {pendingRestore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-panel border-border flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="border-border flex items-center gap-2 border-b px-6 py-4 text-primary">
+              <RotateCcw className="size-5 shrink-0" />
+              <h3 className="text-ink text-base font-bold">Restauration de session</h3>
+            </div>
+            {/* Body */}
+            <div className="p-6 text-sm">
+              <p className="text-ink-muted">
+                Des modifications locales non sauvegardées ont été trouvées dans le cache de votre navigateur pour ce quiz. Souhaitez-vous restaurer votre travail précédent ?
+              </p>
+            </div>
+            {/* Footer */}
+            <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleDiscardRestore}
+              >
+                Ignorer et supprimer
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleApplyRestore}
+              >
+                Restaurer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </QuizzEditorContext.Provider>
   )
 }

@@ -16,6 +16,8 @@ const slideElementBaseValidator = z.object({
   height: z.number(),
   rotation: z.number(),
   opacity: z.number(),
+  isLocked: z.boolean().optional(),
+  name: z.string().optional(),
 })
 
 const textElementValidator = slideElementBaseValidator.extend({
@@ -192,7 +194,7 @@ const legacyMcqValidator = baseQuestionValidator
   })
   .transform((v) => ({ ...v, type: "mcq" as const }))
 
-const questionValidator = z.preprocess(
+export const questionValidator = z.preprocess(
   (val) => {
     if (typeof val === "object" && val !== null && !("type" in val)) {
       return { ...val, type: "mcq" }

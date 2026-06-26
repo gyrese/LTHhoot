@@ -40,6 +40,9 @@ export default defineConfig({
         target: wsTarget,
         ws: true,
       },
+      "/api": {
+        target: wsTarget,
+      },
       "/upload": {
         target: wsTarget,
       },
@@ -60,6 +63,9 @@ export default defineConfig({
       "/ws": {
         target: wsTarget,
         ws: true,
+      },
+      "/api": {
+        target: wsTarget,
       },
       "/upload": {
         target: wsTarget,

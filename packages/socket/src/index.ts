@@ -18,6 +18,19 @@ import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
 import { unlink, copyFile } from "fs/promises"
 
+// Natively load .env variables in Node.js if present (useful for local start without dotenv-cli)
+try {
+  const rootEnv = resolve(process.cwd(), ".env")
+  const parentEnv = resolve(process.cwd(), "../../.env")
+  if (existsSync(rootEnv)) {
+    process.loadEnvFile(rootEnv)
+  } else if (existsSync(parentEnv)) {
+    process.loadEnvFile(parentEnv)
+  }
+} catch (e) {
+  // Ignore if loadEnvFile is not supported (e.g. older node versions)
+}
+
 const WS_PORT = Number(process.env.WS_PORT) || 3001
 
 const configPath = process.env.CONFIG_PATH
@@ -194,6 +207,99 @@ app.post(
     }
 
   },
+)
+
+app.get(
+  "/api/media/unsplash",
+  requireManager,
+  async (req: express.Request, res: express.Response) => {
+    const query = req.query.query as string
+    const page = Number(req.query.page) || 1
+
+    if (!query || !query.trim()) {
+      res.status(400).json({ error: "Query parameter is required" })
+      return
+    }
+
+    const accessKey = process.env.UNSPLASH_ACCESS_KEY
+    if (!accessKey) {
+      res.status(400).json({ error: "UNSPLASH_ACCESS_KEY non configurée sur le serveur" })
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=24`,
+        {
+          headers: {
+            Authorization: `Client-ID ${accessKey}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Unsplash returned status ${response.status}`)
+      }
+
+      const data = await response.json() as any
+      const results = (data.results || []).map((item: any) => ({
+        id: item.id,
+        url: item.urls?.regular,
+        thumb: item.urls?.small || item.urls?.thumb,
+        author: item.user?.name,
+        authorUrl: item.user?.links?.html,
+      }))
+
+      res.json({ results })
+    } catch (err) {
+      console.error("Unsplash proxy error:", err)
+      res.status(500).json({ error: "Échec de la recherche d'images" })
+    }
+  }
+)
+
+app.get(
+  "/api/media/giphy",
+  requireManager,
+  async (req: express.Request, res: express.Response) => {
+    const query = req.query.query as string
+    const page = Number(req.query.page) || 1
+
+    if (!query || !query.trim()) {
+      res.status(400).json({ error: "Query parameter is required" })
+      return
+    }
+
+    const apiKey = process.env.GIPHY_API_KEY
+    if (!apiKey) {
+      res.status(400).json({ error: "GIPHY_API_KEY non configurée sur le serveur" })
+      return
+    }
+
+    try {
+      const offset = (page - 1) * 24
+      const response = await fetch(
+        `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&offset=${offset}`
+      )
+
+      if (!response.ok) {
+        throw new Error(`Giphy returned status ${response.status}`)
+      }
+
+      const data = await response.json() as any
+      const results = (data.data || []).map((item: any) => ({
+        id: item.id,
+        url: item.images?.original?.url,
+        thumb: item.images?.fixed_width?.url || item.images?.preview_gif?.url,
+        title: item.title,
+      }))
+
+      res.json({ results })
+    } catch (err) {
+      console.error("Giphy proxy error:", err)
+      res.status(500).json({ error: "Échec de la recherche de GIFs" })
+    }
+  }
 )
 
 const io: Server = new ServerIO(httpServer, {

@@ -21,11 +21,18 @@ import {
   Check,
   Undo2,
   Redo2,
+  AlignLeft,
+  AlignRight,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  Minimize2,
+  Image as ImageIcon,
 } from "lucide-react"
 import clsx from "clsx"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import MediaSearchModal from "@rahoot/web/features/quizz/components/MediaSearchModal"
 import {
   createTextElement,
   createShapeElement,
@@ -58,6 +65,7 @@ const SlideToolbar = () => {
   const [showYoutubePanel, setShowYoutubePanel] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [urlValue, setUrlValue] = useState("")
+  const [showMediaModal, setShowMediaModal] = useState(false)
 
   const elements = currentQuestion.elements || []
   const selectedElement = elements.find((e) => e.id === selectedId)
@@ -107,6 +115,26 @@ const SlideToolbar = () => {
     img.src = url
     setShowUrlInput(false)
     setUrlValue("")
+  }
+
+  const handleAddMedia = (url: string) => {
+    const img = new window.Image()
+    img.crossOrigin = "Anonymous"
+    img.onload = () => {
+      let width = img.naturalWidth
+      let height = img.naturalHeight
+
+      if (width > 600 || height > 600) {
+        const ratio = Math.min(600 / width, 600 / height)
+        width *= ratio
+        height *= ratio
+      }
+
+      const newImage = createImageElement(url, width, height)
+      handleUpdateElements([...elements, newImage])
+      setSelectedId(newImage.id)
+    }
+    img.src = url
   }
 
   const handleImageUpload = (file: File) => {
@@ -191,6 +219,39 @@ const SlideToolbar = () => {
   const hasColor = (el: SlideElement): el is TextElement | ShapeElement =>
     el.type === "text" || el.type === "shape"
 
+  const CANVAS_W = 1920
+  const CANVAS_H = 1080
+
+  const alignElement = (alignment: "left" | "centerX" | "right" | "top" | "centerY" | "bottom") => {
+    if (!selectedElement) return
+    const width = selectedElement.width
+    const height = selectedElement.height
+    
+    let updates = {}
+    switch (alignment) {
+      case "left":
+        updates = { x: 0 }
+        break
+      case "centerX":
+        updates = { x: Math.round((CANVAS_W - width) / 2) }
+        break
+      case "right":
+        updates = { x: CANVAS_W - width }
+        break
+      case "top":
+        updates = { y: 0 }
+        break
+      case "centerY":
+        updates = { y: Math.round((CANVAS_H - height) / 2) }
+        break
+      case "bottom":
+        updates = { y: CANVAS_H - height }
+        break
+    }
+    
+    updateSelected(updates)
+  }
+
   return (
     <div className="border-border bg-surface flex items-center gap-0.5 rounded-xl border px-1.5 py-1 shadow-sm shadow-black/5">
       <input
@@ -258,77 +319,14 @@ const SlideToolbar = () => {
           <Square className="size-4" />
         </button>
 
-        {/* Upload image depuis fichier */}
+        {/* Ajouter Image (ouvre la modal) */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setShowMediaModal(true)}
           className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors duration-150"
-          title={t("quizz:uploadImage")}
+          title={t("quizz:addImage", "Ajouter une image / GIF")}
         >
-          <Upload className="size-4" />
+          <ImageIcon className="size-4" />
         </button>
-
-        {/* Ajouter image par URL */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowUrlInput(!showUrlInput)
-              setUrlValue("")
-            }}
-            className={clsx(
-              "focus-ring rounded-lg p-1.5 transition-colors duration-150",
-              showUrlInput
-                ? "bg-primary-soft text-primary-ink"
-                : "text-ink-muted hover:bg-panel hover:text-ink",
-            )}
-            title={t("quizz:addImage")}
-          >
-            <Link className="size-4" />
-          </button>
-
-          <AnimatePresence>
-            {showUrlInput && (
-              <motion.div
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
-                style={{ transformOrigin: "top left" }}
-                className="border-border bg-elevated absolute top-full left-0 z-50 mt-1.5 flex min-w-72 gap-1.5 rounded-xl border p-2 shadow-xl shadow-black/10"
-              >
-                <input
-                  autoFocus
-                  type="text"
-                  value={urlValue}
-                  onChange={(e) => setUrlValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      addImageFromUrl()
-                    }
-
-                    if (e.key === "Escape") {
-                      setShowUrlInput(false)
-                    }
-                  }}
-                  placeholder="https://..."
-                  className="border-border text-ink focus:border-primary flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/40"
-                />
-                <button
-                  onClick={addImageFromUrl}
-                  disabled={!urlValue.trim()}
-                  className="bg-primary text-secondary rounded-lg p-1.5 transition-transform duration-150 hover:brightness-[1.03] active:scale-95 disabled:opacity-40"
-                >
-                  <Check className="size-3.5" />
-                </button>
-                <button
-                  onClick={() => setShowUrlInput(false)}
-                  className="text-ink-muted hover:bg-panel rounded-lg p-1.5 transition-colors"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* YouTube */}
         <div className="relative">
@@ -505,6 +503,56 @@ const SlideToolbar = () => {
 
             <div className="bg-border mx-1 h-6 w-px" />
 
+            {/* Alignements horizontaux */}
+            <button
+              onClick={() => alignElement("left")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Aligner à gauche"
+            >
+              <AlignLeft className="size-4" />
+            </button>
+            <button
+              onClick={() => alignElement("centerX")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Centrer horizontalement"
+            >
+              <AlignCenter className="size-4" />
+            </button>
+            <button
+              onClick={() => alignElement("right")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Aligner à droite"
+            >
+              <AlignRight className="size-4" />
+            </button>
+
+            <div className="bg-border mx-0.5 h-6 w-px opacity-50" />
+
+            {/* Alignements verticaux */}
+            <button
+              onClick={() => alignElement("top")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Aligner en haut"
+            >
+              <ArrowUpToLine className="size-4" />
+            </button>
+            <button
+              onClick={() => alignElement("centerY")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Centrer verticalement"
+            >
+              <Minimize2 className="size-4 rotate-90" />
+            </button>
+            <button
+              onClick={() => alignElement("bottom")}
+              className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
+              title="Aligner en bas"
+            >
+              <ArrowDownToLine className="size-4" />
+            </button>
+
+            <div className="bg-border mx-1 h-6 w-px" />
+
             <button
               onClick={bringToFront}
               className="focus-ring text-ink-muted hover:bg-panel hover:text-ink rounded-lg p-1.5 transition-colors active:scale-95"
@@ -536,6 +584,11 @@ const SlideToolbar = () => {
           onClose={() => setShowPreview(false)}
         />
       )}
+      <MediaSearchModal
+        open={showMediaModal}
+        onClose={() => setShowMediaModal(false)}
+        onSelect={handleAddMedia}
+      />
     </div>
   )
 }

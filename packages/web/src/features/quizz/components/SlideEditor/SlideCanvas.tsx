@@ -100,8 +100,9 @@ const SlideCanvas = ({
       }
 
       const selectedNode = stage.findOne(`#${selectedId}`)
+      const selectedEl = elements.find((el) => el.id === selectedId)
 
-      if (selectedNode) {
+      if (selectedNode && !selectedEl?.isLocked) {
         transformerRef.current.nodes([selectedNode])
         transformerRef.current.getLayer()?.batchDraw()
       } else {
@@ -112,7 +113,116 @@ const SlideCanvas = ({
     }
   }, [selectedId, elements])
 
+  const [guideLines, setGuideLines] = useState<{ x1: number; y1: number; x2: number; y2: number }[]>([])
+
+  const handleDragMove = (e: KonvaEventObject<DragEvent>, dragId: string) => {
+    if (readOnly) return
+    const dragNode = e.target
+    const dragWidth = dragNode.width() * dragNode.scaleX()
+    const dragHeight = dragNode.height() * dragNode.scaleY()
+    
+    const dragLeft = dragNode.x()
+    const dragRight = dragLeft + dragWidth
+    const dragCenterX = dragLeft + dragWidth / 2
+    const dragTop = dragNode.y()
+    const dragBottom = dragTop + dragHeight
+    const dragCenterY = dragTop + dragHeight / 2
+
+    const snapThreshold = 8
+    let snapX: number | null = null
+    let snapY: number | null = null
+    const newGuides: typeof guideLines = []
+
+    const vLines = [
+      { coord: 0, type: "left" },
+      { coord: CANVAS_W / 2, type: "center" },
+      { coord: CANVAS_W, type: "right" }
+    ]
+    const hLines = [
+      { coord: 0, type: "top" },
+      { coord: CANVAS_H / 2, type: "center" },
+      { coord: CANVAS_H, type: "bottom" }
+    ]
+
+    elements.forEach((el) => {
+      if (el.id === dragId) return
+      
+      const left = el.x
+      const right = el.x + el.width
+      const centerX = el.x + el.width / 2
+      const top = el.y
+      const bottom = el.y + el.height
+      const centerY = el.y + el.height / 2
+
+      vLines.push({ coord: left, type: "left" })
+      vLines.push({ coord: centerX, type: "center" })
+      vLines.push({ coord: right, type: "right" })
+
+      hLines.push({ coord: top, type: "top" })
+      hLines.push({ coord: centerY, type: "center" })
+      hLines.push({ coord: bottom, type: "bottom" })
+    })
+
+    let minDiffX = snapThreshold
+    vLines.forEach((line) => {
+      const positions = [
+        { val: dragLeft, offset: 0 },
+        { val: dragCenterX, offset: -dragWidth / 2 },
+        { val: dragRight, offset: -dragWidth }
+      ]
+
+      positions.forEach((pos) => {
+        const diff = Math.abs(pos.val - line.coord)
+        if (diff < minDiffX) {
+          minDiffX = diff
+          snapX = line.coord + pos.offset
+          
+          newGuides.push({
+            x1: line.coord,
+            y1: 0,
+            x2: line.coord,
+            y2: CANVAS_H,
+          })
+        }
+      })
+    })
+
+    let minDiffY = snapThreshold
+    hLines.forEach((line) => {
+      const positions = [
+        { val: dragTop, offset: 0 },
+        { val: dragCenterY, offset: -dragHeight / 2 },
+        { val: dragBottom, offset: -dragHeight }
+      ]
+
+      positions.forEach((pos) => {
+        const diff = Math.abs(pos.val - line.coord)
+        if (diff < minDiffY) {
+          minDiffY = diff
+          snapY = line.coord + pos.offset
+
+          newGuides.push({
+            x1: 0,
+            y1: line.coord,
+            x2: CANVAS_W,
+            y2: line.coord,
+          })
+        }
+      })
+    })
+
+    if (snapX !== null) {
+      dragNode.x(snapX)
+    }
+    if (snapY !== null) {
+      dragNode.y(snapY)
+    }
+
+    setGuideLines(newGuides)
+  }
+
   const handleDragEnd = (e: KonvaEventObject<DragEvent>, id: string) => {
+    setGuideLines([])
     const node = e.target
     onChange(
       elements.map((el) =>
@@ -480,7 +590,7 @@ const SlideCanvas = ({
                       fontFamily={el.fontFamily}
                       fill={el.fill || "#000"}
                       align={el.align}
-                      draggable={!isEditing}
+                      draggable={!isEditing && !el.isLocked}
                       visible={!isEditing}
                       onClick={() => {
                         if (selectedId === el.id) {
@@ -491,6 +601,7 @@ const SlideCanvas = ({
                       }}
                       onDblClick={() => setEditingId(el.id)}
                       onTap={() => onSelect(el.id)}
+                      onDragMove={(e) => handleDragMove(e, el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
                     />
@@ -506,9 +617,11 @@ const SlideCanvas = ({
                     opacity: el.opacity,
                     width: el.width,
                     height: el.height,
-                    draggable: true,
+                    draggable: !el.isLocked,
                     onClick: () => onSelect(el.id),
                     onTap: () => onSelect(el.id),
+                    onDragMove: (e: KonvaEventObject<DragEvent>) =>
+                      handleDragMove(e, el.id),
                     onDragEnd: (e: KonvaEventObject<DragEvent>) =>
                       handleDragEnd(e, el.id),
                     onTransformEnd: (e: KonvaEventObject<Event>) =>
@@ -574,9 +687,10 @@ const SlideCanvas = ({
                       opacity={el.opacity}
                       fill={el.fill || "#ccc"}
                       cornerRadius={el.cornerRadius || 0}
-                      draggable
+                      draggable={!el.isLocked}
                       onClick={() => onSelect(el.id)}
                       onTap={() => onSelect(el.id)}
+                      onDragMove={(e) => handleDragMove(e, el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
                     />
@@ -598,6 +712,7 @@ const SlideCanvas = ({
                       key={el.id}
                       el={el}
                       onSelect={onSelect}
+                      handleDragMove={handleDragMove}
                       handleDragEnd={handleDragEnd}
                       handleTransformEnd={handleTransformEnd}
                     />
@@ -610,6 +725,7 @@ const SlideCanvas = ({
                       key={el.id}
                       el={el}
                       onSelect={onSelect}
+                      handleDragMove={handleDragMove}
                       handleDragEnd={handleDragEnd}
                       handleTransformEnd={handleTransformEnd}
                     />
@@ -618,6 +734,16 @@ const SlideCanvas = ({
 
                 return null
               })}
+
+              {guideLines.map((line, idx) => (
+                <Line
+                  key={idx}
+                  points={[line.x1, line.y1, line.x2, line.y2]}
+                  stroke="#ef4444"
+                  strokeWidth={1.5}
+                  dash={[6, 4]}
+                />
+              ))}
 
               <Transformer ref={transformerRef} />
             </Layer>
@@ -771,11 +897,13 @@ const useSimpleImage = (url: string) => {
 const CanvasImageElement = ({
   el,
   onSelect,
+  handleDragMove,
   handleDragEnd,
   handleTransformEnd,
 }: {
   el: Extract<SlideElement, { type: "image" }>
   onSelect: (_id: string) => void
+  handleDragMove: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
 }) => {
@@ -791,9 +919,10 @@ const CanvasImageElement = ({
       height={el.height}
       rotation={el.rotation}
       opacity={el.opacity}
-      draggable
+      draggable={!el.isLocked}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
+      onDragMove={(e) => handleDragMove(e, el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
     />
@@ -803,11 +932,13 @@ const CanvasImageElement = ({
 const CanvasYoutubeElement = ({
   el,
   onSelect,
+  handleDragMove,
   handleDragEnd,
   handleTransformEnd,
 }: {
   el: Extract<SlideElement, { type: "youtube" }>
   onSelect: (_id: string) => void
+  handleDragMove: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
 }) => {
@@ -823,9 +954,10 @@ const CanvasYoutubeElement = ({
       width={el.width}
       height={el.height}
       rotation={el.rotation}
-      draggable
+      draggable={!el.isLocked}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
+      onDragMove={(e) => handleDragMove(e, el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
     >

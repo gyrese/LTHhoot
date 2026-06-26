@@ -5,6 +5,7 @@ import type {
   Player,
   Quizz,
   QuizzWithId,
+  Question,
 } from "@rahoot/common/types/game"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
 import type { PowerUp, PowerUpEffect, PowerUpType } from "@rahoot/common/types/powerup"
@@ -117,6 +118,7 @@ export interface ServerToClientEvents {
   [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
+  [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: { questions: Question[] }) => void
 
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
@@ -174,6 +176,14 @@ export interface ClientToServerEvents {
     id: string
     folder: string | null
   }) => void
+  [EVENTS.QUIZZ.AI_GENERATE]: (
+    _data: {
+      prompt: string
+      count: number
+      questionTypes: string[]
+      level: string
+    },
+  ) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void

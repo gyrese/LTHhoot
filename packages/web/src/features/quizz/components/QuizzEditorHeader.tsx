@@ -2,9 +2,10 @@ import Logo from "@rahoot/web/components/Logo"
 import Button from "@rahoot/web/components/Button"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
+import AIGeneratorModal from "@rahoot/web/features/quizz/components/AIGeneratorModal"
 import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
 import { useNavigate } from "@tanstack/react-router"
-import { Download, LogOut, Settings, Upload } from "lucide-react"
+import { Download, LogOut, Settings, Upload, Sparkles } from "lucide-react"
 import { useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -39,6 +40,7 @@ const QuizzEditorHeader = () => {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [showSettings, setShowSettings] = useState(false)
+  const [showAIGenerator, setShowAIGenerator] = useState(false)
   const reduceMotion = useReducedMotion()
   const csvInputRef = useRef<HTMLInputElement>(null)
 
@@ -234,6 +236,17 @@ const QuizzEditorHeader = () => {
             variant="ghost"
             size="sm"
             className="text-ink-muted gap-2"
+            onClick={() => setShowAIGenerator(true)}
+          >
+            <Sparkles className="size-4 text-primary animate-pulse" />
+            <span className="hidden md:inline">
+              Générer par IA
+            </span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-ink-muted gap-2"
             onClick={() => csvInputRef.current?.click()}
           >
             <Upload className="size-4" />
@@ -259,6 +272,10 @@ const QuizzEditorHeader = () => {
       <QuizzSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
+      />
+      <AIGeneratorModal
+        open={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
       />
     </>
   )
