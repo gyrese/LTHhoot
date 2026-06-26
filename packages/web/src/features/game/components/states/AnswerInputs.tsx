@@ -1,11 +1,13 @@
 import {
-  type MouseEvent,
-  type TouchEvent,
   type PointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
+import { Maximize2, ZoomIn, ZoomOut } from "lucide-react"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -104,6 +106,19 @@ export const PuzzleAnswer = ({
 
 // ── Drop Pin ──────────────────────────────────────────────────────────────────
 
+const MIN_SCALE = 1
+const MAX_SCALE = 6
+// Mouvement max (px) en deçà duquel on considère un tap plutôt qu'un drag
+const TAP_THRESHOLD = 8
+
+const clampNum = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value))
+
+const pointerDist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y)
+
+type PinTransform = { scale: number; tx: number; ty: number }
+
 export const DropPinAnswer = ({
   pinImage,
   onTextAnswer,
@@ -113,40 +128,232 @@ export const DropPinAnswer = ({
 }) => {
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [transform, setTransform] = useState<PinTransform>({
+    scale: 1,
+    tx: 0,
+    ty: 0,
+  })
   const { t } = useTranslation()
 
-  const handleImgClick = (e: MouseEvent | TouchEvent | PointerEvent) => {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const gestureRef = useRef({
+    isPinch: false,
+    startDist: 0,
+    startScale: 1,
+    startTx: 0,
+    startTy: 0,
+    focalX: 0,
+    focalY: 0,
+    startMidX: 0,
+    startMidY: 0,
+    lastX: 0,
+    lastY: 0,
+    moved: 0,
+  })
+
+  // Borne le déplacement pour que l'image reste dans le cadre (origine = centre)
+  const clampTransform = useCallback((next: PinTransform): PinTransform => {
+    const vp = viewportRef.current
+    const img = imgRef.current
+
+    if (!vp || !img) {
+      return next
+    }
+
+    const maxX = Math.max(0, (img.clientWidth * next.scale - vp.clientWidth) / 2)
+    const maxY = Math.max(
+      0,
+      (img.clientHeight * next.scale - vp.clientHeight) / 2,
+    )
+
+    return {
+      scale: next.scale,
+      tx: clampNum(next.tx, -maxX, maxX),
+      ty: clampNum(next.ty, -maxY, maxY),
+    }
+  }, [])
+
+  // Zoom à la molette (listener natif non-passif pour pouvoir bloquer le scroll)
+  useEffect(() => {
+    const vp = viewportRef.current
+
+    if (!vp) {
+      return undefined
+    }
+
+    const onWheelNative = (e: globalThis.WheelEvent) => {
+      e.preventDefault()
+      const rect = vp.getBoundingClientRect()
+      const focalX = e.clientX - (rect.left + rect.width / 2)
+      const focalY = e.clientY - (rect.top + rect.height / 2)
+
+      setTransform((tr) => {
+        const newScale = clampNum(
+          tr.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15),
+          MIN_SCALE,
+          MAX_SCALE,
+        )
+        const ratio = newScale / tr.scale
+
+        return clampTransform({
+          scale: newScale,
+          tx: focalX - (focalX - tr.tx) * ratio,
+          ty: focalY - (focalY - tr.ty) * ratio,
+        })
+      })
+    }
+
+    vp.addEventListener("wheel", onWheelNative, { passive: false })
+
+    return () => vp.removeEventListener("wheel", onWheelNative)
+  }, [clampTransform])
+
+  // Pose l'épingle à partir de coordonnées écran → pourcentage de l'image native
+  const placePin = (clientX: number, clientY: number) => {
     if (submitted) {
       return
     }
 
-    e.preventDefault()
+    const img = imgRef.current
 
-    const target = e.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
+    if (!img) {
+      return
+    }
 
-    const clientX =
-      "touches" in e
-        ? (e as TouchEvent).touches[0].clientX
-        : (e as MouseEvent).clientX
-    const clientY =
-      "touches" in e
-        ? (e as TouchEvent).touches[0].clientY
-        : (e as MouseEvent).clientY
-
-    const xPct = Math.max(
-      0,
-      Math.min(100, ((clientX - rect.left) / rect.width) * 100),
-    )
-    const yPct = Math.max(
-      0,
-      Math.min(100, ((clientY - rect.top) / rect.height) * 100),
-    )
+    // La position écran (getBoundingClientRect) reflète déjà le scale/translate
+    // appliqué, donc le pourcentage reste relatif à l'image d'origine.
+    const rect = img.getBoundingClientRect()
+    const xPct = clampNum(((clientX - rect.left) / rect.width) * 100, 0, 100)
+    const yPct = clampNum(((clientY - rect.top) / rect.height) * 100, 0, 100)
 
     if (!isNaN(xPct) && !isNaN(yPct)) {
       setPin({ x: xPct, y: yPct })
     }
   }
+
+  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    viewportRef.current?.setPointerCapture(e.pointerId)
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    const g = gestureRef.current
+
+    if (pointersRef.current.size === 1) {
+      g.isPinch = false
+      g.lastX = e.clientX
+      g.lastY = e.clientY
+      g.moved = 0
+      g.startScale = transform.scale
+      g.startTx = transform.tx
+      g.startTy = transform.ty
+    } else if (pointersRef.current.size === 2) {
+      g.isPinch = true
+      const [p1, p2] = [...pointersRef.current.values()]
+      g.startDist = pointerDist(p1, p2)
+      g.startMidX = (p1.x + p2.x) / 2
+      g.startMidY = (p1.y + p2.y) / 2
+      g.startScale = transform.scale
+      g.startTx = transform.tx
+      g.startTy = transform.ty
+
+      const vp = viewportRef.current
+
+      if (vp) {
+        const rect = vp.getBoundingClientRect()
+        g.focalX = g.startMidX - (rect.left + rect.width / 2)
+        g.focalY = g.startMidY - (rect.top + rect.height / 2)
+      }
+    }
+  }
+
+  const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const pointers = pointersRef.current
+
+    if (!pointers.has(e.pointerId)) {
+      return
+    }
+
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const g = gestureRef.current
+
+    if (pointers.size >= 2 && g.isPinch) {
+      const [p1, p2] = [...pointers.values()]
+      const curDist = pointerDist(p1, p2)
+      const curMidX = (p1.x + p2.x) / 2
+      const curMidY = (p1.y + p2.y) / 2
+      const factor = g.startDist > 0 ? curDist / g.startDist : 1
+      const newScale = clampNum(g.startScale * factor, MIN_SCALE, MAX_SCALE)
+      const ratio = newScale / g.startScale
+
+      // On garde le point sous les doigts immobile, puis on suit le pan à 2 doigts
+      const tx = g.focalX - (g.focalX - g.startTx) * ratio + (curMidX - g.startMidX)
+      const ty = g.focalY - (g.focalY - g.startTy) * ratio + (curMidY - g.startMidY)
+
+      setTransform(clampTransform({ scale: newScale, tx, ty }))
+    } else if (pointers.size === 1 && !g.isPinch) {
+      const dx = e.clientX - g.lastX
+      const dy = e.clientY - g.lastY
+      g.lastX = e.clientX
+      g.lastY = e.clientY
+      g.moved += Math.hypot(dx, dy)
+
+      // Pan uniquement quand on est zoomé, sinon le tap reste prioritaire
+      if (g.startScale > 1) {
+        setTransform((tr) => clampTransform({ ...tr, tx: tr.tx + dx, ty: tr.ty + dy }))
+      }
+    }
+  }
+
+  const handlePointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    const pointers = pointersRef.current
+    const g = gestureRef.current
+    viewportRef.current?.releasePointerCapture(e.pointerId)
+
+    const wasTap =
+      pointers.size === 1 && !g.isPinch && g.moved < TAP_THRESHOLD
+
+    pointers.delete(e.pointerId)
+
+    if (wasTap) {
+      placePin(e.clientX, e.clientY)
+    }
+
+    if (pointers.size === 0) {
+      g.isPinch = false
+    } else if (pointers.size === 1) {
+      // Fin du pinch mais un doigt reste : on rebase sans placer d'épingle
+      const [p] = [...pointers.values()]
+      g.lastX = p.x
+      g.lastY = p.y
+      g.moved = TAP_THRESHOLD + 1
+      g.isPinch = true
+      g.startScale = transform.scale
+      g.startTx = transform.tx
+      g.startTy = transform.ty
+    }
+  }
+
+  const zoomByButton = (direction: 1 | -1) => {
+    setTransform((tr) => {
+      const newScale = clampNum(
+        tr.scale * (direction > 0 ? 1.4 : 1 / 1.4),
+        MIN_SCALE,
+        MAX_SCALE,
+      )
+      const ratio = newScale / tr.scale
+
+      // Zoom centré sur le cadre
+      return clampTransform({
+        scale: newScale,
+        tx: tr.tx * ratio,
+        ty: tr.ty * ratio,
+      })
+    })
+  }
+
+  const resetZoom = () => setTransform({ scale: 1, tx: 0, ty: 0 })
 
   const handleSubmit = () => {
     if (pin !== null && !submitted) {
@@ -155,13 +362,21 @@ export const DropPinAnswer = ({
     }
   }
 
+  const isZoomed = transform.scale > 1
+
   return (
     <div
       className="animate-in fade-in slide-in-from-bottom-4 mx-auto mb-4 flex w-full max-w-3xl flex-col gap-4 px-2 duration-500"
       style={{ userSelect: "none" }}
     >
-      {/* 🚀 PRO MAX UX: Tap anywhere on the image container */}
-      <div className="relative flex w-full touch-none items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2 shadow-2xl">
+      <div
+        ref={viewportRef}
+        className="relative flex w-full touch-none items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2 shadow-2xl"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
         {!pin && !submitted && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div className="animate-pulse rounded-full border border-white/10 bg-black/60 px-6 py-3 text-sm font-bold text-white/90 shadow-xl backdrop-blur-md sm:text-base">
@@ -170,13 +385,52 @@ export const DropPinAnswer = ({
           </div>
         )}
 
-        <div className="relative inline-block max-w-full">
+        {/* Contrôles de zoom */}
+        <div className="absolute top-3 right-3 z-30 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => zoomByButton(1)}
+            disabled={transform.scale >= MAX_SCALE}
+            aria-label="Zoomer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/60 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 disabled:opacity-30"
+          >
+            <ZoomIn className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => zoomByButton(-1)}
+            disabled={transform.scale <= MIN_SCALE}
+            aria-label="Dézoomer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/60 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 disabled:opacity-30"
+          >
+            <ZoomOut className="h-5 w-5" />
+          </button>
+          {isZoomed && (
+            <button
+              type="button"
+              onClick={resetZoom}
+              aria-label="Réinitialiser le zoom"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/60 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/80 active:scale-95"
+            >
+              <Maximize2 className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+
+        <div
+          className="relative inline-block max-w-full"
+          style={{
+            transform: `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`,
+            transformOrigin: "center center",
+            cursor: isZoomed ? "grab" : "crosshair",
+          }}
+        >
           <img
+            ref={imgRef}
             src={pinImage}
             alt="Target"
             draggable={false}
-            onPointerDown={handleImgClick}
-            className="block h-auto max-h-[50vh] w-auto max-w-full cursor-crosshair rounded-xl object-contain transition-transform duration-300"
+            className="block h-auto max-h-[50vh] w-auto max-w-full rounded-xl object-contain"
           />
 
           {pin !== null && (
@@ -185,8 +439,9 @@ export const DropPinAnswer = ({
               style={{
                 left: `${pin.x}%`,
                 top: `${pin.y}%`,
-                // Align pin tip exactly on coordinate
-                transform: "translate(-50%, -100%)",
+                // Align pin tip exactly on coordinate, contre-scale pour garder une taille constante
+                transform: `translate(-50%, -100%) scale(${1 / transform.scale})`,
+                transformOrigin: "bottom center",
               }}
             >
               <div className="animate-in zoom-in flex flex-col items-center drop-shadow-2xl duration-300">
