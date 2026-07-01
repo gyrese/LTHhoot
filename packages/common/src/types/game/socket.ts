@@ -71,6 +71,7 @@ export interface ServerToClientEvents {
     avatar?: string
   }) => void
   [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
+  [EVENTS.GAME.SURVEY_STATS]: (_data: { results: { label: string; count: number }[] }) => void
 
   // Player events
   [EVENTS.PLAYER.SUCCESS_RECONNECT]: (_data: {
@@ -86,6 +87,7 @@ export interface ServerToClientEvents {
   // Manager events
   [EVENTS.MANAGER.SUCCESS_RECONNECT]: (_data: {
     gameId: string
+    inviteCode?: string
     status: { name: Status; data: StatusDataMap[Status] }
     players: Player[]
     currentQuestion: GameUpdateQuestion
@@ -199,6 +201,13 @@ export interface ClientToServerEvents {
       orderAnswer?: number[]
     }>,
     _ack: (_res: AnswerAck) => void,
+  ) => void
+  [EVENTS.PLAYER.JOIN_TEAM]: (
+    _message: MessageWithoutStatus<{ teamName: string }>,
+  ) => void
+  [EVENTS.PLAYER.BUY_POWER_UP]: (
+    _message: MessageWithoutStatus<{ powerUpType: PowerUpType }>,
+    _ack: (_res: { success: boolean; error?: string }) => void,
   ) => void
 
   // Manager actions supplémentaires

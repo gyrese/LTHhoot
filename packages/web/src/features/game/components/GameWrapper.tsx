@@ -56,7 +56,7 @@ type Props = PropsWithChildren & {
 const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const { isConnected, socket } = useSocket()
   const { player, gameId: playerGameId, updatePoints } = usePlayerStore()
-  const { gameId: managerGameId } = useManagerStore()
+  const { gameId: managerGameId, inviteCode } = useManagerStore()
   const { questionStates, setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
   const [isDisabled, setIsDisabled] = useState(false)
@@ -311,6 +311,23 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
               {/* Contenu principal */}
               {children}
+
+              {/* PIN de la partie affiché en bas à gauche de l'écran principal (projecteur) pour reconnexion rapide */}
+              {manager && !isRoomScreen && inviteCode && (
+                <div className="pointer-events-auto absolute bottom-6 left-6 z-30 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2.5 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-orange-500/25 hover:bg-slate-900/80">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
+                    <span className="text-xs font-black">#</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold tracking-widest text-white/40 uppercase">
+                      {t("game:gamePinLabel")}
+                    </span>
+                    <span className="font-mono text-lg font-black tracking-wider text-white select-all">
+                      {inviteCode}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Interstitiel soirée */}
               {eveningData && (

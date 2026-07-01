@@ -13,7 +13,7 @@ import { useEffect } from "react"
 
 const ManagerConfigPage = () => {
   const { isConnected, socket } = useSocket()
-  const { setGameId, setStatus, setConfig, setSalonImage, config } =
+  const { setGameId, setInviteCode, setStatus, setConfig, setSalonImage, config } =
     useManagerStore()
   const navigate = useNavigate()
 
@@ -35,6 +35,7 @@ const ManagerConfigPage = () => {
     EVENTS.MANAGER.GAME_CREATED,
     ({ gameId, inviteCode, salonImage }) => {
       setGameId(gameId)
+      setInviteCode(inviteCode)
       setSalonImage(salonImage)
       setStatus(STATUS.SHOW_ROOM, {
         text: "game:waitingForPlayers",

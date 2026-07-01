@@ -81,6 +81,7 @@ return
       // Hydratation atomique du store manager
       useManagerStore.getState().hydrate({
         gameId: data.gameId,
+        inviteCode: data.inviteCode,
         status: data.status as any,
         players: data.players,
       })

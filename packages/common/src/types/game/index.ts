@@ -8,6 +8,10 @@ export type Player = {
   avatar?: string
   points: number
   streak: number
+  teamId?: string
+  teamName?: string
+  goldCoins?: number
+  hasStreakShield?: boolean
 }
 
 export type Answer = {

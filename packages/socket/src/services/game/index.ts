@@ -570,6 +570,7 @@ class Game {
 
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
+      inviteCode: this.inviteCode,
       currentQuestion: this.round.getReconnectInfo(),
       status,
       timer: this.cooldown.getTimeRemaining(),
@@ -619,6 +620,7 @@ class Game {
 
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
+      inviteCode: this.inviteCode,
       currentQuestion: this.round.getReconnectInfo(),
       status,
       timer: this.cooldown.getTimeRemaining(),

@@ -12,18 +12,21 @@ type ManagerStore<T> = {
   config: ManagerConfig | null
 
   gameId: string | null
+  inviteCode: string | null
   salonImage: string | undefined
   status: Status<T> | null
   players: Player[]
 
   setConfig: (_config: ManagerConfig) => void
   setGameId: (_gameId: string | null) => void
+  setInviteCode: (_inviteCode: string | null) => void
   setSalonImage: (_salonImage: string | undefined) => void
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   resetStatus: () => void
   setPlayers: (_players: Player[]) => void
   hydrate: (_data: {
     gameId: string
+    inviteCode?: string
     status: { name: keyof T; data: T[keyof T] }
     players: Player[]
   }) => void
@@ -33,6 +36,7 @@ type ManagerStore<T> = {
 const initialState = {
   config: null,
   gameId: null,
+  inviteCode: null,
   salonImage: undefined,
   status: null,
   players: [],
@@ -46,6 +50,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
       setConfig: (config) => set({ config }),
 
       setGameId: (gameId) => set({ gameId }),
+      setInviteCode: (inviteCode) => set({ inviteCode }),
       setSalonImage: (salonImage) => set({ salonImage }),
 
       setStatus: (name, data) => set({ status: createStatus(name, data) }),
@@ -56,6 +61,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
         console.log(`[STORE] Manager hydrate gameId=${data.gameId}`)
         set({
           gameId: data.gameId,
+          inviteCode: data.inviteCode || null,
           status: createStatus(data.status.name, data.status.data),
           players: data.players,
         })
@@ -66,6 +72,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
         console.warn(`[STORE] Manager reset called! Stack:`, stack)
         set((state) => ({
           gameId: null,
+          inviteCode: null,
           salonImage: undefined,
           status: null,
           players: [],
@@ -77,6 +84,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
       name: "rahoot-manager-storage",
       partialize: (state) => ({
         gameId: state.gameId,
+        inviteCode: state.inviteCode,
       }),
     },
   ),

@@ -367,7 +367,18 @@ const Answers = ({
         </div>
       )}
 
-      <div className="flex-1" />
+      {!isPlayer && type === "drop_pin" && pinImage ? (
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-4 py-4">
+          <img
+            src={pinImage}
+            alt={question}
+            draggable={false}
+            className="max-h-[60vh] w-auto max-w-5xl rounded-2xl object-contain shadow-2xl"
+          />
+        </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       <div className={clsx("relative", isPlayer && "pb-12")}>
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">

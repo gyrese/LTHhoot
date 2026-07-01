@@ -25,11 +25,11 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { EVENTS } from "@rahoot/common/constants"
 import toast from "react-hot-toast"
-import { useNavigate, useBlocker } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import Button from "@rahoot/web/components/Button"
 import { validateQuestion } from "@rahoot/web/features/quizz/utils/validation"
-import { AlertTriangle, RotateCcw } from "lucide-react"
+import { RotateCcw } from "lucide-react"
 
 export type QuestionWithId = Question & { id: string }
 
@@ -233,13 +233,6 @@ export const QuizzEditorProvider = ({
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [pendingRestore, setPendingRestore] = useState<any | null>(null)
-
-  const blocker = useBlocker({
-    shouldBlockFn: ({ current, next }) => {
-      return isDirty && current.pathname !== next.pathname
-    },
-    withResolver: true,
-  })
 
   const currentQuestion = questions[currentIndex] || questions[Math.max(0, questions.length - 1)] || questions[0]
 
@@ -834,19 +827,6 @@ export const QuizzEditorProvider = ({
   }, [isConnected, isSaving, t])
 
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault()
-        e.returnValue = ""
-      }
-    }
-
-    window.addEventListener("beforeunload", handler)
-
-    return () => window.removeEventListener("beforeunload", handler)
-  }, [isDirty])
-
-  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       const tag = target?.tagName.toLowerCase()
@@ -956,42 +936,6 @@ export const QuizzEditorProvider = ({
       }}
     >
       {children}
-
-      {/* TanStack Router Navigation Guard Confirmation Modal */}
-      {blocker.status === "blocked" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-panel border-border flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="border-border flex items-center gap-2 border-b px-6 py-4 text-danger">
-              <AlertTriangle className="size-5 shrink-0" />
-              <h3 className="text-ink text-base font-bold">Modifications non sauvegardées</h3>
-            </div>
-            {/* Body */}
-            <div className="p-6 text-sm">
-              <p className="text-ink-muted">
-                Vous avez apporté des modifications à ce quiz. Si vous quittez cette page maintenant, toutes vos modifications non sauvegardées seront perdues.
-              </p>
-            </div>
-            {/* Footer */}
-            <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => blocker.reset()}
-              >
-                Rester ici
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => blocker.proceed()}
-              >
-                Quitter quand même
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Emergency Cache Recovery Prompt Modal */}
       {pendingRestore && (

@@ -114,7 +114,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
-    ({ gameId: gId, status: s, players: p, currentQuestion }) => {
+    ({ gameId: gId, inviteCode: code, status: s, players: p, currentQuestion }) => {
       if (gId !== gameId) {
         return
       }
@@ -128,6 +128,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       setStatus({ name: s.name, data: s.data as Record<string, unknown> })
       setPlayers(p)
       setQuestionStates(currentQuestion)
+      
+      if (code) {
+        setInviteCode(code)
+      }
     },
   )
 
