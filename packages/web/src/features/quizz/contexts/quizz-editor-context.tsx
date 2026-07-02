@@ -234,6 +234,28 @@ export const QuizzEditorProvider = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [pendingRestore, setPendingRestore] = useState<any | null>(null)
 
+  // Nettoyage automatique des anciens backups volumineux de localStorage contenant du base64
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith("rahoot-backup-")) {
+          const val = localStorage.getItem(key)
+          if (val && val.includes("data:image/")) {
+            keysToRemove.push(key)
+          }
+        }
+      }
+      keysToRemove.forEach((key) => {
+        console.warn(`[LocalStorage Cleanup] Suppression d'un ancien backup lourd contenant du base64 : ${key}`)
+        localStorage.removeItem(key)
+      })
+    } catch (e) {
+      console.error("Échec du nettoyage automatique de localStorage :", e)
+    }
+  }, [])
+
   const currentQuestion = questions[currentIndex] || questions[Math.max(0, questions.length - 1)] || questions[0]
 
   const markDirty = () => setIsDirty(true)
