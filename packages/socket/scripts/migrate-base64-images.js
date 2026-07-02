@@ -6,9 +6,14 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Paths setup
-const rootDir = path.resolve(__dirname, "../../..");
-const configDir = path.resolve(rootDir, "config");
+// Paths setup (robust check to support running from scripts folder or directly in config folder)
+let configDir;
+if (__dirname.endsWith("config") || __dirname.endsWith("config/")) {
+  configDir = __dirname;
+} else {
+  const rootDir = path.resolve(__dirname, "../../..");
+  configDir = path.resolve(rootDir, "config");
+}
 const quizzDir = path.resolve(configDir, "quizz");
 const uploadsDir = path.resolve(configDir, "uploads");
 
