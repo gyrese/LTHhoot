@@ -25,6 +25,17 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Création d'une sauvegarde automatique du dossier quizz avant migration
+const backupDir = path.resolve(configDir, `quizz-backup-${Date.now()}`);
+try {
+  console.log(`Création d'une sauvegarde de sécurité dans : ${backupDir}`);
+  fs.cpSync(quizzDir, backupDir, { recursive: true });
+  console.log("Sauvegarde créée avec succès !");
+} catch (err) {
+  console.error("Échec de la création de la sauvegarde. Migration annulée par sécurité :", err.message);
+  process.exit(1);
+}
+
 // Check if sharp is available for optimization
 let sharp = null;
 try {
