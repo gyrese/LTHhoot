@@ -28,6 +28,8 @@ const getPath = (path: string = "") =>
     : resolve(process.cwd(), "../../config", path)
 
 class Config {
+  private static quizzCache: QuizzWithId[] | null = null;
+
   static init() {
     const isConfigFolderExists = fs.existsSync(getPath())
 
@@ -94,6 +96,13 @@ class Config {
   }
 
   static quizzById(id: string) {
+    if (Config.quizzCache) {
+      const cached = Config.quizzCache.find((q) => q.id === id)
+      if (cached) {
+        return cached
+      }
+    }
+
     const filePath = getPath(`quizz/${safeId(id)}.json`)
 
     if (!fs.existsSync(filePath)) {
@@ -111,6 +120,10 @@ class Config {
   }
 
   static quizz() {
+    if (Config.quizzCache) {
+      return Config.quizzCache
+    }
+
     const isExists = fs.existsSync(getPath("quizz"))
 
     if (!isExists) {
@@ -137,7 +150,8 @@ class Config {
         return [{ id, ...result.data }]
       })
 
-      return quizz || []
+      Config.quizzCache = quizz || []
+      return Config.quizzCache
     } catch (error) {
       console.error("Failed to read quizz config:", error)
 
@@ -159,6 +173,7 @@ class Config {
     }
 
     fs.writeFileSync(oldPath, JSON.stringify(result.data, null, 2))
+    Config.quizzCache = null
 
     return { id }
   }
@@ -179,6 +194,7 @@ class Config {
     }
 
     fs.writeFileSync(filePath, JSON.stringify(raw, null, 2))
+    Config.quizzCache = null
   }
 
   static deleteQuizz(id: string): void {
@@ -189,6 +205,7 @@ class Config {
     }
 
     fs.unlinkSync(filePath)
+    Config.quizzCache = null
   }
 
   static saveResult(data: GameResult): void {
@@ -283,6 +300,7 @@ class Config {
     const filePath = getPath(`quizz/${id}.json`)
 
     fs.writeFileSync(filePath, JSON.stringify(result.data, null, 2))
+    Config.quizzCache = null
 
     return { id }
   }
