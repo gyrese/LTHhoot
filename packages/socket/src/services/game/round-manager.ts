@@ -17,7 +17,7 @@ import {
   STATUS,
   type StatusDataMap,
 } from "@rahoot/common/types/game/status"
-import type { PowerUp } from "@rahoot/common/types/powerup"
+import { SHOP, type PowerUp } from "@rahoot/common/types/powerup"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
@@ -50,6 +50,7 @@ export interface RoundManagerOptions {
   onEveningQuizFinished?: (_result: GameResult, _leaderboard: Player[]) => void
   powerUpManager?: PowerUpManager
   onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
+  onCoinsEarned?: (_playerId: string, _coins: number) => void
 }
 
 /** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
@@ -581,6 +582,12 @@ export class RoundManager {
         player.points += points
         player.streak = isCorrect ? player.streak + 1 : 0
 
+        // Boutique : on gagne des pièces proportionnelles aux points de la manche.
+        if (this.opts.powerUpManager && points > 0) {
+          player.goldCoins =
+            (player.goldCoins ?? 0) + Math.round(points * SHOP.COIN_RATE)
+        }
+
         return { ...player, lastCorrect: isCorrect, lastPoints: points }
       })
       .sort((a, b) => b.points - a.points)
@@ -668,14 +675,11 @@ export class RoundManager {
     this.tempOldLeaderboard = oldLeaderboard
     this.playersAnswers = []
 
-    // Évaluation et attribution des power-ups après chaque question
-    if (this.opts.powerUpManager && this.opts.onPowerUpEarned) {
-      const earned = this.opts.powerUpManager.evaluateRoundEarnings(
-        new Map(sortedPlayers.map((p) => [p.id, p.streak])),
-      )
-
-      for (const { playerId, powerUp } of earned) {
-        this.opts.onPowerUpEarned(playerId, powerUp)
+    // Boutique : on ne distribue plus de power-ups par combo — on notifie chaque
+    // joueur de son nouveau solde de pièces (crédité ci-dessus au scoring).
+    if (this.opts.powerUpManager && this.opts.onCoinsEarned) {
+      for (const player of sortedPlayers) {
+        this.opts.onCoinsEarned(player.id, player.goldCoins ?? 0)
       }
     }
 
@@ -727,11 +731,12 @@ export class RoundManager {
       return "duplicate"
     }
 
-    const isFrozen = this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
+    // Le gel bloque la saisie 3 s côté client : la pénalité de vitesse émerge
+    // naturellement du temps réel écoulé. On consomme juste l'effet (nettoyage)
+    // — plus de malus serveur `startTime - 3000` qui doublait la peine.
+    this.opts.powerUpManager?.consumeFrozen(player.id)
     // Clear scrambled state upon answering
     this.opts.powerUpManager?.consumeScrambled(player.id)
-
-    const startTimeForPoints = isFrozen ? this.startTime - 3000 : this.startTime
 
     this.playersAnswers.push({
       playerId: player.id,
@@ -739,7 +744,7 @@ export class RoundManager {
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,
-      points: timeToPoint(startTimeForPoints, question.time),
+      points: timeToPoint(this.startTime, question.time),
     })
 
     this.opts.send(socket.id, STATUS.WAIT, {

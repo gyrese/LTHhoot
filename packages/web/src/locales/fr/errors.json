@@ -23,6 +23,12 @@
   "upload": {
     "failed": "L'importation a échoué. Vérifiez que le serveur est démarré."
   },
+  "shop": {
+    "notEnoughCoins": "Pièces insuffisantes",
+    "inventoryFull": "Inventaire plein (3 maximum)",
+    "disabled": "La boutique n'est pas active pour cette partie",
+    "failed": "L'achat a échoué. Réessaie."
+  },
   "quizz": {
     "answerEmpty": "Une réponse ne peut pas être vide",
     "failedToDelete": "Suppression du quizz a échoué",

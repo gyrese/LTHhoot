@@ -45,6 +45,7 @@ import {
 import SlidePreviewModal from "@rahoot/web/features/quizz/components/SlideEditor/SlidePreviewModal"
 import YoutubePanel from "@rahoot/web/features/quizz/components/SlideEditor/YoutubePanel"
 import { AVAILABLE_FONTS } from "@rahoot/web/features/quizz/utils/fonts"
+import { uploadImageToServer } from "@rahoot/web/features/quizz/utils/upload"
 
 const SlideToolbar = () => {
   const {
@@ -137,15 +138,9 @@ const SlideToolbar = () => {
     img.src = url
   }
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader()
-
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-
-      if (!dataUrl) {
-        return
-      }
+  const handleImageUpload = async (file: File) => {
+    try {
+      const uploadedUrl = await uploadImageToServer(file)
 
       const img = new window.Image()
 
@@ -159,16 +154,16 @@ const SlideToolbar = () => {
           height *= ratio
         }
 
-        const el = createImageElement(dataUrl, width, height)
+        const el = createImageElement(uploadedUrl, width, height)
 
         handleUpdateElements([...elements, el])
         setSelectedId(el.id)
       }
 
-      img.src = dataUrl
+      img.src = uploadedUrl
+    } catch (err) {
+      console.error("Error uploading image in toolbar:", err)
     }
-
-    reader.readAsDataURL(file)
   }
 
   const handleYoutubeAdd = (el: YoutubeElement) => {

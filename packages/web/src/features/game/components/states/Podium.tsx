@@ -392,6 +392,7 @@ const PodiumPlace = ({
 const Podium = ({ data: { subject, top } }: Props) => {
   const apparition = usePodiumAnimation(top.length)
   const { salonImage } = useManagerStore()
+  const { isEveningFinale } = useGameConfig()
   const { width, height } = useScreenSize()
   const isFinal = apparition >= 4
 
@@ -484,7 +485,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
               animation: "neon-breathe 2s ease-in-out infinite",
             }}
           >
-            GAME OVER
+            {isEveningFinale ? "SOIRÉE TERMINÉE" : "GAME OVER"}
           </span>
           <PixelStar color="#FAFF00" size={10} />
           <div className="h-px flex-1" style={{ background: "linear-gradient(to left, transparent, #FAFF00CC)" }} />
@@ -516,7 +517,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             textShadow: neonShadow("#FAFF00"),
           }}
         >
-          CLASSEMENT FINAL
+          {isEveningFinale ? "CLASSEMENT DE LA SOIRÉE" : "CLASSEMENT FINAL"}
           <span style={{ animation: "cursor-blink 1s step-end infinite" }}>█</span>
         </p>
       </div>

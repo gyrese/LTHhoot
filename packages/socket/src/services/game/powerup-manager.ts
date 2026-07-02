@@ -2,6 +2,7 @@ import {
   POWER_UP_TYPE,
   POWER_UPS_BY_RARITY,
   POWER_UP_CATALOG,
+  getPowerUpPrice,
   type PowerUp,
   type PowerUpType,
   type PowerUpRarity,
@@ -28,6 +29,8 @@ export interface ActiveEffects {
   mirrors: Set<string>
   // Timer +3s à la prochaine question
   frozen: Set<string>
+  // Points divisés par 2 à la prochaine question (cadeau empoisonné)
+  poisoned: Set<string>
 }
 
 export interface EarnedPowerUp {
@@ -66,6 +69,7 @@ const emptyEffects = (): ActiveEffects => ({
   scrambled: new Set(),
   mirrors: new Set(),
   frozen: new Set(),
+  poisoned: new Set(),
 })
 
 export class PowerUpManager {
@@ -191,6 +195,43 @@ export class PowerUpManager {
     }
 
     return earned
+  }
+
+  // ── Boutique ──────────────────────────────────────────────────────────────
+
+  /**
+   * Achat d'un power-up contre des pièces d'or. Le solde vit sur `player.goldCoins`
+   * (persiste à la reconnexion via l'objet Player). Refuse si inventaire plein
+   * ou solde insuffisant.
+   */
+  buyPowerUp(
+    player: Player,
+    type: PowerUpType,
+  ): { success: boolean; error?: string; powerUp?: PowerUp } {
+    const current = this.playerPowerUps.get(player.id) ?? []
+
+    if (current.length >= MAX_POWER_UPS) {
+      return { success: false, error: "errors:shop.inventoryFull" }
+    }
+
+    const price = getPowerUpPrice(type)
+    const balance = player.goldCoins ?? 0
+
+    if (balance < price) {
+      return { success: false, error: "errors:shop.notEnoughCoins" }
+    }
+
+    player.goldCoins = balance - price
+    const powerUp = this.addPowerUp(player.id, type)
+
+    if (!powerUp) {
+      // Ne devrait pas arriver (capacité déjà vérifiée) — on rembourse par sûreté.
+      player.goldCoins = balance
+
+      return { success: false, error: "errors:shop.inventoryFull" }
+    }
+
+    return { success: true, powerUp }
   }
 
   // ── Activation d'un power-up ──────────────────────────────────────────────
@@ -454,16 +495,22 @@ export class PowerUpManager {
 
       case POWER_UP_TYPE.POISONED_GIFT: {
         const [target] = targets
-        // Donne un commun aléatoire au target — qui sera obligé de l'utiliser
-        // sur lui-même (effet auto-déclenché à la prochaine question)
-        const giftType = randomFromRarity("COMMON")
-        const giftPowerUp = this.addPowerUp(target.id, giftType)
+
+        // Le bouclier protège de l'empoisonnement.
+        if (this.activeEffects.shields.has(target.id)) {
+          this.activeEffects.shields.delete(target.id)
+
+          return { success: true, type: powerUp.type, blockedBy: target.id }
+        }
+
+        // Empoisonne la cible : ses points seront divisés par 2 à la prochaine
+        // question (consommé au scoring dans applyPointModifiers).
+        this.activeEffects.poisoned.add(target.id)
 
         return {
           success: true,
           type: powerUp.type,
           affectedPlayers: [{ id: target.id, username: target.username, pointsDelta: 0 }],
-          ...(giftPowerUp ? { mirroredTo: giftPowerUp.id } : {}),
         }
       }
 
@@ -513,6 +560,11 @@ export class PowerUpManager {
       }
     }
 
+    // Cadeau empoisonné : points de la manche divisés par 2.
+    if (consumeFromSet(this.activeEffects.poisoned, playerId)) {
+      points = Math.floor(points / 2)
+    }
+
     return points
   }
 
@@ -534,16 +586,61 @@ export class PowerUpManager {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+  private effectSets(): Set<string>[] {
+    return [
+      this.activeEffects.doublePoints,
+      this.activeEffects.triplePoints,
+      this.activeEffects.shields,
+      this.activeEffects.safetyNets,
+      this.activeEffects.sparks,
+      this.activeEffects.scrambled,
+      this.activeEffects.mirrors,
+      this.activeEffects.frozen,
+      this.activeEffects.poisoned,
+    ]
+  }
+
+  /**
+   * Remappe l'inventaire et les effets actifs d'un joueur vers son nouveau socket
+   * id à la reconnexion. Sans ce remap, un joueur qui achète des power-ups puis
+   * subit un blip réseau les perdait (tout est indexé par socket id, or `player.id`
+   * change à la reconnexion). Les pièces, elles, vivent sur l'objet Player et
+   * survivent déjà.
+   */
+  remap(oldId: string, newId: string) {
+    if (oldId === newId) {
+      return
+    }
+
+    const inventory = this.playerPowerUps.get(oldId)
+
+    if (inventory) {
+      this.playerPowerUps.delete(oldId)
+      this.playerPowerUps.set(newId, inventory)
+    }
+
+    const wins = this.consecutiveWinsByPlayer.get(oldId)
+
+    if (wins !== undefined) {
+      this.consecutiveWinsByPlayer.delete(oldId)
+      this.consecutiveWinsByPlayer.set(newId, wins)
+    }
+
+    for (const set of this.effectSets()) {
+      if (set.has(oldId)) {
+        set.delete(oldId)
+        set.add(newId)
+      }
+    }
+  }
+
   removePlayer(playerId: string) {
     this.playerPowerUps.delete(playerId)
-    this.activeEffects.doublePoints.delete(playerId)
-    this.activeEffects.triplePoints.delete(playerId)
-    this.activeEffects.shields.delete(playerId)
-    this.activeEffects.safetyNets.delete(playerId)
-    this.activeEffects.sparks.delete(playerId)
-    this.activeEffects.scrambled.delete(playerId)
-    this.activeEffects.mirrors.delete(playerId)
-    this.activeEffects.frozen.delete(playerId)
+
+    for (const set of this.effectSets()) {
+      set.delete(playerId)
+    }
+
     this.consecutiveWinsByPlayer.delete(playerId)
   }
 

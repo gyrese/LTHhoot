@@ -59,5 +59,13 @@
     "cumulativeRanking": "Classement soirée",
     "nextQuiz": "Quiz suivant",
     "waitingHost": "En attente du prochain quiz…"
+  },
+  "shop": {
+    "open": "Ouvrir la boutique",
+    "title": "Boutique",
+    "subtitle": "Dépense tes pièces",
+    "buy": "Acheter",
+    "notEnough": "Pièces insuffisantes",
+    "inventoryFull": "Inventaire plein (3/3) — utilise un power-up avant d'en acheter"
   }
 }

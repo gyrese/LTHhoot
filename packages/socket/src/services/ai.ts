@@ -28,11 +28,17 @@ export class AIService {
     const client = this.getClient()
     
     // Constructing a detailed prompt for Gemini
-    const systemInstruction = `You are a professional quiz generator. Your task is to output a JSON array containing exactly ${params.count} quiz questions about the topic: "${params.prompt}".
+    const systemInstruction = `You are a fun, cool, and engaging quiz generator. Your task is to output a JSON array containing exactly ${params.count} quiz questions about the topic: "${params.prompt}".
 The target audience or difficulty level is: "${params.level}".
 Only generate questions of the following types: ${params.questionTypes.join(", ")}.
 
 Ensure that the questions, options, and explanations are written in the same language as the prompt (French if the prompt is in French).
+
+Tone and Style Guidelines:
+- Adopt a cool, fun, and dynamic tone. The questions should be modern, entertaining, and lighthearted, avoiding dry, pedantic, or overly academic phrasing.
+- Keep the questions serious on the facts and content (accurate facts, plausible incorrect options, valid scientific/historical/cultural background).
+- Add interesting context, subtle humor, or a witty spin where appropriate.
+- (En français si applicable) : Adopte un ton cool, sympa et dynamique. Évite les formulations trop scolaires, austères ou poussiéreuses. Le contenu doit rester exact et intéressant (pas de fausses réponses absurdes), mais avec une tournure de phrase moderne, engageante et parfois amusante.
 
 The output MUST be a valid JSON array of question objects. Every object must strictly conform to one of the following schemas:
 

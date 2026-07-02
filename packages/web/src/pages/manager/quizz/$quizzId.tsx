@@ -22,7 +22,7 @@ const QuizzEditPage = () => {
 
   useEffect(() => {
     socket?.emit(EVENTS.QUIZZ.GET, quizzId)
-    const timer = setTimeout(() => setLoadError(true), 8000)
+    const timer = setTimeout(() => setLoadError(true), 30000)
 
     return () => clearTimeout(timer)
   }, [socket, quizzId])

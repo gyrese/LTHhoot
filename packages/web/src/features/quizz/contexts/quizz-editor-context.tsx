@@ -801,7 +801,11 @@ export const QuizzEditorProvider = ({
         listingImage,
         questions: questions.map(({ id, ...q }) => q),
       }
-      localStorage.setItem(`rahoot-backup-${quizzId}`, JSON.stringify(backupData))
+      try {
+        localStorage.setItem(`rahoot-backup-${quizzId}`, JSON.stringify(backupData))
+      } catch (err) {
+        console.warn("Failed to write to localStorage backup (likely quota exceeded due to large quiz size):", err)
+      }
     }, 3000)
 
     return () => clearTimeout(timer)

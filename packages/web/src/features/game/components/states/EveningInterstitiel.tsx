@@ -108,8 +108,6 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
         return
       }
 
-      console.log("[EveningInterstitiel] Global click captured, target:", target)
-
       // Ignorer les clics sur les éléments interactifs
       if (
         target.closest("button") ||

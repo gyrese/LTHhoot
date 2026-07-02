@@ -235,6 +235,18 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     game.sendPlayerInventory(socket.id)
   })
 
+  socket.on(EVENTS.PLAYER.BUY_POWER_UP, ({ data }, ack) => {
+    const game = registry.getGameByPlayerSocketId(socket.id)
+
+    if (!game) {
+      ack({ success: false, error: "errors:game.notFound" })
+
+      return
+    }
+
+    ack(game.handleBuyPowerUp(socket.id, data.powerUpType))
+  })
+
   socket.on(EVENTS.MANAGER.GET_LOGS, ({ gameId }) =>
     withManagerGame(gameId, socket, (game) => {
       for (const entry of game.getLogs()) {

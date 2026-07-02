@@ -77,7 +77,7 @@ export const POWER_UP_META_UI: Record<PowerUpType, PowerUpMetaUI> = {
   },
   [POWER_UP_TYPE.FREEZE]: {
     type: POWER_UP_TYPE.FREEZE, rarity: POWER_UP_RARITY.COMMON, Icon: Snowflake,
-    label: "Gel du timer", description: "+3s au timer des adversaires", color: "#94A3B8",
+    label: "Gel du timer", description: "Bloque la saisie des adversaires pendant 3 s", color: "#94A3B8",
   },
   [POWER_UP_TYPE.SAFETY_NET]: {
     type: POWER_UP_TYPE.SAFETY_NET, rarity: POWER_UP_RARITY.COMMON, Icon: LifeBuoy,
@@ -119,7 +119,7 @@ export const POWER_UP_META_UI: Record<PowerUpType, PowerUpMetaUI> = {
   },
   [POWER_UP_TYPE.POISONED_GIFT]: {
     type: POWER_UP_TYPE.POISONED_GIFT, rarity: POWER_UP_RARITY.RARE, Icon: Gift,
-    label: "Cadeau empoisonné", description: "Donne un commun aléatoire à un adversaire", color: "#60A5FA",
+    label: "Cadeau empoisonné", description: "Divise par 2 les points d'un adversaire à la prochaine question", color: "#60A5FA",
   },
 
   // ── Légendaire ──────────────────────────────────────────────────────────────

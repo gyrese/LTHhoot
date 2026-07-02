@@ -83,6 +83,7 @@ export const EVENTS = {
     BLOCKED: "powerup:blocked",
     GET_INVENTORY: "powerup:get_inventory",
     INVENTORY: "powerup:inventory",
+    COINS: "powerup:coins",
   },
 } as const
 

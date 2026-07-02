@@ -1,6 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
-import { POWER_UP_CATALOG, POWER_UP_TYPE, type PowerUp } from "@rahoot/common/types/powerup"
+import { POWER_UP_CATALOG, POWER_UP_TYPE, type PowerUp, type PowerUpType } from "@rahoot/common/types/powerup"
 import background from "@rahoot/web/assets/background.png"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import {
@@ -17,7 +17,9 @@ import PowerUpBar from "@rahoot/web/features/game/components/PowerUpBar"
 import PowerUpEarnedToast from "@rahoot/web/features/game/components/PowerUpEarnedToast"
 import PowerUpConfirmDrawer from "@rahoot/web/features/game/components/PowerUpConfirmDrawer"
 import PowerUpEffectToast from "@rahoot/web/features/game/components/PowerUpEffectToast"
+import ShopDrawer from "@rahoot/web/features/game/components/ShopDrawer"
 import clsx from "clsx"
+import { Coins } from "lucide-react"
 import { createContext, useContext, type PropsWithChildren, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -41,9 +43,13 @@ type EveningData = {
 
 type GameConfig = {
   isHost: boolean
+  isEveningFinale: boolean
 }
 
-const GameConfigContext = createContext<GameConfig>({ isHost: false })
+const GameConfigContext = createContext<GameConfig>({
+  isHost: false,
+  isEveningFinale: false,
+})
 
 export const useGameConfig = () => useContext(GameConfigContext)
 
@@ -64,6 +70,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const [powerUps, setPowerUps] = useState<PowerUp[]>([])
   const [earnedPowerUp, setEarnedPowerUp] = useState<PowerUp | null>(null)
   const [drawerPowerUp, setDrawerPowerUp] = useState<PowerUp | null>(null)
+  const [coins, setCoins] = useState<number | null>(null)
+  const [shopOpen, setShopOpen] = useState(false)
+  const [isEveningFinale, setIsEveningFinale] = useState(false)
   const [otherPlayers, setOtherPlayers] = useState<{ id: string; username: string; avatar?: string }[]>([])
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const activeGameId = managerGameId ?? playerGameId
@@ -90,6 +99,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     setEveningData({ gameId: activeGameId, ...data })
   })
 
+  // Fin de soirée : le podium FINISHED qui suit doit s'afficher en mode « soirée ».
+  useEvent(EVENTS.EVENING.COMPLETE, () => {
+    setIsEveningFinale(true)
+  })
+
   useEvent(EVENTS.POWER_UP.EARNED, (powerUp) => {
     setPowerUps((prev) => [...prev.slice(-2), powerUp])
     setEarnedPowerUp(powerUp)
@@ -97,6 +111,10 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
   useEvent(EVENTS.POWER_UP.INVENTORY, (inventory) => {
     setPowerUps(inventory)
+  })
+
+  useEvent(EVENTS.POWER_UP.COINS, ({ coins: balance }) => {
+    setCoins(balance)
   })
 
   // Demander l'inventaire au mount et aux changements de phase (joueur uniquement)
@@ -164,6 +182,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
     if (statusName === STATUS.SHOW_START || statusName === STATUS.SHOW_ROOM) {
       setEveningData(null)
+      setIsEveningFinale(false)
     }
 
     if (statusName === STATUS.SHOW_ROOM) {
@@ -180,7 +199,10 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   }
 
   useEffect(() => {
-    if (!manager || !next) {
+    // Pendant l'interstitiel de soirée, c'est EveningInterstitiel qui pilote
+    // l'avancement : on désactive le clic/flèche global de GameWrapper pour ne
+    // pas déclencher deux avancements concurrents.
+    if (!manager || !next || eveningData) {
       return
     }
 
@@ -210,8 +232,6 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
         return
       }
 
-      console.log("[GameWrapper] Global click captured, target:", target)
-
       // Ignorer les clics sur les éléments interactifs
       if (
         target.closest("button") ||
@@ -236,7 +256,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("click", handleGlobalClick)
     }
-  }, [manager, next, isDisabled, handleNext])
+  }, [manager, next, isDisabled, handleNext, eveningData])
 
   const handleUsePowerUp = (powerUp: PowerUp) => {
     setDrawerPowerUp(powerUp)
@@ -256,10 +276,35 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     setDrawerPowerUp(null)
   }
 
+  const handleBuyPowerUp = (type: PowerUpType) => {
+    if (!playerGameId || !socket) {
+      return
+    }
+
+    socket
+      .timeout(4000)
+      .emit(
+        EVENTS.PLAYER.BUY_POWER_UP,
+        { gameId: playerGameId, data: { powerUpType: type } },
+        (err, res) => {
+          if (err) {
+            toast.error(t("errors:shop.failed"))
+
+            return
+          }
+
+          if (!res?.success) {
+            toast.error(t(res?.error ?? "errors:shop.failed"))
+          }
+          // Succès : le serveur pousse le power-up (EARNED) + le nouveau solde (COINS).
+        },
+      )
+  }
+
   const isRoomScreen = !statusName || statusName === STATUS.SHOW_ROOM
 
   return (
-    <GameConfigContext.Provider value={{ isHost: Boolean(manager) }}>
+    <GameConfigContext.Provider value={{ isHost: Boolean(manager), isEveningFinale }}>
       <section
         className="relative flex h-dvh flex-col overflow-hidden bg-slate-950"
         style={
@@ -359,6 +404,17 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                 onCancel={() => setDrawerPowerUp(null)}
               />
 
+              {/* Boutique de power-ups */}
+              {!manager && coins !== null && (
+                <ShopDrawer
+                  open={shopOpen}
+                  coins={coins}
+                  inventoryCount={powerUps.length}
+                  onBuy={handleBuyPowerUp}
+                  onClose={() => setShopOpen(false)}
+                />
+              )}
+
               {/* Flash fullscreen pour effets globaux légendaires (manager uniquement) */}
               <AnimatePresence>
                 {manager && globalFlash === "apocalypse" && (
@@ -392,6 +448,17 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   <p className="min-w-0 flex-1 truncate text-sm font-bold text-white">
                     {player?.username}
                   </p>
+                  {/* Boutique : solde de pièces cliquable (uniquement si power-ups actifs) */}
+                  {coins !== null && (
+                    <button
+                      onClick={() => setShopOpen(true)}
+                      className="ring-1 flex shrink-0 items-center gap-1 rounded-lg bg-yellow-500/20 px-2.5 py-1.5 text-sm font-black text-yellow-300 ring-yellow-500/40 transition-colors hover:bg-yellow-500/30 active:scale-95"
+                      title={t("game:shop.open")}
+                    >
+                      <Coins className="size-4" />
+                      <span className="tabular-nums">{coins}</span>
+                    </button>
+                  )}
                   {/* Power-ups inline */}
                   {powerUps.length > 0 && (
                     <PowerUpBar powerUps={powerUps} onUse={handleUsePowerUp} compact />

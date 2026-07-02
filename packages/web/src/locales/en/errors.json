@@ -22,6 +22,12 @@
   "upload": {
     "failed": "Upload failed. Make sure the server is running."
   },
+  "shop": {
+    "notEnoughCoins": "Not enough coins",
+    "inventoryFull": "Inventory full (3 max)",
+    "disabled": "The shop is not enabled for this game",
+    "failed": "Purchase failed. Try again."
+  },
   "quizz": {
     "answerEmpty": "An answer cannot be empty",
     "failedToDelete": "Failed to delete quizz",

@@ -1,5 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
+import { SHOP, type PowerUpType } from "@rahoot/common/types/powerup"
 import type {
   AnswerAckStatus,
   Server,
@@ -233,11 +234,11 @@ class Game {
       onEveningQuizFinished: isEvening
         ? (result, leaderboard) => this.handleEveningQuizFinished(result, leaderboard)
         : undefined,
-      // Power-ups uniquement en mode soirée avec flag activé
+      // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
-      onPowerUpEarned: this.powerUpsActive
-        ? (playerId, powerUp) => {
-            this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, powerUp)
+      onCoinsEarned: this.powerUpsActive
+        ? (playerId, coins) => {
+            this.io.to(playerId).emit(EVENTS.POWER_UP.COINS, { coins })
           }
         : undefined,
     })
@@ -267,8 +268,8 @@ class Game {
 
     Config.saveResult({ ...result, logs: this.logger.getAll() })
 
-    // Évaluer les power-ups de fin de quiz (victoire, sans faute, 2 wins d'affilée)
-    this.grantQuizEndPowerUps(result, leaderboard)
+    // Bonus de pièces de fin de quiz (victoire + quiz sans faute)
+    this.grantQuizEndCoins(result, leaderboard)
 
     const { quizIds, currentIndex } = this.eveningSession
     const isLastQuiz = currentIndex + 1 >= quizIds.length
@@ -348,20 +349,24 @@ class Game {
     })
   }
 
-  // ── Power-ups ────────────────────────────────────────────────────────────────
+  // ── Power-ups / boutique ─────────────────────────────────────────────────────
 
-  private grantQuizEndPowerUps(result: GameResult, leaderboard: Player[]) {
+  // Bonus de pièces de fin de quiz (mode soirée) : le vainqueur et les joueurs
+  // ayant réussi le quiz sans faute reçoivent un bonus de pièces.
+  private grantQuizEndCoins(result: GameResult, leaderboard: Player[]) {
     if (!this.powerUpsActive) {
       return
     }
 
     const [winner] = leaderboard
-    const winnerId = winner?.points && winner.points > 0 ? winner.id : null
-    const allPlayerIds = leaderboard.map((p) => p.id)
 
-    // Quiz sans faute : player a marqué des points à chaque question
+    if (winner?.points && winner.points > 0) {
+      winner.goldCoins = (winner.goldCoins ?? 0) + SHOP.QUIZ_WIN_BONUS
+      this.emitCoins(winner)
+    }
+
+    // Quiz sans faute : le joueur a marqué des points à chaque question
     const totalQuestions = result.questions.length
-    const perfectPlayerIds: string[] = []
 
     for (const player of leaderboard) {
       const correctAnswers = result.questions.filter((q) =>
@@ -369,18 +374,9 @@ class Game {
       ).length
 
       if (totalQuestions > 0 && correctAnswers === totalQuestions) {
-        perfectPlayerIds.push(player.id)
+        player.goldCoins = (player.goldCoins ?? 0) + SHOP.PERFECT_BONUS
+        this.emitCoins(player)
       }
-    }
-
-    const earned = this.powerUpManager.evaluateQuizEndEarnings(
-      winnerId,
-      perfectPlayerIds,
-      allPlayerIds,
-    )
-
-    for (const { playerId, powerUp } of earned) {
-      this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, powerUp)
     }
   }
 
@@ -391,6 +387,13 @@ class Game {
 
     const inventory = this.powerUpManager.getPlayerPowerUps(playerId)
     this.io.to(playerId).emit(EVENTS.POWER_UP.INVENTORY, inventory)
+
+    // Solde de pièces (pour la boutique)
+    const player = this.playerManager.findById(playerId)
+
+    if (player) {
+      this.emitCoins(player)
+    }
 
     // Notify the player about all other connected players so their target list is fully synced
     for (const p of this.playerManager.getAll()) {
@@ -516,14 +519,51 @@ class Game {
     this.playerManager.join(socket, username, avatar)
     this.logAndEmit("info", `${username} a rejoint la partie`)
 
-    // Cadeau de bienvenue (mode soirée avec power-ups activés) : 1 commun aléatoire
+    // Boutique activée : on crédite le solde de pièces de départ (le joueur
+    // achète ses power-ups au lieu d'en recevoir aléatoirement).
     if (this.powerUpsActive) {
-      const gift = this.powerUpManager.grantStartGift(socket.id)
+      const player = this.playerManager.findById(socket.id)
 
-      if (gift) {
-        this.io.to(socket.id).emit(EVENTS.POWER_UP.EARNED, gift.powerUp)
+      if (player) {
+        player.goldCoins = SHOP.STARTING_COINS
+        this.emitCoins(player)
+        this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
       }
     }
+  }
+
+  private emitCoins(player: Player) {
+    this.io.to(player.id).emit(EVENTS.POWER_UP.COINS, { coins: player.goldCoins ?? 0 })
+  }
+
+  // Achat d'un power-up à la boutique (contre des pièces d'or).
+  handleBuyPowerUp(
+    playerId: string,
+    type: PowerUpType,
+  ): { success: boolean; error?: string } {
+    if (!this.powerUpsActive) {
+      return { success: false, error: "errors:shop.disabled" }
+    }
+
+    const player = this.playerManager.findById(playerId)
+
+    if (!player) {
+      return { success: false, error: "errors:game.notFound" }
+    }
+
+    const result = this.powerUpManager.buyPowerUp(player, type)
+
+    if (!result.success || !result.powerUp) {
+      return { success: false, error: result.error }
+    }
+
+    // On pousse le power-up acheté (déclenche l'animation d'obtention) + le
+    // nouveau solde ; le manager voit le solde à jour sur l'objet joueur.
+    this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, result.powerUp)
+    this.emitCoins(player)
+    this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+
+    return { success: true }
   }
 
   kickPlayer(socket: Socket, playerId: string) {
@@ -684,6 +724,9 @@ class Game {
     // le joueur reconnecté n'est pas crédité au scoring (cf. questions ouvertes
     // et leur fenêtre de repêchage).
     this.round.remapPlayerAnswer(oldSocketId, newSocketId)
+    // Idem pour l'inventaire de power-ups + effets actifs (indexés socket id),
+    // sinon les power-ups achetés sont perdus au moindre blip réseau.
+    this.powerUpManager.remap(oldSocketId, newSocketId)
     player.connected = true
 
     const MANAGER_ONLY_STATUSES: Status[] = [STATUS.SHOW_ROOM, STATUS.SHOW_LEADERBOARD]
@@ -798,6 +841,8 @@ class Game {
     const player = this.playerManager.remove(socketId)
 
     if (player) {
+      // Purge de l'inventaire / effets / wins pour éviter les entrées orphelines.
+      this.powerUpManager.removePlayer(socketId)
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()

@@ -84,6 +84,29 @@ export interface PowerUp {
   earnedAt: number
 }
 
+// ─── Boutique (pièces d'or) ──────────────────────────────────────────────────
+// La boutique REMPLACE le gain aléatoire de power-ups : on gagne des pièces aux
+// bonnes réponses et on achète ses power-ups. Active uniquement quand les
+// power-ups sont activés pour la partie.
+export const SHOP = {
+  // Solde de départ à l'arrivée d'un joueur
+  STARTING_COINS: 300,
+  // Pièces gagnées = round(points de la manche × COIN_RATE)
+  COIN_RATE: 0.5,
+  // Bonus de fin de quiz (mode soirée)
+  QUIZ_WIN_BONUS: 500,
+  PERFECT_BONUS: 1000,
+  // Prix d'achat par rareté
+  PRICE_BY_RARITY: {
+    COMMON: 150,
+    RARE: 400,
+    LEGENDARY: 800,
+  } as Record<PowerUpRarity, number>,
+} as const
+
+export const getPowerUpPrice = (type: PowerUpType): number =>
+  SHOP.PRICE_BY_RARITY[POWER_UP_CATALOG[type].rarity]
+
 export interface PowerUpEffect {
   type: PowerUpType
   activatedBy: string

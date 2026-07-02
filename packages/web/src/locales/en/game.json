@@ -47,5 +47,13 @@
   },
   "imageSequence": {
     "indicator": "Image {{current}} / {{total}}"
+  },
+  "shop": {
+    "open": "Open the shop",
+    "title": "Shop",
+    "subtitle": "Spend your coins",
+    "buy": "Buy",
+    "notEnough": "Not enough coins",
+    "inventoryFull": "Inventory full (3/3) — use a power-up before buying"
   }
 }

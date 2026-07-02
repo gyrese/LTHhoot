@@ -8,6 +8,7 @@ import {
   createImageElement,
   createTextElement,
 } from "@rahoot/web/features/quizz/utils/element-factory"
+import { uploadImageToServer } from "@rahoot/web/features/quizz/utils/upload"
 import {
   Stage,
   Layer,
@@ -329,41 +330,37 @@ const SlideCanvas = ({
           return
         }
 
-        const reader = new FileReader()
+        const localDataUrl = URL.createObjectURL(file)
+        const img = new window.Image()
 
-        reader.onload = (ev) => {
-          const dataUrl = ev.target?.result as string
+        img.onload = async () => {
+          let width = img.naturalWidth
+          let height = img.naturalHeight
 
-          if (!dataUrl) {
-            return
+          if (width > 600 || height > 600) {
+            const ratio = Math.min(600 / width, 600 / height)
+            width *= ratio
+            height *= ratio
           }
 
-          const img = new window.Image()
-
-          img.onload = () => {
-            let width = img.naturalWidth
-            let height = img.naturalHeight
-
-            if (width > 600 || height > 600) {
-              const ratio = Math.min(600 / width, 600 / height)
-              width *= ratio
-              height *= ratio
-            }
-
+          try {
+            const uploadedUrl = await uploadImageToServer(file)
             const el = {
-              ...createImageElement(dataUrl, width, height),
+              ...createImageElement(uploadedUrl, width, height),
               x: CANVAS_W / 2 - width / 2,
               y: CANVAS_H / 2 - height / 2,
             }
 
             change([...els, el])
             select(el.id)
+          } catch (err) {
+            console.error("Paste image upload failed:", err)
+          } finally {
+            URL.revokeObjectURL(localDataUrl)
           }
-
-          img.src = dataUrl
         }
 
-        reader.readAsDataURL(file)
+        img.src = localDataUrl
 
         return
       }
@@ -404,41 +401,37 @@ const SlideCanvas = ({
   }
 
   const processDroppedFile = (file: File, dropX: number, dropY: number) => {
-    const reader = new FileReader()
+    const localDataUrl = URL.createObjectURL(file)
+    const img = new window.Image()
 
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string
+    img.onload = async () => {
+      let width = img.naturalWidth
+      let height = img.naturalHeight
 
-      if (!dataUrl) {
-        return
+      if (width > 600 || height > 600) {
+        const ratio = Math.min(600 / width, 600 / height)
+        width *= ratio
+        height *= ratio
       }
 
-      const img = new window.Image()
-
-      img.onload = () => {
-        let width = img.naturalWidth
-        let height = img.naturalHeight
-
-        if (width > 600 || height > 600) {
-          const ratio = Math.min(600 / width, 600 / height)
-          width *= ratio
-          height *= ratio
-        }
-
+      try {
+        const uploadedUrl = await uploadImageToServer(file)
         const el = {
-          ...createImageElement(dataUrl, width, height),
+          ...createImageElement(uploadedUrl, width, height),
           x: Math.max(0, dropX - width / 2),
           y: Math.max(0, dropY - height / 2),
         }
 
         onChange([...elements, el])
         onSelect(el.id)
+      } catch (err) {
+        console.error("Dropped file upload failed:", err)
+      } finally {
+        URL.revokeObjectURL(localDataUrl)
       }
-
-      img.src = dataUrl
     }
 
-    reader.readAsDataURL(file)
+    img.src = localDataUrl
   }
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {

@@ -141,6 +141,7 @@ export interface ServerToClientEvents {
   [EVENTS.POWER_UP.EFFECT]: (_effect: PowerUpEffect) => void
   [EVENTS.POWER_UP.BLOCKED]: (_data: { powerUpType: PowerUpType; defenderId: string }) => void
   [EVENTS.POWER_UP.INVENTORY]: (_powerUps: PowerUp[]) => void
+  [EVENTS.POWER_UP.COINS]: (_data: { coins: number }) => void
 }
 
 export interface ClientToServerEvents {
