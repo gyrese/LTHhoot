@@ -147,7 +147,22 @@ const QuizzEditorHeader = () => {
       <header className="border-border bg-surface z-20 flex h-16 items-center gap-3 border-b px-4">
         {/* Gauche : logo + titre + autosave (tronqué sur petits écrans) */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Logo className="h-10 shrink-0" />
+          <button
+            type="button"
+            onClick={() => {
+              if (isDirty) {
+                if (confirm(t("common:unsavedChangesConfirm", "Attention : vous avez des modifications non enregistrées. Voulez-vous vraiment quitter sans sauvegarder ?"))) {
+                  navigate({ to: "/manager" })
+                }
+              } else {
+                navigate({ to: "/manager" })
+              }
+            }}
+            className="focus-ring rounded-lg transition-transform active:scale-95 shrink-0"
+            title={t("common:backToManager", "Retour au manager")}
+          >
+            <Logo className="h-10 shrink-0" />
+          </button>
 
           <div className="bg-border-strong/70 h-7 w-px shrink-0" />
 
@@ -208,15 +223,7 @@ const QuizzEditorHeader = () => {
 
         {/* Droite : actions */}
         <div className="flex flex-1 items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-ink-muted gap-2"
-            onClick={() => navigate({ to: "/manager" })}
-          >
-            <LogOut className="size-4" />
-            <span className="hidden md:inline">{t("common:exit")}</span>
-          </Button>
+
           <input
             ref={csvInputRef}
             type="file"

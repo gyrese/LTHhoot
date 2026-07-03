@@ -67,5 +67,9 @@
     "buy": "Acheter",
     "notEnough": "Pièces insuffisantes",
     "inventoryFull": "Inventaire plein (3/3) — utilise un power-up avant d'en acheter"
+  },
+  "freeze": {
+    "title": "Gelé !",
+    "subtitle": "Vos réponses se débloquent dans 3 secondes…"
   }
 }

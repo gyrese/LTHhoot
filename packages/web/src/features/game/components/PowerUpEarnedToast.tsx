@@ -1,5 +1,6 @@
 import type { PowerUp } from "@rahoot/common/types/powerup"
 import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { motion } from "motion/react"
 import { useEffect } from "react"
@@ -50,6 +51,12 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
 
     return () => clearTimeout(timer)
   }, [onDismiss, meta.rarity])
+
+  useEffect(() => {
+    // Ce toast n'est monté que côté joueur (cf. GameWrapper.tsx) — pas besoin
+    // de vérifier isHost ici.
+    vibrate(isLegendary ? HAPTIC_PATTERNS.POWERUP_LEGENDARY : HAPTIC_PATTERNS.POWERUP_RECEIVED)
+  }, [isLegendary])
 
   return (
     <motion.div

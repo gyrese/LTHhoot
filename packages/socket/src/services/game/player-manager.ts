@@ -36,10 +36,26 @@ export class PlayerManager {
       this.players = this.players.filter((p) => p.clientId !== socket.handshake.auth.clientId)
     }
 
-    const result = usernameValidator.safeParse(username)
+    const trimmedUsername = username.trim()
+    const result = usernameValidator.safeParse(trimmedUsername)
 
     if (result.error) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, result.error.issues[0].message)
+
+      return
+    }
+
+    // Unicité (insensible à la casse) : de nombreux endroits matchent les
+    // joueurs par username plutôt que par id (résultats, power-ups, mode
+    // soirée) — un doublon casserait ce matching. Vérifié APRÈS le retrait de
+    // l'éventuel ancien joueur du même clientId ci-dessus, sinon un joueur qui
+    // se reconnecte avec son propre pseudo se rejetterait lui-même.
+    const isDuplicate = this.players.some(
+      (p) => p.username.trim().toLowerCase() === trimmedUsername.toLowerCase(),
+    )
+
+    if (isDuplicate) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:auth.usernameTaken")
 
       return
     }
@@ -50,7 +66,7 @@ export class PlayerManager {
       id: socket.id,
       clientId: socket.handshake.auth.clientId,
       connected: true,
-      username,
+      username: trimmedUsername,
       avatar,
       points: 0,
       streak: 0,

@@ -2,7 +2,8 @@
   "auth": {
     "invalidInviteCode": "Code d'invitation invalide",
     "usernameTooLong": "Le pseudo ne peut pas dépasser 20 caractères",
-    "usernameTooShort": "Le pseudo doit faire au moins 4 caractères"
+    "usernameTooShort": "Le pseudo doit faire au moins 4 caractères",
+    "usernameTaken": "Ce pseudo est déjà pris"
   },
   "game": {
     "expired": "La partie a expiré",

@@ -1,7 +1,9 @@
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
+import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
+import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
 import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import { motion, AnimatePresence } from "motion/react"
 import { useEffect, useState } from "react"
@@ -392,9 +394,29 @@ const PodiumPlace = ({
 const Podium = ({ data: { subject, top } }: Props) => {
   const apparition = usePodiumAnimation(top.length)
   const { salonImage } = useManagerStore()
-  const { isEveningFinale } = useGameConfig()
+  const { isHost, isEveningFinale } = useGameConfig()
+  const { player } = usePlayerStore()
   const { width, height } = useScreenSize()
   const isFinal = apparition >= 4
+
+  // Vibration côté joueur au moment précis où c'est LUI qui est révélé sur le
+  // podium (rang 3 à apparition=1, rang 2 à apparition=2, rang 1 à apparition=4
+  // — cf. les seuils `show={apparition >= n}` de chaque PodiumPlace ci-dessous).
+  useEffect(() => {
+    if (isHost || !player) {
+      return
+    }
+
+    const revealedRank = apparition === 1 ? 3 : apparition === 2 ? 2 : apparition === 4 ? 1 : null
+
+    if (revealedRank === null) {
+      return
+    }
+
+    if (top[revealedRank - 1]?.username === player.username) {
+      vibrate(HAPTIC_PATTERNS.DUEL_WIN)
+    }
+  }, [apparition, isHost, player, top])
 
   useEffect(() => {
     if (document.getElementById("podium-neon-css")) {

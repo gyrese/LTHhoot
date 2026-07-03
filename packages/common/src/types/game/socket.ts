@@ -71,7 +71,6 @@ export interface ServerToClientEvents {
     avatar?: string
   }) => void
   [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
-  [EVENTS.GAME.SURVEY_STATS]: (_data: { results: { label: string; count: number }[] }) => void
 
   // Player events
   [EVENTS.PLAYER.SUCCESS_RECONNECT]: (_data: {

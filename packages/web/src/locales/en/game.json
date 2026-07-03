@@ -55,5 +55,9 @@
     "buy": "Buy",
     "notEnough": "Not enough coins",
     "inventoryFull": "Inventory full (3/3) — use a power-up before buying"
+  },
+  "freeze": {
+    "title": "Frozen!",
+    "subtitle": "Your answers unlock in 3 seconds…"
   }
 }

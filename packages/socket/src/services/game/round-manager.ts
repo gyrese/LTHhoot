@@ -81,6 +81,10 @@ export class RoundManager {
     return this.started
   }
 
+  isQuestionInProgress(): boolean {
+    return this.questionInProgress
+  }
+
   setDemoMode(enabled: boolean) {
     this.demoMode = enabled
   }
@@ -372,10 +376,13 @@ export class RoundManager {
         }
       })()
 
-      // Send custom SELECT_ANSWER status to each player to convey frozen / scrambled states
+      // Send custom SELECT_ANSWER status to each player to convey frozen / scrambled states.
+      // Consommés ici (pas à la réponse) : l'effet s'applique à CETTE question
+      // qu'elle soit répondue ou non — sinon un joueur qui ne répond jamais
+      // reste gelé/mélangé indéfiniment aux questions suivantes.
       for (const player of this.opts.players.getAll()) {
-        const isFrozen = this.opts.powerUpManager?.hasFrozen(player.id) ?? false
-        const isScrambled = this.opts.powerUpManager?.hasScrambled(player.id) ?? false
+        const isFrozen = this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
+        const isScrambled = this.opts.powerUpManager?.consumeScrambled(player.id) ?? false
 
         this.opts.send(player.id, STATUS.SELECT_ANSWER, {
           ...selectAnswerBase,
@@ -605,13 +612,23 @@ export class RoundManager {
         myPoints: player.points,
         rank,
         aheadOfMe: aheadPlayer ? aheadPlayer.username : null,
+        streak: player.streak,
       })
     })
+
+    // Split correct/incorrect générique — utile aux types sans dénombrement
+    // par valeur exacte (slider/date/puzzle/open/image_sequence). Capturé
+    // depuis `sortedPlayers` (post-scoring) et AVANT que `this.playersAnswers`
+    // soit vidé plus bas.
+    const correctCount = sortedPlayers.filter((p) => p.lastCorrect).length
+    const totalAnswered = this.playersAnswers.length
 
     const responsesBase = {
       question: question.question,
       type: question.type,
       responses: totalType,
+      correctCount,
+      totalAnswered,
       media: question.media,
       background: question.background,
       backgroundOpacity: question.backgroundOpacity,
@@ -659,6 +676,12 @@ export class RoundManager {
       ...question,
       playerAnswers: currentPlayers.map((player) => {
         const ans = this.playersAnswers.find((a) => a.playerId === player.id)
+        // `ans.points` est le score temporel brut fixé à la soumission
+        // (avant vérification de justesse) : ne PAS l'utiliser tel quel, sinon
+        // une mauvaise réponse rapide s'enregistre comme si elle rapportait des
+        // points. `sortedPlayers` (ci-dessus) porte le score réellement
+        // attribué (post-checkAnswer + modificateurs power-up).
+        const scored = sortedPlayers.find((p) => p.id === player.id)
 
         return {
           playerName: player.username,
@@ -666,7 +689,7 @@ export class RoundManager {
           textAnswer: ans?.textAnswer ?? null,
           numberAnswer: ans?.numberAnswer ?? null,
           orderAnswer: ans?.orderAnswer ?? null,
-          points: ans?.points ?? 0,
+          points: scored?.lastPoints ?? 0,
         }
       }),
     })
@@ -731,12 +754,9 @@ export class RoundManager {
       return "duplicate"
     }
 
-    // Le gel bloque la saisie 3 s côté client : la pénalité de vitesse émerge
-    // naturellement du temps réel écoulé. On consomme juste l'effet (nettoyage)
-    // — plus de malus serveur `startTime - 3000` qui doublait la peine.
-    this.opts.powerUpManager?.consumeFrozen(player.id)
-    // Clear scrambled state upon answering
-    this.opts.powerUpManager?.consumeScrambled(player.id)
+    // Gel/mélange déjà consommés à la diffusion de la question (newQuestion),
+    // pas ici — l'effet ne doit s'appliquer qu'à cette question, que le joueur
+    // réponde ou non.
 
     this.playersAnswers.push({
       playerId: player.id,

@@ -13,7 +13,6 @@ export const EVENTS = {
     CREATE: "game:create",
     NEW_PLAYER: "game:newPlayer",
     REMOVE_PLAYER: "game:removePlayer",
-    SURVEY_STATS: "game:surveyStats",
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",

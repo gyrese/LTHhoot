@@ -47,5 +47,9 @@
   },
   "imageSequence": {
     "indicator": "Immagine {{current}} / {{total}}"
+  },
+  "freeze": {
+    "title": "Congelato!",
+    "subtitle": "Le tue risposte si sbloccano tra 3 secondi…"
   }
 }

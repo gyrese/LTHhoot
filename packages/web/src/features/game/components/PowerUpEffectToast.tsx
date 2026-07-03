@@ -1,7 +1,10 @@
 import type { PowerUpEffect } from "@rahoot/common/types/powerup"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { motion } from "motion/react"
+import { useEffect } from "react"
 
 type Props = {
   effect: PowerUpEffect
@@ -9,6 +12,13 @@ type Props = {
 
 const PowerUpEffectToast = ({ effect }: Props) => {
   const meta = POWER_UP_META_UI[effect.type]
+  const { isHost } = useGameConfig()
+
+  useEffect(() => {
+    if (!isHost) {
+      vibrate(HAPTIC_PATTERNS.POWERUP_RECEIVED)
+    }
+  }, [isHost])
 
   if (!meta) {
     return null

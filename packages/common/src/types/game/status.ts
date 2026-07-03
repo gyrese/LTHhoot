@@ -83,6 +83,7 @@ export type CommonStatusDataMap = {
     myPoints: number
     rank: number
     aheadOfMe: string | null
+    streak: number
   }
   SHOW_OPEN_ANSWERS: {
     question: string
@@ -122,6 +123,8 @@ type ManagerExtraStatus = {
     question: string
     type: QuestionType
     responses: Record<number, number>
+    correctCount: number
+    totalAnswered: number
     solutions?: number[]
     correctAnswers?: string[]
     correctYear?: number

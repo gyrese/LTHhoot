@@ -1,5 +1,12 @@
 @import "tailwindcss";
 /*
+ * Utilitaires d'animation « enter/exit » (animate-in, fade-in, zoom-in-95,
+ * slide-in-from-bottom-4, etc.) — remplaçant Tailwind v4 de tailwindcss-animate.
+ * Sans cet import, ces classes utilisées dans les modales, overlays et reveals
+ * étaient des no-op silencieux (les éléments apparaissaient sans animation).
+ */
+@import "tw-animate-css";
+/*
  * NOTE: Les ~40 polices Google (sélecteur de police de l'éditeur + rendu des
  * slides) NE sont PAS importées ici volontairement. Un @import en tête de CSS
  * critique est bloquant pour le rendu et provoquait un écran blanc de ~20s sur

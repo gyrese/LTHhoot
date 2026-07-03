@@ -2,8 +2,10 @@ import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import CricleCheck from "@rahoot/web/features/game/components/icons/CricleCheck"
 import CricleXmark from "@rahoot/web/features/game/components/icons/CricleXmark"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
+import StreakBadge from "@rahoot/web/features/game/components/StreakBadge"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
+import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
@@ -14,7 +16,7 @@ type Props = {
 }
 
 const Result = ({
-  data: { correct, message, points, myPoints, rank, aheadOfMe },
+  data: { correct, message, points, myPoints, rank, aheadOfMe, streak },
 }: Props) => {
   const player = usePlayerStore()
   const { t } = useTranslation()
@@ -37,12 +39,24 @@ const Result = ({
       player.updatePoints(myPoints)
     }, 2000)
 
-    if (isHost) {
-      if (correct) {
-        sfxCorrect()
-      } else {
-        sfxWrong()
-      }
+    // Son joué pour tout le monde (host ET joueur) — auparavant restreint au
+    // host, ce qui privait le joueur de tout retour audio sur son propre
+    // résultat. Vibration réservée au joueur (le host est l'écran de
+    // projection, pas un mobile en main).
+    if (correct) {
+      sfxCorrect()
+    } else {
+      sfxWrong()
+    }
+
+    if (!isHost) {
+      vibrate(
+        streak >= 3
+          ? HAPTIC_PATTERNS.STREAK_MILESTONE
+          : correct
+            ? HAPTIC_PATTERNS.CORRECT
+            : HAPTIC_PATTERNS.WRONG,
+      )
     }
 
     return () => clearTimeout(timer)
@@ -77,12 +91,15 @@ const Result = ({
         <span className="text-sm font-bold tracking-widest text-white/60 uppercase">
           {t("game:totalScore", "Score Total")}
         </span>
-        <AnimatedPoints
-          from={startPoints}
-          to={myPoints}
-          delay={0.8}
-          className="text-5xl font-black text-white drop-shadow-lg"
-        />
+        <div className="flex items-center">
+          <AnimatedPoints
+            from={startPoints}
+            to={myPoints}
+            delay={0.8}
+            className="text-5xl font-black text-white drop-shadow-lg"
+          />
+          <StreakBadge streak={streak} />
+        </div>
       </div>
 
       {/* Classement */}

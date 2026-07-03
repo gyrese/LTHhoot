@@ -23,6 +23,7 @@ import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
+import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -201,6 +202,7 @@ const Answers = ({
       return
     }
 
+    vibrate(HAPTIC_PATTERNS.TAP)
     sendingRef.current = true
     setSendError(false)
     // Feedback immédiat ; rétabli (answered=false) en cas d'échec définitif.
@@ -231,7 +233,7 @@ const Answers = ({
       osc.start()
       osc.stop(ctx.currentTime + 0.08)
     } catch {
-      // AudioContext non support├®
+      // AudioContext non supporté
     }
   }
 
@@ -490,16 +492,16 @@ const Answers = ({
       </div>
 
       {isFreezeBlocked && isPlayer && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-blue-500/10 backdrop-blur-md animate-fade-in pointer-events-auto">
+        <div className="animate-in fade-in pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center bg-blue-500/10 backdrop-blur-md">
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/20 bg-blue-900/30 p-8 shadow-2xl backdrop-blur-2xl">
             <svg className="size-16 animate-pulse text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18m-3-6L6 18M6 6l12 12m-6-9l2-2m-2 2l-2-2m2 11l2 2m-2-2l-2 2m-5-5l-2-2m2 2l-2 2m14-2l2-2m-2 2l2 2" />
             </svg>
             <span className="text-2xl font-black uppercase tracking-wider text-blue-200">
-              Gel├® !
+              {t("game:freeze.title")}
             </span>
             <span className="text-sm font-semibold text-blue-100/70">
-              Vos r├®ponses se d├®bloquent dans 3 secondes...
+              {t("game:freeze.subtitle")}
             </span>
           </div>
         </div>

@@ -416,6 +416,39 @@ const DropPinResult = ({
   )
 }
 
+// ── Split correct/incorrect (types sans dénombrement par valeur exacte) ───────
+
+const CorrectSplitBar = ({
+  correctCount,
+  totalAnswered,
+}: {
+  correctCount: number
+  totalAnswered: number
+}) => {
+  const { t } = useTranslation()
+  const pct = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0
+
+  return (
+    <div className="anim-show mx-auto w-full max-w-lg px-4">
+      <div className="mb-1 flex justify-between text-sm font-bold text-white/70">
+        <span>
+          {t("game:correctSplit", "{{count}}/{{total}} bonnes réponses", {
+            count: correctCount,
+            total: totalAnswered,
+          })}
+        </span>
+        <span>{pct}%</span>
+      </div>
+      <div className="h-4 w-full overflow-hidden rounded-full bg-red-500/60">
+        <div
+          className="anim-bar-grow h-full rounded-full bg-green-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Carte « Réponse » ─────────────────────────────────────────────────────────
 
 const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
@@ -469,6 +502,8 @@ const Responses = ({
     question,
     type,
     responses,
+    correctCount,
+    totalAnswered,
     solutions: rawSolutions,
     correctAnswers,
     correctYear,
@@ -594,6 +629,12 @@ const Responses = ({
               percentages={percentages}
               revealed={revealed}
             />
+          )}
+
+          {/* Types sans dénombrement par valeur exacte (slider/date/puzzle/
+              drop_pin/open/image_sequence) : split correct/incorrect générique */}
+          {type !== "mcq" && type !== "true_false" && type !== "title" && (
+            <CorrectSplitBar correctCount={correctCount} totalAnswered={totalAnswered} />
           )}
 
           {(type === "open" || type === "image_sequence") &&

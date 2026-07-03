@@ -325,6 +325,15 @@ class Game {
       return
     }
 
+    // Garde contre un EVENING.NEXT tardif/dupliqué (countdown auto de
+    // l'interstitiel + bouton manuel, potentiellement montés à la fois sur
+    // l'écran principal et la télécommande) : si le quiz suivant a déjà été
+    // démarré manuellement par l'hôte, on ne doit pas écraser le
+    // RoundManager en cours.
+    if (this.round.isStarted()) {
+      return
+    }
+
     const { quizIds, currentIndex } = this.eveningSession
     const quizz = Config.quizz().find((q) => q.id === quizIds[currentIndex])
 
@@ -358,9 +367,33 @@ class Game {
       return
     }
 
-    const [winner] = leaderboard
+    // Gagnant de CE quiz = delta net de points sur `result.questions` (propre
+    // à ce quiz). `leaderboard[0]` est le classement CUMULÉ de la soirée : le
+    // prendre tel quel créditerait le leader de la soirée même s'il vient de
+    // perdre ce quiz-ci.
+    const deltaByPlayer = new Map<string, number>()
 
-    if (winner?.points && winner.points > 0) {
+    for (const q of result.questions) {
+      for (const pa of q.playerAnswers) {
+        deltaByPlayer.set(pa.playerName, (deltaByPlayer.get(pa.playerName) ?? 0) + pa.points)
+      }
+    }
+
+    let winnerUsername: string | null = null
+    let winnerDelta = 0
+
+    for (const [username, delta] of deltaByPlayer) {
+      if (delta > winnerDelta) {
+        winnerDelta = delta
+        winnerUsername = username
+      }
+    }
+
+    const winner = winnerUsername
+      ? leaderboard.find((p) => p.username === winnerUsername)
+      : undefined
+
+    if (winner) {
       winner.goldCoins = (winner.goldCoins ?? 0) + SHOP.QUIZ_WIN_BONUS
       this.emitCoins(winner)
     }
@@ -959,6 +992,16 @@ class Game {
 
   showLeaderboard() {
     if (!this.acceptAdvance()) {
+      return
+    }
+
+    // Garde contre un déclenchement manager/télécommande pendant qu'une
+    // question est en cours de préparation/diffusion (avancerait l'index sans
+    // que la question courante ait été jouée). Posé ici plutôt que dans
+    // RoundManager.showLeaderboard() : cette méthode-là est aussi appelée en
+    // interne (fin de quiz sur un slide titre) pendant que
+    // questionInProgress est encore vrai, et ce chemin-là doit rester libre.
+    if (this.round.isQuestionInProgress()) {
       return
     }
 
