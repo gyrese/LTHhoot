@@ -1,4 +1,4 @@
-import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { type QuestionWithId, useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { X } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import { useEffect, type CSSProperties } from "react"
@@ -27,6 +27,7 @@ type Props = {
 const SlidePreviewModal = ({ question, onClose }: Props) => {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
+  const { salonImage: quizSalonImage } = useQuizzEditor()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +73,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
   }
 
   let bgStyle: CSSProperties = {
-    backgroundImage: `url(${slideBg})`,
+    backgroundImage: `url(${quizSalonImage || slideBg})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   }
@@ -119,6 +120,7 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           selectedId={undefined}
           onSelect={() => undefined}
           readOnly={true}
+          noBackground={true}
         />
       </div>
 
@@ -142,14 +144,16 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
           onClick={(e) => e.stopPropagation()}
         >
-          <QuestionMedia
-            media={
-              type === "drop_pin" && pinImage
-                ? { type: "image", url: pinImage }
-                : media
-            }
-            alt={title}
-          />
+          {(!elements || elements.length === 0) && (
+            <QuestionMedia
+              media={
+                type === "drop_pin" && pinImage
+                  ? { type: "image", url: pinImage }
+                  : media
+              }
+              alt={title}
+            />
+          )}
         </div>
       )}
 
