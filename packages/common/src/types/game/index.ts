@@ -21,6 +21,7 @@ export type Answer = {
   numberAnswer?: number
   orderAnswer?: number[]
   points: number
+  timeMs?: number
 }
 
 export type QuestionMediaType =
@@ -122,6 +123,9 @@ type BaseQuestion = {
   audio?: string
   showLeaderboard?: boolean
   answerReveal?: AnswerReveal
+  // Mort subite : la manche s'arrête dès la première bonne réponse (au lieu
+  // d'attendre que tout le monde ait répondu ou le temps imparti).
+  suddenDeath?: boolean
   cooldown: number
   time: number
   revelationEnabled?: boolean
@@ -239,6 +243,10 @@ export type PlayerAnswerRecord = {
   numberAnswer?: number | null
   orderAnswer?: number[] | null
   points: number
+  // Temps de réponse en ms — optionnel/additif, absent des anciens résultats
+  // persistés sur disque avant son introduction. Sert au calcul des awards de
+  // fin de soirée (« le plus rapide »).
+  timeMs?: number | null
 }
 
 export type QuestionResult = Question & {
@@ -266,6 +274,16 @@ export type GameResult = {
   players: GameResultPlayer[]
   questions: QuestionResult[]
   logs?: LogEntry[]
+}
+
+// Récap "Wrapped" de fin de soirée — awards calculés sur l'ensemble des quiz
+// joués (cf. calculateAwards côté serveur).
+export type AwardType = "fastest" | "comeback" | "loser" | "sniper"
+
+export type Award = {
+  type: AwardType
+  playerName: string
+  value?: number
 }
 
 export type GameResultMeta = {

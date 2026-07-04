@@ -18,6 +18,7 @@ import PowerUpEarnedToast from "@rahoot/web/features/game/components/PowerUpEarn
 import PowerUpConfirmDrawer from "@rahoot/web/features/game/components/PowerUpConfirmDrawer"
 import PowerUpEffectToast from "@rahoot/web/features/game/components/PowerUpEffectToast"
 import ShopDrawer from "@rahoot/web/features/game/components/ShopDrawer"
+import useWakeLock from "@rahoot/web/features/game/hooks/useWakeLock"
 import clsx from "clsx"
 import { Coins } from "lucide-react"
 import { createContext, useContext, type PropsWithChildren, useEffect, useState } from "react"
@@ -71,11 +72,16 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const [earnedPowerUp, setEarnedPowerUp] = useState<PowerUp | null>(null)
   const [drawerPowerUp, setDrawerPowerUp] = useState<PowerUp | null>(null)
   const [coins, setCoins] = useState<number | null>(null)
+  const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [shopOpen, setShopOpen] = useState(false)
   const [isEveningFinale, setIsEveningFinale] = useState(false)
   const [otherPlayers, setOtherPlayers] = useState<{ id: string; username: string; avatar?: string }[]>([])
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const activeGameId = managerGameId ?? playerGameId
+
+  // Écran maintenu allumé pendant toute la partie (joueur ET écran principal) :
+  // un téléphone qui se verrouille dans le salon = socket mort = question ratée.
+  useWakeLock()
 
   useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total }) => {
     setQuestionStates({ current, total })
@@ -113,8 +119,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     setPowerUps(inventory)
   })
 
-  useEvent(EVENTS.POWER_UP.COINS, ({ coins: balance }) => {
+  useEvent(EVENTS.POWER_UP.COINS, ({ coins: balance, disabledPowerUps: list }) => {
     setCoins(balance)
+    if (list) {
+      setDisabledPowerUps(list)
+    }
   })
 
   // Demander l'inventaire au mount et aux changements de phase (joueur uniquement)
@@ -410,6 +419,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   open={shopOpen}
                   coins={coins}
                   inventoryCount={powerUps.length}
+                  disabledPowerUps={disabledPowerUps}
                   onBuy={handleBuyPowerUp}
                   onClose={() => setShopOpen(false)}
                 />

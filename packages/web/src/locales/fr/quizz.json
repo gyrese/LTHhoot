@@ -29,6 +29,8 @@
       "questionDisplayHint": "Délai avant l'apparition des réponses",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Afficher le classement après cette question",
+      "suddenDeath": "Mort subite",
+      "suddenDeathHint": "La manche s'arrête dès la première bonne réponse.",
       "timings": "Durées",
       "propertiesTitle": "Propriétés",
       "layersTitle": "Calques",
@@ -60,8 +62,12 @@
       "video": "Vidéo"
     },
     "mediaUrlPlaceholder": "Entrez l'URL...",
-    "placeholder": "Commencez à écrire votre question..."
+    "placeholder": "Commencez à écrire votre question...",
+    "aiRephrase": "Reformuler par IA",
+    "aiSuggestWrongAnswers": "Générer les mauvaises réponses par IA"
   },
+  "testDrive": "Tester",
+  "testDriveNeedsSave": "Sauvegardez le quiz avant de le tester",
   "questionType": {
     "title": "Type de question",
     "date": "Date",

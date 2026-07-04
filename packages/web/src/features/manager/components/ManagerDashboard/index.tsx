@@ -10,6 +10,7 @@ import DashboardSidebar from "./DashboardSidebar"
 import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
 import EveningFooter from "./EveningFooter"
+import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
 import { LogOut, Play, PartyPopper, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -31,6 +32,9 @@ const ManagerDashboard = ({ data }: Props) => {
   const [eveningQuizIds, setEveningQuizIds] = useState<string[]>([])
   const [powerUpsEnabled, setPowerUpsEnabled] = useState(true)
   const [singlePowerUpsEnabled, setSinglePowerUpsEnabled] = useState(false)
+  const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
+  const [powerUpsModalOpen, setPowerUpsModalOpen] = useState(false)
+  const [powerUpsModalMode, setPowerUpsModalMode] = useState<"single" | "evening">("single")
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
@@ -48,7 +52,11 @@ const ManagerDashboard = ({ data }: Props) => {
       return
     }
 
-    socket?.emit(EVENTS.GAME.CREATE, { quizId: selectedQuizz, powerUpsEnabled: singlePowerUpsEnabled })
+    socket?.emit(EVENTS.GAME.CREATE, {
+      quizId: selectedQuizz,
+      powerUpsEnabled: singlePowerUpsEnabled,
+      disabledPowerUps,
+    })
   }
 
   const handleEveningStart = () => {
@@ -58,7 +66,11 @@ const ManagerDashboard = ({ data }: Props) => {
       return
     }
 
-    socket?.emit(EVENTS.EVENING.START, { quizIds: eveningQuizIds, powerUpsEnabled })
+    socket?.emit(EVENTS.EVENING.START, {
+      quizIds: eveningQuizIds,
+      powerUpsEnabled,
+      disabledPowerUps,
+    })
   }
 
   const handleToggleEveningQuizz = (id: string) => {
@@ -129,15 +141,18 @@ const ManagerDashboard = ({ data }: Props) => {
 
         {/* Footer */}
         {eveningMode ? (
-          <EveningFooter
-            eveningQuizIds={eveningQuizIds}
-            quizzList={data.quizz}
-            powerUpsEnabled={powerUpsEnabled}
-            onRemove={handleToggleEveningQuizz}
-            onStart={handleEveningStart}
-            onToggleOff={handleToggleEveningOff}
-            onTogglePowerUps={setPowerUpsEnabled}
-          />
+            <EveningFooter
+              eveningQuizIds={eveningQuizIds}
+              quizzList={data.quizz}
+              powerUpsEnabled={powerUpsEnabled}
+              onRemove={handleToggleEveningQuizz}
+              onStart={handleEveningStart}
+              onToggleOff={handleToggleEveningOff}
+              onOpenPowerUpsConfig={() => {
+                setPowerUpsModalMode("evening")
+                setPowerUpsModalOpen(true)
+              }}
+            />
         ) : (
           <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -165,8 +180,12 @@ const ManagerDashboard = ({ data }: Props) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              {/* Toggle power-ups */}
-              <label
+              <button
+                type="button"
+                onClick={() => {
+                  setPowerUpsModalMode("single")
+                  setPowerUpsModalOpen(true)
+                }}
                 className={clsx(
                   "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
                   singlePowerUpsEnabled
@@ -175,15 +194,9 @@ const ManagerDashboard = ({ data }: Props) => {
                 )}
                 title={t("manager:quizz.powerUpsToggle")}
               >
-                <input
-                  type="checkbox"
-                  checked={singlePowerUpsEnabled}
-                  onChange={(e) => setSinglePowerUpsEnabled(e.target.checked)}
-                  className="accent-yellow-400"
-                />
                 <Sparkles className="size-3.5" />
-                <span className="hidden sm:inline">{t("manager:quizz.powerUps")}</span>
-              </label>
+                <span>{t("manager:quizz.powerUps")}</span>
+              </button>
 
               <button
                 onClick={handleStart}
@@ -202,7 +215,15 @@ const ManagerDashboard = ({ data }: Props) => {
           </footer>
         )}
       </div>
-    </ConfigProvider>
+        <PowerUpsSettingsModal
+          isOpen={powerUpsModalOpen}
+          onClose={() => setPowerUpsModalOpen(false)}
+          powerUpsEnabled={powerUpsModalMode === "single" ? singlePowerUpsEnabled : powerUpsEnabled}
+          onTogglePowerUps={powerUpsModalMode === "single" ? setSinglePowerUpsEnabled : setPowerUpsEnabled}
+          disabledPowerUps={disabledPowerUps}
+          onChangeDisabledPowerUps={setDisabledPowerUps}
+        />
+      </ConfigProvider>
   )
 }
 

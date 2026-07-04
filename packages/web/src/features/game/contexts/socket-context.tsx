@@ -103,8 +103,9 @@ const createSocketClient = (
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
-      // Un peu plus lent pour le polling
-      reconnectionDelayMax: 8000,
+      // Plafond bas : sur le Wi-Fi d'une salle, 8s de backoff = une question
+      // ratée. Les retries polling sont bon marché, on retente vite.
+      reconnectionDelayMax: 3000,
       randomizationFactor: 0.5,
       timeout: 20000,
       // Doit refléter le serveur : polling d'abord, puis upgrade WebSocket. Si le
@@ -127,7 +128,7 @@ const createSocketClient = (
       // Tenter une reconnexion métier si on a une session
       const playerGameId = usePlayerStore.getState().gameId
       const managerGameId = useManagerStore.getState().gameId
-      const pwd = sessionStorage.getItem("rc_pwd")
+      const pwd = localStorage.getItem("rc_pwd")
 
       if (playerGameId) {
         console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
@@ -257,6 +258,71 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     },
     [],
   )
+
+  // Watchdog mobile : quand l'app revient au premier plan (téléphone
+  // déverrouillé, retour d'onglet) ou que le réseau revient, on ne laisse PAS
+  // Socket.IO attendre son backoff (timers gelés en arrière-plan par l'OS) ni
+  // son ping timeout (~20s) pour découvrir que le lien est mort. On vérifie
+  // immédiatement : déconnecté → connect() direct ; « connecté » → sonde ping
+  // ack 3s, sans réponse → recyclage de la connexion. C'est ce qui ramène un
+  // joueur qui rallume son téléphone dans la partie en ~1s au lieu de 8–45s.
+  useEffect(() => {
+    if (!socket) {
+      return
+    }
+
+    let lastProbe = 0
+
+    const verifyLiveness = () => {
+      if (document.visibilityState === "hidden") {
+        return
+      }
+
+      if (!socket.connected) {
+        console.log(
+          "[WATCHDOG] Premier plan et socket déconnecté → reconnexion immédiate",
+        )
+        socket.connect()
+
+        return
+      }
+
+      // Anti-rafale : online + pageshow + visibilitychange peuvent tirer en même temps.
+      const now = Date.now()
+
+      if (now - lastProbe < 2000) {
+        return
+      }
+
+      lastProbe = now
+
+      socket.timeout(3000).emit(EVENTS.CONNECTION.PING, (err) => {
+        if (err) {
+          console.warn(
+            "[WATCHDOG] Sonde de vivacité sans réponse → recyclage de la connexion",
+          )
+          socket.disconnect()
+          socket.connect()
+        }
+      })
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        verifyLiveness()
+      }
+    }
+
+    window.addEventListener("online", verifyLiveness)
+    window.addEventListener("pageshow", verifyLiveness)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+
+    return () => {
+      window.removeEventListener("online", verifyLiveness)
+      window.removeEventListener("pageshow", verifyLiveness)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+    }
+  }, [socket])
 
   const connect = useCallback(() => {
     console.log("[SOCKET] Action: connect")

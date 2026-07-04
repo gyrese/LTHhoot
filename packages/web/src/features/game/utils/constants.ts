@@ -3,6 +3,7 @@ import Answers from "@rahoot/web/features/game/components/states/Answers"
 import Leaderboard from "@rahoot/web/features/game/components/states/Leaderboard"
 import OpenAnswersManager from "@rahoot/web/features/game/components/states/OpenAnswersManager"
 import OpenAnswersReveal from "@rahoot/web/features/game/components/states/OpenAnswersReveal"
+import PauseScreen from "@rahoot/web/features/game/components/states/PauseScreen"
 import PlayerFinished from "@rahoot/web/features/game/components/states/PlayerFinished"
 import Podium from "@rahoot/web/features/game/components/states/Podium"
 import Prepared from "@rahoot/web/features/game/components/states/Prepared"
@@ -11,6 +12,9 @@ import Responses from "@rahoot/web/features/game/components/states/Responses"
 import Result from "@rahoot/web/features/game/components/states/Result"
 import Room from "@rahoot/web/features/game/components/states/Room"
 import Start from "@rahoot/web/features/game/components/states/Start"
+import TieBreakDuel from "@rahoot/web/features/game/components/states/TieBreakDuel"
+import TieBreakResult from "@rahoot/web/features/game/components/states/TieBreakResult"
+import TieBreakSpectate from "@rahoot/web/features/game/components/states/TieBreakSpectate"
 import Wait from "@rahoot/web/features/game/components/states/Wait"
 
 import { STATUS } from "@rahoot/common/types/game/status"
@@ -48,6 +52,10 @@ export const GAME_STATE_COMPONENTS = {
   [STATUS.SHOW_PREPARED]: Prepared,
   [STATUS.FINISHED]: PlayerFinished,
   [STATUS.SHOW_OPEN_ANSWERS]: OpenAnswersReveal,
+  [STATUS.SHOW_TIE_BREAK]: TieBreakDuel,
+  [STATUS.SHOW_TIE_BREAK_SPECTATE]: TieBreakSpectate,
+  [STATUS.SHOW_TIE_BREAK_RESULT]: TieBreakResult,
+  [STATUS.PAUSED]: PauseScreen,
 }
 
 export const GAME_STATE_COMPONENTS_MANAGER = {
@@ -106,4 +114,8 @@ export const MANAGER_SKIP_BTN = {
   [STATUS.SHOW_LEADERBOARD]: "common:next",
   [STATUS.FINISHED]: "common:exit",
   [STATUS.WAIT]: null,
+  [STATUS.SHOW_TIE_BREAK]: null,
+  [STATUS.SHOW_TIE_BREAK_SPECTATE]: null,
+  [STATUS.SHOW_TIE_BREAK_RESULT]: null,
+  [STATUS.PAUSED]: null,
 }

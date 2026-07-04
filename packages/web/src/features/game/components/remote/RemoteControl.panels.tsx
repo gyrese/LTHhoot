@@ -10,6 +10,15 @@ import {
   MANAGER_SKIP_EVENTS,
 } from "@rahoot/web/features/game/utils/constants"
 import {
+  IconCheck,
+  IconDisplay,
+  IconPower,
+  IconScroll,
+  IconTrophy,
+  IconUsers,
+  IconX,
+} from "@rahoot/web/features/game/components/remote/RemoteControl.icons"
+import {
   type GameStatus,
   MCQ_COLORS,
   type PrimaryAction,
@@ -19,115 +28,6 @@ import {
   type RemoteTab,
   STATUS_LABELS,
 } from "@rahoot/web/features/game/components/remote/RemoteControl.types"
-
-// ─── Icônes SVG ───────────────────────────────────────────────────────────────
-
-export const IconUsers = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-)
-
-export const IconDisplay = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="2" y="3" width="20" height="14" rx="2" />
-    <path d="M8 21h8M12 17v4" />
-  </svg>
-)
-
-export const IconX = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.5}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-)
-
-export const IconCheck = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.5}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="20,6 9,17 4,12" />
-  </svg>
-)
-
-export const IconTrophy = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-  </svg>
-)
-
-export const IconScroll = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14,2 14,8 20,8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <polyline points="10,9 9,9 8,9" />
-  </svg>
-)
-
-export const IconPower = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.5}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-    <line x1="12" y1="2" x2="12" y2="12" />
-  </svg>
-)
 
 // ─── Écran d'authentification ─────────────────────────────────────────────────
 
@@ -173,15 +73,17 @@ export function AuthScreen({
         </div>
 
         <label className="mb-2 block text-xs font-semibold tracking-widest text-white/50 uppercase">
-          Mot de passe manager
+          Code PIN
         </label>
         <input
           type="password"
+          inputMode="numeric"
+          autoComplete="off"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-          placeholder="••••••••"
-          className="mb-3 w-full rounded-xl border border-white/10 bg-white/8 px-4 py-3 text-base text-white placeholder-white/20 transition-all focus:border-orange-500/50 focus:bg-white/10 focus:outline-none"
+          placeholder="••••"
+          className="mb-3 w-full rounded-xl border border-white/10 bg-white/8 px-4 py-3 text-center font-mono text-xl tracking-[0.5em] text-white placeholder-white/20 transition-all focus:border-orange-500/50 focus:bg-white/10 focus:outline-none"
         />
 
         {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
@@ -299,6 +201,8 @@ export function GamePanel({
   players,
   onValidateOpenAnswer,
   onInvalidateOpenAnswer,
+  onPauseGame,
+  onResumeGame,
   questionStates,
   timer,
   maxTime,
@@ -308,6 +212,8 @@ export function GamePanel({
   players: Player[]
   onValidateOpenAnswer: (_text: string) => void
   onInvalidateOpenAnswer: (_text: string) => void
+  onPauseGame: () => void
+  onResumeGame: () => void
   questionStates: QuestionStates | null
   timer: number | null
   maxTime: number
@@ -324,7 +230,9 @@ export function GamePanel({
 
   switch (status.name) {
     case STATUS.SHOW_ROOM:
-      return <RoomPanel data={status.data} players={players} />
+      return (
+        <RoomPanel data={status.data} players={players} onPauseGame={onPauseGame} />
+      )
 
     case STATUS.SHOW_START:
       return <StartPanel data={status.data} t={t} />
@@ -370,9 +278,35 @@ export function GamePanel({
     case STATUS.WAIT:
       return <WaitPanel data={status.data} t={t} />
 
+    // La pause est déclenchée depuis la télécommande : elle doit aussi pouvoir
+    // reprendre la partie, sans dépendre d'un clic sur l'écran projecteur.
+    case STATUS.PAUSED:
+      return <PausedPanel onResumeGame={onResumeGame} />
+
     default:
       return null
   }
+}
+
+// ─── Panneau pause soirée ─────────────────────────────────────────────────────
+
+function PausedPanel({ onResumeGame }: { onResumeGame: () => void }) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-8">
+      <span className="text-4xl">☕</span>
+      <p className="text-lg font-black text-white">
+        {t("game:pause.title", "Pause")}
+      </p>
+      <button
+        onClick={onResumeGame}
+        className="rounded-2xl bg-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition-transform hover:bg-orange-400 active:scale-98"
+      >
+        ▶ {t("game:pause.resume", "Reprendre la partie")}
+      </button>
+    </div>
+  )
 }
 
 // ─── Timer bar helper ─────────────────────────────────────────────────────────
@@ -605,10 +539,13 @@ function OpenAnswersManagerPanel({
 function RoomPanel({
   data,
   players,
+  onPauseGame,
 }: {
   data: Record<string, unknown>
   players: Player[]
+  onPauseGame: () => void
 }) {
+  const { t } = useTranslation()
   const inviteCode = String(data.inviteCode ?? "------")
   const [copied, setCopied] = useState(false)
 
@@ -633,6 +570,16 @@ function RoomPanel({
         <p className="mt-2 text-xs text-white/20">
           {copied ? "✓ Copié !" : "Appuyer pour copier"}
         </p>
+      </button>
+
+      {/* Pause soirée : bouton toujours visible ici (l'écran salon ne se
+          revoit qu'entre deux quiz en mode soirée) — le serveur refuse
+          silencieusement l'action hors mode soirée (Game.pauseGame). */}
+      <button
+        onClick={onPauseGame}
+        className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm font-bold text-white/50 backdrop-blur-sm transition-colors hover:border-orange-500/20 hover:text-orange-300 active:scale-98"
+      >
+        ☕ {t("game:pause.action", "Pause soirée")}
       </button>
 
       <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-5 py-3.5 backdrop-blur-sm">

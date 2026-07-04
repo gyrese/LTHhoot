@@ -51,5 +51,28 @@
   "freeze": {
     "title": "¡Congelado!",
     "subtitle": "Tus respuestas se desbloquean en 3 segundos…"
-  }
+  },
+  "correctSplit": "{{count}}/{{total}} respuestas correctas",
+  "paused": "El anfitrión ha pausado la partida.",
+  "pause": {
+    "title": "Pausa",
+    "action": "Pausar la velada",
+    "resume": "Reanudar la partida",
+    "waitingHost": "Esperando al anfitrión…"
+  },
+  "tieBreak": {
+    "duelVs": "Duelo de desempate contra {{names}}",
+    "title": "¡Duelo de desempate!",
+    "spectateHint": "La clasificación final se decide ahora…",
+    "winner": "¡{{name}} gana el duelo!",
+    "noWinner": "Nadie respondió a tiempo — empate mantenido."
+  },
+  "awards": {
+    "fastest": "El más rápido",
+    "comeback": "Mejor remontada",
+    "loser": "El último de la clase",
+    "sniper": "El francotirador"
+  },
+  "podiumShare": "Compartir",
+  "podiumExporting": "Exportando…"
 }

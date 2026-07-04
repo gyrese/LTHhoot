@@ -96,7 +96,44 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
         console.error("Failed to generate quiz with AI:", error)
         const message =
           error instanceof Error ? error.message : "errors:quizz.aiGenerationFailed"
-        socket.emit(EVENTS.QUIZZ.ERROR, message)
+        // Canal AI_ERROR dédié : QUIZZ.ERROR est aussi écouté par le flux de
+        // sauvegarde de l'éditeur (toast + reset d'état croisés).
+        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.QUIZZ.AI_REPHRASE,
+    manager.withAuth(socket, async ({ currentText }) => {
+      try {
+        const rephrased = await AIService.rephraseQuestion(currentText)
+
+        socket.emit(EVENTS.QUIZZ.AI_REPHRASE_SUCCESS, { rephrased })
+      } catch (error) {
+        console.error("Failed to rephrase question with AI:", error)
+        const message =
+          error instanceof Error ? error.message : "errors:quizz.aiGenerationFailed"
+        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS,
+    manager.withAuth(socket, async ({ correctAnswer, questionContext }) => {
+      try {
+        const wrongAnswers = await AIService.generateWrongAnswers(
+          correctAnswer,
+          questionContext,
+        )
+
+        socket.emit(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, { wrongAnswers })
+      } catch (error) {
+        console.error("Failed to generate wrong answers with AI:", error)
+        const message =
+          error instanceof Error ? error.message : "errors:quizz.aiGenerationFailed"
+        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
       }
     }),
   )

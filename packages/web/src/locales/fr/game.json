@@ -24,7 +24,7 @@
   "rankSuffix": "e place",
   "resultBehind": ", derrière ",
   "resultTop": "Tu es ",
-  "startGame": "Demarrer la partie",
+  "startGame": "Démarrer la partie",
   "true": "Vrai",
   "usernamePlaceholder": "Pseudo",
   "waitingForAnswers": "En attente des réponses des joueurs",
@@ -71,5 +71,28 @@
   "freeze": {
     "title": "Gelé !",
     "subtitle": "Vos réponses se débloquent dans 3 secondes…"
-  }
+  },
+  "correctSplit": "{{count}}/{{total}} bonnes réponses",
+  "paused": "L'hôte a mis la partie en pause.",
+  "pause": {
+    "title": "Pause",
+    "action": "Pause soirée",
+    "resume": "Reprendre la partie",
+    "waitingHost": "En attente de l'hôte…"
+  },
+  "tieBreak": {
+    "duelVs": "Duel de départage contre {{names}}",
+    "title": "Duel de départage !",
+    "spectateHint": "Le classement final se joue maintenant…",
+    "winner": "{{name}} remporte le duel !",
+    "noWinner": "Personne n'a trouvé à temps — égalité conservée."
+  },
+  "awards": {
+    "fastest": "Le plus rapide",
+    "comeback": "Meilleur comeback",
+    "loser": "Le dernier de la classe",
+    "sniper": "Le sniper"
+  },
+  "podiumShare": "Partager",
+  "podiumExporting": "Export…"
 }

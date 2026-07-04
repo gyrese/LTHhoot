@@ -10,6 +10,14 @@ import { withGame, withManagerGame } from "@rahoot/socket/utils/game"
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   const registry = Registry.getInstance()
 
+  // Sonde de vivacité du watchdog client (retour d'arrière-plan mobile) : on
+  // acquitte immédiatement pour prouver que le lien est réellement vivant.
+  socket.on(EVENTS.CONNECTION.PING, (ack) => {
+    if (typeof ack === "function") {
+      ack()
+    }
+  })
+
   socket.on(EVENTS.PLAYER.RECONNECT, ({ gameId }) => {
     const game = registry.getPlayerGame(gameId, socket.handshake.auth.clientId)
 
@@ -65,12 +73,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     let quizzId = ""
     let powerUpsEnabled = false
+    let disabledPowerUps: string[] = []
 
     if (typeof payload === "string") {
       quizzId = payload
     } else if (payload && typeof payload === "object") {
       quizzId = payload.quizId
       powerUpsEnabled = Boolean(payload.powerUpsEnabled)
+      disabledPowerUps = Array.isArray(payload.disabledPowerUps) ? payload.disabledPowerUps : []
     } else {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
 
@@ -86,7 +96,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz, { powerUpsEnabled })
+    const game = new Game(io, socket, quizz, { powerUpsEnabled, disabledPowerUps })
     registry.addGame(game)
   })
 
@@ -149,6 +159,28 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     ack({ status })
   })
 
+  socket.on(EVENTS.PLAYER.TIE_BREAK_ANSWER, ({ answerId }, ack) => {
+    // Résolu via le socket joueur uniquement, même pattern que POWER_UP.USE :
+    // un duel ne peut être répondu que par un joueur réellement inscrit.
+    // L'ack est TOUJOURS appelé (même contrat que SELECTED_ANSWER) : le client
+    // ne verrouille sa saisie que sur confirmation et retente sinon.
+    const game = registry.getGameByPlayerSocketId(socket.id)
+
+    if (!game) {
+      if (typeof ack === "function") {
+        ack({ status: "no_player" })
+      }
+
+      return
+    }
+
+    const status = game.submitTieBreakAnswer(socket, answerId)
+
+    if (typeof ack === "function") {
+      ack({ status })
+    }
+  })
+
   socket.on(EVENTS.MANAGER.ABORT_QUIZ, ({ gameId }) =>
     withGame(gameId, socket, (game) => game.abortRound(socket)),
   )
@@ -181,7 +213,15 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     withManagerGame(gameId, socket, (game) => game.endGame()),
   )
 
-  socket.on(EVENTS.EVENING.START, ({ quizIds, powerUpsEnabled }) => {
+  socket.on(EVENTS.MANAGER.PAUSE_GAME, ({ gameId }) =>
+    withManagerGame(gameId, socket, (game) => game.pauseGame()),
+  )
+
+  socket.on(EVENTS.MANAGER.RESUME_GAME, ({ gameId }) =>
+    withManagerGame(gameId, socket, (game) => game.resumeGame()),
+  )
+
+  socket.on(EVENTS.EVENING.START, ({ quizIds, powerUpsEnabled, disabledPowerUps }) => {
     if (!Manager.isLogged(socket)) {
       socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
@@ -204,7 +244,11 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }
 
     const game = new Game(io, socket, firstQuizz)
-    game.initEveningMode(quizIds, powerUpsEnabled ?? true)
+    game.initEveningMode(
+      quizIds,
+      powerUpsEnabled ?? true,
+      Array.isArray(disabledPowerUps) ? disabledPowerUps : [],
+    )
     registry.addGame(game)
   })
 

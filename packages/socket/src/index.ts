@@ -321,12 +321,15 @@ const io: Server = new ServerIO(httpServer, {
   // régression possible par rapport au mode polling-only précédent.
   transports: ["polling", "websocket"],
   allowUpgrades: true,
-  // Hardening pour réseaux instables (mobile). On détecte une coupure réelle en
-  // ~45s sans descendre assez bas pour éjecter un mobile temporairement lent. La
-  // perte de slot n'est plus un risque : la reconnexion se fait par clientId et
-  // la manche ne compte que les joueurs connectés (cf. countConnected).
-  pingTimeout: 25000,
-  pingInterval: 20000,
+  // Hardening pour réseaux instables (mobile). Lien mort détecté en ≤20s
+  // (pingInterval + pingTimeout) au lieu de ~45s : pendant une question de 20s,
+  // 45s de lien mort non détecté = question ratée sans que le joueur le sache.
+  // Un faux positif ne coûte qu'un blip : la reconnexion se fait par clientId
+  // avec resync d'état, et la manche ne compte que les joueurs connectés
+  // (cf. countConnected). Le client dispose en plus d'un watchdog au retour de
+  // premier plan (sonde connection:ping) pour ne même pas attendre ces 20s.
+  pingTimeout: 10000,
+  pingInterval: 10000,
   connectTimeout: 45000,
   allowEIO3: false,
 })

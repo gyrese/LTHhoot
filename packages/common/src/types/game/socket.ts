@@ -45,6 +45,15 @@ export type AnswerAckStatus =
   | "not_found"
 export type AnswerAck = { status: AnswerAckStatus }
 
+// Accusé de réception d'une réponse de duel de départage — même philosophie
+// que AnswerAck : le client ne verrouille sa saisie que sur confirmation.
+//  - ok        : réponse enregistrée
+//  - duplicate : déjà reçue (renvoi après retry) → succès idempotent
+//  - closed    : duel terminé / pas de duel en cours
+//  - no_player : le socket n'est pas un duelliste de ce duel
+export type TieBreakAckStatus = "ok" | "duplicate" | "closed" | "no_player"
+export type TieBreakAck = { status: TieBreakAckStatus }
+
 export interface ServerToClientEvents {
   connect: () => void
 
@@ -119,7 +128,12 @@ export interface ServerToClientEvents {
   [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
+  [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: { questions: Question[] }) => void
+  [EVENTS.QUIZZ.AI_REPHRASE_SUCCESS]: (_data: { rephrased: string }) => void
+  [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS]: (_data: {
+    wrongAnswers: string[]
+  }) => void
 
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
@@ -140,13 +154,15 @@ export interface ServerToClientEvents {
   [EVENTS.POWER_UP.EFFECT]: (_effect: PowerUpEffect) => void
   [EVENTS.POWER_UP.BLOCKED]: (_data: { powerUpType: PowerUpType; defenderId: string }) => void
   [EVENTS.POWER_UP.INVENTORY]: (_powerUps: PowerUp[]) => void
-  [EVENTS.POWER_UP.COINS]: (_data: { coins: number }) => void
+  [EVENTS.POWER_UP.COINS]: (_data: { coins: number; disabledPowerUps?: string[] }) => void
 }
 
 export interface ClientToServerEvents {
   // Manager actions
   [EVENTS.GAME.CREATE]: (
-    _payload: string | { quizId: string; powerUpsEnabled?: boolean },
+    _payload:
+      | string
+      | { quizId: string; powerUpsEnabled?: boolean; disabledPowerUps?: string[] },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
@@ -168,6 +184,8 @@ export interface ClientToServerEvents {
     _message: MessageWithoutStatus<{ text: string }>,
   ) => void
   [EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.PAUSE_GAME]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.RESUME_GAME]: (_message: MessageGameId) => void
 
   // Quizz actions
   [EVENTS.QUIZZ.GET]: (_id: string) => void
@@ -185,6 +203,10 @@ export interface ClientToServerEvents {
       questionTypes: string[]
       level: string
     },
+  ) => void
+  [EVENTS.QUIZZ.AI_REPHRASE]: (_data: { currentText: string }) => void
+  [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (
+    _data: { correctAnswer: string; questionContext: string },
   ) => void
 
   // Player actions
@@ -209,6 +231,10 @@ export interface ClientToServerEvents {
     _message: MessageWithoutStatus<{ powerUpType: PowerUpType }>,
     _ack: (_res: { success: boolean; error?: string }) => void,
   ) => void
+  [EVENTS.PLAYER.TIE_BREAK_ANSWER]: (
+    _data: { answerId: number },
+    _ack: (_res: TieBreakAck) => void,
+  ) => void
 
   // Manager actions supplémentaires
   [EVENTS.MANAGER.GET_LOGS]: (_message: { gameId: string }) => void
@@ -219,12 +245,19 @@ export interface ClientToServerEvents {
   [EVENTS.RESULTS.DELETE]: (_id: string) => void
 
   // Evening actions
-  [EVENTS.EVENING.START]: (_data: { quizIds: string[]; powerUpsEnabled?: boolean }) => void
+  [EVENTS.EVENING.START]: (
+    _data: { quizIds: string[]; powerUpsEnabled?: boolean; disabledPowerUps?: string[] },
+  ) => void
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 
   // Power-up actions
   [EVENTS.POWER_UP.USE]: (_data: { gameId: string; powerUpId: string; targetIds?: string[] }) => void
   [EVENTS.POWER_UP.GET_INVENTORY]: () => void
+
+  // Sonde de vivacité (watchdog client au retour de premier plan) : le serveur
+  // acquitte immédiatement, sans réponse dans le timeout le client recycle sa
+  // connexion au lieu d'attendre le ping timeout Engine.IO.
+  [EVENTS.CONNECTION.PING]: (_ack: () => void) => void
 
   // Common
   disconnect: () => void

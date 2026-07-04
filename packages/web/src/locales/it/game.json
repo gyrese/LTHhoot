@@ -51,5 +51,28 @@
   "freeze": {
     "title": "Congelato!",
     "subtitle": "Le tue risposte si sbloccano tra 3 secondi…"
-  }
+  },
+  "correctSplit": "{{count}}/{{total}} risposte corrette",
+  "paused": "L'host ha messo in pausa la partita.",
+  "pause": {
+    "title": "Pausa",
+    "action": "Pausa serata",
+    "resume": "Riprendi la partita",
+    "waitingHost": "In attesa dell'host…"
+  },
+  "tieBreak": {
+    "duelVs": "Duello di spareggio contro {{names}}",
+    "title": "Duello di spareggio!",
+    "spectateHint": "La classifica finale si decide ora…",
+    "winner": "{{name}} vince il duello!",
+    "noWinner": "Nessuno ha risposto in tempo — parità mantenuta."
+  },
+  "awards": {
+    "fastest": "Il più veloce",
+    "comeback": "Miglior rimonta",
+    "loser": "L'ultimo della classe",
+    "sniper": "Il cecchino"
+  },
+  "podiumShare": "Condividi",
+  "podiumExporting": "Esportazione…"
 }

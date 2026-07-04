@@ -24,7 +24,7 @@ import {
   playerToSnapshot,
   snapshotToPlayer,
 } from "@rahoot/socket/services/persistence"
-import { createInviteCode } from "@rahoot/socket/utils/game"
+import { calculateAwards, createInviteCode } from "@rahoot/socket/utils/game"
 import { v4 as uuid } from "uuid"
 
 const registry = Registry.getInstance()
@@ -46,6 +46,11 @@ class Game {
   private readonly powerUpManager: PowerUpManager
   private eveningSession: { quizIds: string[]; currentIndex: number; powerUpsEnabled: boolean } | null = null
   private singleQuizPowerUpsEnabled = false
+  private disabledPowerUps: string[] = []
+  // Accumulateur des résultats de chaque quiz d'une soirée — en mémoire
+  // uniquement (pas de persistance disque), sert au calcul des awards
+  // "Wrapped" au dernier quiz. Purgé/non pertinent hors mode soirée.
+  private eveningGameResults: GameResult[] = []
 
   private readonly disconnectTimers: Map<
     string,
@@ -75,12 +80,17 @@ class Game {
     { name: Status; data: StatusDataMap[Status] }
   > = new Map()
 
+  // Statut sauvegardé avant une pause soirée, restauré tel quel à la reprise.
+  private prePauseStatus: { name: Status; data: StatusDataMap[Status] } | null =
+    null
+
   constructor(
     io: Server,
     socket: Socket | null,
     quizz: Quizz,
     options?: {
       powerUpsEnabled?: boolean
+      disabledPowerUps?: string[]
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
   ) {
@@ -102,6 +112,7 @@ class Game {
       connected: !restore,
     }
     this.singleQuizPowerUpsEnabled = powerUpsEnabled
+    this.disabledPowerUps = options?.disabledPowerUps ?? []
 
     this.cooldown = new CooldownTimer(io, this.gameId)
     this.playerManager = new PlayerManager(io, this.gameId)
@@ -164,6 +175,7 @@ class Game {
           }
         : null,
       singleQuizPowerUpsEnabled: this.singleQuizPowerUpsEnabled,
+      disabledPowerUps: this.disabledPowerUps,
       savedAt: Date.now(),
     }
   }
@@ -181,6 +193,7 @@ class Game {
 
     const game = new Game(io, null, snapshot.quizz, {
       powerUpsEnabled: snapshot.singleQuizPowerUpsEnabled,
+      disabledPowerUps: snapshot.disabledPowerUps,
       restore: {
         gameId: snapshot.gameId,
         inviteCode: snapshot.inviteCode,
@@ -234,6 +247,14 @@ class Game {
       onEveningQuizFinished: isEvening
         ? (result, leaderboard) => this.handleEveningQuizFinished(result, leaderboard)
         : undefined,
+      // Le duel de départage ne doit trancher que le classement FINAL : partie
+      // simple = toujours, soirée = uniquement le dernier quiz (le cumul peut
+      // encore bouger avant).
+      isFinalQuiz: isEvening
+        ? () =>
+            !this.eveningSession ||
+            this.eveningSession.currentIndex + 1 >= this.eveningSession.quizIds.length
+        : () => true,
       // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
       onCoinsEarned: this.powerUpsActive
@@ -246,8 +267,13 @@ class Game {
 
   // ── Mode Soirée ─────────────────────────────────────────────────────────────
 
-  initEveningMode(quizIds: string[], powerUpsEnabled: boolean = true) {
+  initEveningMode(
+    quizIds: string[],
+    powerUpsEnabled: boolean = true,
+    disabledPowerUps: string[] = [],
+  ) {
     this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
+    this.disabledPowerUps = disabledPowerUps
     const firstQuizz = Config.quizz().find((q) => q.id === quizIds[0])
 
     if (!firstQuizz) {
@@ -267,6 +293,7 @@ class Game {
     }
 
     Config.saveResult({ ...result, logs: this.logger.getAll() })
+    this.eveningGameResults.push(result)
 
     // Bonus de pièces de fin de quiz (victoire + quiz sans faute)
     this.grantQuizEndCoins(result, leaderboard)
@@ -276,10 +303,11 @@ class Game {
 
     if (isLastQuiz) {
       const top = leaderboard.slice(0, 3)
+      const awards = calculateAwards(this.eveningGameResults, leaderboard)
 
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
         name: STATUS.FINISHED,
-        data: { subject: result.subject, top, totalPlayers: leaderboard.length },
+        data: { subject: result.subject, top, totalPlayers: leaderboard.length, awards },
       })
 
       leaderboard.forEach((player, index) => {
@@ -290,6 +318,7 @@ class Game {
             top,
             rank: index + 1,
             totalPlayers: leaderboard.length,
+            awards,
           },
         })
       })
@@ -328,9 +357,10 @@ class Game {
     // Garde contre un EVENING.NEXT tardif/dupliqué (countdown auto de
     // l'interstitiel + bouton manuel, potentiellement montés à la fois sur
     // l'écran principal et la télécommande) : si le quiz suivant a déjà été
-    // démarré manuellement par l'hôte, on ne doit pas écraser le
-    // RoundManager en cours.
-    if (this.round.isStarted()) {
+    // démarré manuellement par l'hôte, ou si un duel de départage est en
+    // cours (started=false pendant le duel), on ne doit pas écraser le
+    // RoundManager.
+    if (this.round.isStarted() || this.round.isTieBreakActive()) {
       return
     }
 
@@ -356,6 +386,44 @@ class Game {
       inviteCode: this.inviteCode,
       salonImage: quizz.salonImage ?? quizz.listingImage,
     })
+  }
+
+  // Pause soirée : restreinte à l'écran salon (entre deux quiz) pour éviter
+  // toute complexité de suspension d'un CooldownTimer en cours — pas de
+  // persistance disque du statut de pause (limitation assumée, une pause de
+  // quelques minutes ne survit pas à un crash serveur de toute façon).
+  pauseGame() {
+    if (!this.eveningSession) {
+      return
+    }
+
+    if (!this.lastBroadcastStatus || this.lastBroadcastStatus.name !== STATUS.SHOW_ROOM) {
+      return
+    }
+
+    this.prePauseStatus = this.lastBroadcastStatus
+    this.logAndEmit("info", "Partie mise en pause")
+    this.broadcastStatus(STATUS.PAUSED, { text: "game:paused" })
+  }
+
+  resumeGame() {
+    if (!this.prePauseStatus) {
+      return
+    }
+
+    const status = this.prePauseStatus
+    this.prePauseStatus = null
+    this.logAndEmit("info", "Partie reprise")
+    this.broadcastStatus(status.name, status.data)
+
+    // SHOW_ROOM n'est rendu que côté manager : sans statut dédié, les
+    // téléphones resteraient figés sur l'écran Pause jusqu'au SHOW_START du
+    // quiz suivant. On les bascule explicitement en attente.
+    for (const player of this.playerManager.getAll()) {
+      this.sendStatus(player.id, STATUS.WAIT, {
+        text: "game:waitingForPlayers",
+      })
+    }
   }
 
   // ── Power-ups / boutique ─────────────────────────────────────────────────────
@@ -566,7 +634,10 @@ class Game {
   }
 
   private emitCoins(player: Player) {
-    this.io.to(player.id).emit(EVENTS.POWER_UP.COINS, { coins: player.goldCoins ?? 0 })
+    this.io.to(player.id).emit(EVENTS.POWER_UP.COINS, {
+      coins: player.goldCoins ?? 0,
+      disabledPowerUps: this.disabledPowerUps,
+    })
   }
 
   // Achat d'un power-up à la boutique (contre des pièces d'or).
@@ -576,6 +647,10 @@ class Game {
   ): { success: boolean; error?: string } {
     if (!this.powerUpsActive) {
       return { success: false, error: "errors:shop.disabled" }
+    }
+
+    if (this.disabledPowerUps.includes(type)) {
+      return { success: false, error: "errors:shop.itemDisabled" }
     }
 
     const player = this.playerManager.findById(playerId)
@@ -805,6 +880,10 @@ class Game {
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
     this.logAndEmit("info", `${player.username} reconnecté`)
 
+    if (this.powerUpsActive) {
+      this.sendPlayerInventory(newSocketId)
+    }
+
     console.log(
       `[RECONNECT_FINISH] ${player.username} session restored on ${newSocketId}`,
     )
@@ -959,6 +1038,10 @@ class Game {
     },
   ): AnswerAckStatus {
     return this.round.selectAnswer(socket, payload)
+  }
+
+  submitTieBreakAnswer(socket: Socket, answerId: number) {
+    return this.round.submitTieBreakAnswer(socket, answerId)
   }
 
   // Verrou anti-double-pilotage partagé par toutes les transitions d'avancement.

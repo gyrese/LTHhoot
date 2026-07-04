@@ -11,6 +11,7 @@ import type {
   AnswerAckStatus,
   Server,
   Socket,
+  TieBreakAckStatus,
 } from "@rahoot/common/types/game/socket"
 import {
   type Status,
@@ -21,8 +22,9 @@ import { SHOP, type PowerUp } from "@rahoot/common/types/powerup"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
+import { TieBreakManager } from "@rahoot/socket/services/game/tie-break-manager"
 import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
-import { checkAnswer, timeToPoint } from "@rahoot/socket/utils/game"
+import { checkAnswer, detectTopTie, timeToPoint } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
 
@@ -48,6 +50,10 @@ export interface RoundManagerOptions {
   onNewQuestion: () => void
   onGameFinished: (_result: GameResult) => void
   onEveningQuizFinished?: (_result: GameResult, _leaderboard: Player[]) => void
+  // Vrai si ce quiz décide le classement FINAL (partie simple, ou dernier quiz
+  // d'une soirée). Le duel de départage ne doit tourner que dans ce cas — pas
+  // au milieu d'une soirée où le classement cumulé peut encore bouger.
+  isFinalQuiz?: () => boolean
   powerUpManager?: PowerUpManager
   onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
   onCoinsEarned?: (_playerId: string, _coins: number) => void
@@ -73,8 +79,22 @@ export class RoundManager {
   private pendingOpenCorrectAnswers: string[] = []
   private demoMode = false
 
+  private readonly tieBreak: TieBreakManager
+  // Vrai pendant TOUT le flux de duel (annonce → réponses → résultat → sleep →
+  // finalize), pas seulement pendant la fenêtre de réponse : sert de garde à
+  // startNextEveningQuiz contre un EVENING.NEXT retardataire qui remplacerait
+  // le RoundManager en plein duel (`started` est déjà false à ce stade).
+  private tieBreakInProgress = false
+
   constructor(opts: RoundManagerOptions) {
     this.opts = opts
+    this.tieBreak = new TieBreakManager({
+      players: opts.players,
+      cooldown: opts.cooldown,
+      send: opts.send,
+      broadcast: opts.broadcast,
+      getManagerId: opts.getManagerId,
+    })
   }
 
   isStarted(): boolean {
@@ -83,6 +103,10 @@ export class RoundManager {
 
   isQuestionInProgress(): boolean {
     return this.questionInProgress
+  }
+
+  isTieBreakActive(): boolean {
+    return this.tieBreakInProgress
   }
 
   setDemoMode(enabled: boolean) {
@@ -690,6 +714,7 @@ export class RoundManager {
           numberAnswer: ans?.numberAnswer ?? null,
           orderAnswer: ans?.orderAnswer ?? null,
           points: scored?.lastPoints ?? 0,
+          timeMs: ans?.timeMs ?? null,
         }
       }),
     })
@@ -758,14 +783,17 @@ export class RoundManager {
     // pas ici — l'effet ne doit s'appliquer qu'à cette question, que le joueur
     // réponde ou non.
 
-    this.playersAnswers.push({
+    const answer: Answer = {
       playerId: player.id,
       answerId: payload.answerId,
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,
       points: timeToPoint(this.startTime, question.time),
-    })
+      timeMs: Date.now() - this.startTime,
+    }
+
+    this.playersAnswers.push(answer)
 
     this.opts.send(socket.id, STATUS.WAIT, {
       text: "game:waitingForAnswers",
@@ -775,6 +803,16 @@ export class RoundManager {
       .to(this.opts.gameId)
       .emit(EVENTS.GAME.PLAYER_ANSWER, this.playersAnswers.length)
     this.opts.players.broadcastCount()
+
+    // Mort subite : la première bonne réponse arrête immédiatement la manche,
+    // sans attendre les autres joueurs ni l'expiration du temps. L'abort
+    // résout la Promise du cooldown dans newQuestion(), qui enchaîne ensuite
+    // normalement vers showResults()/showOpenAnswers().
+    if (question.suddenDeath && checkAnswer(question, answer)) {
+      this.opts.cooldown.abort()
+
+      return "ok"
+    }
 
     // On compare au nombre de joueurs CONNECTÉS : un joueur déconnecté pendant
     // la partie reste dans la liste (pour reconnexion) mais ne répondra jamais,
@@ -852,8 +890,7 @@ export class RoundManager {
     if (isLastRound) {
       this.started = false
 
-      const top = this.leaderboard.slice(0, 3)
-      const gameResult = {
+      const gameResult: GameResult = {
         id: `${Date.now()}-${nanoid(8)}`,
         subject: this.opts.quizz.subject,
         date: new Date().toISOString(),
@@ -866,29 +903,21 @@ export class RoundManager {
         questions: this.questionsHistory,
       }
 
-      // Mode soirée : déléguer sans émettre STATUS.FINISHED
-      if (this.opts.onEveningQuizFinished) {
-        this.opts.onEveningQuizFinished(gameResult, this.leaderboard)
+      // Égalité sur le podium : un duel de départage décide du classement
+      // final avant toute émission FINISHED (cf. runTieBreakDuel). Uniquement
+      // quand ce quiz décide le classement FINAL — pas entre deux quiz d'une
+      // soirée, où le cumul peut encore bouger.
+      const tiedGroup = (this.opts.isFinalQuiz?.() ?? true)
+        ? detectTopTie(this.leaderboard)
+        : null
+
+      if (tiedGroup && tiedGroup.length >= 2) {
+        void this.runTieBreakDuel(tiedGroup, gameResult)
 
         return
       }
 
-      this.opts.onGameFinished(gameResult)
-
-      this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, {
-        subject: this.opts.quizz.subject,
-        top,
-        totalPlayers: this.leaderboard.length,
-      })
-
-      this.leaderboard.forEach((player, index) => {
-        this.opts.send(player.id, STATUS.FINISHED, {
-          subject: this.opts.quizz.subject,
-          top,
-          rank: index + 1,
-          totalPlayers: this.leaderboard.length,
-        })
-      })
+      this.finalizeGameResult(gameResult, this.leaderboard)
 
       return
     }
@@ -924,6 +953,101 @@ export class RoundManager {
     })
 
     this.tempOldLeaderboard = null
+  }
+
+  // Émission finale (FINISHED côté hôte/joueurs, ou délégation au mode
+  // soirée). Point d'entrée UNIQUE vers la fin de partie — utilisé par le
+  // chemin normal (showLeaderboard) ET par la résolution du duel de
+  // départage, pour ne jamais dupliquer cette logique.
+  private finalizeGameResult(gameResult: GameResult, leaderboard: Player[]): void {
+    const top = leaderboard.slice(0, 3)
+
+    // Mode soirée : déléguer sans émettre STATUS.FINISHED — Game.
+    // handleEveningQuizFinished() décide lui-même s'il s'agit du dernier quiz.
+    if (this.opts.onEveningQuizFinished) {
+      this.opts.onEveningQuizFinished(gameResult, leaderboard)
+
+      return
+    }
+
+    this.opts.onGameFinished(gameResult)
+
+    this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, {
+      subject: this.opts.quizz.subject,
+      top,
+      totalPlayers: leaderboard.length,
+    })
+
+    leaderboard.forEach((player, index) => {
+      this.opts.send(player.id, STATUS.FINISHED, {
+        subject: this.opts.quizz.subject,
+        top,
+        rank: index + 1,
+        totalPlayers: leaderboard.length,
+      })
+    })
+  }
+
+  // ── Duel de départage ────────────────────────────────────────────────────
+
+  // Sous-flux AUTONOME (délégué à TieBreakManager), séparé de
+  // newQuestion()/selectAnswer() : n'affecte en rien le pipeline de manche
+  // normal. `this.started` reste `false` pendant tout le duel (déjà
+  // positionné par showLeaderboard juste avant), ce qui bloque
+  // nextQuestion()/abortQuestion() comme souhaité.
+  private async runTieBreakDuel(
+    tiedClientIds: string[],
+    gameResult: GameResult,
+  ): Promise<void> {
+    this.tieBreakInProgress = true
+
+    try {
+      const winnerClientId = await this.tieBreak.run(tiedClientIds)
+
+      // Rang corrigé : le vainqueur remonte en tête du groupe ex-æquo dans le
+      // classement — sans vainqueur (timeout ou duel impossible), rang partagé
+      // assumé, on ne réordonne rien. Tout est indexé par clientId (stable),
+      // jamais par id socket (muté à chaque reconnexion).
+      if (winnerClientId) {
+        const winnerIndex = this.leaderboard.findIndex(
+          (p) => p.clientId === winnerClientId,
+        )
+
+        if (winnerIndex > -1) {
+          // Position de tête du groupe calculée AVANT le retrait du vainqueur
+          // (le groupe le contient) : toujours ≤ winnerIndex, jamais -1.
+          const firstTiedIndex = this.leaderboard.findIndex((p) =>
+            tiedClientIds.includes(p.clientId),
+          )
+          const [winner] = this.leaderboard.splice(winnerIndex, 1)
+
+          this.leaderboard.splice(firstTiedIndex, 0, winner!)
+        }
+      }
+
+      // Laisser 3s pour que l'annonce du duel soit visible avant le podium.
+      await sleep(3)
+
+      const correctedGameResult: GameResult = {
+        ...gameResult,
+        players: this.leaderboard.map((player, index) => ({
+          username: player.username,
+          avatar: player.avatar,
+          points: player.points,
+          rank: index + 1,
+        })),
+      }
+
+      this.finalizeGameResult(correctedGameResult, this.leaderboard)
+    } finally {
+      this.tieBreakInProgress = false
+    }
+  }
+
+  // Réponse d'un des duellistes — délégué à TieBreakManager ; le statut
+  // retourné alimente l'ack client.
+  submitTieBreakAnswer(socket: Socket, answerId: number): TieBreakAckStatus {
+    return this.tieBreak.submitAnswer(socket, answerId)
   }
 
   private static getQuestionSolutionData(question: Question) {

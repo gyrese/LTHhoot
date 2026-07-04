@@ -17,6 +17,7 @@ type Props = {
   open: boolean
   coins: number
   inventoryCount: number
+  disabledPowerUps?: string[]
   onBuy: (_type: PowerUpType) => void
   onClose: () => void
 }
@@ -27,7 +28,7 @@ const RARITY_ORDER: PowerUpRarity[] = [
   POWER_UP_RARITY.LEGENDARY,
 ]
 
-const ShopDrawer = ({ open, coins, inventoryCount, onBuy, onClose }: Props) => {
+const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy, onClose }: Props) => {
   const { t } = useTranslation()
   const inventoryFull = inventoryCount >= MAX_POWER_UPS
 
@@ -84,6 +85,13 @@ const ShopDrawer = ({ open, coins, inventoryCount, onBuy, onClose }: Props) => {
             <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
               {RARITY_ORDER.map((rarity) => {
                 const style = RARITY_STYLE[rarity]
+                const items = POWER_UPS_BY_RARITY[rarity].filter(
+                  (type) => !disabledPowerUps.includes(type)
+                )
+
+                if (items.length === 0) {
+                  return null
+                }
 
                 return (
                   <div key={rarity}>
@@ -91,7 +99,7 @@ const ShopDrawer = ({ open, coins, inventoryCount, onBuy, onClose }: Props) => {
                       {style.label}
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {POWER_UPS_BY_RARITY[rarity].map((type) => {
+                      {items.map((type) => {
                         const meta = POWER_UP_META_UI[type]
                         const price = getPowerUpPrice(type)
                         const affordable = coins >= price

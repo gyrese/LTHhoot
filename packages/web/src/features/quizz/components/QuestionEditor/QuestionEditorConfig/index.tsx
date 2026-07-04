@@ -26,6 +26,7 @@ import {
   MessageSquareReply,
   Lock,
   Unlock,
+  Zap,
 } from "lucide-react"
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -307,6 +308,21 @@ const QuestionEditorConfig = () => {
                 updateQuestion(currentIndex, { showLeaderboard: value })
               }
               description={t("quizz:question.config.showLeaderboardHint")}
+            />
+          )}
+
+          {!isSlide && (
+            <ConfigToggle
+              icon={<Zap className="size-4" />}
+              label={t("quizz:question.config.suddenDeath", "Mort subite")}
+              checked={Boolean(currentQuestion?.suddenDeath)}
+              onChange={(value) =>
+                updateQuestion(currentIndex, { suddenDeath: value })
+              }
+              description={t(
+                "quizz:question.config.suddenDeathHint",
+                "La manche s'arrête dès la première bonne réponse.",
+              )}
             />
           )}
 

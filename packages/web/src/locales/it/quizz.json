@@ -29,6 +29,8 @@
       "questionDisplayHint": "Durata prima che appaiano le risposte",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Mostra la classifica dopo questa domanda",
+      "suddenDeath": "Morte improvvisa",
+      "suddenDeathHint": "Il turno termina non appena qualcuno risponde correttamente.",
       "timings": "Tempi",
       "propertiesTitle": "Proprietà",
       "layersTitle": "Livelli",
@@ -60,8 +62,12 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Inserisci URL...",
-    "placeholder": "Inizia a scrivere la tua domanda..."
+    "placeholder": "Inizia a scrivere la tua domanda...",
+    "aiRephrase": "Riformula con IA",
+    "aiSuggestWrongAnswers": "Genera risposte errate con IA"
   },
+  "testDrive": "Prova",
+  "testDriveNeedsSave": "Salva il quiz prima di testarlo",
   "questionType": {
     "title": "Tipo di domanda",
     "date": "Data",

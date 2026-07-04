@@ -59,5 +59,28 @@
   "freeze": {
     "title": "Frozen!",
     "subtitle": "Your answers unlock in 3 seconds…"
-  }
+  },
+  "correctSplit": "{{count}}/{{total}} correct answers",
+  "paused": "The host has paused the game.",
+  "pause": {
+    "title": "Pause",
+    "action": "Pause the evening",
+    "resume": "Resume the game",
+    "waitingHost": "Waiting for the host…"
+  },
+  "tieBreak": {
+    "duelVs": "Tie-break duel against {{names}}",
+    "title": "Tie-break duel!",
+    "spectateHint": "The final ranking is being decided now…",
+    "winner": "{{name}} wins the duel!",
+    "noWinner": "No one answered in time — tie kept."
+  },
+  "awards": {
+    "fastest": "Fastest answer",
+    "comeback": "Best comeback",
+    "loser": "Last of the class",
+    "sniper": "The sniper"
+  },
+  "podiumShare": "Share",
+  "podiumExporting": "Exporting…"
 }

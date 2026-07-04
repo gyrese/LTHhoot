@@ -51,7 +51,9 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
     }
   })
 
-  useEvent(EVENTS.QUIZZ.ERROR, (message: string) => {
+  // Canal AI_ERROR dédié : les erreurs IA ne transitent plus par QUIZZ.ERROR
+  // (partagé avec la sauvegarde de l'éditeur → toasts/reset croisés).
+  useEvent(EVENTS.QUIZZ.AI_ERROR, (message: string) => {
     if (!loading) return
     setLoading(false)
     // Map backend error messages if translated

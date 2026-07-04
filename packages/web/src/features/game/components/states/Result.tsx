@@ -50,13 +50,15 @@ const Result = ({
     }
 
     if (!isHost) {
-      vibrate(
-        streak >= 3
-          ? HAPTIC_PATTERNS.STREAK_MILESTONE
-          : correct
-            ? HAPTIC_PATTERNS.CORRECT
-            : HAPTIC_PATTERNS.WRONG,
-      )
+      let pattern: readonly number[] = HAPTIC_PATTERNS.WRONG
+
+      if (streak >= 3) {
+        pattern = HAPTIC_PATTERNS.STREAK_MILESTONE
+      } else if (correct) {
+        pattern = HAPTIC_PATTERNS.CORRECT
+      }
+
+      vibrate(pattern)
     }
 
     return () => clearTimeout(timer)

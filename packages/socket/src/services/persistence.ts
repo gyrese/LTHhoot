@@ -49,6 +49,7 @@ export interface GameSnapshot {
     powerUpsEnabled: boolean
   } | null
   singleQuizPowerUpsEnabled: boolean
+  disabledPowerUps?: string[]
   savedAt: number
 }
 

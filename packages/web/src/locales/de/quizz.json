@@ -29,6 +29,8 @@
       "questionDisplayHint": "Dauer bevor Antworten erscheinen",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Rangliste nach dieser Frage anzeigen",
+      "suddenDeath": "Sudden Death",
+      "suddenDeathHint": "Die Runde endet, sobald jemand richtig antwortet.",
       "timings": "Zeiten",
       "propertiesTitle": "Eigenschaften",
       "layersTitle": "Ebenen",
@@ -60,8 +62,12 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "URL eingeben...",
-    "placeholder": "Beginne deine Frage zu tippen..."
+    "placeholder": "Beginne deine Frage zu tippen...",
+    "aiRephrase": "Mit KI umformulieren",
+    "aiSuggestWrongAnswers": "Falsche Antworten mit KI generieren"
   },
+  "testDrive": "Testen",
+  "testDriveNeedsSave": "Speichere das Quiz, bevor du es testest",
   "questionType": {
     "title": "Fragentyp",
     "date": "Datum",

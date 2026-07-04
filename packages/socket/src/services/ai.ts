@@ -8,11 +8,14 @@ export class AIService {
   private static getClient(): GoogleGenAI {
     if (!this.genAI) {
       const apiKey = process.env.GEMINI_API_KEY
+
       if (!apiKey) {
         throw new Error("GEMINI_API_KEY is not configured on the server")
       }
+
       this.genAI = new GoogleGenAI({ apiKey })
     }
+
     return this.genAI
   }
 
@@ -114,12 +117,14 @@ The output MUST be a valid JSON array of question objects. Every object must str
         },
       })
 
-      const text = response.text
+      const { text } = response
+
       if (!text) {
         throw new Error("Empty response received from Gemini")
       }
 
       const parsed = JSON.parse(text)
+
       if (!Array.isArray(parsed)) {
         throw new Error("Gemini response is not a JSON array")
       }
@@ -129,6 +134,7 @@ The output MUST be a valid JSON array of question objects. Every object must str
       for (const rawQuestion of parsed) {
         // Run Zod validator
         const parseResult = questionValidator.safeParse(rawQuestion)
+
         if (parseResult.success) {
           validatedQuestions.push(parseResult.data as Question)
         } else {
@@ -148,6 +154,99 @@ The output MUST be a valid JSON array of question objects. Every object must str
       return validatedQuestions
     } catch (error) {
       console.error("Error in AIService.generateQuestions:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Reformule une question existante (même sens, même langue, ton plus vif).
+   */
+  public static async rephraseQuestion(currentText: string): Promise<string> {
+    const client = this.getClient()
+
+    const systemInstruction = `You are a fun, cool quiz question writer. Reformulate the following quiz question, keeping the exact same meaning and the same language, but with a fresher, more engaging phrasing.
+
+Question to reformulate: "${currentText}"
+
+Output MUST be a valid JSON object: { "rephrased": "the reformulated question text" }`
+
+    try {
+      const response = await client.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: systemInstruction,
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.8,
+        },
+      })
+
+      const { text } = response
+
+      if (!text) {
+        throw new Error("Empty response received from Gemini")
+      }
+
+      const parsed = JSON.parse(text)
+
+      if (typeof parsed.rephrased !== "string" || !parsed.rephrased.trim()) {
+        throw new Error("Gemini response missing a valid 'rephrased' string")
+      }
+
+      return parsed.rephrased
+    } catch (error) {
+      console.error("Error in AIService.rephraseQuestion:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Génère 3 mauvaises réponses plausibles pour une bonne réponse donnée.
+   */
+  public static async generateWrongAnswers(
+    correctAnswer: string,
+    questionContext: string,
+  ): Promise<string[]> {
+    const client = this.getClient()
+
+    const systemInstruction = `You are a fun, cool quiz question writer. Given a quiz question and its correct answer, generate exactly 3 plausible but INCORRECT answer options, in the same language as the question.
+
+Question: "${questionContext}"
+Correct answer: "${correctAnswer}"
+
+The wrong answers must be plausible, distinct from each other and from the correct answer, and appropriate in tone and difficulty.
+
+Output MUST be a valid JSON object: { "wrongAnswers": ["wrong 1", "wrong 2", "wrong 3"] }`
+
+    try {
+      const response = await client.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: systemInstruction,
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.8,
+        },
+      })
+
+      const { text } = response
+
+      if (!text) {
+        throw new Error("Empty response received from Gemini")
+      }
+
+      const parsed = JSON.parse(text)
+      const { wrongAnswers } = parsed
+
+      if (
+        !Array.isArray(wrongAnswers) ||
+        wrongAnswers.length !== 3 ||
+        !wrongAnswers.every((a: unknown) => typeof a === "string" && a.trim())
+      ) {
+        throw new Error("Gemini response missing a valid 'wrongAnswers' array of 3 strings")
+      }
+
+      return wrongAnswers
+    } catch (error) {
+      console.error("Error in AIService.generateWrongAnswers:", error)
       throw error
     }
   }

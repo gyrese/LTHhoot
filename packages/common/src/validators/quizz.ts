@@ -82,6 +82,7 @@ const baseQuestionValidator = z.object({
   audio: z.string().optional(),
   showLeaderboard: z.boolean().optional(),
   answerReveal: answerRevealValidator.optional(),
+  suddenDeath: z.boolean().optional(),
   cooldown: z.number().int().min(3).max(15),
   time: z.number().int().min(5).max(120),
   revelationEnabled: z.boolean().optional(),

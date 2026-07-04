@@ -1,5 +1,6 @@
 import type {
   AnswerReveal,
+  Award,
   DropPinZone,
   Player,
   QuestionMedia,
@@ -20,6 +21,10 @@ export const STATUS = {
   SHOW_LEADERBOARD: "SHOW_LEADERBOARD",
   FINISHED: "FINISHED",
   WAIT: "WAIT",
+  PAUSED: "PAUSED",
+  SHOW_TIE_BREAK: "SHOW_TIE_BREAK",
+  SHOW_TIE_BREAK_SPECTATE: "SHOW_TIE_BREAK_SPECTATE",
+  SHOW_TIE_BREAK_RESULT: "SHOW_TIE_BREAK_RESULT",
 } as const
 
 export type Status = (typeof STATUS)[keyof typeof STATUS]
@@ -98,7 +103,12 @@ export type CommonStatusDataMap = {
     top: Player[]
     rank?: number
     totalPlayers?: number
+    awards?: Award[]
   }
+  PAUSED: { text: string }
+  SHOW_TIE_BREAK: { statement: string; opponents: string[] }
+  SHOW_TIE_BREAK_SPECTATE: { duelPlayerNames: string[] }
+  SHOW_TIE_BREAK_RESULT: { winnerName: string | null }
 }
 
 type ManagerExtraStatus = {

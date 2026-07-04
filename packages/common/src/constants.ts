@@ -23,6 +23,7 @@ export const EVENTS = {
     SELECTED_ANSWER: "player:selectedAnswer",
     JOIN_TEAM: "player:joinTeam",
     BUY_POWER_UP: "player:buyPowerUp",
+    TIE_BREAK_ANSWER: "player:tieBreakAnswer",
   },
   MANAGER: {
     SUCCESS_RECONNECT: "manager:successReconnect",
@@ -50,6 +51,8 @@ export const EVENTS = {
     FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
     START_DEMO: "manager:startDemo",
     END_GAME: "manager:endGame",
+    PAUSE_GAME: "manager:pauseGame",
+    RESUME_GAME: "manager:resumeGame",
   },
   QUIZZ: {
     GET: "quizz:get",
@@ -63,6 +66,14 @@ export const EVENTS = {
     ERROR: "quizz:error",
     AI_GENERATE: "quizz:aiGenerate",
     AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",
+    AI_REPHRASE: "quizz:aiRephrase",
+    AI_REPHRASE_SUCCESS: "quizz:aiRephraseSuccess",
+    AI_SUGGEST_WRONG_ANSWERS: "quizz:aiSuggestWrongAnswers",
+    AI_SUGGEST_WRONG_ANSWERS_SUCCESS: "quizz:aiSuggestWrongAnswersSuccess",
+    // Canal d'erreur DÉDIÉ aux actions IA : QUIZZ.ERROR est partagé avec la
+    // sauvegarde (6 listeners côté éditeur) → une erreur IA déclenchait aussi
+    // le toast/reset de sauvegarde, et inversement.
+    AI_ERROR: "quizz:aiError",
   },
   RESULTS: {
     GET: "results:get",
@@ -83,6 +94,12 @@ export const EVENTS = {
     GET_INVENTORY: "powerup:get_inventory",
     INVENTORY: "powerup:inventory",
     COINS: "powerup:coins",
+  },
+  CONNECTION: {
+    // Sonde de vivacité applicative : après un retour d'arrière-plan mobile, le
+    // client peut se croire connecté alors que le lien est mort (détection
+    // Engine.IO en dizaines de secondes). Un ping/ack prouve que le lien vit.
+    PING: "connection:ping",
   },
 } as const
 

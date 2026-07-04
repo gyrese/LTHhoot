@@ -28,6 +28,7 @@
     "notEnoughCoins": "Pièces insuffisantes",
     "inventoryFull": "Inventaire plein (3 maximum)",
     "disabled": "La boutique n'est pas active pour cette partie",
+    "itemDisabled": "Ce power-up a été désactivé pour cette partie",
     "failed": "L'achat a échoué. Réessaie."
   },
   "quizz": {

@@ -3,6 +3,10 @@ import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import manager, { emitConfig } from "@rahoot/socket/services/manager"
 
+// PIN volontairement simple et codé en dur : l'app tourne sur le réseau local
+// pendant une soirée, la télécommande doit pouvoir se connecter sans friction.
+const REMOTE_PIN = "1234"
+
 export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.MANAGER.GET_CONFIG,
@@ -28,16 +32,13 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
 
       const config = Config.game()
 
-      if (config.managerPassword === "PASSWORD") {
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "manager.passwordNotConfigured",
-        )
+      // Le mot de passe du fichier de config reste valide s'il a été
+      // personnalisé ; la valeur d'usine "PASSWORD" n'est jamais acceptée.
+      const isConfigPassword =
+        config.managerPassword !== "PASSWORD" &&
+        password === config.managerPassword
 
-        return
-      }
-
-      if (password !== config.managerPassword) {
+      if (password !== REMOTE_PIN && !isConfigPassword) {
         manager.registerFailedAuth(socket)
         socket.emit(
           EVENTS.MANAGER.ERROR_MESSAGE,

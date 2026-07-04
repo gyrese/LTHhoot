@@ -29,6 +29,8 @@
       "questionDisplayHint": "Duración antes de que aparezcan las respuestas",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Mostrar la clasificación después de esta pregunta",
+      "suddenDeath": "Muerte súbita",
+      "suddenDeathHint": "La ronda termina en cuanto alguien responde correctamente.",
       "timings": "Tiempos",
       "propertiesTitle": "Propiedades",
       "layersTitle": "Capas",
@@ -60,8 +62,12 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Introduce la URL...",
-    "placeholder": "Empieza a escribir tu pregunta..."
+    "placeholder": "Empieza a escribir tu pregunta...",
+    "aiRephrase": "Reformular con IA",
+    "aiSuggestWrongAnswers": "Generar respuestas incorrectas con IA"
   },
+  "testDrive": "Probar",
+  "testDriveNeedsSave": "Guarda el cuestionario antes de probarlo",
   "questionType": {
     "title": "Tipo de pregunta",
     "date": "Fecha",

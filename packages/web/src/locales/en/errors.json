@@ -27,6 +27,7 @@
     "notEnoughCoins": "Not enough coins",
     "inventoryFull": "Inventory full (3 max)",
     "disabled": "The shop is not enabled for this game",
+    "itemDisabled": "This power-up is disabled for this game",
     "failed": "Purchase failed. Try again."
   },
   "quizz": {

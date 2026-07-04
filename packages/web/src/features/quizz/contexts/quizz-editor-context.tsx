@@ -43,6 +43,7 @@ export type QuestionUpdate = {
   audio?: string | undefined
   showLeaderboard?: boolean
   answerReveal?: AnswerReveal | undefined
+  suddenDeath?: boolean
   cooldown?: number
   time?: number
   answers?: string[]

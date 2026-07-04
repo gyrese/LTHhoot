@@ -27,7 +27,9 @@ const ManagerAuthPage = () => {
   })
 
   const handleAuth = (password: string) => {
-    sessionStorage.setItem("rc_pwd", password)
+    // Stocké en localStorage : le PIN doit survivre à la fermeture de l'onglet
+    // pour que la ré-authentification automatique fonctionne (cf. socket-context).
+    localStorage.setItem("rc_pwd", password)
     socket?.emit(EVENTS.MANAGER.AUTH, password)
   }
 

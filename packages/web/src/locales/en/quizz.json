@@ -29,6 +29,8 @@
       "questionDisplayHint": "Duration before answers appear",
       "showLeaderboard": "Leaderboard",
       "showLeaderboardHint": "Show the leaderboard after this question",
+      "suddenDeath": "Sudden death",
+      "suddenDeathHint": "The round ends as soon as someone answers correctly.",
       "timings": "Timings",
       "propertiesTitle": "Properties",
       "layersTitle": "Layers",
@@ -60,8 +62,12 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Enter URL...",
-    "placeholder": "Start typing your question..."
+    "placeholder": "Start typing your question...",
+    "aiRephrase": "Rephrase with AI",
+    "aiSuggestWrongAnswers": "Generate wrong answers with AI"
   },
+  "testDrive": "Test",
+  "testDriveNeedsSave": "Save the quiz before testing it",
   "questionType": {
     "title": "Question type",
     "date": "Date",

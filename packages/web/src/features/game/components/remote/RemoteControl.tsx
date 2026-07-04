@@ -39,8 +39,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     return () => console.log("[UNMOUNT] RemoteControl")
   }, [])
 
+  // Stocké en localStorage (et non sessionStorage) : sur mobile, le navigateur
+  // tue l'onglet en arrière-plan et sessionStorage part avec — le PIN doit survivre.
   const [password, setPassword] = useState(
-    () => sessionStorage.getItem("rc_pwd") ?? "",
+    () => localStorage.getItem("rc_pwd") ?? "",
   )
   const [authError, setAuthError] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -96,11 +98,20 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   }, [])
 
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
-    resetAuthLoading("Mot de passe incorrect")
-    sessionStorage.removeItem("rc_pwd")
+    resetAuthLoading("Code PIN incorrect")
+    localStorage.removeItem("rc_pwd")
   })
 
   useEvent(EVENTS.MANAGER.ERROR_MESSAGE, (msg) => {
+    // Un PIN mémorisé refusé ne doit pas être retenté en boucle à chaque
+    // reconnexion (rate-limit serveur) : on l'oublie immédiatement.
+    if (msg === "errors:manager.invalidPassword") {
+      localStorage.removeItem("rc_pwd")
+      resetAuthLoading("Code PIN incorrect")
+
+      return
+    }
+
     resetAuthLoading(msg || "Erreur de connexion à la partie")
   })
 
@@ -183,8 +194,6 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     navigate({ to: "/remote" })
   })
 
-  // La reconnexion est gérée globalement par le SocketProvider
-
   const handleAuth = useCallback(() => {
     if (!socket || !password.trim()) {
       return
@@ -192,7 +201,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
     setAuthError("")
     setIsAuthLoading(true)
-    sessionStorage.setItem("rc_pwd", password)
+    localStorage.setItem("rc_pwd", password)
     socket?.emit(EVENTS.MANAGER.AUTH, password)
     socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
 
@@ -205,6 +214,18 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       setAuthError("Partie introuvable. Vérifiez le code de partie.")
     }, 5000)
   }, [socket, password, gameId])
+
+  // Ré-authentification automatique à chaque (re)connexion du socket. Après une
+  // coupure réseau, le socket serveur perd ses rooms : sans ce re-join
+  // (AUTH + RECONNECT), la télécommande ne recevait plus aucun événement et
+  // semblait déconnectée en permanence. Couvre aussi l'auto-login au montage
+  // quand un PIN est mémorisé. Dépendance limitée à isConnected : re-tenter à
+  // chaque frappe du PIN déclencherait des AUTH parasites.
+  useEffect(() => {
+    if (isConnected) {
+      handleAuth()
+    }
+  }, [isConnected])
 
   const handlePrimary = useCallback(() => {
     if (!socket || !status || actionPending) {
@@ -263,6 +284,14 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     setActionPending(true)
     socket?.emit(EVENTS.MANAGER.START_DEMO, { gameId })
   }, [socket, actionPending, gameId])
+
+  const handlePauseGame = useCallback(() => {
+    socket?.emit(EVENTS.MANAGER.PAUSE_GAME, { gameId })
+  }, [socket, gameId])
+
+  const handleResumeGame = useCallback(() => {
+    socket?.emit(EVENTS.MANAGER.RESUME_GAME, { gameId })
+  }, [socket, gameId])
 
   const handleValidateOpenAnswer = useCallback(
     (text: string) => {
@@ -357,6 +386,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             players={players}
             onValidateOpenAnswer={handleValidateOpenAnswer}
             onInvalidateOpenAnswer={handleInvalidateOpenAnswer}
+            onPauseGame={handlePauseGame}
+            onResumeGame={handleResumeGame}
             questionStates={questionStates}
             timer={timer}
             maxTime={maxTime}

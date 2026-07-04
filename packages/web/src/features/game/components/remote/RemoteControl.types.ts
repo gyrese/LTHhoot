@@ -43,6 +43,10 @@ export const STATUS_LABELS: Partial<Record<Status, string>> = {
   [STATUS.SHOW_RESPONSES]: "Résultats",
   [STATUS.SHOW_LEADERBOARD]: "Classement",
   [STATUS.FINISHED]: "Terminé",
+  [STATUS.PAUSED]: "Pause",
+  [STATUS.SHOW_TIE_BREAK]: "Duel de départage",
+  [STATUS.SHOW_TIE_BREAK_SPECTATE]: "Duel de départage",
+  [STATUS.SHOW_TIE_BREAK_RESULT]: "Résultat du duel",
 }
 
 export const RANK_MEDALS = ["🥇", "🥈", "🥉"]

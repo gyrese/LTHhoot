@@ -51,5 +51,28 @@
   "freeze": {
     "title": "Eingefroren!",
     "subtitle": "Deine Antworten werden in 3 Sekunden freigeschaltet…"
-  }
+  },
+  "correctSplit": "{{count}}/{{total}} richtige Antworten",
+  "paused": "Der Gastgeber hat das Spiel pausiert.",
+  "pause": {
+    "title": "Pause",
+    "action": "Abend pausieren",
+    "resume": "Spiel fortsetzen",
+    "waitingHost": "Warten auf den Gastgeber…"
+  },
+  "tieBreak": {
+    "duelVs": "Stichduell gegen {{names}}",
+    "title": "Stichduell!",
+    "spectateHint": "Die Endplatzierung wird jetzt entschieden…",
+    "winner": "{{name}} gewinnt das Duell!",
+    "noWinner": "Niemand hat rechtzeitig geantwortet — Unentschieden bleibt bestehen."
+  },
+  "awards": {
+    "fastest": "Der Schnellste",
+    "comeback": "Bestes Comeback",
+    "loser": "Letzter der Klasse",
+    "sniper": "Der Scharfschütze"
+  },
+  "podiumShare": "Teilen",
+  "podiumExporting": "Exportieren…"
 }

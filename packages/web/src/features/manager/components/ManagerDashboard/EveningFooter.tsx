@@ -10,7 +10,7 @@ type Props = {
   onRemove: (_id: string) => void
   onStart: () => void
   onToggleOff: () => void
-  onTogglePowerUps: (_enabled: boolean) => void
+  onOpenPowerUpsConfig: () => void
 }
 
 const EveningFooter = ({
@@ -20,7 +20,7 @@ const EveningFooter = ({
   onRemove,
   onStart,
   onToggleOff,
-  onTogglePowerUps,
+  onOpenPowerUpsConfig,
 }: Props) => {
   const { t } = useTranslation()
   const canStart = eveningQuizIds.length >= 2
@@ -85,25 +85,21 @@ const EveningFooter = ({
           <p className="text-xs text-white/40">{eveningQuizIds.length} quiz</p>
         )}
 
-        {/* Toggle power-ups */}
-        <label
+        {/* Configure power-ups */}
+        <button
+          type="button"
+          onClick={onOpenPowerUpsConfig}
           className={clsx(
-            "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors",
+            "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
             powerUpsEnabled
               ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
               : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
           )}
-          title={t("manager:evening.powerUpsToggle", "Activer / désactiver les power-ups")}
+          title={t("manager:evening.powerUpsToggle", "Configurer les power-ups")}
         >
-          <input
-            type="checkbox"
-            checked={powerUpsEnabled}
-            onChange={(e) => onTogglePowerUps(e.target.checked)}
-            className="accent-yellow-400"
-          />
           <Sparkles className="size-3.5" />
-          <span className="hidden sm:inline">{t("manager:evening.powerUps", "Power-ups")}</span>
-        </label>
+          <span>{t("manager:evening.powerUps", "Power-ups")}</span>
+        </button>
 
         <button
           onClick={onStart}

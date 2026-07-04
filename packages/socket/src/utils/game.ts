@@ -1,5 +1,5 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { Answer, Question } from "@rahoot/common/types/game"
+import type { Answer, Award, GameResult, Player, Question } from "@rahoot/common/types/game"
 import type { Socket } from "@rahoot/common/types/game/socket"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
@@ -192,4 +192,148 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
     default:
       return false
   }
+}
+
+// Détecte une égalité de points qui affecte le PODIUM du classement final
+// (déjà trié décroissant) : premier groupe d'ex-æquo dont la tête est dans le
+// top 3, membres au-delà du rang 3 inclus (une égalité 3e/4e dispute la place
+// sur le podium). Retourne les clientIds (stables, contrairement aux ids
+// socket) des joueurs ex-æquo, ou `null` si le podium n'est pas contesté.
+export const detectTopTie = (leaderboard: Player[]): string[] | null => {
+  const podiumSize = Math.min(3, leaderboard.length)
+
+  for (let start = 0; start < podiumSize; ) {
+    const { points } = leaderboard[start]!
+    let end = start + 1
+
+    while (end < leaderboard.length && leaderboard[end]!.points === points) {
+      end += 1
+    }
+
+    if (end - start >= 2) {
+      return leaderboard.slice(start, end).map((p) => p.clientId)
+    }
+
+    start = end
+  }
+
+  return null
+}
+
+// Nombre minimum de réponses pour être éligible à l'award "sniper" (évite
+// qu'un joueur n'ayant répondu qu'une fois gagne par défaut).
+const MIN_ANSWERS_FOR_SNIPER = 3
+
+// Awards de fin de soirée ("Wrapped"), calculés sur l'ensemble des quiz joués.
+// `comeback` est une heuristique APPROXIMATIVE (delta entre le rang au
+// premier quiz et le rang final cumulé, sans tenir compte des quiz
+// intermédiaires) — assumée, pas un calcul exact de progression.
+const hasValue = <T,>(v: T | null | undefined): v is T =>
+  v !== null && v !== undefined
+
+export const calculateAwards = (
+  results: GameResult[],
+  finalLeaderboard: Player[],
+): Award[] => {
+  const awards: Award[] = []
+
+  let fastestPlayerName: string | null = null
+  let fastestTimeMs = Number.POSITIVE_INFINITY
+
+  const answerStats = new Map<string, { correct: number; total: number }>()
+
+  const allAnswers = results.flatMap((result) =>
+    result.questions.flatMap((question) => question.playerAnswers),
+  )
+
+  for (const pa of allAnswers) {
+    const hasAnswered =
+      hasValue(pa.answerId) ||
+      hasValue(pa.textAnswer) ||
+      hasValue(pa.numberAnswer) ||
+      hasValue(pa.orderAnswer)
+
+    if (!hasAnswered) {
+      continue
+    }
+
+    const stats = answerStats.get(pa.playerName) ?? { correct: 0, total: 0 }
+    stats.total += 1
+
+    if (pa.points > 0) {
+      stats.correct += 1
+
+      if (hasValue(pa.timeMs) && pa.timeMs < fastestTimeMs) {
+        fastestTimeMs = pa.timeMs
+        fastestPlayerName = pa.playerName
+      }
+    }
+
+    answerStats.set(pa.playerName, stats)
+  }
+
+  if (fastestPlayerName) {
+    awards.push({ type: "fastest", playerName: fastestPlayerName, value: fastestTimeMs })
+  }
+
+  let sniperName: string | null = null
+  let sniperRatio = 0
+
+  for (const [playerName, stats] of answerStats) {
+    if (stats.total < MIN_ANSWERS_FOR_SNIPER) {
+      continue
+    }
+
+    const ratio = stats.correct / stats.total
+
+    if (ratio > sniperRatio) {
+      sniperRatio = ratio
+      sniperName = playerName
+    }
+  }
+
+  if (sniperName) {
+    awards.push({
+      type: "sniper",
+      playerName: sniperName,
+      value: Math.round(sniperRatio * 100),
+    })
+  }
+
+  // Pas de "perdant" décerné pour une partie solo.
+  if (finalLeaderboard.length >= 2) {
+    const loser = finalLeaderboard[finalLeaderboard.length - 1]!
+    awards.push({ type: "loser", playerName: loser.username })
+  }
+
+  const [firstQuiz] = results
+
+  if (firstQuiz) {
+    let comebackName: string | null = null
+    let comebackScore = 0
+
+    finalLeaderboard.forEach((player, index) => {
+      const finalRank = index + 1
+      const firstQuizPlayer = firstQuiz.players.find(
+        (p) => p.username === player.username,
+      )
+
+      if (!firstQuizPlayer) {
+        return
+      }
+
+      const score = firstQuizPlayer.rank - finalRank
+
+      if (score > comebackScore) {
+        comebackScore = score
+        comebackName = player.username
+      }
+    })
+
+    if (comebackName) {
+      awards.push({ type: "comeback", playerName: comebackName, value: comebackScore })
+    }
+  }
+
+  return awards
 }

@@ -1,18 +1,40 @@
+import type { AwardType } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  downloadCanvasAsPng,
+  renderPodiumToCanvas,
+} from "@rahoot/web/features/game/utils/podium-export"
 import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import { motion, AnimatePresence } from "motion/react"
+import { Download } from "lucide-react"
 import { useEffect, useState } from "react"
 import ReactConfetti from "react-confetti"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
 type Props = {
   data: ManagerStatusDataMap["FINISHED"]
+}
+
+const AWARD_ICONS: Record<AwardType, string> = {
+  fastest: "⚡",
+  comeback: "📈",
+  loser: "🐢",
+  sniper: "🎯",
+}
+
+// Libellés traduits : game:awards.<type> (cf. locales game.json).
+const AWARD_LABEL_KEYS: Record<AwardType, string> = {
+  fastest: "game:awards.fastest",
+  comeback: "game:awards.comeback",
+  loser: "game:awards.loser",
+  sniper: "game:awards.sniper",
 }
 
 const WINNING_ANIMATION_STATES = ["waving"] as const
@@ -391,13 +413,32 @@ const PodiumPlace = ({
   )
 }
 
-const Podium = ({ data: { subject, top } }: Props) => {
+const Podium = ({ data: { subject, top, awards } }: Props) => {
   const apparition = usePodiumAnimation(top.length)
   const { salonImage } = useManagerStore()
   const { isHost, isEveningFinale } = useGameConfig()
   const { player } = usePlayerStore()
   const { width, height } = useScreenSize()
+  const { t } = useTranslation()
   const isFinal = apparition >= 4
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExport = async () => {
+    if (isExporting) {
+      return
+    }
+
+    setIsExporting(true)
+
+    try {
+      const canvas = await renderPodiumToCanvas(top, subject)
+      downloadCanvasAsPng(canvas, `podium-${subject}`)
+    } catch (error) {
+      console.error("Échec de l'export du podium:", error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   // Vibration côté joueur au moment précis où c'est LUI qui est révélé sur le
   // podium (rang 3 à apparition=1, rang 2 à apparition=2, rang 1 à apparition=4
@@ -407,9 +448,10 @@ const Podium = ({ data: { subject, top } }: Props) => {
       return
     }
 
-    const revealedRank = apparition === 1 ? 3 : apparition === 2 ? 2 : apparition === 4 ? 1 : null
+    const REVEALED_RANK_BY_APPARITION: Record<number, number> = { 1: 3, 2: 2, 4: 1 }
+    const revealedRank = REVEALED_RANK_BY_APPARITION[apparition]
 
-    if (revealedRank === null) {
+    if (!revealedRank) {
       return
     }
 
@@ -470,6 +512,20 @@ const Podium = ({ data: { subject, top } }: Props) => {
             "repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 3px)",
         }}
       />
+
+      {/* Export image du podium (hôte uniquement, une fois le podium révélé) */}
+      {isHost && isFinal && (
+        <button
+          onClick={handleExport}
+          disabled={isExporting}
+          className="absolute top-4 right-4 z-30 flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-bold text-white/70 backdrop-blur-sm transition-colors hover:border-orange-500/30 hover:text-orange-300 disabled:opacity-50"
+        >
+          <Download className="size-4" />
+          {isExporting
+            ? t("game:podiumExporting", "Export…")
+            : t("game:podiumShare", "Partager")}
+        </button>
+      )}
 
       {/* Flash reveal 1er */}
       <RevealFlash trigger={isFinal} />
@@ -558,6 +614,34 @@ const Podium = ({ data: { subject, top } }: Props) => {
           ) : <div />}
         </div>
       </div>
+
+      {/* Récap "Wrapped" — awards de fin de soirée */}
+      {isEveningFinale && isFinal && awards && awards.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="relative z-20 flex w-full max-w-3xl flex-wrap items-center justify-center gap-2 px-4 pb-6"
+        >
+          {awards.map((award) => (
+            <div
+              key={award.type}
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 backdrop-blur-md"
+            >
+              <span className="text-lg">{AWARD_ICONS[award.type]}</span>
+              <div className="flex flex-col leading-tight">
+                <span
+                  className="text-[10px] tracking-widest text-white/40 uppercase"
+                  style={{ fontFamily: "monospace" }}
+                >
+                  {t(AWARD_LABEL_KEYS[award.type])}
+                </span>
+                <span className="text-sm font-bold text-white">{award.playerName}</span>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      )}
     </div>
   )
 }

@@ -28,7 +28,7 @@ for (const file of quizFiles) {
     try {
       const json = JSON.parse(fs.readFileSync(filePath, "utf-8"));
       
-      const inspect = (obj, path = "") => {
+      const inspect = (obj: any, path = "") => {
         if (!obj || typeof obj !== "object") return;
         
         for (const key of Object.keys(obj)) {
