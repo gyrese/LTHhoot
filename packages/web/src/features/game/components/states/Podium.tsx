@@ -8,14 +8,9 @@ import {
   HAPTIC_PATTERNS,
   vibrate,
 } from "@rahoot/web/features/game/utils/haptics"
-import {
-  downloadCanvasAsPng,
-  renderPodiumToCanvas,
-} from "@rahoot/web/features/game/utils/podium-export"
 import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import { MOTION_EASE } from "@rahoot/web/features/game/utils/motion"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
-import { Download } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import ReactConfetti from "react-confetti"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
@@ -585,7 +580,6 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
   const { t } = useTranslation()
   const reducedMotion = useReducedMotion()
   const isFinal = apparition >= 4
-  const [isExporting, setIsExporting] = useState(false)
 
   // Mini burst de confettis localisé à l'annonce du 3e puis du 2e — le 1er est
   // réservé au grand confetti final (isFinal) pour garder le suspense monter.
@@ -609,23 +603,6 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
 
     return () => clearTimeout(t2)
   }, [apparition])
-
-  const handleExport = async () => {
-    if (isExporting) {
-      return
-    }
-
-    setIsExporting(true)
-
-    try {
-      const canvas = await renderPodiumToCanvas(top, subject)
-      downloadCanvasAsPng(canvas, `podium-${subject}`)
-    } catch (error) {
-      console.error("Échec de l'export du podium:", error)
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   // Vibration côté joueur au moment précis où c'est LUI qui est révélé sur le
   // podium (rang 3 à apparition=1, rang 2 à apparition=2, rang 1 à apparition=4
@@ -718,19 +695,7 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
           }}
         />
 
-        {/* Export image du podium (hôte uniquement, une fois le podium révélé) */}
-        {isHost && isFinal && (
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="absolute top-3 right-32 z-30 flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-bold text-white/70 backdrop-blur-sm transition-colors hover:border-orange-500/30 hover:text-orange-300 disabled:opacity-50"
-          >
-            <Download className="size-4" />
-            {isExporting
-              ? t("game:podiumExporting", "Export…")
-              : t("game:podiumShare", "Partager")}
-          </button>
-        )}
+
 
         {/* Flash reveal 1er */}
         <RevealFlash trigger={isFinal} />

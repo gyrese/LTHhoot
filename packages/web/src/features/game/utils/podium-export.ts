@@ -216,3 +216,211 @@ export const downloadCanvasAsPng = (canvas: HTMLCanvasElement, filename: string)
     }
   }, "image/png")
 }
+
+export const renderScorecardToCanvas = async (
+  username: string,
+  avatar: string,
+  points: number,
+  rank: number | null,
+  totalPlayers: number | null,
+  subject: string,
+): Promise<HTMLCanvasElement> => {
+  const canvas = document.createElement("canvas")
+  const size = 1080
+  canvas.width = size
+  canvas.height = size
+
+  const ctx = canvas.getContext("2d")
+  if (!ctx) {
+    throw new Error("Canvas 2D context unavailable")
+  }
+
+  // 1. Background gradient
+  const gradient = ctx.createLinearGradient(0, 0, 0, size)
+  gradient.addColorStop(0, "#0a0518")
+  gradient.addColorStop(1, "#180c30")
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+
+  // 2. Subtle grid lines in the background
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.025)"
+  ctx.lineWidth = 1
+  const gridSpacing = 48
+  for (let x = 0; x < size; x += gridSpacing) {
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, size)
+    ctx.stroke()
+  }
+  for (let y = 0; y < size; y += gridSpacing) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(size, y)
+    ctx.stroke()
+  }
+
+  // 3. Set color scheme based on rank
+  let themeColor = "#ffffff"
+  let rankLabel = rank ? `#${rank}` : "—"
+  if (rank === 1) {
+    themeColor = "#FAFF00" // Gold
+    rankLabel = "1er"
+  } else if (rank === 2) {
+    themeColor = "#00F5FF" // Cyan
+    rankLabel = "2ème"
+  } else if (rank === 3) {
+    themeColor = "#FF00E5" // Magenta
+    rankLabel = "3ème"
+  } else if (rank) {
+    rankLabel = `${rank}e`
+  }
+
+  // Glowing double outer border
+  ctx.save()
+  ctx.strokeStyle = themeColor
+  ctx.lineWidth = 4
+  ctx.shadowColor = themeColor
+  ctx.shadowBlur = 30
+  ctx.beginPath()
+  ctx.roundRect(50, 50, size - 100, size - 100, 36)
+  ctx.stroke()
+  ctx.restore()
+
+  // Inner border border
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.roundRect(65, 65, size - 130, size - 130, 24)
+  ctx.stroke()
+
+  // 4. Header metadata
+  ctx.textAlign = "center"
+  ctx.fillStyle = themeColor
+  ctx.font = "bold 20px monospace"
+  ctx.fillText("RAHOOT SCORECARD", size / 2, 115)
+
+  ctx.fillStyle = "#ffffff"
+  ctx.font = "bold 52px sans-serif"
+  ctx.fillText(subject, size / 2, 185, size - 200)
+
+  // 5. Draw Avatar
+  const avatarCx = size / 2
+  const avatarCy = size / 2 - 30
+  const localAvatarSize = 240
+
+  // Outer glowing ring for avatar
+  ctx.save()
+  ctx.strokeStyle = themeColor
+  ctx.lineWidth = 6
+  ctx.shadowColor = themeColor
+  ctx.shadowBlur = 25
+  ctx.beginPath()
+  ctx.arc(avatarCx, avatarCy, localAvatarSize / 2 + 5, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.restore()
+
+  // Draw actual avatar
+  try {
+    const { img, sw, sh } = await resolveAvatarImage(avatar)
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(avatarCx, avatarCy, localAvatarSize / 2, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.drawImage(
+      img,
+      0,
+      0,
+      sw,
+      sh,
+      avatarCx - localAvatarSize / 2,
+      avatarCy - localAvatarSize / 2,
+      localAvatarSize,
+      localAvatarSize,
+    )
+    ctx.restore()
+  } catch {
+    drawFallbackAvatar(ctx, avatar, avatarCx, avatarCy)
+  }
+
+  // Draw medal/rank overlay icon on top-right of avatar if top 3
+  if (rank && rank <= 3) {
+    ctx.save()
+    ctx.font = "56px sans-serif"
+    ctx.fillText(MEDAL_BY_RANK[rank] || "", avatarCx + localAvatarSize / 2 - 10, avatarCy - localAvatarSize / 2 + 20)
+    ctx.restore()
+  }
+
+  // 6. Username
+  ctx.fillStyle = "#ffffff"
+  ctx.font = "bold 54px sans-serif"
+  ctx.fillText(username, size / 2, avatarCy + localAvatarSize / 2 + 80)
+
+  // 7. Stats Box (Rank & Score)
+  const boxY = avatarCy + localAvatarSize / 2 + 130
+  const boxWidth = 660
+  const boxHeight = 170
+  const boxX = size / 2 - boxWidth / 2
+
+  // Background and borders of the stats box
+  ctx.fillStyle = "rgba(255, 255, 255, 0.03)"
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 24)
+  ctx.fill()
+  ctx.stroke()
+
+  // Separator line
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
+  ctx.beginPath()
+  ctx.moveTo(size / 2, boxY + 20)
+  ctx.lineTo(size / 2, boxY + boxHeight - 20)
+  ctx.stroke()
+
+  // Left: Rank
+  ctx.textAlign = "center"
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)"
+  ctx.font = "bold 20px monospace"
+  ctx.fillText("CLASSEMENT", boxX + boxWidth / 4, boxY + 55)
+
+  ctx.fillStyle = themeColor
+  ctx.font = "bold 54px sans-serif"
+  let rankText = rankLabel
+  if (totalPlayers) {
+    rankText += ` / ${totalPlayers}`
+  }
+  ctx.fillText(rankText, boxX + boxWidth / 4, boxY + 120)
+
+  // Right: Score
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)"
+  ctx.font = "bold 20px monospace"
+  ctx.fillText("SCORE", boxX + (3 * boxWidth) / 4, boxY + 55)
+
+  const scoreCenter = boxX + (3 * boxWidth) / 4
+  const pointsStr = points.toLocaleString()
+  ctx.font = "bold 54px sans-serif"
+  const valWidth = ctx.measureText(pointsStr).width
+  ctx.font = "bold 24px sans-serif"
+  const suffixWidth = ctx.measureText(" pts").width
+  const totalWidth = valWidth + suffixWidth
+  const startDrawX = scoreCenter - totalWidth / 2
+
+  // Draw score value (left-aligned from startDrawX)
+  ctx.textAlign = "left"
+  ctx.fillStyle = "#ffffff"
+  ctx.font = "bold 54px sans-serif"
+  ctx.fillText(pointsStr, startDrawX, boxY + 120)
+
+  // Draw suffix (left-aligned after value)
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)"
+  ctx.font = "bold 24px sans-serif"
+  ctx.fillText(" pts", startDrawX + valWidth, boxY + 120)
+
+  // 8. Footer brand
+  ctx.textAlign = "center"
+  ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
+  ctx.font = "bold 24px monospace"
+  ctx.fillText("LTNHOOT", size / 2, size - 85)
+
+  return canvas
+}
