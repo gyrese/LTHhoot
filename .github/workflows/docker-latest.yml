@@ -3,6 +3,7 @@ name: Docker Latest
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -29,3 +30,31 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lthoot:latest
           no-cache: true
+
+  # Met à jour le VPS une fois la nouvelle image publiée : connexion SSH,
+  # pull de l'image :latest puis redémarrage du conteneur via docker compose.
+  # Secrets requis (Settings > Secrets and variables > Actions) :
+  #   VPS_HOST      — IP ou domaine du VPS
+  #   VPS_USER      — utilisateur SSH (ex: root ou deploy)
+  #   VPS_SSH_KEY   — clé privée SSH autorisée sur le VPS
+  #   VPS_APP_PATH  — chemin absolu du dossier contenant compose.yml sur le VPS
+  #   VPS_PORT      — (optionnel) port SSH, 22 par défaut
+  deploy:
+    name: Deploy to VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update VPS over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ secrets.VPS_APP_PATH }}"
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
+            docker compose ps
