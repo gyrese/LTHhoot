@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next"
 
 const PlayerGamePage = () => {
   const navigate = useNavigate()
-  const { isReconnecting, socket } = useSocket()
+  const { isConnected, socket } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
   const { status, setStatus, reset } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -53,14 +53,17 @@ const PlayerGamePage = () => {
     }
   })
 
-  // Au montage, si DÉJÀ connecté : redemander l'état (l'event "connect" ne se
-  // redéclenche pas). Le serveur renvoie l'écran d'attente (WAIT) — sinon le
-  // joueur reste sur le fond de base après avoir choisi pseudo + avatar.
+  // Resync métier dès que la connexion est établie (et à chaque reconnexion).
+  // Dépendre d'isConnected — PAS de socket.connected lu au montage — couvre le
+  // rechargement complet de la page (onglet déchargé par le mobile en veille) :
+  // au montage le socket n'est pas encore connecté, l'émission part au moment
+  // où il l'est. Le serveur identifie le joueur par clientId (localStorage),
+  // donc la session est restaurée même si le store a été vidé entre-temps.
   useEffect(() => {
-    if (socket?.connected && gameIdParam) {
+    if (isConnected && socket && gameIdParam) {
       socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
     }
-  }, [socket, gameIdParam])
+  }, [isConnected, socket, gameIdParam])
 
   // UseSocket déplacé en haut
 
@@ -72,13 +75,11 @@ const PlayerGamePage = () => {
     }
   }, [reset, setQuestionStates])
 
+  // GAME.RESET est toujours traité : le serveur ne l'émet plus lors d'un
+  // takeover du même clientId (retiré côté serveur), donc chaque RESET restant
+  // est autoritaire (partie expirée/fermée, joueur retiré ou kické). L'ignorer
+  // pendant une reconnexion laissait le joueur bloqué sur un écran vide.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    if (isReconnecting) {
-      console.log(`[DEBUG] Ignored GAME.RESET during reconnect (msg: ${message})`)
-
-      return
-    }
-
     console.log(`[DEBUG] Processing GAME.RESET (msg: ${message})`)
     navigate({ to: "/", search: { pin: undefined } })
     toast.error(t(message))

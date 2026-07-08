@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next"
 const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
-  const { socket, isReconnecting } = useSocket()
+  const { socket } = useSocket()
   const { gameId, status, setStatus, setPlayers, reset } =
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -103,13 +103,10 @@ return
     }
   }, [reset, setQuestionStates])
 
+  // GAME.RESET est toujours traité (cf. commentaire équivalent côté joueur) :
+  // chaque RESET restant est autoritaire, l'ignorer pendant une reconnexion
+  // laissait le manager bloqué sur une partie morte.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    if (isReconnecting) {
-      console.log(`[DEBUG] Ignored MANAGER GAME.RESET during reconnect (msg: ${message})`)
-
-      return
-    }
-
     console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
     navigate({ to: "/manager/config" })
     toast.error(t(message))

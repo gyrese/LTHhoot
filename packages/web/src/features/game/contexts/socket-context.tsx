@@ -72,7 +72,15 @@ const createSocketClient = (
   // ne répond jamais (event perdu, partie disparue silencieusement…), on libère
   // l'overlay au bout de RECONNECT_RESOLVE_TIMEOUT plutôt que de rester bloqué.
   const RECONNECT_RESOLVE_TIMEOUT = 5000
+  // Fenêtre de reconnexion silencieuse : une réattribution NAT opérateur ou un
+  // handover 4G coupe le lien 1-3s (constaté en prod : 23 sessions / 159 avec
+  // changement d'IP en cours de partie). Si la reconnexion + resync aboutissent
+  // dans cette fenêtre, le joueur ne voit RIEN — l'overlay plein écran n'apparaît
+  // que si la coupure dure vraiment. Les réponses émises pendant le blip sont
+  // bufferisées par socket.io-client et parties à la reconnexion.
+  const SILENT_RECONNECT_GRACE = 2500
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+  let overlayGraceTimeout: ReturnType<typeof setTimeout> | null = null
 
   const clearReconnectTimeout = () => {
     if (reconnectTimeout) {
@@ -81,8 +89,32 @@ const createSocketClient = (
     }
   }
 
+  const clearOverlayGrace = () => {
+    if (overlayGraceTimeout) {
+      clearTimeout(overlayGraceTimeout)
+      overlayGraceTimeout = null
+    }
+  }
+
+  // N'affiche l'overlay qu'après SILENT_RECONNECT_GRACE. Ré-armer pendant que le
+  // délai court est un no-op : la fenêtre se mesure depuis la coupure initiale.
+  const showOverlayAfterGrace = () => {
+    if (overlayGraceTimeout) {
+      return
+    }
+
+    overlayGraceTimeout = setTimeout(() => {
+      overlayGraceTimeout = null
+      console.log(
+        "[SESSION] Coupure > fenêtre silencieuse, affichage de l'overlay",
+      )
+      setIsReconnecting(true)
+    }, SILENT_RECONNECT_GRACE)
+  }
+
   const finishReconnecting = () => {
     clearReconnectTimeout()
+    clearOverlayGrace()
     setIsReconnecting(false)
   }
 
@@ -132,7 +164,7 @@ const createSocketClient = (
 
       if (playerGameId) {
         console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
-        setIsReconnecting(true)
+        showOverlayAfterGrace()
         armReconnectTimeout()
         socketClient.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
       } else {
@@ -146,7 +178,7 @@ const createSocketClient = (
 
         if (managerGameId) {
           console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
-          setIsReconnecting(true)
+          showOverlayAfterGrace()
           armReconnectTimeout()
           socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
         } else {
@@ -159,9 +191,10 @@ const createSocketClient = (
       console.log(`[SOCKET] Déconnecté (POLLING) raison=${reason}`)
       setIsConnected(false)
 
-      // Si la déconnexion est involontaire, on passe en mode reconnect
+      // Déconnexion involontaire → reconnexion silencieuse d'abord : l'overlay
+      // n'apparaît que si le blip dépasse la fenêtre de grâce.
       if (reason !== "io client disconnect") {
-        setIsReconnecting(true)
+        showOverlayAfterGrace()
       }
     })
 
