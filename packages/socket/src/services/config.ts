@@ -82,6 +82,23 @@ class Config {
     return {}
   }
 
+  // Migration transparente legacy → hash : appelée après une auth réussie sur un
+  // mot de passe en clair personnalisé, pour ne plus jamais le stocker lisible.
+  static migratePasswordToHash(hash: string): void {
+    const filePath = getPath("game.json")
+
+    if (!fs.existsSync(filePath)) {
+      return
+    }
+
+    const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+
+    delete raw.managerPassword
+    raw.managerPasswordHash = hash
+
+    fs.writeFileSync(filePath, JSON.stringify(raw, null, 2))
+  }
+
   static quizzMeta() {
     return Config.quizz().map(
       ({ id, subject, folder, tags, salonImage, listingImage }) => ({
@@ -159,7 +176,7 @@ class Config {
     }
   }
 
-  static updateQuizz(id: string, data: unknown): { id: string } {
+  static updateQuizz(id: string, data: unknown): { id: string; updatedAt: number } {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {
@@ -172,10 +189,31 @@ class Config {
       throw new Error(`Quizz "${id}" not found`)
     }
 
-    fs.writeFileSync(oldPath, JSON.stringify(result.data, null, 2))
+    // Concurrence optimiste : si le client connaissait un `updatedAt` et que le
+    // fichier sur disque en a un différent, quelqu'un d'autre a sauvegardé
+    // entre-temps — on refuse d'écraser silencieusement (cf. `errors:quizz.conflict`).
+    // Un client qui envoie explicitement `updatedAt: undefined` (force overwrite)
+    // contourne volontairement ce contrôle.
+    const existingRaw = JSON.parse(fs.readFileSync(oldPath, "utf-8"))
+    const clientUpdatedAt = result.data.updatedAt
+
+    if (
+      existingRaw.updatedAt !== undefined &&
+      clientUpdatedAt !== undefined &&
+      existingRaw.updatedAt !== clientUpdatedAt
+    ) {
+      throw new Error("errors:quizz.conflict")
+    }
+
+    const updatedAt = Date.now()
+
+    fs.writeFileSync(
+      oldPath,
+      JSON.stringify({ ...result.data, updatedAt }, null, 2),
+    )
     Config.quizzCache = null
 
-    return { id }
+    return { id, updatedAt }
   }
 
   static moveToFolder(id: string, folder: string | null): void {
@@ -289,7 +327,7 @@ class Config {
     fs.unlinkSync(filePath)
   }
 
-  static saveQuizz(data: unknown): { id: string } {
+  static saveQuizz(data: unknown): { id: string; updatedAt: number } {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {
@@ -298,11 +336,15 @@ class Config {
 
     const id = normalizeFilename(result.data.subject)
     const filePath = getPath(`quizz/${id}.json`)
+    const updatedAt = Date.now()
 
-    fs.writeFileSync(filePath, JSON.stringify(result.data, null, 2))
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({ ...result.data, updatedAt }, null, 2),
+    )
     Config.quizzCache = null
 
-    return { id }
+    return { id, updatedAt }
   }
 }
 

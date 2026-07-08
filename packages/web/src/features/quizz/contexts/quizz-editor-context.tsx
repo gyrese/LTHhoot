@@ -1,6 +1,7 @@
 import type {
   AnswerReveal,
   DropPinZone,
+  PodiumThemeSetting,
   Question,
   QuestionMedia,
   QuestionType,
@@ -78,12 +79,14 @@ type QuizzEditorContextType = {
   tags: string[]
   salonImage?: string
   listingImage?: string
+  podiumTheme?: PodiumThemeSetting
   setSubject: (_subject: string) => void
   setDescription: (_description: string) => void
   setFolder: (_folder: string) => void
   setTags: (_tags: string[]) => void
   setSalonImage: (_salonImage?: string) => void
   setListingImage: (_listingImage?: string) => void
+  setPodiumTheme: (_podiumTheme?: PodiumThemeSetting) => void
   questions: QuestionWithId[]
   currentIndex: number
   currentQuestion: QuestionWithId
@@ -156,7 +159,13 @@ const buildDefaultForType = (
       return { ...base, type: "open", correctAnswers: [""] }
 
     case "image_sequence":
-      return { ...base, type: "image_sequence", images: [], correctAnswers: [""], imageInterval: 5 }
+      return {
+        ...base,
+        type: "image_sequence",
+        images: [],
+        correctAnswers: [""],
+        imageInterval: 5,
+      }
 
     case "date": {
       const year = new Date().getFullYear()
@@ -219,21 +228,30 @@ export const QuizzEditorProvider = ({
   const [listingImage, setListingImage] = useState<string | undefined>(
     initialData?.listingImage,
   )
+  const [podiumTheme, setPodiumTheme] = useState<
+    PodiumThemeSetting | undefined
+  >(initialData?.podiumTheme)
   const [questions, setQuestions] = useState<QuestionWithId[]>(
     initialData
       ? initialData.questions.map(toQuestionWithId)
       : [defaultQuestion()],
   )
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(() => [
-    questions[0]?.id || ""
-  ])
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(
+    () => [questions[0]?.id || ""],
+  )
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [quizzId, setQuizzId] = useState<string | null>(initialData?.id ?? null)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [pendingRestore, setPendingRestore] = useState<any | null>(null)
+  // `updatedAt` connu du client pour ce quiz : sert à détecter, côté serveur,
+  // qu'une autre session a sauvegardé entre-temps (concurrence optimiste).
+  const [updatedAt, setUpdatedAt] = useState<number | undefined>(
+    initialData?.updatedAt,
+  )
+  const [saveConflict, setSaveConflict] = useState(false)
 
   // Nettoyage automatique des anciens backups volumineux de localStorage contenant du base64
   useEffect(() => {
@@ -249,7 +267,9 @@ export const QuizzEditorProvider = ({
         }
       }
       keysToRemove.forEach((key) => {
-        console.warn(`[LocalStorage Cleanup] Suppression d'un ancien backup lourd contenant du base64 : ${key}`)
+        console.warn(
+          `[LocalStorage Cleanup] Suppression d'un ancien backup lourd contenant du base64 : ${key}`,
+        )
         localStorage.removeItem(key)
       })
     } catch (e) {
@@ -257,7 +277,10 @@ export const QuizzEditorProvider = ({
     }
   }, [])
 
-  const currentQuestion = questions[currentIndex] || questions[Math.max(0, questions.length - 1)] || questions[0]
+  const currentQuestion =
+    questions[currentIndex] ||
+    questions[Math.max(0, questions.length - 1)] ||
+    questions[0]
 
   const markDirty = () => setIsDirty(true)
 
@@ -285,39 +308,46 @@ export const QuizzEditorProvider = ({
     setListingImage(val)
     markDirty()
   }
+  const wrappedSetPodiumTheme = (val?: PodiumThemeSetting) => {
+    setPodiumTheme(val)
+    markDirty()
+  }
 
   const handleSetCurrentIndex = (index: number) => {
     setCurrentIndex(index)
     setSelectedId(undefined)
   }
 
-  const selectSlide = useCallback((index: number, ctrlKey: boolean, shiftKey: boolean) => {
-    const clickedId = questions[index]?.id
-    if (!clickedId) return
+  const selectSlide = useCallback(
+    (index: number, ctrlKey: boolean, shiftKey: boolean) => {
+      const clickedId = questions[index]?.id
+      if (!clickedId) return
 
-    setSelectedQuestionIds((prevSelected) => {
-      if (ctrlKey) {
-        if (prevSelected.includes(clickedId)) {
-          const nextSelected = prevSelected.filter((id) => id !== clickedId)
-          if (nextSelected.length === 0) {
-            return [clickedId]
+      setSelectedQuestionIds((prevSelected) => {
+        if (ctrlKey) {
+          if (prevSelected.includes(clickedId)) {
+            const nextSelected = prevSelected.filter((id) => id !== clickedId)
+            if (nextSelected.length === 0) {
+              return [clickedId]
+            }
+            return nextSelected
+          } else {
+            return [...prevSelected, clickedId]
           }
-          return nextSelected
+        } else if (shiftKey) {
+          const start = Math.min(currentIndex, index)
+          const end = Math.max(currentIndex, index)
+          const rangeIds = questions.slice(start, end + 1).map((q) => q.id)
+          return rangeIds
         } else {
-          return [...prevSelected, clickedId]
+          return [clickedId]
         }
-      } else if (shiftKey) {
-        const start = Math.min(currentIndex, index)
-        const end = Math.max(currentIndex, index)
-        const rangeIds = questions.slice(start, end + 1).map((q) => q.id)
-        return rangeIds
-      } else {
-        return [clickedId]
-      }
-    })
+      })
 
-    handleSetCurrentIndex(index)
-  }, [questions, currentIndex, handleSetCurrentIndex])
+      handleSetCurrentIndex(index)
+    },
+    [questions, currentIndex, handleSetCurrentIndex],
+  )
 
   // ─── Undo / Redo ────────────────────────────────────────────────────────────
 
@@ -329,6 +359,7 @@ export const QuizzEditorProvider = ({
     tags: string[]
     salonImage?: string
     listingImage?: string
+    podiumTheme?: PodiumThemeSetting
     currentIndex: number
     selectedQuestionIds: string[]
   }
@@ -360,6 +391,7 @@ export const QuizzEditorProvider = ({
       tags,
       salonImage,
       listingImage,
+      podiumTheme,
       currentIndex,
       selectedQuestionIds,
     }),
@@ -371,6 +403,7 @@ export const QuizzEditorProvider = ({
       tags,
       salonImage,
       listingImage,
+      podiumTheme,
       currentIndex,
       selectedQuestionIds,
     ],
@@ -430,6 +463,7 @@ export const QuizzEditorProvider = ({
     tags,
     salonImage,
     listingImage,
+    podiumTheme,
     currentIndex,
     selectedQuestionIds,
     takeSnapshot,
@@ -444,6 +478,7 @@ export const QuizzEditorProvider = ({
     setTags(s.tags)
     setSalonImage(s.salonImage)
     setListingImage(s.listingImage)
+    setPodiumTheme(s.podiumTheme)
     setCurrentIndex(
       s.questions.length === 0
         ? 0
@@ -494,9 +529,10 @@ export const QuizzEditorProvider = ({
 
   const removeQuestion = (index: number) => {
     const clickedId = questions[index]?.id
-    const idsToDelete = clickedId && selectedQuestionIds.includes(clickedId)
-      ? selectedQuestionIds
-      : [clickedId].filter(Boolean)
+    const idsToDelete =
+      clickedId && selectedQuestionIds.includes(clickedId)
+        ? selectedQuestionIds
+        : [clickedId].filter(Boolean)
 
     if (questions.length <= idsToDelete.length) {
       return
@@ -506,9 +542,13 @@ export const QuizzEditorProvider = ({
     setQuestions(nextQuestions)
 
     let newActiveIndex = 0
-    const remainingActive = questions.find((q, i) => !idsToDelete.includes(q.id) && i >= index)
+    const remainingActive = questions.find(
+      (q, i) => !idsToDelete.includes(q.id) && i >= index,
+    )
     if (remainingActive) {
-      newActiveIndex = nextQuestions.findIndex((q) => q.id === remainingActive.id)
+      newActiveIndex = nextQuestions.findIndex(
+        (q) => q.id === remainingActive.id,
+      )
     } else {
       newActiveIndex = Math.max(0, nextQuestions.length - 1)
     }
@@ -523,14 +563,21 @@ export const QuizzEditorProvider = ({
     if (!draggedId) return
 
     const idsToMove = selectedQuestionIds.includes(draggedId)
-      ? questions.filter((q) => selectedQuestionIds.includes(q.id)).map((q) => q.id)
+      ? questions
+          .filter((q) => selectedQuestionIds.includes(q.id))
+          .map((q) => q.id)
       : [draggedId]
 
     setQuestions((prev) => {
       const movingQuestions = prev.filter((q) => idsToMove.includes(q.id))
       const remaining = prev.filter((q) => !idsToMove.includes(q.id))
-      const numMovedBeforeTo = prev.slice(0, to).filter((q) => idsToMove.includes(q.id)).length
-      const insertIndex = Math.max(0, Math.min(remaining.length, to - numMovedBeforeTo))
+      const numMovedBeforeTo = prev
+        .slice(0, to)
+        .filter((q) => idsToMove.includes(q.id)).length
+      const insertIndex = Math.max(
+        0,
+        Math.min(remaining.length, to - numMovedBeforeTo),
+      )
 
       const next = [...remaining]
       next.splice(insertIndex, 0, ...movingQuestions)
@@ -551,16 +598,22 @@ export const QuizzEditorProvider = ({
   const duplicateQuestion = (index: number) => {
     const clickedId = questions[index]?.id
     const isMultiSelection =
-      clickedId !== undefined && selectedQuestionIds.includes(clickedId) && selectedQuestionIds.length > 1
+      clickedId !== undefined &&
+      selectedQuestionIds.includes(clickedId) &&
+      selectedQuestionIds.length > 1
 
     if (isMultiSelection) {
       // Duplique tous les slides sélectionnés, dans leur ordre d'apparition
-      const orderedSelected = questions.filter((q) => selectedQuestionIds.includes(q.id))
+      const orderedSelected = questions.filter((q) =>
+        selectedQuestionIds.includes(q.id),
+      )
       const newCopies = orderedSelected.map((q) => ({ ...q, id: generateId() }))
 
       // Détermine l'index du dernier slide sélectionné pour insérer les copies juste après
-      const lastSelectedIndex = questions.reduce((acc, q, i) =>
-        selectedQuestionIds.includes(q.id) ? i : acc, -1)
+      const lastSelectedIndex = questions.reduce(
+        (acc, q, i) => (selectedQuestionIds.includes(q.id) ? i : acc),
+        -1,
+      )
 
       setQuestions((prev) => {
         const next = [...prev]
@@ -602,7 +655,10 @@ export const QuizzEditorProvider = ({
       return
     }
 
-    const newWithIds = imported.map((q) => ({ ...q, id: generateId() })) as QuestionWithId[]
+    const newWithIds = imported.map((q) => ({
+      ...q,
+      id: generateId(),
+    })) as QuestionWithId[]
 
     setQuestions((prev) => {
       const firstNewIndex = prev.length
@@ -619,7 +675,9 @@ export const QuizzEditorProvider = ({
   }
 
   const applyToAllQuestions = (patch: QuestionUpdate) => {
-    setQuestions((prev) => prev.map((q) => ({ ...q, ...patch } as QuestionWithId)))
+    setQuestions((prev) =>
+      prev.map((q) => ({ ...q, ...patch }) as QuestionWithId),
+    )
     markDirty()
   }
 
@@ -653,12 +711,16 @@ export const QuizzEditorProvider = ({
   const [pendingNavigation, setPendingNavigation] = useState(false)
 
   const saveQuizz = useCallback(
-    (options?: { silent?: boolean; navigate?: boolean }) => {
+    (options?: { silent?: boolean; navigate?: boolean; force?: boolean }) => {
       if (!socket || !isConnected) {
         if (!options?.silent) {
-          toast.error(t("errors:quizz.failedToSave") || "Connexion perdue. Sauvegarde impossible.", {
-            id: "quizz-save",
-          })
+          toast.error(
+            t("errors:quizz.failedToSave") ||
+              "Connexion perdue. Sauvegarde impossible.",
+            {
+              id: "quizz-save",
+            },
+          )
         }
 
         return
@@ -678,7 +740,7 @@ export const QuizzEditorProvider = ({
           const first = allErrors[0]
           toast.error(
             `Veuillez corriger les erreurs sur la diapositive ${first.index} : ${first.errors[0]}`,
-            { id: "quizz-save" }
+            { id: "quizz-save" },
           )
           return
         }
@@ -691,7 +753,11 @@ export const QuizzEditorProvider = ({
         tags: tags.length ? tags : undefined,
         salonImage: salonImage || undefined,
         listingImage: listingImage || undefined,
+        podiumTheme: podiumTheme || undefined,
         questions,
+        // `force` omet volontairement `updatedAt` : le serveur saute alors le
+        // contrôle de concurrence et écrase quoi qu'il arrive.
+        updatedAt: options?.force ? undefined : updatedAt,
       }
 
       const result = quizzValidator.safeParse(payload)
@@ -733,14 +799,17 @@ export const QuizzEditorProvider = ({
       tags,
       salonImage,
       listingImage,
+      podiumTheme,
       questions,
       quizzId,
+      updatedAt,
       t,
     ],
   )
 
-  useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id }) => {
+  useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id, updatedAt: newUpdatedAt }) => {
     setQuizzId(id)
+    setUpdatedAt(newUpdatedAt)
     setIsDirty(false)
     setIsSaving(false)
     setLastSaved(new Date())
@@ -752,7 +821,8 @@ export const QuizzEditorProvider = ({
     }
   })
 
-  useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, () => {
+  useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, ({ updatedAt: newUpdatedAt }) => {
+    setUpdatedAt(newUpdatedAt)
     setIsDirty(false)
     setIsSaving(false)
     setLastSaved(new Date())
@@ -767,10 +837,27 @@ export const QuizzEditorProvider = ({
   })
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
-    toast.error(t(message), { id: "quizz-save" })
     setPendingNavigation(false)
     setIsSaving(false)
+
+    if (message === "errors:quizz.conflict") {
+      toast.dismiss("quizz-save")
+      setSaveConflict(true)
+
+      return
+    }
+
+    toast.error(t(message), { id: "quizz-save" })
   })
+
+  const handleConflictOverwrite = () => {
+    setSaveConflict(false)
+    saveQuizz({ force: true })
+  }
+
+  const handleConflictReload = () => {
+    window.location.reload()
+  }
 
   // Recovery check on load
   useEffect(() => {
@@ -788,12 +875,18 @@ export const QuizzEditorProvider = ({
 
   const handleApplyRestore = () => {
     if (pendingRestore) {
-      if (pendingRestore.subject !== undefined) setSubject(pendingRestore.subject)
-      if (pendingRestore.description !== undefined) setDescription(pendingRestore.description)
+      if (pendingRestore.subject !== undefined)
+        setSubject(pendingRestore.subject)
+      if (pendingRestore.description !== undefined)
+        setDescription(pendingRestore.description)
       if (pendingRestore.folder !== undefined) setFolder(pendingRestore.folder)
       if (pendingRestore.tags !== undefined) setTags(pendingRestore.tags)
-      if (pendingRestore.salonImage !== undefined) setSalonImage(pendingRestore.salonImage)
-      if (pendingRestore.listingImage !== undefined) setListingImage(pendingRestore.listingImage)
+      if (pendingRestore.salonImage !== undefined)
+        setSalonImage(pendingRestore.salonImage)
+      if (pendingRestore.listingImage !== undefined)
+        setListingImage(pendingRestore.listingImage)
+      if (pendingRestore.podiumTheme !== undefined)
+        setPodiumTheme(pendingRestore.podiumTheme)
       if (pendingRestore.questions !== undefined) {
         setQuestions(pendingRestore.questions.map(toQuestionWithId))
       }
@@ -822,17 +915,35 @@ export const QuizzEditorProvider = ({
         tags,
         salonImage,
         listingImage,
+        podiumTheme,
         questions: questions.map(({ id, ...q }) => q),
       }
       try {
-        localStorage.setItem(`rahoot-backup-${quizzId}`, JSON.stringify(backupData))
+        localStorage.setItem(
+          `rahoot-backup-${quizzId}`,
+          JSON.stringify(backupData),
+        )
       } catch (err) {
-        console.warn("Failed to write to localStorage backup (likely quota exceeded due to large quiz size):", err)
+        console.warn(
+          "Failed to write to localStorage backup (likely quota exceeded due to large quiz size):",
+          err,
+        )
       }
     }, 3000)
 
     return () => clearTimeout(timer)
-  }, [isDirty, subject, description, folder, tags, salonImage, listingImage, questions, quizzId])
+  }, [
+    isDirty,
+    subject,
+    description,
+    folder,
+    tags,
+    salonImage,
+    listingImage,
+    podiumTheme,
+    questions,
+    quizzId,
+  ])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -847,9 +958,13 @@ export const QuizzEditorProvider = ({
   useEffect(() => {
     if (!isConnected && isSaving) {
       setIsSaving(false)
-      toast.error(t("errors:quizz.failedToSave") || "Connexion perdue. Sauvegarde impossible.", {
-        id: "quizz-save",
-      })
+      toast.error(
+        t("errors:quizz.failedToSave") ||
+          "Connexion perdue. Sauvegarde impossible.",
+        {
+          id: "quizz-save",
+        },
+      )
     }
   }, [isConnected, isSaving, t])
 
@@ -882,14 +997,20 @@ export const QuizzEditorProvider = ({
       }
 
       // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
-      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && (ctrl || e.altKey)) {
+      if (
+        (e.key === "ArrowUp" || e.key === "ArrowLeft") &&
+        (ctrl || e.altKey)
+      ) {
         if (currentIndex > 0) {
           e.preventDefault()
           reorderQuestions(currentIndex, currentIndex - 1)
         }
         return
       }
-      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && (ctrl || e.altKey)) {
+      if (
+        (e.key === "ArrowDown" || e.key === "ArrowRight") &&
+        (ctrl || e.altKey)
+      ) {
         if (currentIndex < questions.length - 1) {
           e.preventDefault()
           reorderQuestions(currentIndex, currentIndex + 1)
@@ -898,14 +1019,31 @@ export const QuizzEditorProvider = ({
       }
 
       // ─── Navigation entre slides (Flèches simples) ───
-      if ((e.key === "ArrowUp" || e.key === "ArrowLeft") && !ctrl && !e.altKey && !e.shiftKey) {
+      // Ignoré si un élément du canvas est sélectionné : les flèches doivent
+      // alors déplacer l'élément (géré localement dans SlideEditor), pas
+      // changer de slide.
+      if (selectedId) {
+        return
+      }
+
+      if (
+        (e.key === "ArrowUp" || e.key === "ArrowLeft") &&
+        !ctrl &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
         if (currentIndex > 0) {
           e.preventDefault()
           handleSetCurrentIndex(currentIndex - 1)
         }
         return
       }
-      if ((e.key === "ArrowDown" || e.key === "ArrowRight") && !ctrl && !e.altKey && !e.shiftKey) {
+      if (
+        (e.key === "ArrowDown" || e.key === "ArrowRight") &&
+        !ctrl &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
         if (currentIndex < questions.length - 1) {
           e.preventDefault()
           handleSetCurrentIndex(currentIndex + 1)
@@ -917,7 +1055,15 @@ export const QuizzEditorProvider = ({
     window.addEventListener("keydown", handler)
 
     return () => window.removeEventListener("keydown", handler)
-  }, [undo, redo, currentIndex, questions.length, reorderQuestions, handleSetCurrentIndex])
+  }, [
+    undo,
+    redo,
+    currentIndex,
+    questions.length,
+    reorderQuestions,
+    handleSetCurrentIndex,
+    selectedId,
+  ])
 
   return (
     <QuizzEditorContext.Provider
@@ -929,12 +1075,14 @@ export const QuizzEditorProvider = ({
         tags,
         salonImage,
         listingImage,
+        podiumTheme,
         setSubject: wrappedSetSubject,
         setDescription: wrappedSetDescription,
         setFolder: wrappedSetFolder,
         setTags: wrappedSetTags,
         setSalonImage: wrappedSetSalonImage,
         setListingImage: wrappedSetListingImage,
+        setPodiumTheme: wrappedSetPodiumTheme,
         questions,
         currentIndex,
         currentQuestion,
@@ -967,16 +1115,20 @@ export const QuizzEditorProvider = ({
       {/* Emergency Cache Recovery Prompt Modal */}
       {pendingRestore && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-panel border-border flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
             {/* Header */}
-            <div className="border-border flex items-center gap-2 border-b px-6 py-4 text-primary">
+            <div className="border-border text-primary flex items-center gap-2 border-b px-6 py-4">
               <RotateCcw className="size-5 shrink-0" />
-              <h3 className="text-ink text-base font-bold">Restauration de session</h3>
+              <h3 className="text-ink text-base font-bold">
+                Restauration de session
+              </h3>
             </div>
             {/* Body */}
             <div className="p-6 text-sm">
               <p className="text-ink-muted">
-                Des modifications locales non sauvegardées ont été trouvées dans le cache de votre navigateur pour ce quiz. Souhaitez-vous restaurer votre travail précédent ?
+                Des modifications locales non sauvegardées ont été trouvées dans
+                le cache de votre navigateur pour ce quiz. Souhaitez-vous
+                restaurer votre travail précédent ?
               </p>
             </div>
             {/* Footer */}
@@ -988,12 +1140,44 @@ export const QuizzEditorProvider = ({
               >
                 Ignorer et supprimer
               </Button>
+              <Button variant="primary" size="sm" onClick={handleApplyRestore}>
+                Restaurer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conflit de sauvegarde : le quiz a été modifié ailleurs entre-temps */}
+      {saveConflict && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
+            {/* Header */}
+            <div className="border-border text-danger flex items-center gap-2 border-b px-6 py-4">
+              <RotateCcw className="size-5 shrink-0" />
+              <h3 className="text-ink text-base font-bold">
+                Conflit de sauvegarde
+              </h3>
+            </div>
+            {/* Body */}
+            <div className="p-6 text-sm">
+              <p className="text-ink-muted">{t("errors:quizz.conflict")}</p>
+            </div>
+            {/* Footer */}
+            <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleConflictReload}
+              >
+                Recharger (perdre mes modifs)
+              </Button>
               <Button
                 variant="primary"
                 size="sm"
-                onClick={handleApplyRestore}
+                onClick={handleConflictOverwrite}
               >
-                Restaurer
+                Écraser quand même
               </Button>
             </div>
           </div>

@@ -1,5 +1,13 @@
-import { EVENTS } from "@rahoot/common/constants"
-import type { Answer, Award, GameResult, Player, Question } from "@rahoot/common/types/game"
+import { EVENTS, PODIUM_THEMES } from "@rahoot/common/constants"
+import type {
+  Answer,
+  Award,
+  GameResult,
+  Player,
+  PodiumThemeId,
+  PodiumThemeSetting,
+  Question,
+} from "@rahoot/common/types/game"
 import type { Socket } from "@rahoot/common/types/game/socket"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
@@ -220,6 +228,20 @@ export const detectTopTie = (leaderboard: Player[]): string[] | null => {
   return null
 }
 
+// Résout le thème visuel du podium : réglage du quiz s'il est précis, tirage
+// au sort sinon ("random", absent, ou thème retiré du catalogue encore stocké
+// dans un vieux quiz). Résolu UNE fois côté serveur pour que hôte et joueurs
+// voient le même thème.
+export const resolvePodiumTheme = (
+  setting?: PodiumThemeSetting,
+): PodiumThemeId => {
+  if (setting && (PODIUM_THEMES as readonly string[]).includes(setting)) {
+    return setting as PodiumThemeId
+  }
+
+  return PODIUM_THEMES[Math.floor(Math.random() * PODIUM_THEMES.length)]!
+}
+
 // Nombre minimum de réponses pour être éligible à l'award "sniper" (évite
 // qu'un joueur n'ayant répondu qu'une fois gagne par défaut).
 const MIN_ANSWERS_FOR_SNIPER = 3
@@ -228,7 +250,7 @@ const MIN_ANSWERS_FOR_SNIPER = 3
 // `comeback` est une heuristique APPROXIMATIVE (delta entre le rang au
 // premier quiz et le rang final cumulé, sans tenir compte des quiz
 // intermédiaires) — assumée, pas un calcul exact de progression.
-const hasValue = <T,>(v: T | null | undefined): v is T =>
+const hasValue = <T>(v: T | null | undefined): v is T =>
   v !== null && v !== undefined
 
 export const calculateAwards = (
@@ -273,7 +295,11 @@ export const calculateAwards = (
   }
 
   if (fastestPlayerName) {
-    awards.push({ type: "fastest", playerName: fastestPlayerName, value: fastestTimeMs })
+    awards.push({
+      type: "fastest",
+      playerName: fastestPlayerName,
+      value: fastestTimeMs,
+    })
   }
 
   let sniperName: string | null = null
@@ -331,7 +357,11 @@ export const calculateAwards = (
     })
 
     if (comebackName) {
-      awards.push({ type: "comeback", playerName: comebackName, value: comebackScore })
+      awards.push({
+        type: "comeback",
+        playerName: comebackName,
+        value: comebackScore,
+      })
     }
   }
 

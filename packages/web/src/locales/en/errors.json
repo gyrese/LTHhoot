@@ -32,6 +32,7 @@
   },
   "quizz": {
     "answerEmpty": "An answer cannot be empty",
+    "conflict": "This quizz was modified elsewhere since you last opened it",
     "failedToDelete": "Failed to delete quizz",
     "failedToSave": "Quizz is incomplete, make sure all questions have a title and at least one correct answer",
     "failedToUpdate": "Failed to update quizz",

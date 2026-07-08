@@ -304,8 +304,9 @@ app.get(
 
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
-  // 100MB
-  maxHttpBufferSize: 1e8,
+  // 5MB : les uploads d'images passent déjà par l'endpoint HTTP /upload (multer,
+  // limite 50MB), ce buffer ne sert plus qu'aux échanges JSON classiques du socket.
+  maxHttpBufferSize: 5 * 1024 * 1024,
   cors: {
     origin: process.env.ALLOWED_ORIGIN ?? "*",
     methods: ["GET", "POST"],

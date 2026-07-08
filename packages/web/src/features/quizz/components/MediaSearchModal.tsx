@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { X, Search, Upload, Image as ImageIcon, Film, Loader2, Sparkles, Check, Crop } from "lucide-react"
-import { useTranslation } from "react-i18next"
+import { X, Search, Upload, Image as ImageIcon, Film, Loader2, Check, Crop } from "lucide-react"
 import toast from "react-hot-toast"
 
 type Props = {
@@ -21,7 +20,6 @@ type MediaItem = {
 }
 
 const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
-  const { t } = useTranslation()
   const [tab, setTab] = useState<TabType>("upload")
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<MediaItem[]>([])
@@ -192,9 +190,6 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
           reject(new Error("Failed to get 2d context"))
           return
         }
-
-        let targetWidth = img.naturalWidth
-        let targetHeight = img.naturalHeight
 
         let cropWidth = img.naturalWidth
         let cropHeight = img.naturalHeight

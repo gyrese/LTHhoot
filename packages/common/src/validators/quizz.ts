@@ -1,4 +1,4 @@
-import { MEDIA_TYPES } from "@rahoot/common/constants"
+import { MEDIA_TYPES, PODIUM_THEMES } from "@rahoot/common/constants"
 import { z } from "zod"
 
 export const questionMediaValidator = z.object({
@@ -117,9 +117,7 @@ const openValidator = baseQuestionValidator.extend({
 
 const imageSequenceValidator = baseQuestionValidator.extend({
   type: z.literal("image_sequence"),
-  images: z
-    .array(z.string().min(1))
-    .min(1, "errors:quizz.tooFewImages"),
+  images: z.array(z.string().min(1)).min(1, "errors:quizz.tooFewImages"),
   correctAnswers: z
     .array(z.string().min(1, "errors:quizz.answerEmpty"))
     .min(1, "errors:quizz.tooFewCorrectAnswers"),
@@ -223,7 +221,14 @@ export const quizzValidator = z.object({
   tags: z.array(z.string()).optional(),
   salonImage: z.string().optional(),
   listingImage: z.string().optional(),
+  // .catch(undefined) : un thème retiré du catalogue (ex-"jurassic") déjà
+  // stocké sur disque retombe sur "aléatoire" au lieu d'invalider le quiz.
+  podiumTheme: z
+    .enum(["random", ...PODIUM_THEMES])
+    .optional()
+    .catch(undefined),
   questions: z.array(questionValidator).min(1, "errors:quizz.noQuestions"),
+  updatedAt: z.number().optional(),
 })
 
 export type QuizzValidated = z.infer<typeof quizzValidator>

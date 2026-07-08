@@ -24,7 +24,12 @@ import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
 import { TieBreakManager } from "@rahoot/socket/services/game/tie-break-manager"
 import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
-import { checkAnswer, detectTopTie, timeToPoint } from "@rahoot/socket/utils/game"
+import {
+  checkAnswer,
+  detectTopTie,
+  resolvePodiumTheme,
+  timeToPoint,
+} from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
 
@@ -309,8 +314,12 @@ export class RoundManager {
         gridCols: question.gridCols,
         gridRows: question.gridRows,
         revelationStyle: question.revelationStyle,
-        images: question.type === "image_sequence" ? question.images : undefined,
-        imageInterval: question.type === "image_sequence" ? (question.imageInterval ?? 5) : undefined,
+        images:
+          question.type === "image_sequence" ? question.images : undefined,
+        imageInterval:
+          question.type === "image_sequence"
+            ? (question.imageInterval ?? 5)
+            : undefined,
       })
 
       // Send solution to manager only
@@ -329,8 +338,12 @@ export class RoundManager {
         gridCols: question.gridCols,
         gridRows: question.gridRows,
         revelationStyle: question.revelationStyle,
-        images: question.type === "image_sequence" ? question.images : undefined,
-        imageInterval: question.type === "image_sequence" ? (question.imageInterval ?? 5) : undefined,
+        images:
+          question.type === "image_sequence" ? question.images : undefined,
+        imageInterval:
+          question.type === "image_sequence"
+            ? (question.imageInterval ?? 5)
+            : undefined,
         ...RoundManager.getQuestionSolutionData(question),
       })
 
@@ -405,8 +418,10 @@ export class RoundManager {
       // qu'elle soit répondue ou non — sinon un joueur qui ne répond jamais
       // reste gelé/mélangé indéfiniment aux questions suivantes.
       for (const player of this.opts.players.getAll()) {
-        const isFrozen = this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
-        const isScrambled = this.opts.powerUpManager?.consumeScrambled(player.id) ?? false
+        const isFrozen =
+          this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
+        const isScrambled =
+          this.opts.powerUpManager?.consumeScrambled(player.id) ?? false
 
         this.opts.send(player.id, STATUS.SELECT_ANSWER, {
           ...selectAnswerBase,
@@ -433,7 +448,7 @@ export class RoundManager {
       if (isOpenLike(question.type)) {
         this.showOpenAnswers(question)
       } else {
-        this.showResults(question)
+        void this.showResults(question)
       }
     } finally {
       this.acceptingAnswers = false
@@ -504,7 +519,10 @@ export class RoundManager {
     const normalized = text.trim().toLowerCase()
 
     // Les réponses d'origine du quiz sont verrouillées — on ne peut pas les désélectionner
-    if (isOpenLike(this.pendingOpenQuestion.type) && "correctAnswers" in this.pendingOpenQuestion) {
+    if (
+      isOpenLike(this.pendingOpenQuestion.type) &&
+      "correctAnswers" in this.pendingOpenQuestion
+    ) {
       const isOrigin = this.pendingOpenQuestion.correctAnswers.some(
         (ca) => ca.trim().toLowerCase() === normalized,
       )
@@ -526,7 +544,10 @@ export class RoundManager {
   }
 
   finalizeOpenAnswers(): void {
-    if (!this.pendingOpenQuestion || !isOpenLike(this.pendingOpenQuestion.type)) {
+    if (
+      !this.pendingOpenQuestion ||
+      !isOpenLike(this.pendingOpenQuestion.type)
+    ) {
       return
     }
 
@@ -537,10 +558,10 @@ export class RoundManager {
 
     this.pendingOpenQuestion = null
     this.pendingOpenCorrectAnswers = []
-    this.showResults(question)
+    void this.showResults(question)
   }
 
-  private showResults(question: Question): void {
+  private async showResults(question: Question): Promise<void> {
     const currentPlayers = this.opts.players.getAll()
 
     const oldLeaderboard = (() => {
@@ -608,15 +629,23 @@ export class RoundManager {
           playerAnswer.points = points
         }
 
-        points = this.opts.powerUpManager?.applyPointModifiers(player.id, points, isCorrect) ?? points
+        points =
+          this.opts.powerUpManager?.applyPointModifiers(
+            player.id,
+            points,
+            isCorrect,
+          ) ?? points
 
         player.points += points
         player.streak = isCorrect ? player.streak + 1 : 0
 
-        // Boutique : on gagne des pièces proportionnelles aux points de la manche.
-        if (this.opts.powerUpManager && points > 0) {
+        // Boutique : montant fixe par bonne réponse + bonus de série
+        // (player.streak vient d'être incrémenté juste au-dessus).
+        if (this.opts.powerUpManager && isCorrect) {
+          const streakBonus =
+            player.streak % SHOP.STREAK_LENGTH === 0 ? SHOP.STREAK_BONUS : 0
           player.goldCoins =
-            (player.goldCoins ?? 0) + Math.round(points * SHOP.COIN_RATE)
+            (player.goldCoins ?? 0) + SHOP.COINS_PER_CORRECT + streakBonus
         }
 
         return { ...player, lastCorrect: isCorrect, lastPoints: points }
@@ -741,6 +770,13 @@ export class RoundManager {
     )
 
     if (isOpenLike(question.type) && !hasRevealCard) {
+      // Ici, rien ne bloque l'avancement en attendant une action de l'hôte
+      // (contrairement à SHOW_RESPONSES, cf. commentaire ci-dessus) : sans
+      // cette pause, le SHOW_RESULT envoyé à chaque joueur juste au-dessus
+      // est immédiatement écrasé par le SHOW_PREPARED de la question
+      // suivante, et le joueur ne voit jamais les points qu'il vient de
+      // gagner (cas du repêchage d'une réponse ouverte notamment).
+      await sleep(3)
       this.showLeaderboard()
     } else {
       this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
@@ -907,9 +943,10 @@ export class RoundManager {
       // final avant toute émission FINISHED (cf. runTieBreakDuel). Uniquement
       // quand ce quiz décide le classement FINAL — pas entre deux quiz d'une
       // soirée, où le cumul peut encore bouger.
-      const tiedGroup = (this.opts.isFinalQuiz?.() ?? true)
-        ? detectTopTie(this.leaderboard)
-        : null
+      const tiedGroup =
+        (this.opts.isFinalQuiz?.() ?? true)
+          ? detectTopTie(this.leaderboard)
+          : null
 
       if (tiedGroup && tiedGroup.length >= 2) {
         void this.runTieBreakDuel(tiedGroup, gameResult)
@@ -959,7 +996,10 @@ export class RoundManager {
   // soirée). Point d'entrée UNIQUE vers la fin de partie — utilisé par le
   // chemin normal (showLeaderboard) ET par la résolution du duel de
   // départage, pour ne jamais dupliquer cette logique.
-  private finalizeGameResult(gameResult: GameResult, leaderboard: Player[]): void {
+  private finalizeGameResult(
+    gameResult: GameResult,
+    leaderboard: Player[],
+  ): void {
     const top = leaderboard.slice(0, 3)
 
     // Mode soirée : déléguer sans émettre STATUS.FINISHED — Game.
@@ -972,18 +1012,20 @@ export class RoundManager {
 
     this.opts.onGameFinished(gameResult)
 
-    this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, {
+    const base = {
       subject: this.opts.quizz.subject,
       top,
       totalPlayers: leaderboard.length,
-    })
+      // Thème résolu une seule fois : hôte et joueurs voient le même.
+      podiumTheme: resolvePodiumTheme(this.opts.quizz.podiumTheme),
+    }
+
+    this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, base)
 
     leaderboard.forEach((player, index) => {
       this.opts.send(player.id, STATUS.FINISHED, {
-        subject: this.opts.quizz.subject,
-        top,
+        ...base,
         rank: index + 1,
-        totalPlayers: leaderboard.length,
       })
     })
   }

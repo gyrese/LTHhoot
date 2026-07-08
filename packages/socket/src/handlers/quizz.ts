@@ -23,9 +23,9 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.SAVE,
     manager.withAuth(socket, (data) => {
       try {
-        const { id } = Config.saveQuizz(data)
+        const { id, updatedAt } = Config.saveQuizz(data)
 
-        socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id })
+        socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id, updatedAt })
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to save quizz:", error)
@@ -54,9 +54,9 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.UPDATE,
     manager.withAuth(socket, ({ id, ...data }) => {
       try {
-        const { id: newId } = Config.updateQuizz(id, data)
+        const { id: newId, updatedAt } = Config.updateQuizz(id, data)
 
-        socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId })
+        socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId, updatedAt })
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to update quizz:", error)

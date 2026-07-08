@@ -142,7 +142,17 @@
     "coverImageHint": "Add a cover image to make your kahoot stand out.",
     "upload": "Upload",
     "aiGenerate": "Generate",
-    "aiGenerateTooltip": "Automatically generate an image from the title"
+    "aiGenerateTooltip": "Automatically generate an image from the title",
+    "podiumThemeLabel": "Podium theme",
+    "podiumThemeHint": "Backdrop of the final ranking. \"Random\" picks one each game.",
+    "podiumThemes": {
+      "random": "Random",
+      "espace": "Space",
+      "jurassic": "Jurassic",
+      "manga": "Manga",
+      "science": "Science",
+      "heros": "Superheroes"
+    }
   },
   "titleQuizzPlaceholder": "Quizz title...",
   "tolerance": "Tolerance",

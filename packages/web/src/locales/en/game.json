@@ -1,6 +1,7 @@
 {
   "answerSent": "Answer sent!",
   "answerSendFailed": "Answer not sent — tap to retry",
+  "answerSending": "Sending your answer…",
   "correct": "Nice!",
   "false": "False",
   "gamePinLabel": "Game PIN:",

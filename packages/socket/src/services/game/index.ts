@@ -24,7 +24,11 @@ import {
   playerToSnapshot,
   snapshotToPlayer,
 } from "@rahoot/socket/services/persistence"
-import { calculateAwards, createInviteCode } from "@rahoot/socket/utils/game"
+import {
+  calculateAwards,
+  createInviteCode,
+  resolvePodiumTheme,
+} from "@rahoot/socket/utils/game"
 import { v4 as uuid } from "uuid"
 
 const registry = Registry.getInstance()
@@ -44,7 +48,11 @@ class Game {
   private readonly cooldown: CooldownTimer
   private readonly logger: GameLogger
   private readonly powerUpManager: PowerUpManager
-  private eveningSession: { quizIds: string[]; currentIndex: number; powerUpsEnabled: boolean } | null = null
+  private eveningSession: {
+    quizIds: string[]
+    currentIndex: number
+    powerUpsEnabled: boolean
+  } | null = null
   private singleQuizPowerUpsEnabled = false
   private disabledPowerUps: string[] = []
   // Accumulateur des résultats de chaque quiz d'une soirée — en mémoire
@@ -132,9 +140,7 @@ class Game {
     // Chemin restauration : aucun socket à rejoindre/notifier ici. La partie
     // attend que l'hôte et les joueurs se reconnectent par clientId.
     if (restore) {
-      console.log(
-        `Game restored: ${this.inviteCode} subject: ${quizz.subject}`,
-      )
+      console.log(`Game restored: ${this.inviteCode} subject: ${quizz.subject}`)
 
       return
     }
@@ -245,7 +251,8 @@ class Game {
         }
       },
       onEveningQuizFinished: isEvening
-        ? (result, leaderboard) => this.handleEveningQuizFinished(result, leaderboard)
+        ? (result, leaderboard) =>
+            this.handleEveningQuizFinished(result, leaderboard)
         : undefined,
       // Le duel de départage ne doit trancher que le classement FINAL : partie
       // simple = toujours, soirée = uniquement le dernier quiz (le cumul peut
@@ -253,7 +260,8 @@ class Game {
       isFinalQuiz: isEvening
         ? () =>
             !this.eveningSession ||
-            this.eveningSession.currentIndex + 1 >= this.eveningSession.quizIds.length
+            this.eveningSession.currentIndex + 1 >=
+              this.eveningSession.quizIds.length
         : () => true,
       // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
@@ -284,7 +292,10 @@ class Game {
   }
 
   private get powerUpsActive(): boolean {
-    return this.singleQuizPowerUpsEnabled || Boolean(this.eveningSession?.powerUpsEnabled)
+    return (
+      this.singleQuizPowerUpsEnabled ||
+      Boolean(this.eveningSession?.powerUpsEnabled)
+    )
   }
 
   private handleEveningQuizFinished(result: GameResult, leaderboard: Player[]) {
@@ -302,24 +313,27 @@ class Game {
     const isLastQuiz = currentIndex + 1 >= quizIds.length
 
     if (isLastQuiz) {
-      const top = leaderboard.slice(0, 3)
-      const awards = calculateAwards(this.eveningGameResults, leaderboard)
+      // Thème du podium final de soirée : réglage du dernier quiz joué.
+      const lastQuizz = Config.quizz().find(
+        (q) => q.id === quizIds[currentIndex],
+      )
+      const data = {
+        subject: result.subject,
+        top: leaderboard.slice(0, 3),
+        totalPlayers: leaderboard.length,
+        awards: calculateAwards(this.eveningGameResults, leaderboard),
+        podiumTheme: resolvePodiumTheme(lastQuizz?.podiumTheme),
+      }
 
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
         name: STATUS.FINISHED,
-        data: { subject: result.subject, top, totalPlayers: leaderboard.length, awards },
+        data,
       })
 
       leaderboard.forEach((player, index) => {
         this.io.to(player.id).emit(EVENTS.GAME.STATUS, {
           name: STATUS.FINISHED,
-          data: {
-            subject: result.subject,
-            top,
-            rank: index + 1,
-            totalPlayers: leaderboard.length,
-            awards,
-          },
+          data: { ...data, rank: index + 1 },
         })
       })
 
@@ -397,7 +411,10 @@ class Game {
       return
     }
 
-    if (!this.lastBroadcastStatus || this.lastBroadcastStatus.name !== STATUS.SHOW_ROOM) {
+    if (
+      !this.lastBroadcastStatus ||
+      this.lastBroadcastStatus.name !== STATUS.SHOW_ROOM
+    ) {
       return
     }
 
@@ -443,7 +460,10 @@ class Game {
 
     for (const q of result.questions) {
       for (const pa of q.playerAnswers) {
-        deltaByPlayer.set(pa.playerName, (deltaByPlayer.get(pa.playerName) ?? 0) + pa.points)
+        deltaByPlayer.set(
+          pa.playerName,
+          (deltaByPlayer.get(pa.playerName) ?? 0) + pa.points,
+        )
       }
     }
 
@@ -471,7 +491,9 @@ class Game {
 
     for (const player of leaderboard) {
       const correctAnswers = result.questions.filter((q) =>
-        q.playerAnswers.some((a) => a.playerName === player.username && a.points > 0),
+        q.playerAnswers.some(
+          (a) => a.playerName === player.username && a.points > 0,
+        ),
       ).length
 
       if (totalQuestions > 0 && correctAnswers === totalQuestions) {
@@ -514,7 +536,12 @@ class Game {
     }
 
     const players = this.playerManager.getAll()
-    const result = this.powerUpManager.usePowerUp(players, playerId, powerUpId, targetIds)
+    const result = this.powerUpManager.usePowerUp(
+      players,
+      playerId,
+      powerUpId,
+      targetIds,
+    )
 
     if (!result.success) {
       return
@@ -551,7 +578,9 @@ class Game {
 
         if (updated) {
           // Informer le manager des nouvelles valeurs de score pour rafraîchissement temps réel
-          this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, updated)
+          this.io
+            .to(`manager-${this.gameId}`)
+            .emit(EVENTS.MANAGER.NEW_PLAYER, updated)
         }
       }
     }
@@ -585,9 +614,7 @@ class Game {
 
   private logAndEmit(level: "info" | "warn" | "error", message: string) {
     const entry = this.logger.log(level, message)
-    this.io
-      .to(`manager-${this.gameId}`)
-      .emit(EVENTS.MANAGER.LOG_ENTRY, entry)
+    this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.LOG_ENTRY, entry)
   }
 
   // ── Status broadcasting ──────────────────────────────────────────────────
@@ -628,7 +655,9 @@ class Game {
       if (player) {
         player.goldCoins = SHOP.STARTING_COINS
         this.emitCoins(player)
-        this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+        this.io
+          .to(`manager-${this.gameId}`)
+          .emit(EVENTS.MANAGER.NEW_PLAYER, player)
       }
     }
   }
@@ -740,7 +769,9 @@ class Game {
     const oldSocketId = this._manager.id
 
     if (this._manager.connected && oldSocketId !== newSocketId) {
-      console.log(`[TAKEOVER] Manager takeover: ${oldSocketId} -> ${newSocketId}`)
+      console.log(
+        `[TAKEOVER] Manager takeover: ${oldSocketId} -> ${newSocketId}`,
+      )
       const oldSocket = this.io.sockets.sockets.get(oldSocketId)
 
       if (oldSocket) {
@@ -791,10 +822,14 @@ class Game {
     const player = this.playerManager.findByClientId(clientId)
     const newSocketId = socket.id
 
-    console.log(`[RECONNECT_START] clientId=${clientId.substring(0, 8)} newSocket=${newSocketId}`)
+    console.log(
+      `[RECONNECT_START] clientId=${clientId.substring(0, 8)} newSocket=${newSocketId}`,
+    )
 
     if (!player) {
-      console.warn(`[RECONNECT_REJECT] Player not found for clientId=${clientId}`)
+      console.warn(
+        `[RECONNECT_REJECT] Player not found for clientId=${clientId}`,
+      )
       socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
 
       return
@@ -803,10 +838,14 @@ class Game {
     const oldSocketId = player.id
     const isTimerActive = this.disconnectTimers.has(oldSocketId)
 
-    console.log(`[RECONNECT_TRACE] player=${player.username} oldSocket=${oldSocketId} connected=${player.connected} timerActive=${isTimerActive}`)
+    console.log(
+      `[RECONNECT_TRACE] player=${player.username} oldSocket=${oldSocketId} connected=${player.connected} timerActive=${isTimerActive}`,
+    )
 
     if (player.connected && oldSocketId !== newSocketId) {
-      console.log(`[TAKEOVER] Triggered for ${player.username} (${oldSocketId} -> ${newSocketId})`)
+      console.log(
+        `[TAKEOVER] Triggered for ${player.username} (${oldSocketId} -> ${newSocketId})`,
+      )
       const oldSocket = this.io.sockets.sockets.get(oldSocketId)
 
       if (oldSocket) {
@@ -816,7 +855,9 @@ class Game {
         // l'accueil = « déco sauvage ». On coupe juste le socket orphelin.
         oldSocket.disconnect(true)
       } else {
-        console.log(`[TAKEOVER] Old socket ${oldSocketId} already gone from memory`)
+        console.log(
+          `[TAKEOVER] Old socket ${oldSocketId} already gone from memory`,
+        )
       }
     }
 
@@ -837,7 +878,10 @@ class Game {
     this.powerUpManager.remap(oldSocketId, newSocketId)
     player.connected = true
 
-    const MANAGER_ONLY_STATUSES: Status[] = [STATUS.SHOW_ROOM, STATUS.SHOW_LEADERBOARD]
+    const MANAGER_ONLY_STATUSES: Status[] = [
+      STATUS.SHOW_ROOM,
+      STATUS.SHOW_LEADERBOARD,
+    ]
     const playerSpecific = this.playerStatus.get(oldSocketId)
     const liveStatus = (() => {
       const last = this.lastBroadcastStatus
@@ -845,7 +889,11 @@ class Game {
       if (!last || MANAGER_ONLY_STATUSES.includes(last.name)) {
         return {
           name: STATUS.WAIT,
-          data: { text: this.started ? "game:waitingForAnswers" : "game:waitingForPlayers" },
+          data: {
+            text: this.started
+              ? "game:waitingForAnswers"
+              : "game:waitingForPlayers",
+          },
         } as const
       }
 
@@ -859,7 +907,9 @@ class Game {
       this.playerStatus.set(newSocketId, oldStatus)
     }
 
-    console.log(`[RECONNECT_SUCCESS] Emitting SUCCESS_RECONNECT to ${newSocketId}`)
+    console.log(
+      `[RECONNECT_SUCCESS] Emitting SUCCESS_RECONNECT to ${newSocketId}`,
+    )
     socket.emit(EVENTS.PLAYER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
@@ -902,7 +952,10 @@ class Game {
       return
     }
 
-    this.logAndEmit("warn", "Manager absent — reset dans 30s si pas de reconnexion")
+    this.logAndEmit(
+      "warn",
+      "Manager absent — reset dans 30s si pas de reconnexion",
+    )
     console.log(
       `[DISCONNECT] Manager game=${this.inviteCode} → grace period 30s avant reset joueurs`,
     )
@@ -927,7 +980,10 @@ class Game {
         return
       }
 
-      this.logAndEmit("error", "Manager non reconnecté après 30s — session fermée")
+      this.logAndEmit(
+        "error",
+        "Manager non reconnecté après 30s — session fermée",
+      )
       console.log(
         `[TIMEOUT] Manager game=${this.inviteCode} → reset après 30s sans reconnexion`,
       )
@@ -955,10 +1011,15 @@ class Game {
     if (player) {
       // Purge de l'inventaire / effets / wins pour éviter les entrées orphelines.
       this.powerUpManager.removePlayer(socketId)
-      this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      this.io
+        .to(`manager-${this.gameId}`)
+        .emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
-      this.logAndEmit("warn", `${player.username} retiré (30s sans reconnexion)`)
+      this.logAndEmit(
+        "warn",
+        `${player.username} retiré (30s sans reconnexion)`,
+      )
       console.log(
         `[REMOVE] ${player.username} supprimé définitivement game=${this.inviteCode} joueurs restants=${this.playerManager.count()}`,
       )
@@ -1106,7 +1167,9 @@ class Game {
   endGame() {
     this.logAndEmit("warn", "Session fermée manuellement par le manager")
     console.log(`[END_GAME] Force closing session game=${this.inviteCode}`)
-    this.io.to(this.gameId).emit(EVENTS.GAME.RESET, "game:sessionClosedByManager")
+    this.io
+      .to(this.gameId)
+      .emit(EVENTS.GAME.RESET, "game:sessionClosedByManager")
     registry.removeGame(this.gameId)
   }
 }

@@ -1,4 +1,10 @@
-import type { MEDIA_TYPES } from "@rahoot/common/constants"
+import type { MEDIA_TYPES, PODIUM_THEMES } from "@rahoot/common/constants"
+
+// Thème concret du podium, jamais "random" (résolu côté serveur).
+export type PodiumThemeId = (typeof PODIUM_THEMES)[number]
+
+// Réglage stocké dans le quiz : un thème précis ou tirage au sort.
+export type PodiumThemeSetting = PodiumThemeId | "random"
 
 export type Player = {
   id: string
@@ -217,7 +223,9 @@ export type Quizz = {
   tags?: string[]
   salonImage?: string
   listingImage?: string
+  podiumTheme?: PodiumThemeSetting
   questions: Question[]
+  updatedAt?: number
 }
 
 export type QuizzWithId = Quizz & { id: string }

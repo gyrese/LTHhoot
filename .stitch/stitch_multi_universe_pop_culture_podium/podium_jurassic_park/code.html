@@ -1,0 +1,261 @@
+<!DOCTYPE html><html class="dark" lang="fr" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wght@700;800;900&amp;family=Plus+Jakarta+Sans:wght@400;500&amp;family=Geist:wght@700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdada",
+                    "surface-tint": "#f1c100",
+                    "primary": "#ffedc3",
+                    "on-tertiary-container": "#b60033",
+                    "surface-container": "#1f1f23",
+                    "surface-dim": "#131317",
+                    "surface-variant": "#353439",
+                    "error": "#ffb4ab",
+                    "on-primary": "#3d2f00",
+                    "inverse-surface": "#e4e1e7",
+                    "surface": "#131317",
+                    "on-surface-variant": "#d2c5ab",
+                    "surface-container-high": "#2a2a2e",
+                    "tertiary": "#ffe9e9",
+                    "on-secondary-fixed-variant": "#004f54",
+                    "inverse-primary": "#745b00",
+                    "outline-variant": "#4e4632",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed-dim": "#f1c100",
+                    "secondary-fixed": "#7df4ff",
+                    "secondary": "#d3fbff",
+                    "on-secondary": "#00363a",
+                    "on-tertiary": "#680019",
+                    "on-tertiary-fixed": "#40000c",
+                    "on-error": "#690005",
+                    "on-primary-fixed-variant": "#584400",
+                    "on-background": "#e4e1e7",
+                    "on-primary-container": "#6f5700",
+                    "primary-container": "#ffcc00",
+                    "inverse-on-surface": "#303034",
+                    "surface-container-low": "#1b1b1f",
+                    "secondary-container": "#00eefc",
+                    "surface-bright": "#39393d",
+                    "on-secondary-fixed": "#002022",
+                    "on-tertiary-fixed-variant": "#920027",
+                    "background": "#131317",
+                    "surface-container-lowest": "#0e0e12",
+                    "tertiary-fixed-dim": "#ffb3b5",
+                    "on-primary-fixed": "#241a00",
+                    "tertiary-container": "#ffc3c5",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#00dbe9",
+                    "surface-container-highest": "#353439",
+                    "on-secondary-container": "#00686f",
+                    "outline": "#9a9078",
+                    "on-surface": "#e4e1e7",
+                    "primary-fixed": "#ffe08b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "0.5rem",
+                    "stack-md": "1.5rem",
+                    "stack-lg": "3rem",
+                    "unit": "8px",
+                    "gutter": "1.5rem",
+                    "container-padding-desktop": "4rem",
+                    "container-padding-mobile": "1.5rem"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["anybody"],
+                    "headline-md": ["anybody"],
+                    "headline-lg": ["anybody"],
+                    "body-lg": ["plusJakartaSans"],
+                    "display-hero": ["anybody"],
+                    "display-hero-mobile": ["anybody"],
+                    "body-md": ["plusJakartaSans"],
+                    "label-caps": ["geist"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-lg": ["48px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "display-hero": ["72px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900"}],
+                    "display-hero-mobile": ["40px", {"lineHeight": "1.1", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["14px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .fossil-border {
+            position: relative;
+            padding: 12px;
+            background: linear-gradient(135deg, #4e4632 0%, #353439 100%);
+            mask: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10 L90 10 L90 90 L10 90 Z' fill='black'/%3E%3C/svg%3E");
+            clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .moss-texture {
+            background-image: radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.2) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 70%, rgba(21, 128, 61, 0.2) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary selection:text-on-primary overflow-hidden">
+<!-- Cinematic Background -->
+<div class="fixed inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background z-10"></div>
+<div class="w-full h-full bg-cover bg-center opacity-40 scale-110" data-alt="A cinematic, hyper-realistic dense prehistoric jungle at dawn, shrouded in thick amber-tinted mist. In the distance, the colossal silhouette of a Brachiosaurus is visible among towering fern trees and ancient palms. The color palette is dominated by deep forest greens, earthy browns, and glowing amber sunlight filtering through the canopy. The overall mood is mysterious, majestic, and atmospheric, perfectly capturing a high-stakes Jurassic environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBd2qF2PmOX1mrYDPicEYnMzn3zEcHm9va2dn8csatYlatUeRncoEwTP0MNQlElD6euVaYtITXE2TRzPwXV1F6NJJpT-PlrX9xr2dYzH5PXv-K-udWr0UvcOD64JLN0bUYe1mfsH3rGdrCOWvCagEGBDsWv6EXu81dmIHNTQ6QqMHcjkolD0RgYnZ79iq6pgZbUpxVhgKHemkbvGTjDsAx9tDN8GwLEXgWJeIMbJMT72anu-DzrjkEA')">
+</div>
+<!-- Atmospheric Particles -->
+<div class="absolute inset-0 z-20 pointer-events-none opacity-30">
+<script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const container = document.body;
+                    for(let i=0; i<30; i++) {
+                        let particle = document.createElement('div');
+                        particle.className = 'absolute bg-primary-fixed w-1 h-1 rounded-full blur-[1px]';
+                        particle.style.left = Math.random() * 100 + '%';
+                        particle.style.top = Math.random() * 100 + '%';
+                        particle.style.opacity = Math.random();
+                        particle.style.animation = `float ${5 + Math.random() * 5}s infinite`;
+                        container.appendChild(particle);
+                    }
+                });
+            </script>
+</div>
+</div>
+<!-- Navigation Header -->
+
+<!-- Main Content Stage -->
+<main class="relative z-30 min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-container-padding-mobile md:px-container-padding-desktop">
+<!-- Header Title -->
+<div class="text-center mb-stack-lg animate-float">
+<div class="flex items-center justify-center gap-4 mb-2">
+<div class="h-px w-12 bg-primary/40"></div>
+<span class="font-label-caps text-label-caps text-primary tracking-[0.3em]">JURASSIC EDITION</span>
+<div class="h-px w-12 bg-primary/40"></div>
+</div>
+<h2 class="font-display-hero text-display-hero-mobile md:text-display-hero text-primary-container drop-shadow-[0_0_15px_rgba(255,204,0,0.4)]">CLASSEMENT FINAL</h2>
+</div>
+<!-- Podium Grid -->
+<div class="w-full max-w-5xl grid grid-cols-3 items-end gap-2 md:gap-8 mt-12 h-[500px]">
+<!-- 2nd Place -->
+<div class="flex flex-col items-center group">
+<div class="mb-stack-md transition-transform duration-500 group-hover:-translate-y-4">
+<div class="fossil-border w-24 h-24 md:w-32 md:h-32 shadow-[0_0_20px_rgba(125,244,255,0.2)]">
+<img class="w-full h-full object-cover" data-alt="A high-quality 3D stylized avatar of a person wearing a rugged paleontologist hat and khaki vest, set against a blurred jungle background. The character has a confident expression. The lighting is warm and dramatic, highlighting the texture of the fabric and the fossilized amber frame around them." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9GaJFMYFysALYmYYAb-_3RhwvZqwN0--qBx9PpFLcBiwR6rqA0eexaoclUYbjKTU8Z72i4otOEzRNSumbEzVVmBfDpo_UFMOki7hs8xeMnTKU7N45BmpCEHAt9x6rmt_yuzJAcaGN5zv66QuL7zdeXSx1VYqOeKMefMyozx-5mwVgriLY7-2T_HfxB4NWjhYOeo75sQ13z8HCD1b7t--2FqA6bUEu8Rv3VUDngkdveYTzDMQ7NIzc">
+</div>
+</div>
+<div class="text-center mb-4">
+<p class="font-headline-md text-on-surface">DR. GRANT</p>
+<p class="font-label-caps text-secondary">2,850 PTS</p>
+</div>
+<div class="w-full h-48 bg-surface-variant border-x-4 border-t-4 border-outline-variant rounded-t-xl relative overflow-hidden shadow-2xl">
+<div class="absolute inset-0 moss-texture opacity-60"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-display-hero text-surface-dim opacity-30">2</span>
+</div>
+<div class="absolute top-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+</div>
+</div>
+<!-- 1st Place (The Winner) -->
+<div class="flex flex-col items-center z-10 group">
+<div class="mb-stack-md relative animate-float">
+<!-- Aura Glow -->
+<div class="absolute -inset-8 bg-primary/20 blur-3xl rounded-full animate-pulse"></div>
+<div class="fossil-border w-32 h-32 md:w-48 md:h-48 border-4 border-primary shadow-[0_0_40px_rgba(255,204,0,0.4)]" style="transform: rotate(0deg) scale(1);">
+<img class="w-full h-full object-cover" data-alt="A triumphant 3D stylized character of an explorer with a weathered leather satchel and a wide-brimmed hat, smiling broadly. The background is a glowing amber cave filled with crystalline formations. The avatar is framed by an ornate fossil-themed golden border that catches the cinematic lighting, emphasizing their first-place victory in a prehistoric adventure setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0gnxpoTBJgRFGouwCtGD-U_RyKYx6YAmUistA11gXHRlaOLjNXgq-Y9Ahuzq0xVzAyVgXLFURvlbaBV420g_8F1h-UkF5BGwQc-4aDrMJkgQaFo1TuomlvoxSKThtmepG0l4Qofv32OAidDCZ6XtpXNSP5RsbUD2732qN2QdoKGR6rsZO6hfkohBGTt_qNNrvVu4wehVEUmhgqUue2ARFOYbOJ-WX3jRYT9IgF-H6-IOM781b46_Q">
+</div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-primary-container text-on-primary-container px-4 py-1 rounded-full font-label-caps text-label-caps shadow-lg">
+                        CHAMPION
+                    </div>
+</div>
+<div class="text-center mb-6">
+<p class="font-headline-lg text-primary">DR. SATTLER</p>
+<p class="font-headline-md text-primary-fixed">3,420 PTS</p>
+</div>
+<div class="w-full h-72 bg-surface-container-high border-x-4 border-t-4 border-primary/40 rounded-t-2xl relative overflow-hidden shadow-[0_-10px_50px_rgba(255,204,0,0.15)]">
+<div class="absolute inset-0 moss-texture"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-display-hero text-primary/10">1</span>
+</div>
+<!-- Weathered Detail -->
+<div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] opacity-20"></div>
+<div class="absolute top-0 w-full h-4 bg-gradient-to-b from-primary/30 to-transparent"></div>
+</div>
+</div>
+<!-- 3rd Place -->
+<div class="flex flex-col items-center group">
+<div class="mb-stack-md transition-transform duration-500 group-hover:-translate-y-2">
+<div class="fossil-border w-20 h-20 md:w-28 md:h-28 shadow-[0_0_15px_rgba(255,179,181,0.1)]" style="transform: rotate(0deg) scale(1);">
+<img class="w-full h-full object-cover" data-alt="A cool 3D stylized avatar of a computer scientist with glasses and a tropical shirt, reminiscent of early 90s jungle expeditions. The lighting is cool blue and green, reflecting off the monitor in the background. The avatar is encased in a dark, stony fossil frame with realistic cracks and mossy patches." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCuDGqQil5fMKY816lIeFF-Gf8jVODWWksN4VsmpigAWe4oXcYA1QuggLmL42w0j0gWuCwduD70mdMfTbwe8lS-pyVE_udsUXE12AVQbI4RBqbxdNDb6hEYuBrE_2d1Pk2khkO425g2fN_fGgisTZ3nP5TM5KPpOiIafbCaPYUrFhJpZa5KxnMeerAS1zF8OV9xtOx76tqPRSPXs0FQ4CcX58C2Bb-J6d2ECheJG7l8ptJEP3h2-7g">
+</div>
+</div>
+<div class="text-center mb-4">
+<p class="font-headline-md text-on-surface">DR. MALCOLM</p>
+<p class="font-label-caps text-tertiary-fixed-dim">2,100 PTS</p>
+</div>
+<div class="w-full h-32 bg-surface-container border-x-4 border-t-4 border-outline-variant/60 rounded-t-lg relative overflow-hidden shadow-xl">
+<div class="absolute inset-0 moss-texture opacity-40"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-display-hero text-surface-dim opacity-20 text-4xl">3</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Leaderboard (The Rest) -->
+<div class="w-full max-w-2xl mt-12 space-y-2">
+<div class="grid grid-cols-[auto,1fr,auto] items-center gap-4 p-4 bg-surface-container-low/40 backdrop-blur-md rounded-xl border border-outline-variant/30 hover:bg-surface-container-high/60 transition-colors">
+<span class="font-label-caps text-on-surface-variant w-8">4</span>
+<span class="font-body-lg text-on-surface">Dennis Nedry</span>
+<span class="font-headline-md text-primary/80">1,840</span>
+</div>
+<div class="grid grid-cols-[auto,1fr,auto] items-center gap-4 p-4 bg-surface-container-low/40 backdrop-blur-md rounded-xl border border-outline-variant/30 hover:bg-surface-container-high/60 transition-colors">
+<span class="font-label-caps text-on-surface-variant w-8">5</span>
+<span class="font-body-lg text-on-surface">John Hammond</span>
+<span class="font-headline-md text-primary/80">1,520</span>
+</div>
+</div>
+<!-- Call to Action -->
+<div class="mt-stack-lg flex gap-4">
+<button class="bg-primary-container text-on-primary-container font-label-caps text-label-caps px-12 py-5 rounded-lg shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">replay</span>
+                PLAY AGAIN
+            </button>
+<button class="bg-surface-container-high/80 text-on-surface font-label-caps text-label-caps px-8 py-5 rounded-lg border border-outline-variant hover:bg-surface-variant transition-all">
+                VIEW RECAP
+            </button>
+</div>
+</main>
+<!-- Footer Status -->
+
+<script>
+        // Micro-interaction for hover states
+        document.querySelectorAll('.fossil-border').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                el.style.transform = 'rotate(2deg) scale(1.05)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'rotate(0deg) scale(1)';
+            });
+        });
+    </script>
+</body></html>

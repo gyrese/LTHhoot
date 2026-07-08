@@ -1,0 +1,243 @@
+<!DOCTYPE html><html class="dark" lang="fr" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TRIVIA SHOWDOWN - REMISE DES PRIX</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wght@700;800;900&amp;family=Plus+Jakarta+Sans:wght@400;500&amp;family=Geist:wght@700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=anybody:wght@100..900&amp;family=geist:wght@100..900&amp;family=plusJakartaSans:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdada",
+                    "surface-tint": "#f1c100",
+                    "primary": "#ffedc3",
+                    "on-tertiary-container": "#b60033",
+                    "surface-container": "#1f1f23",
+                    "surface-dim": "#131317",
+                    "surface-variant": "#353439",
+                    "error": "#ffb4ab",
+                    "on-primary": "#3d2f00",
+                    "inverse-surface": "#e4e1e7",
+                    "surface": "#131317",
+                    "on-surface-variant": "#d2c5ab",
+                    "surface-container-high": "#2a2a2e",
+                    "tertiary": "#ffe9e9",
+                    "on-secondary-fixed-variant": "#004f54",
+                    "inverse-primary": "#745b00",
+                    "outline-variant": "#4e4632",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed-dim": "#f1c100",
+                    "secondary-fixed": "#7df4ff",
+                    "secondary": "#d3fbff",
+                    "on-secondary": "#00363a",
+                    "on-tertiary": "#680019",
+                    "on-tertiary-fixed": "#40000c",
+                    "on-error": "#690005",
+                    "on-primary-fixed-variant": "#584400",
+                    "on-background": "#e4e1e7",
+                    "on-primary-container": "#6f5700",
+                    "primary-container": "#ffcc00",
+                    "inverse-on-surface": "#303034",
+                    "surface-container-low": "#1b1b1f",
+                    "secondary-container": "#00eefc",
+                    "surface-bright": "#39393d",
+                    "on-secondary-fixed": "#002022",
+                    "on-tertiary-fixed-variant": "#920027",
+                    "background": "#131317",
+                    "surface-container-lowest": "#0e0e12",
+                    "tertiary-fixed-dim": "#ffb3b5",
+                    "on-primary-fixed": "#241a00",
+                    "tertiary-container": "#ffc3c5",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#00dbe9",
+                    "surface-container-highest": "#353439",
+                    "on-secondary-container": "#00686f",
+                    "outline": "#9a9078",
+                    "on-surface": "#e4e1e7",
+                    "primary-fixed": "#ffe08b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "0.5rem",
+                    "stack-md": "1.5rem",
+                    "stack-lg": "3rem",
+                    "unit": "8px",
+                    "gutter": "1.5rem",
+                    "container-padding-desktop": "4rem",
+                    "container-padding-mobile": "1.5rem"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["anybody"],
+                    "headline-md": ["anybody"],
+                    "headline-lg": ["anybody"],
+                    "body-lg": ["plusJakartaSans"],
+                    "display-hero": ["anybody"],
+                    "display-hero-mobile": ["anybody"],
+                    "body-md": ["plusJakartaSans"],
+                    "label-caps": ["geist"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-lg": ["48px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "display-hero": ["72px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900"}],
+                    "display-hero-mobile": ["40px", {"lineHeight": "1.1", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["14px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        @keyframes speedLines {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+        .manga-speed-lines {
+            background-image: radial-gradient(circle, transparent 20%, black 20%, black 21%, transparent 21%, transparent 30%, black 30%, black 31%, transparent 31%);
+            background-size: 10px 10px;
+            animation: speedLines 0.2s infinite linear;
+        }
+        .impact-star {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .halftone-bg {
+            background-image: radial-gradient(#000 10%, transparent 11%);
+            background-size: 8px 8px;
+        }
+        .diagonal-stripes {
+            background: repeating-linear-gradient(45deg, #ffcc00, #ffcc00 10px, #000 10px, #000 20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden">
+<!-- THEME BACKGROUND -->
+<div class="fixed inset-0 z-0">
+<!-- Cel-shaded Cityscape -->
+<div class="absolute inset-0 bg-cover bg-center grayscale contrast-125 opacity-40" data-alt="A cinematic, cel-shaded Japanese cityscape at night with glowing red and yellow neon signs, thick black outlines, and dramatic perspective. The style is inspired by modern high-octane anime like Promare or Spider-Verse, featuring sharp geometric shapes and intense tonal contrast between deep blacks and vibrant primary colors. Large halftone patterns and ink-splatter textures are visible in the shadows of the skyscrapers." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDYLm-POI1zS8nvW0cRl6S_zZVVuCTfklAI8RjMjCigcwDeoIL0O1PzMTHIhQiMjVvI9y_dtc4dFBVEfO9e-TdhbIVmtGjA5qS6RH3a-aqBP84fgzpmlveStfDT22KaiWoxiCzcEqoET1-us_NF975gtvVharAQ0PlUxA51qbvFhF9RET_rhhwkUjjtXrgHdujZFlvAeMGwLR4W-ugZLRb5MoWMmi24tw9nfOJ_ctV-XDfvRAvAN6_C')">
+</div>
+<!-- Speed Lines Overlay -->
+<div class="absolute inset-0 opacity-20 pointer-events-none manga-speed-lines"></div>
+<!-- Gradient Vignette -->
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50"></div>
+</div>
+<!-- SHARED TOP APP BAR (The Anchor) -->
+
+<!-- MAIN STAGE (Winner's Podium) -->
+<main class="relative z-10 min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-container-padding-mobile md:px-container-padding-desktop">
+<!-- HEADER TEXT -->
+<div class="text-center mb-stack-lg animate-bounce">
+<span class="inline-block bg-primary-container text-on-primary-container px-4 py-1 font-label-caps text-label-caps rounded-full mb-stack-sm border-2 border-black">
+                MATCH TERMINÉ
+            </span>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase italic drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] tracking-tighter">CLASSEMENT FINAL - MANGA</h2>
+</div>
+<!-- PODIUM GRID -->
+<div class="w-full max-w-5xl grid grid-cols-3 items-end gap-2 md:gap-stack-md mt-12">
+<!-- 2nd Place -->
+<div class="flex flex-col items-center group">
+<div class="relative mb-stack-md">
+<!-- Burst Frame -->
+<div class="absolute -inset-4 bg-secondary-container impact-star animate-pulse opacity-50 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black overflow-hidden ring-4 ring-secondary-container/50">
+<img class="w-full h-full object-cover" data-alt="A stylized anime portrait of a cool female character with bright blue hair, wearing a high-tech visor and a yellow streetwear jacket. The character is drawn with bold ink outlines, vibrant cel-shading, and an expressive, determined look. The background of the avatar is a yellow starburst pattern with halftone dots." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBe8Fw_R5JXGBN-iuf_1BxBH-UiFMWL_edR2H1ScQ8kOAEnFYnmm1uoOff2MrY9FS0PVEOvz-hl-u0sznpFPLAh6jiaMCf89Ui0sABZ3AtYyXWoe45OB-Nyvh8VMg8BIxPxUAjQ5ubeOn1tTeUORPJG98saRLChK7_1JlTIERkSwj4h0B0KEtTCCzpsQWxUZDhT0QW64qIL5OJeWC7xNLY5wjVGB_7XsT-iK7qBxnitDRMMojxROzxh">
+</div>
+<div class="absolute -bottom-2 -right-2 bg-black text-secondary-container font-headline-md text-headline-md px-3 border-2 border-secondary-container transform rotate-12">2</div>
+</div>
+<div class="w-full h-32 md:h-48 bg-surface-container-high border-x-4 border-t-4 border-black relative overflow-hidden group-hover:translate-y-[-10px] transition-transform">
+<div class="absolute inset-0 halftone-bg opacity-10"></div>
+<div class="absolute bottom-0 w-full h-2 bg-secondary-container"></div>
+<div class="p-4 text-center">
+<p class="font-label-caps text-label-caps text-on-surface-variant truncate">SORA_TECH</p>
+<p class="font-headline-md text-headline-md text-secondary-container">1,850 pts</p>
+</div>
+</div>
+</div>
+<!-- 1st Place (The Hero) -->
+<div class="flex flex-col items-center group relative z-20">
+<!-- KA-POW EFFECT -->
+<div class="absolute -top-16 -right-12 md:-top-24 md:-right-20 z-30 transform rotate-12 pointer-events-none scale-75 md:scale-100">
+<div class="bg-on-tertiary-container text-primary-container font-display-hero-mobile text-display-hero-mobile px-6 py-2 border-4 border-black skew-x-12 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+                        WIN!
+                    </div>
+</div>
+<div class="relative mb-stack-md">
+<!-- Massive Aura -->
+<div class="absolute -inset-10 bg-primary-container impact-star animate-ping opacity-20"></div>
+<div class="absolute -inset-6 bg-primary-container impact-star animate-pulse opacity-60"></div>
+<div class="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-8 border-black overflow-hidden ring-8 ring-primary-container/80 z-10 scale-110 shadow-[0_0_50px_rgba(255,204,0,0.4)]">
+<img class="w-full h-full object-cover" data-alt="An epic anime character portrait of a powerful protagonist with spiky golden hair and glowing eyes. The character wears a red and black combat suit. The art style features intense line work, dramatic shadows, and glowing energy particles. The character has a confident, triumphant smirk. Background is a red radial burst." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVyxxeFxih7H_QaEIIjLtWU3IP57omHmQOm6pxSLaDsZfheejWVpQmU_O7tYx-L5tGd-5w7c2_g3ZzpyUfFeUPOMZ31yuA2PCeYZFze3yCiw65imwGFmAiuh2gauzocxgALIj8ul8JbBpgOBzHngLvmf06OxU5AJBI28D7BxA2fxhWgKtKeRcmyfSEBb02yM-yX__lWdI6ldf_yqC5evBbvGPlWIVIdVe1HNl6DwcSADl_yRxwKsxZ">
+</div>
+<div class="absolute -bottom-4 -right-4 bg-primary-container text-black font-display-hero-mobile text-display-hero-mobile px-5 border-4 border-black transform -rotate-6 z-20">1</div>
+</div>
+<div class="w-full h-48 md:h-72 bg-surface-container-highest border-x-4 border-t-4 border-black relative overflow-hidden group-hover:translate-y-[-15px] transition-all duration-300">
+<div class="absolute inset-0 diagonal-stripes opacity-10"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary-container/20 to-transparent"></div>
+<div class="absolute bottom-0 w-full h-4 bg-primary-container"></div>
+<div class="p-6 text-center">
+<p class="font-headline-md text-headline-md text-primary tracking-widest uppercase italic drop-shadow-md">KAIZEN_99</p>
+<p class="font-display-hero-mobile text-display-hero-mobile text-primary-container drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">2,400 pts</p>
+</div>
+</div>
+</div>
+<!-- 3rd Place -->
+<div class="flex flex-col items-center group">
+<div class="relative mb-stack-md">
+<div class="absolute -inset-4 bg-tertiary-container impact-star animate-pulse opacity-30 group-hover:opacity-80 transition-opacity"></div>
+<div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black overflow-hidden ring-4 ring-tertiary-container/50">
+<img class="w-full h-full object-cover" data-alt="A cute but fierce anime character portrait, a young boy with dark green messy hair and a red headband, wearing a tattered martial arts uniform. Style is bold cel-shading with heavy black outlines and vibrant pop-art elements. The background is a green halftone pattern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsd3Pb4oV289Lg96WGkEh20dpVL6DrPrsus9w-EIb90LJucABTWs4LAs6AI88Oa35Ugh53ww6_K95XAcErp3PWk1TKChLBwWuOr8GM1MZJKi2OouPTTXag2S9UOokSlHnFL3p4bdRtyHVdNi4WXVRkSOXeKAU2uPDM-gquX2dSM_YJ63ImxPfNPeqm4CU6PGxpESh7l22LMV1HC9WJoPJBmOqdOj4Yy8juN59shJre0Xb_9uH8LQxZ">
+</div>
+<div class="absolute -bottom-2 -right-2 bg-black text-tertiary-container font-headline-md text-headline-md px-3 border-2 border-tertiary-container transform rotate-12">3</div>
+</div>
+<div class="w-full h-24 md:h-36 bg-surface-container-high border-x-4 border-t-4 border-black relative overflow-hidden group-hover:translate-y-[-5px] transition-transform">
+<div class="absolute inset-0 halftone-bg opacity-10"></div>
+<div class="absolute bottom-0 w-full h-2 bg-tertiary-container"></div>
+<div class="p-4 text-center">
+<p class="font-label-caps text-label-caps text-on-surface-variant truncate">NEO_CHIBI</p>
+<p class="font-headline-md text-headline-md text-tertiary-container">1,420 pts</p>
+</div>
+</div>
+</div>
+</div>
+<!-- CALL TO ACTION -->
+<div class="mt-stack-lg flex gap-stack-md">
+<button class="group relative px-8 py-4 bg-primary-container text-black font-headline-md text-headline-md border-4 border-black hover:scale-105 active:scale-95 transition-all">
+<span class="relative z-10">CONTINUER</span>
+<div class="absolute top-1 left-1 w-full h-full bg-black -z-10 group-hover:top-0 group-hover:left-0 transition-all"></div>
+</button>
+<button class="group relative px-8 py-4 bg-surface-container text-on-surface font-headline-md text-headline-md border-4 border-black hover:scale-105 active:scale-95 transition-all">
+<span class="relative z-10">REJOUER</span>
+<div class="absolute top-1 left-1 w-full h-full bg-black -z-10 group-hover:top-0 group-hover:left-0 transition-all"></div>
+</button>
+</div>
+</main>
+<!-- FOOTER (The Foundation) -->
+
+<!-- INTERACTION SCRIPTS -->
+<script>
+        // Micro-interactions for the manga feel
+        document.addEventListener('mousemove', (e) => {
+            const lines = document.querySelector('.manga-speed-lines');
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            lines.style.transform = `translate(${x}px, ${y}px)`;
+        });
+
+        // Trigger celebratory particles on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Trivia Showdown Podium Loaded: Manga Edition');
+        });
+    </script>
+</body></html>

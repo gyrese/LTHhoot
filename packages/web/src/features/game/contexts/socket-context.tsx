@@ -225,6 +225,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return Boolean(playerGameId || managerGameId)
   })
 
+  const isReconnectingRef = useRef(isReconnecting)
+  useEffect(() => {
+    isReconnectingRef.current = isReconnecting
+  }, [isReconnecting])
+
   // Création SYNCHRONE du socket via un ref lazy : il est disponible dès le 1er
   // rendu. Auparavant il était créé dans un useEffect (donc null au 1er rendu),
   // empêchant le montage du layout (fond sombre) ET du loader → écran BLANC
@@ -264,7 +269,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   // Socket.IO attendre son backoff (timers gelés en arrière-plan par l'OS) ni
   // son ping timeout (~20s) pour découvrir que le lien est mort. On vérifie
   // immédiatement : déconnecté → connect() direct ; « connecté » → sonde ping
-  // ack 3s, sans réponse → recyclage de la connexion. C'est ce qui ramène un
+  // ack 7s, sans réponse → recyclage de la connexion. C'est ce qui ramène un
   // joueur qui rallume son téléphone dans la partie en ~1s au lieu de 8–45s.
   useEffect(() => {
     if (!socket) {
@@ -274,7 +279,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     let lastProbe = 0
 
     const verifyLiveness = () => {
-      if (document.visibilityState === "hidden") {
+      if (document.visibilityState === "hidden" || isReconnectingRef.current) {
         return
       }
 
@@ -290,19 +295,22 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       // Anti-rafale : online + pageshow + visibilitychange peuvent tirer en même temps.
       const now = Date.now()
 
-      if (now - lastProbe < 2000) {
+      if (now - lastProbe < 3000) {
         return
       }
 
       lastProbe = now
 
-      socket.timeout(3000).emit(EVENTS.CONNECTION.PING, (err) => {
+      console.log("[WATCHDOG] Envoi sonde de vivacité...")
+      socket.timeout(7000).emit(EVENTS.CONNECTION.PING, (err) => {
         if (err) {
           console.warn(
             "[WATCHDOG] Sonde de vivacité sans réponse → recyclage de la connexion",
           )
           socket.disconnect()
           socket.connect()
+        } else {
+          console.log("[WATCHDOG] Sonde de vivacité OK")
         }
       })
     }

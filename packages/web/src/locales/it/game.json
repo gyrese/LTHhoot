@@ -1,6 +1,7 @@
 {
   "answerSent": "Risposta inviata!",
   "answerSendFailed": "Risposta non inviata — tocca per riprovare",
+  "answerSending": "Invio della risposta…",
   "correct": "Bravo!",
   "false": "Falso",
   "gamePinLabel": "PIN del gioco:",

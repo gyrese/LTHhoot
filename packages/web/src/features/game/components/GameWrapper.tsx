@@ -1,6 +1,11 @@
 import { EVENTS } from "@rahoot/common/constants"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
-import { POWER_UP_CATALOG, POWER_UP_TYPE, type PowerUp, type PowerUpType } from "@rahoot/common/types/powerup"
+import {
+  POWER_UP_CATALOG,
+  POWER_UP_TYPE,
+  type PowerUp,
+  type PowerUpType,
+} from "@rahoot/common/types/powerup"
 import background from "@rahoot/web/assets/background.png"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
 import {
@@ -21,10 +26,17 @@ import ShopDrawer from "@rahoot/web/features/game/components/ShopDrawer"
 import useWakeLock from "@rahoot/web/features/game/hooks/useWakeLock"
 import clsx from "clsx"
 import { Coins } from "lucide-react"
-import { createContext, useContext, type PropsWithChildren, useEffect, useState } from "react"
+import {
+  createContext,
+  useContext,
+  type PropsWithChildren,
+  useEffect,
+  useState,
+} from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 import { AnimatePresence, motion } from "motion/react"
+import { stateTransition } from "@rahoot/web/features/game/utils/motion"
 
 type EveningLeaderboardEntry = {
   id: string
@@ -75,7 +87,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [shopOpen, setShopOpen] = useState(false)
   const [isEveningFinale, setIsEveningFinale] = useState(false)
-  const [otherPlayers, setOtherPlayers] = useState<{ id: string; username: string; avatar?: string }[]>([])
+  const [otherPlayers, setOtherPlayers] = useState<
+    { id: string; username: string; avatar?: string }[]
+  >([])
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const activeGameId = managerGameId ?? playerGameId
 
@@ -119,12 +133,15 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     setPowerUps(inventory)
   })
 
-  useEvent(EVENTS.POWER_UP.COINS, ({ coins: balance, disabledPowerUps: list }) => {
-    setCoins(balance)
-    if (list) {
-      setDisabledPowerUps(list)
-    }
-  })
+  useEvent(
+    EVENTS.POWER_UP.COINS,
+    ({ coins: balance, disabledPowerUps: list }) => {
+      setCoins(balance)
+      if (list) {
+        setDisabledPowerUps(list)
+      }
+    },
+  )
 
   // Demander l'inventaire au mount et aux changements de phase (joueur uniquement)
   useEffect(() => {
@@ -138,7 +155,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   useEvent(EVENTS.PLAYER.SUCCESS_RECONNECT, (data) => {
     if (data.players) {
       const currentUsername = player?.username || data.player.username
-      setOtherPlayers(data.players.filter((p) => p.username !== currentUsername))
+      setOtherPlayers(
+        data.players.filter((p) => p.username !== currentUsername),
+      )
     }
   })
 
@@ -147,11 +166,17 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     // affichés si ce n'est pas le joueur concerné ou le manager
     const meta = POWER_UP_CATALOG[effect.type]
 
-    if (meta?.target === "SELF" && !manager && effect.activatedByUsername !== player?.username) {
+    if (
+      meta?.target === "SELF" &&
+      !manager &&
+      effect.activatedByUsername !== player?.username
+    ) {
       return
     }
 
-    toast.custom(() => <PowerUpEffectToast effect={effect} />, { duration: 4000 })
+    toast.custom(() => <PowerUpEffectToast effect={effect} />, {
+      duration: 4000,
+    })
 
     // Flash fullscreen pour les effets globaux légendaires
     if (effect.type === POWER_UP_TYPE.APOCALYPSE) {
@@ -161,7 +186,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
     // Si on est un joueur et qu'on fait partie des victimes, on met à jour nos points
     if (!manager && player) {
-      const affectedSelf = effect.affectedPlayers.find((p) => p.username === player.username)
+      const affectedSelf = effect.affectedPlayers.find(
+        (p) => p.username === player.username,
+      )
 
       if (affectedSelf) {
         const currentPoints = player.points ?? 0
@@ -313,7 +340,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const isRoomScreen = !statusName || statusName === STATUS.SHOW_ROOM
 
   return (
-    <GameConfigContext.Provider value={{ isHost: Boolean(manager), isEveningFinale }}>
+    <GameConfigContext.Provider
+      value={{ isHost: Boolean(manager), isEveningFinale }}
+    >
       <section
         className="relative flex h-dvh flex-col overflow-hidden bg-slate-950"
         style={
@@ -363,8 +392,21 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                 )}
               </div>
 
-              {/* Contenu principal */}
-              {children}
+              {/* Contenu principal. Fondu enchaîné : sortie et entrée se
+                  chevauchent (mode par défaut, pas "wait") — sinon l'ancien
+                  état disparaît avant que le nouveau soit visible et on voit
+                  le fond générique du conteneur pendant l'intervalle.
+                  `absolute inset-0` fait se superposer les deux états
+                  pendant le chevauchement au lieu de s'empiler dans le flex. */}
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={statusName ?? "none"}
+                  className="absolute inset-0 flex flex-col"
+                  {...stateTransition()}
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
 
               {/* PIN de la partie affiché en bas à gauche de l'écran principal (projecteur) pour reconnexion rapide */}
               {manager && !isRoomScreen && inviteCode && (
@@ -462,7 +504,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   {coins !== null && (
                     <button
                       onClick={() => setShopOpen(true)}
-                      className="ring-1 flex shrink-0 items-center gap-1 rounded-lg bg-yellow-500/20 px-2.5 py-1.5 text-sm font-black text-yellow-300 ring-yellow-500/40 transition-colors hover:bg-yellow-500/30 active:scale-95"
+                      className="flex shrink-0 items-center gap-1 rounded-lg bg-yellow-500/20 px-2.5 py-1.5 text-sm font-black text-yellow-300 ring-1 ring-yellow-500/40 transition-colors hover:bg-yellow-500/30 active:scale-95"
                       title={t("game:shop.open")}
                     >
                       <Coins className="size-4" />
@@ -471,7 +513,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   )}
                   {/* Power-ups inline */}
                   {powerUps.length > 0 && (
-                    <PowerUpBar powerUps={powerUps} onUse={handleUsePowerUp} compact />
+                    <PowerUpBar
+                      powerUps={powerUps}
+                      onUse={handleUsePowerUp}
+                      compact
+                    />
                   )}
                   {/* Points */}
                   <div className="anim-pop-in bg-primary/20 text-primary ring-primary/40 shrink-0 rounded-lg px-3 py-1.5 text-sm font-black ring-1">

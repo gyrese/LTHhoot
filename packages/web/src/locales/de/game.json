@@ -1,6 +1,7 @@
 {
   "answerSent": "Antwort gesendet!",
   "answerSendFailed": "Antwort nicht gesendet – zum Wiederholen tippen",
+  "answerSending": "Antwort wird gesendet…",
   "correct": "Richtig!",
   "false": "Falsch",
   "gamePinLabel": "Spiel-PIN:",

@@ -143,7 +143,17 @@
     "coverImageHint": "Ajoute une image de couverture pour permettre à ton kahoot de se démarquer.",
     "upload": "Importer",
     "aiGenerate": "Générer",
-    "aiGenerateTooltip": "Générer une image automatiquement depuis le titre"
+    "aiGenerateTooltip": "Générer une image automatiquement depuis le titre",
+    "podiumThemeLabel": "Thème du podium",
+    "podiumThemeHint": "Décor du classement final. « Aléatoire » en tire un au sort à chaque partie.",
+    "podiumThemes": {
+      "random": "Aléatoire",
+      "espace": "Espace",
+      "jurassic": "Jurassique",
+      "manga": "Manga",
+      "science": "Science",
+      "heros": "Super-héros"
+    }
   },
   "titleQuizzPlaceholder": "Titre du quizz...",
   "tolerance": "Tolérance",

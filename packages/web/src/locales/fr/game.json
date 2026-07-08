@@ -1,6 +1,7 @@
 {
   "answerSent": "Réponse envoyée !",
   "answerSendFailed": "Réponse non envoyée — touche pour réessayer",
+  "answerSending": "Envoi de ta réponse…",
   "correct": "Bravo !",
   "false": "Faux",
   "gamePinLabel": "PIN de la partie :",

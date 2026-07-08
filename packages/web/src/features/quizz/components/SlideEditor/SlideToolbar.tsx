@@ -8,8 +8,6 @@ import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor
 import {
   Type,
   Square,
-  Upload,
-  Link,
   Play,
   Trash2,
   BringToFront,
@@ -17,8 +15,6 @@ import {
   AlignCenter,
   Bold,
   Expand,
-  X,
-  Check,
   Undo2,
   Redo2,
   AlignLeft,
@@ -64,8 +60,6 @@ const SlideToolbar = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [showYoutubePanel, setShowYoutubePanel] = useState(false)
-  const [showUrlInput, setShowUrlInput] = useState(false)
-  const [urlValue, setUrlValue] = useState("")
   const [showMediaModal, setShowMediaModal] = useState(false)
 
   const elements = currentQuestion.elements || []
@@ -85,37 +79,6 @@ const SlideToolbar = () => {
     const el = createShapeElement()
     handleUpdateElements([...elements, el])
     setSelectedId(el.id)
-  }
-
-  const addImageFromUrl = () => {
-    const url = urlValue.trim()
-
-    if (!url) {
-      return
-    }
-
-    const img = new window.Image()
-
-    img.crossOrigin = "Anonymous"
-    img.onload = () => {
-      let width = img.naturalWidth
-      let height = img.naturalHeight
-
-      if (width > 600 || height > 600) {
-        const ratio = Math.min(600 / width, 600 / height)
-        width *= ratio
-        height *= ratio
-      }
-
-      const newImage = createImageElement(url, width, height)
-
-      handleUpdateElements([...elements, newImage])
-      setSelectedId(newImage.id)
-    }
-
-    img.src = url
-    setShowUrlInput(false)
-    setUrlValue("")
   }
 
   const handleAddMedia = (url: string) => {

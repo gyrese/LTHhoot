@@ -2,7 +2,7 @@ import {
   type SlideElement,
   type SlideBackground,
 } from "@rahoot/common/types/game"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { generateElementId } from "@rahoot/web/features/quizz/utils/id"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import SlideCanvas from "./SlideCanvas"
@@ -28,42 +28,122 @@ const SlideEditor = ({
     y: number
     show: boolean
   } | null>(null)
-  const [copiedElement, setCopiedElement] = useState<SlideElement | null>(null)
+  const [copiedElements, setCopiedElements] = useState<SlideElement[] | null>(
+    null,
+  )
+  // Sélection multiple d'éléments (rubber-band / shift-clic sur le canvas).
+  // Mutuellement exclusive avec `selectedId` : le canvas ne renseigne jamais
+  // les deux à la fois (cf. `applySelectionResult` dans SlideCanvas).
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+  // Une sélection multiple ne doit pas survivre à un changement de slide.
+  useEffect(() => {
+    setSelectedIds([])
+  }, [currentIndex])
 
   const selectedElement = elements.find((e) => e.id === selectedId)
   const selectedType = selectedElement?.type
+  const hasMultiSelection = selectedIds.length >= 2
+
+  const deleteSelection = () => {
+    if (hasMultiSelection) {
+      onChange(elements.filter((e) => !selectedIds.includes(e.id)))
+      setSelectedIds([])
+
+      return
+    }
+
+    onChange(elements.filter((e) => e.id !== selectedId))
+    setSelectedId(undefined)
+  }
+
+  const copySelection = () => {
+    if (hasMultiSelection) {
+      const selected = elements.filter((e) => selectedIds.includes(e.id))
+
+      if (selected.length) {
+        setCopiedElements(selected)
+      }
+
+      return
+    }
+
+    const selected = elements.find((e) => e.id === selectedId)
+
+    if (selected) {
+      setCopiedElements([selected])
+    }
+  }
+
+  const pasteSelection = () => {
+    if (!copiedElements || copiedElements.length === 0) {
+      return
+    }
+
+    const newEls = copiedElements.map((el) => ({
+      ...el,
+      id: generateElementId(),
+      x: el.x + 20,
+      y: el.y + 20,
+    }))
+
+    onChange([...elements, ...newEls])
+
+    if (newEls.length >= 2) {
+      setSelectedIds(newEls.map((el) => el.id))
+      setSelectedId(undefined)
+    } else {
+      setSelectedIds([])
+      setSelectedId(newEls[0].id)
+    }
+  }
+
+  const duplicateSelection = () => {
+    const idsToDuplicate = hasMultiSelection
+      ? selectedIds
+      : selectedId
+        ? [selectedId]
+        : []
+
+    if (idsToDuplicate.length === 0) {
+      return
+    }
+
+    const toDuplicate = elements.filter((e) => idsToDuplicate.includes(e.id))
+    const newEls = toDuplicate.map((el) => ({
+      ...el,
+      id: generateElementId(),
+      x: el.x + 20,
+      y: el.y + 20,
+    }))
+
+    onChange([...elements, ...newEls])
+
+    if (newEls.length >= 2) {
+      setSelectedIds(newEls.map((el) => el.id))
+      setSelectedId(undefined)
+    } else {
+      setSelectedIds([])
+      setSelectedId(newEls[0].id)
+    }
+  }
 
   const handleContextMenuAction = (action: ContextMenuAction) => {
     switch (action) {
       case "copy": {
-        const selected = elements.find((e) => e.id === selectedId)
-
-        if (selected) {
-          setCopiedElement(selected)
-        }
+        copySelection()
 
         break
       }
 
       case "paste": {
-        if (copiedElement) {
-          const newEl = {
-            ...copiedElement,
-            id: generateElementId(),
-            x: copiedElement.x + 20,
-            y: copiedElement.y + 20,
-          }
-
-          onChange([...elements, newEl])
-          setSelectedId(newEl.id)
-        }
+        pasteSelection()
 
         break
       }
 
       case "delete": {
-        onChange(elements.filter((e) => e.id !== selectedId))
-        setSelectedId(undefined)
+        deleteSelection()
 
         break
       }
@@ -156,6 +236,116 @@ const SlideEditor = ({
     }
   }
 
+  // Raccourcis clavier locaux pour l'élément (ou le groupe) sélectionné du
+  // canvas. Ne doit s'activer que si une sélection existe et que le focus
+  // n'est pas dans un champ texte (même garde que le handler global du
+  // contexte). Le handler global du contexte ignore de son côté la
+  // navigation entre slides via les flèches simples tant qu'un élément est
+  // sélectionné (voir quizz-editor-context.tsx), en défense complémentaire
+  // du preventDefault/stopPropagation ci-dessous.
+  useEffect(() => {
+    if (!selectedId && !hasMultiSelection) {
+      return
+    }
+
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName.toLowerCase()
+      const inTextField =
+        tag === "input" ||
+        tag === "textarea" ||
+        target?.isContentEditable === true
+
+      if (inTextField) {
+        return
+      }
+
+      const ctrl = e.ctrlKey || e.metaKey
+      const key = e.key.toLowerCase()
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault()
+        deleteSelection()
+
+        return
+      }
+
+      if (ctrl && key === "c") {
+        e.preventDefault()
+        copySelection()
+
+        return
+      }
+
+      if (ctrl && key === "v") {
+        e.preventDefault()
+        pasteSelection()
+
+        return
+      }
+
+      if (ctrl && key === "d") {
+        e.preventDefault()
+        duplicateSelection()
+
+        return
+      }
+
+      if (e.key === "Escape") {
+        setSelectedId(undefined)
+        setSelectedIds([])
+
+        return
+      }
+
+      const isArrow =
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown" ||
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight"
+
+      if (isArrow && !ctrl && !e.altKey) {
+        e.preventDefault()
+        e.stopPropagation()
+
+        const step = e.shiftKey ? 10 : 1
+        let dx = 0
+        let dy = 0
+
+        if (e.key === "ArrowUp") dy = -step
+        if (e.key === "ArrowDown") dy = step
+        if (e.key === "ArrowLeft") dx = -step
+        if (e.key === "ArrowRight") dx = step
+
+        const idsToMove = hasMultiSelection
+          ? selectedIds
+          : selectedId
+            ? [selectedId]
+            : []
+
+        onChange(
+          elements.map((el) =>
+            idsToMove.includes(el.id)
+              ? { ...el, x: el.x + dx, y: el.y + dy }
+              : el,
+          ),
+        )
+      }
+    }
+
+    window.addEventListener("keydown", handler)
+
+    return () => window.removeEventListener("keydown", handler)
+  }, [
+    selectedId,
+    selectedIds,
+    hasMultiSelection,
+    elements,
+    onChange,
+    setSelectedId,
+    copiedElements,
+  ])
+
   return (
     <div className="pointer-events-none absolute inset-0 h-full w-full">
       <div className="pointer-events-auto absolute inset-0 h-full w-full">
@@ -164,6 +354,8 @@ const SlideEditor = ({
           onChange={onChange}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          selectedIds={selectedIds}
+          onSelectMultiple={setSelectedIds}
           background={background}
           backgroundOpacity={backgroundOpacity}
           onContextMenuEvent={(e) => {
@@ -176,9 +368,9 @@ const SlideEditor = ({
         <SlideContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          hasSelection={Boolean(selectedId)}
+          hasSelection={Boolean(selectedId) || hasMultiSelection}
           selectedType={selectedType}
-          canPaste={Boolean(copiedElement)}
+          canPaste={Boolean(copiedElements?.length)}
           onClose={() => setContextMenu(null)}
           onAction={handleContextMenuAction}
         />

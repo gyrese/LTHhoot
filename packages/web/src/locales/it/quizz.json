@@ -142,7 +142,17 @@
     "coverImageHint": "Aggiungi un'immagine di copertina per distinguerti.",
     "upload": "Carica",
     "aiGenerate": "Genera",
-    "aiGenerateTooltip": "Genera automaticamente un'immagine dal titolo"
+    "aiGenerateTooltip": "Genera automaticamente un'immagine dal titolo",
+    "podiumThemeLabel": "Tema del podio",
+    "podiumThemeHint": "Sfondo della classifica finale. «Casuale» ne sceglie uno a ogni partita.",
+    "podiumThemes": {
+      "random": "Casuale",
+      "espace": "Spazio",
+      "jurassic": "Giurassico",
+      "manga": "Manga",
+      "science": "Scienza",
+      "heros": "Supereroi"
+    }
   },
   "titleQuizzPlaceholder": "Titolo del quiz...",
   "tolerance": "Tolleranza",

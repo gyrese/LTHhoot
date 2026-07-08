@@ -142,7 +142,17 @@
     "coverImageHint": "Füge ein Titelbild hinzu, damit dein Kahoot auffällt.",
     "upload": "Hochladen",
     "aiGenerate": "Generieren",
-    "aiGenerateTooltip": "Bild automatisch aus dem Titel generieren"
+    "aiGenerateTooltip": "Bild automatisch aus dem Titel generieren",
+    "podiumThemeLabel": "Podium-Design",
+    "podiumThemeHint": "Hintergrund der Endwertung. „Zufällig“ wählt jedes Spiel eines aus.",
+    "podiumThemes": {
+      "random": "Zufällig",
+      "espace": "Weltraum",
+      "jurassic": "Jurassic",
+      "manga": "Manga",
+      "science": "Wissenschaft",
+      "heros": "Superhelden"
+    }
   },
   "titleQuizzPlaceholder": "Quiz-Titel...",
   "tolerance": "Toleranz",

@@ -1,19 +1,29 @@
 import type { AwardType } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
-import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import {
+  BODY_FONT,
+  DISPLAY_FONT,
+  LABEL_FONT,
+  PODIUM_CSS,
+  PODIUM_THEME_TOKENS,
+  ThemeAmbient,
+  ThemeAvatarFrame,
+  pickRandomPodiumTheme,
+  type PodiumThemeTokens,
+} from "@rahoot/web/features/game/components/states/podium/themes"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import {
   HAPTIC_PATTERNS,
   vibrate,
 } from "@rahoot/web/features/game/utils/haptics"
-import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import { MOTION_EASE } from "@rahoot/web/features/game/utils/motion"
-import { motion, AnimatePresence, useReducedMotion } from "motion/react"
-import { useEffect, useRef, useState } from "react"
+import useScreenSize from "@rahoot/web/hooks/useScreenSize"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import ReactConfetti from "react-confetti"
-import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
@@ -38,52 +48,12 @@ const AWARD_LABEL_KEYS: Record<AwardType, string> = {
 
 const WINNING_ANIMATION_STATES = ["waving"] as const
 
-// Keyframes CSS injectés une seule fois
-const NEON_CSS = `
-  @keyframes neon-glitch {
-    0%, 88%, 100% { transform: translate(0); filter: none; }
-    89% { transform: translate(-3px, 1px); filter: hue-rotate(90deg); }
-    90% { transform: translate(3px, -1px); }
-    91% { transform: translate(0); filter: none; }
-  }
-  @keyframes neon-glitch-2 {
-    0%, 93%, 100% { clip-path: none; transform: translate(0); }
-    94% { clip-path: inset(15% 0 40% 0); transform: translate(4px, 0); }
-    95% { clip-path: inset(60% 0 10% 0); transform: translate(-4px, 0); }
-    96% { clip-path: none; transform: translate(0); }
-  }
-  @keyframes cursor-blink {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-  @keyframes neon-breathe {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-  }
-  @keyframes scanline-sweep {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100vh); }
-  }
-  @keyframes star-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  /* Tremblement caméra pendant le roulement de tambour : silence les 70%
-     premiers (suspense), puis secousse croissante juste avant le reveal. */
-  @keyframes drumroll-shake {
-    0% { transform: translate(0, 0); }
-    70% { transform: translate(-1px, 0); }
-    75% { transform: translate(1px, 0); }
-    80% { transform: translate(-2px, 1px); }
-    84% { transform: translate(2px, -1px); }
-    88% { transform: translate(-3px, 1px); }
-    91% { transform: translate(3px, -1px); }
-    94% { transform: translate(-4px, 2px); }
-    96% { transform: translate(4px, -2px); }
-    98% { transform: translate(-5px, 2px); }
-    100% { transform: translate(0, 0); }
-  }
-`
+// Proportions du podium (hauteur socle / taille avatar) par rang.
+const RANK_LAYOUT = {
+  1: { h: "64%", avatarSize: 108 },
+  2: { h: "48%", avatarSize: 86 },
+  3: { h: "35%", avatarSize: 78 },
+} as const
 
 const usePodiumAnimation = (topLength: number) => {
   const [apparition, setApparition] = useState(0)
@@ -160,64 +130,60 @@ const ScoreCounter = ({ target, show }: { target: number; show: boolean }) => {
   return <>{displayed.toLocaleString()}</>
 }
 
-const RANK = {
-  1: {
-    neon: "#FAFF00",
-    dim: "#FAFF0030",
-    label: "01",
-    h: "62%",
-    avatarSize: 96,
-  },
-  2: {
-    neon: "#00F5FF",
-    dim: "#00F5FF30",
-    label: "02",
-    h: "46%",
-    avatarSize: 76,
-  },
-  3: {
-    neon: "#FF00E5",
-    dim: "#FF00E530",
-    label: "03",
-    h: "32%",
-    avatarSize: 68,
-  },
-} as const
+// Badge vainqueur : skewé façon case de BD pour manga, pilule accent sinon.
+const WinnerBadge = ({ theme }: { theme: PodiumThemeTokens }) => {
+  const badgeAccent = theme.ranks[1].accent
 
-const neonShadow = (c: string, intensity = 1) =>
-  `0 0 ${6 * intensity}px ${c}, 0 0 ${20 * intensity}px ${c}, 0 0 ${40 * intensity}px ${c}80`
+  if (theme.id === "manga") {
+    return (
+      <div
+        className="skew-x-12 px-5 py-1"
+        style={{
+          background: badgeAccent,
+          border: "3px solid #000000",
+          boxShadow: "6px 6px 0px rgba(0,0,0,1)",
+        }}
+      >
+        <span
+          className="text-sm font-black uppercase italic"
+          style={{ fontFamily: DISPLAY_FONT, color: "#131317" }}
+        >
+          {theme.winnerLabel}
+        </span>
+      </div>
+    )
+  }
 
-// Étoile SVG pixel-art
-const PixelStar = ({ color, size = 14 }: { color: string; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 10 10" fill={color} aria-hidden>
-    <rect x="4" y="0" width="2" height="2" />
-    <rect x="2" y="2" width="6" height="2" />
-    <rect x="0" y="4" width="10" height="2" />
-    <rect x="2" y="6" width="6" height="2" />
-    <rect x="0" y="2" width="2" height="6" />
-    <rect x="8" y="2" width="2" height="6" />
+  return (
+    <div
+      className="rounded-full px-5 py-1"
+      style={{
+        background: badgeAccent,
+        boxShadow: `0 0 20px ${badgeAccent}80`,
+      }}
+    >
+      <span
+        className="text-xs font-bold tracking-[0.2em] uppercase"
+        style={{ fontFamily: LABEL_FONT, color: "#131317" }}
+      >
+        {theme.winnerLabel}
+      </span>
+    </div>
+  )
+}
+
+// Étoile dorée au-dessus du vainqueur (remplace le trophée générique).
+const WinnerStar = ({ color }: { color: string }) => (
+  <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden>
+    <path
+      d="M12 2 L14.6 8.6 L21.6 9.2 L16.3 13.8 L18 20.8 L12 17 L6 20.8 L7.7 13.8 L2.4 9.2 L9.4 8.6 Z"
+      fill={color}
+      style={{ filter: `drop-shadow(0 0 8px ${color})` }}
+    />
   </svg>
 )
 
-// Couronne pixel-art — tombe avec rebond juste avant le badge VAINQUEUR
-const PixelCrown = ({ color, size = 22 }: { color: string; size?: number }) => (
-  <svg
-    width={size}
-    height={size * 0.75}
-    viewBox="0 0 16 12"
-    fill={color}
-    aria-hidden
-  >
-    <rect x="1" y="7" width="14" height="4" />
-    <rect x="1" y="2" width="2" height="5" />
-    <rect x="7" y="0" width="2" height="7" />
-    <rect x="13" y="2" width="2" height="5" />
-    <rect x="3" y="4" width="2" height="3" />
-    <rect x="11" y="4" width="2" height="3" />
-  </svg>
-)
-
-// Faisceau spot qui s'allume au moment précis du reveal d'un rang
+// Faisceau lumineux qui s'allume au moment précis du reveal d'un rang.
 const RankSpotlight = ({
   color,
   active,
@@ -229,20 +195,20 @@ const RankSpotlight = ({
     {active && (
       <motion.div
         initial={{ opacity: 0, scaleY: 0 }}
-        animate={{ opacity: [0, 0.9, 0.3], scaleY: 1 }}
+        animate={{ opacity: [0, 0.8, 0.3], scaleY: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="pointer-events-none absolute inset-x-0 top-0 z-0 origin-top"
         style={{
           height: "140%",
-          background: `linear-gradient(180deg, ${color}55 0%, ${color}15 40%, transparent 70%)`,
+          background: `linear-gradient(180deg, ${color}45 0%, ${color}12 40%, transparent 70%)`,
         }}
       />
     )}
   </AnimatePresence>
 )
 
-// Flash blanc au reveal 1er
+// Flash au reveal du gagnant, façon flash d'appareil photo.
 const RevealFlash = ({ trigger }: { trigger: boolean }) => {
   const [visible, setVisible] = useState(false)
   useEffect(() => {
@@ -265,18 +231,18 @@ const RevealFlash = ({ trigger }: { trigger: boolean }) => {
       {visible && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 0.7, 0] }}
+          animate={{ opacity: [0, 1, 0.6, 0] }}
           transition={{ duration: 0.5, times: [0, 0.08, 0.3, 1] }}
           className="pointer-events-none absolute inset-0 z-50"
-          style={{ backgroundColor: "#FAFF00" }}
+          style={{ backgroundColor: "#FFF3D6" }}
         />
       )}
     </AnimatePresence>
   )
 }
 
-// Rayons néon depuis le bas au reveal final
-const NeonRays = ({ active }: { active: boolean }) => (
+// Rayons colorés depuis le bas au reveal final, teintés du thème.
+const ThemeRays = ({ active, color }: { active: boolean; color: string }) => (
   <AnimatePresence>
     {active && (
       <motion.div
@@ -284,20 +250,19 @@ const NeonRays = ({ active }: { active: boolean }) => (
         animate={{ opacity: 1 }}
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        {Array.from({ length: 14 }).map((_, i) => (
+        {Array.from({ length: 10 }).map((_, i) => (
           <motion.div
             key={i}
             initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: 1, opacity: [0, 0.35, 0.15] }}
-            transition={{ duration: 0.9, delay: i * 0.045, ease: "easeOut" }}
+            animate={{ scaleY: 1, opacity: [0, 0.3, 0.12] }}
+            transition={{ duration: 0.9, delay: i * 0.06, ease: "easeOut" }}
             className="absolute bottom-0 left-1/2 origin-bottom"
             style={{
-              width: 1.5,
-              height: "88%",
+              width: 2,
+              height: "85%",
               transformOrigin: "bottom center",
-              transform: `translateX(-50%) rotate(${(i - 6.5) * 12}deg)`,
-              background:
-                "linear-gradient(to top, #FAFF00CC 0%, transparent 100%)",
+              transform: `translateX(-50%) rotate(${(i - 4.5) * 14}deg)`,
+              background: `linear-gradient(to top, ${color}b3 0%, transparent 100%)`,
             }}
           />
         ))}
@@ -306,51 +271,32 @@ const NeonRays = ({ active }: { active: boolean }) => (
   </AnimatePresence>
 )
 
-// Pixels décoratifs dans les coins
-const CornerPixels = ({ color }: { color: string }) => (
-  <>
-    <div
-      className="absolute top-0 left-0 h-3 w-3"
-      style={{ background: color, boxShadow: neonShadow(color) }}
-    />
-    <div
-      className="absolute top-0 right-0 h-3 w-3"
-      style={{ background: color, boxShadow: neonShadow(color) }}
-    />
-    <div
-      className="absolute top-3 left-0 h-1 w-3"
-      style={{ background: color, opacity: 0.5 }}
-    />
-    <div
-      className="absolute top-3 right-0 h-1 w-3"
-      style={{ background: color, opacity: 0.5 }}
-    />
-  </>
-)
-
 const PodiumPlace = ({
   player,
   rank,
   show,
   apparition,
+  theme,
+  reducedMotion,
 }: {
   player: { username: string; avatar?: string; points: number }
   rank: 1 | 2 | 3
   show: boolean
   apparition: number
+  theme: PodiumThemeTokens
+  reducedMotion: boolean
 }) => {
-  const cfg = RANK[rank]
+  const layout = RANK_LAYOUT[rank]
+  const tokens = theme.ranks[rank]
   const isFirst = rank === 1
   const isFinal = apparition >= 4
-  const shadow = neonShadow(cfg.neon)
-  const shadowStrong = neonShadow(cfg.neon, 2)
   const [punch, setPunch] = useState(false)
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-end">
-      <RankSpotlight color={cfg.neon} active={show} />
+      <RankSpotlight color={tokens.accent} active={show} />
 
-      {/* Zone flottante */}
+      {/* Zone flottante : badge vainqueur, avatar, nom */}
       <AnimatePresence>
         {show && (
           <motion.div
@@ -364,13 +310,12 @@ const PodiumPlace = ({
             }}
             className="flex flex-col items-center gap-2 pb-2"
           >
-            {/* Couronne + badge VAINQUEUR 1er uniquement */}
             {isFirst && (
               <AnimatePresence>
                 {isFinal && (
                   <motion.div
                     key="winner-badge"
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex flex-col items-center gap-2"
                   >
                     <motion.div
                       initial={{ y: -60, opacity: 0, rotate: -10 }}
@@ -381,7 +326,7 @@ const PodiumPlace = ({
                         damping: 11,
                       }}
                     >
-                      <PixelCrown color={cfg.neon} />
+                      <WinnerStar color={tokens.accent} />
                     </motion.div>
                     <motion.div
                       initial={{ scale: 0, opacity: 0 }}
@@ -392,44 +337,22 @@ const PodiumPlace = ({
                         damping: 14,
                         delay: 0.18,
                       }}
-                      className="flex items-center gap-1.5"
                     >
-                      <PixelStar color={cfg.neon} />
-                      <span
-                        className="text-xs font-black tracking-[0.35em] uppercase"
-                        style={{
-                          fontFamily: "monospace",
-                          color: cfg.neon,
-                          textShadow: shadow,
-                          animation: "neon-breathe 1.2s ease-in-out infinite",
-                        }}
-                      >
-                        VAINQUEUR
-                      </span>
-                      <PixelStar color={cfg.neon} />
+                      <WinnerBadge theme={theme} />
                     </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
             )}
 
-            {/* Avatar — cadre néon sharp */}
-            <motion.div
-              animate={{
-                boxShadow:
-                  isFinal && isFirst ? [shadow, shadowStrong, shadow] : shadow,
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.6,
-                ease: "easeInOut",
-              }}
-              className="relative overflow-hidden"
-              style={{
-                width: cfg.avatarSize,
-                height: cfg.avatarSize,
-                border: `3px solid ${cfg.neon}`,
-              }}
+            {/* Avatar dans le cadre du thème */}
+            <ThemeAvatarFrame
+              theme={theme}
+              accent={tokens.accent}
+              size={layout.avatarSize}
+              rank={rank}
+              isWinner={isFirst && isFinal}
+              reducedMotion={reducedMotion}
             >
               <GameAvatar
                 seed={player.avatar || player.username}
@@ -437,25 +360,19 @@ const PodiumPlace = ({
                 animationStates={WINNING_ANIMATION_STATES}
                 className="h-full w-full"
               />
-              {/* Scanline interne subtile */}
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    "repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px)",
-                }}
-              />
-            </motion.div>
+            </ThemeAvatarFrame>
 
             {/* Nom */}
             <p
-              className="max-w-[90%] truncate text-center font-black uppercase"
+              className="max-w-[90%] truncate text-center font-bold"
               style={{
-                fontFamily: "monospace",
-                fontSize: isFirst ? 17 : 13,
-                color: "#FFFFFF",
-                textShadow: `0 0 8px ${cfg.neon}80, 0 0 20px ${cfg.dim}`,
-                letterSpacing: "0.12em",
+                fontFamily: DISPLAY_FONT,
+                fontSize: isFirst ? 19 : 15,
+                color: tokens.accent,
+                textShadow:
+                  theme.id === "manga"
+                    ? "2px 2px 0px rgba(0,0,0,1)"
+                    : `0 2px 10px rgba(0,0,0,0.6), 0 0 14px ${tokens.accent}40`,
               }}
             >
               {player.username}
@@ -464,104 +381,152 @@ const PodiumPlace = ({
         )}
       </AnimatePresence>
 
-      {/* Bloc podium néon — le wrapper externe fait un léger "punch" scale
-          quand le bloc atteint sa hauteur finale (impact d'atterrissage) */}
+      {/* Socle podium — enfant DIRECT de la colonne (hauteur définie via
+          h-full) : la hauteur en % ne se résout pas sous un wrapper en
+          hauteur auto. Le "punch" d'atterrissage est une animation CSS
+          (transform) sur le même noeud : aucune collision avec framer,
+          qui n'anime ici que la hauteur. */}
       <motion.div
-        animate={punch ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="w-full"
+        initial={{ height: 0 }}
+        animate={{ height: show ? layout.h : 0 }}
+        transition={{
+          type: "spring",
+          stiffness: 55,
+          damping: 16,
+          delay: isFirst ? 0.45 : 0,
+        }}
+        onAnimationComplete={() => {
+          if (!show) {
+            return
+          }
+
+          setPunch(true)
+          setTimeout(() => setPunch(false), 300)
+        }}
+        className={`relative w-full overflow-hidden ${theme.blockRadiusClass}`}
+        style={{
+          ...tokens.blockStyle,
+          transformOrigin: "bottom center",
+          animation: punch ? "podium-punch 0.3s ease-out" : undefined,
+          // Blason à épaules coupées pour le thème héros.
+          ...(theme.id === "heros"
+            ? {
+                clipPath:
+                  "polygon(5% 0%, 95% 0%, 100% 12%, 100% 100%, 0% 100%, 0% 12%)",
+              }
+            : {}),
+        }}
       >
-        <motion.div
-          initial={{ height: 0 }}
-          animate={{ height: show ? cfg.h : 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 55,
-            damping: 16,
-            delay: isFirst ? 0.45 : 0,
-          }}
-          onAnimationComplete={() => {
-            if (!show) {
-              return
-            }
-
-            setPunch(true)
-            setTimeout(() => setPunch(false), 300)
-          }}
-          className="relative w-full overflow-hidden"
-          style={{
-            borderTop: `2px solid ${cfg.neon}`,
-            borderLeft: `2px solid ${cfg.neon}`,
-            borderRight: `2px solid ${cfg.neon}`,
-            boxShadow: shadow,
-            background: `linear-gradient(180deg, ${cfg.dim} 0%, transparent 60%)`,
-          }}
-        >
-          <CornerPixels color={cfg.neon} />
-
-          {/* Contenu intérieur */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 pt-4">
-            {/* Score */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: show ? 1 : 0, scale: show ? 1 : 0.2 }}
-              transition={{
-                type: "spring",
-                stiffness: 180,
-                delay: isFirst ? 0.75 : 0.2,
-              }}
-              className="text-center"
-            >
-              <div
-                className="leading-none font-black tabular-nums"
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: isFirst ? 28 : 20,
-                  color: cfg.neon,
-                  textShadow: shadow,
-                }}
-              >
-                <ScoreCounter target={player.points} show={show} />
-              </div>
-              <div
-                className="tracking-[0.35em] uppercase"
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: 9,
-                  color: cfg.neon,
-                  opacity: 0.6,
-                  textShadow: shadow,
-                }}
-              >
-                PTS
-              </div>
-            </motion.div>
-
-            {/* Rang en watermark */}
-            <div
-              className="font-black select-none"
-              style={{
-                fontFamily: "monospace",
-                fontSize: isFirst ? 52 : 40,
-                color: cfg.neon,
-                opacity: 0.1,
-                lineHeight: 1,
-                marginTop: 4,
-              }}
-            >
-              {cfg.label}
-            </div>
-          </div>
-
-          {/* Ligne scan déco */}
+        {/* Texture mousse (jurassic) */}
+        {theme.id === "jurassic" && (
           <div
-            className="absolute inset-x-0 h-px"
+            className="pointer-events-none absolute inset-0 opacity-60"
             style={{
-              top: "30%",
-              background: `linear-gradient(to right, transparent, ${cfg.neon}60, transparent)`,
+              backgroundImage:
+                "radial-gradient(circle at 20% 30%, rgba(34,197,94,0.2) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(21,128,61,0.2) 0%, transparent 50%)",
             }}
           />
-        </motion.div>
+        )}
+
+        {/* Rayures diagonales sur le socle du vainqueur (manga) */}
+        {theme.id === "manga" && isFirst && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-10"
+            style={{
+              background: `repeating-linear-gradient(45deg, ${tokens.accent}, ${tokens.accent} 10px, #000 10px, #000 20px)`,
+            }}
+          />
+        )}
+
+        {/* Halo montant depuis la base (vainqueur, hors manga) */}
+        {isFirst && theme.id !== "manga" && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `linear-gradient(to top, ${tokens.accent}26 0%, transparent 60%)`,
+            }}
+          />
+        )}
+
+        {/* Contenu intérieur */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 pt-4">
+          {/* Score */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.2 }}
+            animate={{ opacity: show ? 1 : 0, scale: show ? 1 : 0.2 }}
+            transition={{
+              type: "spring",
+              stiffness: 180,
+              delay: isFirst ? 0.75 : 0.2,
+            }}
+            className="text-center"
+          >
+            <div
+              className="leading-none font-black tabular-nums"
+              style={{
+                fontFamily: DISPLAY_FONT,
+                fontSize: isFirst ? 26 : 19,
+                color: tokens.accent,
+                textShadow:
+                  theme.id === "manga"
+                    ? "2px 2px 0px rgba(0,0,0,1)"
+                    : `0 0 12px ${tokens.accent}66`,
+              }}
+            >
+              <ScoreCounter target={player.points} show={show} />
+            </div>
+            <div
+              className="tracking-[0.3em] uppercase"
+              style={{
+                fontFamily: LABEL_FONT,
+                fontSize: 9,
+                color: tokens.accent,
+                opacity: 0.65,
+              }}
+            >
+              pts
+            </div>
+          </motion.div>
+
+          {/* Numéral du rang en watermark */}
+          <div
+            className="font-black select-none"
+            style={{
+              fontFamily: DISPLAY_FONT,
+              fontSize: isFirst ? 52 : 40,
+              color: tokens.accent,
+              opacity: 0.14,
+              lineHeight: 1,
+              marginTop: 4,
+            }}
+          >
+            {rank}
+          </div>
+        </div>
+
+        {/* Liseré bas accent (manga) / barre d'énergie (science) */}
+        {theme.id === "manga" && (
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{ height: isFirst ? 10 : 6, background: tokens.accent }}
+          />
+        )}
+        {theme.id === "science" && (
+          <div className="absolute inset-x-3 bottom-3 h-1 overflow-hidden rounded-full bg-white/10">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{
+                width: show ? `${{ 1: 100, 2: 70, 3: 50 }[rank]}%` : 0,
+              }}
+              transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
+              className="h-full"
+              style={{
+                background: tokens.accent,
+                boxShadow: `0 0 10px ${tokens.accent}`,
+              }}
+            />
+          </div>
+        )}
       </motion.div>
     </div>
   )
@@ -571,18 +536,32 @@ const PodiumPlace = ({
 // réservé au grand final apparition=4) — sert au mini burst de confettis.
 const APPARITION_RANK: Partial<Record<number, 1 | 2 | 3>> = { 1: 3, 2: 2 }
 
-const Podium = ({ data: { subject, top, awards } }: Props) => {
+const Podium = ({ data: { subject, top, awards, podiumTheme } }: Props) => {
   const apparition = usePodiumAnimation(top.length)
-  const { salonImage } = useManagerStore()
   const { isHost, isEveningFinale } = useGameConfig()
   const { player } = usePlayerStore()
   const { width, height } = useScreenSize()
   const { t } = useTranslation()
-  const reducedMotion = useReducedMotion()
+  const reducedMotion = useReducedMotion() ?? false
   const isFinal = apparition >= 4
 
-  // Mini burst de confettis localisé à l'annonce du 3e puis du 2e — le 1er est
-  // réservé au grand confetti final (isFinal) pour garder le suspense monter.
+  // Thème résolu côté serveur ; tirage local de secours si absent (ancien
+  // serveur). useMemo : le tirage ne doit pas changer entre deux renders.
+  const theme = useMemo(
+    () => PODIUM_THEME_TOKENS[podiumTheme ?? pickRandomPodiumTheme()],
+    [podiumTheme],
+  )
+
+  let subtitle = "Et maintenant, le classement final..."
+
+  if (isFinal) {
+    subtitle = isEveningFinale
+      ? "Le grand vainqueur de la soirée"
+      : "Et le vainqueur est..."
+  }
+
+  // Mini burst de confettis localisé à l'annonce du 3e puis du 2e — le
+  // 1er est réservé au grand confetti final (isFinal) pour garder le suspense.
   const [burst, setBurst] = useState<{ rank: 1 | 2 | 3; id: number } | null>(
     null,
   )
@@ -629,15 +608,15 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
   }, [apparition, isHost, player, top])
 
   useEffect(() => {
-    if (document.getElementById("podium-neon-css")) {
+    if (document.getElementById("podium-theme-css")) {
       return () => {
         // Noop
       }
     }
 
     const el = document.createElement("style")
-    el.id = "podium-neon-css"
-    el.textContent = NEON_CSS
+    el.id = "podium-theme-css"
+    el.textContent = PODIUM_CSS
     document.head.appendChild(el)
 
     return () => {
@@ -645,13 +624,14 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
     }
   }, [])
 
+  const winnerAccent = theme.ranks[1].accent
+
   return (
     <motion.div
       initial={{ scale: 0.94, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.9, ease: MOTION_EASE.out }}
       className="relative flex h-full w-full flex-col items-center justify-between overflow-hidden"
-      style={{ backgroundColor: "#000000" }}
     >
       {/* Tremblement caméra pendant le roulement de tambour (apparition=3) —
           isolé sur un noeud à part pour ne jamais entrer en conflit avec le
@@ -660,67 +640,60 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
         className="flex h-full w-full flex-col items-center justify-between"
         style={
           apparition === 3 && !reducedMotion
-            ? { animation: "drumroll-shake 2.4s ease-in-out 1" }
+            ? { animation: "podium-drumroll-shake 2.4s ease-in-out 1" }
             : undefined
         }
       >
-        {/* Image salon / couverture en fond */}
-        {salonImage && (
-          <>
-            <div
-              className="absolute inset-0 scale-105 bg-cover bg-center blur-sm"
-              style={{ backgroundImage: `url(${salonImage})`, opacity: 0.18 }}
-            />
-            {/* Overlay sombre pour conserver la lisibilité du podium néon */}
-            <div className="absolute inset-0 bg-black/60" />
-          </>
-        )}
+        {/* Dégradé de base du thème */}
+        <div
+          className="absolute inset-0"
+          style={{ background: theme.baseGradient }}
+        />
 
-        {/* Grille de fond */}
+        {/* Image d'ambiance .stitch, voilée */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${theme.bgImage})`,
+            ...theme.bgStyle,
+          }}
+        />
+
+        {/* Voile de lisibilité */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: theme.overlayGradient }}
+        />
+
+        {/* Vignette */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        {/* Scanlines */}
-        <div
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
             background:
-              "repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 3px)",
+              "radial-gradient(ellipse at 50% 30%, transparent 40%, rgba(0,0,0,0.6) 100%)",
           }}
         />
 
-
+        {/* Ambiance animée du thème (étoiles, particules, trames...) */}
+        <ThemeAmbient theme={theme} reducedMotion={reducedMotion} />
 
         {/* Flash reveal 1er */}
         <RevealFlash trigger={isFinal} />
 
-        {/* Rayons néon dorés */}
-        <NeonRays active={isFinal} />
+        {/* Rayons colorés du reveal final */}
+        <ThemeRays active={isFinal} color={winnerAccent} />
 
-        {/* Confettis néon */}
+        {/* Confettis aux couleurs du thème */}
         {isFinal && (
           <ReactConfetti
             width={width}
             height={height}
             className="pointer-events-none z-50"
-            colors={[
-              "#FAFF00",
-              "#00F5FF",
-              "#FF00E5",
-              "#FFFFFF",
-              "#FF6600",
-              "#00FF88",
-            ]}
-            numberOfPieces={320}
+            colors={theme.confetti}
+            numberOfPieces={200}
             recycle={false}
-            initialVelocityY={18}
-            gravity={0.15}
+            initialVelocityY={14}
+            gravity={0.12}
           />
         )}
 
@@ -732,11 +705,11 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
             width={width}
             height={height}
             className="pointer-events-none z-40"
-            colors={[RANK[burst.rank].neon, "#FFFFFF"]}
-            numberOfPieces={50}
+            colors={[theme.ranks[burst.rank].accent, "#FFFFFF"]}
+            numberOfPieces={40}
             recycle={false}
-            initialVelocityY={14}
-            gravity={0.25}
+            initialVelocityY={12}
+            gravity={0.22}
             confettiSource={{
               x: burst.rank === 3 ? width * 0.66 : 0,
               y: height * 0.75,
@@ -746,68 +719,62 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
           />
         )}
 
-        {/* Header */}
-        <div className="relative z-20 flex w-full flex-col items-center gap-2 pt-6 md:pt-8">
-          {/* Ligne décorative */}
-          <div className="flex w-full max-w-lg items-center gap-3 px-6">
-            <div
-              className="h-px flex-1"
-              style={{
-                background: "linear-gradient(to right, transparent, #FAFF00CC)",
-              }}
-            />
-            <PixelStar color="#FAFF00" size={10} />
-            <span
-              className="text-xs tracking-[0.5em] uppercase"
-              style={{
-                fontFamily: "monospace",
-                color: "#FAFF00",
-                opacity: 0.5,
-                textShadow: neonShadow("#FAFF00"),
-                animation: "neon-breathe 2s ease-in-out infinite",
-              }}
-            >
-              {isEveningFinale ? "SOIRÉE TERMINÉE" : "GAME OVER"}
-            </span>
-            <PixelStar color="#FAFF00" size={10} />
-            <div
-              className="h-px flex-1"
-              style={{
-                background: "linear-gradient(to left, transparent, #FAFF00CC)",
-              }}
-            />
-          </div>
+        {/* Header — aucune mention de thème ; seule la finale de soirée
+            affiche un libellé contextuel au-dessus du titre. */}
+        <div className="relative z-20 flex w-full flex-col items-center gap-3 pt-6 md:pt-8">
+          {isEveningFinale && (
+            <div className="flex items-center gap-3">
+              <div
+                className="h-px w-16"
+                style={{
+                  background: `linear-gradient(to right, transparent, ${winnerAccent})`,
+                }}
+              />
+              <div
+                className="h-1.5 w-1.5 rotate-45"
+                style={{ background: winnerAccent }}
+              />
+              <span
+                className="text-[11px] tracking-[0.4em] uppercase"
+                style={{
+                  color: winnerAccent,
+                  fontFamily: LABEL_FONT,
+                  opacity: 0.9,
+                }}
+              >
+                Grande finale de la soirée
+              </span>
+              <div
+                className="h-1.5 w-1.5 rotate-45"
+                style={{ background: winnerAccent }}
+              />
+              <div
+                className="h-px w-16"
+                style={{
+                  background: `linear-gradient(to left, transparent, ${winnerAccent})`,
+                }}
+              />
+            </div>
+          )}
 
-          {/* Titre avec glitch */}
+          {/* Titre — sujet du quiz stylé par le thème */}
           <h2
-            className="text-center font-black text-white uppercase"
+            className="px-4 text-center"
             style={{
-              fontFamily: "monospace",
-              fontSize: "clamp(1.4rem, 4.5vw, 2.8rem)",
-              letterSpacing: "0.06em",
-              textShadow: "0 0 12px rgba(255,255,255,0.35)",
-              animation: "neon-glitch 7s infinite, neon-glitch-2 8s infinite",
+              ...theme.titleStyle,
+              fontSize: "clamp(1.6rem, 4.8vw, 3rem)",
+              lineHeight: 1.1,
             }}
           >
             {subject}
           </h2>
 
-          {/* Sous-titre clignotant */}
+          {/* Sous-titre suspense */}
           <p
-            style={{
-              fontFamily: "monospace",
-              fontSize: 11,
-              color: "#FAFF00",
-              opacity: 0.45,
-              letterSpacing: "0.45em",
-              textTransform: "uppercase",
-              textShadow: neonShadow("#FAFF00"),
-            }}
+            className="text-sm tracking-wide italic"
+            style={theme.subtitleStyle}
           >
-            {isEveningFinale ? "CLASSEMENT DE LA SOIRÉE" : "CLASSEMENT FINAL"}
-            <span style={{ animation: "cursor-blink 1s step-end infinite" }}>
-              █
-            </span>
+            {subtitle}
           </p>
         </div>
 
@@ -820,6 +787,8 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
                 rank={2}
                 show={apparition >= 2}
                 apparition={apparition}
+                theme={theme}
+                reducedMotion={reducedMotion}
               />
             ) : (
               <div />
@@ -830,6 +799,8 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
               rank={1}
               show={apparition >= 3}
               apparition={apparition}
+              theme={theme}
+              reducedMotion={reducedMotion}
             />
 
             {top[2] ? (
@@ -838,6 +809,8 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
                 rank={3}
                 show={apparition >= 1}
                 apparition={apparition}
+                theme={theme}
+                reducedMotion={reducedMotion}
               />
             ) : (
               <div />
@@ -856,17 +829,27 @@ const Podium = ({ data: { subject, top, awards } }: Props) => {
             {awards.map((award) => (
               <div
                 key={award.type}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 backdrop-blur-md"
+                className="flex items-center gap-2 rounded-xl border px-3 py-2 backdrop-blur-md"
+                style={{
+                  borderColor: `${winnerAccent}40`,
+                  background: "rgba(0,0,0,0.5)",
+                }}
               >
                 <span className="text-lg">{AWARD_ICONS[award.type]}</span>
                 <div className="flex flex-col leading-tight">
                   <span
-                    className="text-[10px] tracking-widest text-white/40 uppercase"
-                    style={{ fontFamily: "monospace" }}
+                    className="text-[10px] tracking-widest uppercase"
+                    style={{
+                      fontFamily: LABEL_FONT,
+                      color: `${winnerAccent}99`,
+                    }}
                   >
                     {t(AWARD_LABEL_KEYS[award.type])}
                   </span>
-                  <span className="text-sm font-bold text-white">
+                  <span
+                    className="text-sm font-bold text-white"
+                    style={{ fontFamily: BODY_FONT }}
+                  >
                     {award.playerName}
                   </span>
                 </div>

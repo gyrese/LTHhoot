@@ -125,8 +125,8 @@ export interface ServerToClientEvents {
   }) => void
 
   // Quizz events
-  [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string }) => void
-  [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string }) => void
+  [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string; updatedAt: number }) => void
+  [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string; updatedAt: number }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: { questions: Question[] }) => void

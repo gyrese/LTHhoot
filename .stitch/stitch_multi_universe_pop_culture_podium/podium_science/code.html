@@ -1,0 +1,250 @@
+<!DOCTYPE html><html class="dark" lang="fr" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wght@400;700;800;900&amp;family=Plus+Jakarta+Sans:wght@400;500;700&amp;family=Geist:wght@400;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=anybody:wght@100..900&amp;family=geist:wght@100..900&amp;family=plusJakartaSans:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hex-clip {
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 237, 195, 0.1);
+        }
+        .neon-border-blue {
+            box-shadow: 0 0 15px rgba(0, 238, 252, 0.3), inset 0 0 5px rgba(0, 238, 252, 0.5);
+            border: 1px solid #00eefc;
+        }
+        .neon-glow-green {
+            filter: drop-shadow(0 0 8px #7df4ff);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        .dna-strand {
+            opacity: 0.15;
+            pointer-events: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdada",
+                        "surface-tint": "#f1c100",
+                        "primary": "#ffedc3",
+                        "on-tertiary-container": "#b60033",
+                        "surface-container": "#1f1f23",
+                        "surface-dim": "#131317",
+                        "surface-variant": "#353439",
+                        "error": "#ffb4ab",
+                        "on-primary": "#3d2f00",
+                        "inverse-surface": "#e4e1e7",
+                        "surface": "#131317",
+                        "on-surface-variant": "#d2c5ab",
+                        "surface-container-high": "#2a2a2e",
+                        "tertiary": "#ffe9e9",
+                        "on-secondary-fixed-variant": "#004f54",
+                        "inverse-primary": "#745b00",
+                        "outline-variant": "#4e4632",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#f1c100",
+                        "secondary-fixed": "#7df4ff",
+                        "secondary": "#d3fbff",
+                        "on-secondary": "#00363a",
+                        "on-tertiary": "#680019",
+                        "on-tertiary-fixed": "#40000c",
+                        "on-error": "#690005",
+                        "on-primary-fixed-variant": "#584400",
+                        "on-background": "#e4e1e7",
+                        "on-primary-container": "#6f5700",
+                        "primary-container": "#ffcc00",
+                        "inverse-on-surface": "#303034",
+                        "surface-container-low": "#1b1b1f",
+                        "secondary-container": "#00eefc",
+                        "surface-bright": "#39393d",
+                        "on-secondary-fixed": "#002022",
+                        "on-tertiary-fixed-variant": "#920027",
+                        "background": "#131317",
+                        "surface-container-lowest": "#0e0e12",
+                        "tertiary-fixed-dim": "#ffb3b5",
+                        "on-primary-fixed": "#241a00",
+                        "tertiary-container": "#ffc3c5",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#00dbe9",
+                        "surface-container-highest": "#353439",
+                        "on-secondary-container": "#00686f",
+                        "outline": "#9a9078",
+                        "on-surface": "#e4e1e7",
+                        "primary-fixed": "#ffe08b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "stack-md": "1.5rem",
+                        "stack-lg": "3rem",
+                        "unit": "8px",
+                        "gutter": "1.5rem",
+                        "container-padding-desktop": "4rem",
+                        "container-padding-mobile": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["anybody"],
+                        "headline-md": ["anybody"],
+                        "headline-lg": ["anybody"],
+                        "body-lg": ["plusJakartaSans"],
+                        "display-hero": ["anybody"],
+                        "display-hero-mobile": ["anybody"],
+                        "body-md": ["plusJakartaSans"],
+                        "label-caps": ["geist"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "headline-lg": ["48px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                        "display-hero": ["72px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900"}],
+                        "display-hero-mobile": ["40px", {"lineHeight": "1.1", "fontWeight": "900"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["14px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen overflow-hidden font-body-md selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Environmental Background Layer -->
+<div class="fixed inset-0 z-0">
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-surface-bright/20 via-background to-background"></div>
+<div class="absolute inset-0 opacity-30" data-alt="A high-tech laboratory interior with glowing electric blue blueprints of molecular structures projected on glass walls. Bubbling glass beakers with neon green fluids are visible in the background, creating a vibrant scientific atmosphere. The lighting is moody and cinematic, with sharp highlights and deep shadows typical of a futuristic research facility." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB1YByKG9_TppsJsttfWvV17HCaqhtaB64dKsdZKLLG7lMtnzlKenovLmDtJFta30Csyvd674_Bte72VrRHV_fxXuIG7xR7l4aLkVVOiWQPLtdASTO85Oes1tFc6ky_oUDVhsZRjjHQXD9b4U_cXkOFKhyu-2MbOtonIY6Qn44-0ARz1_fHyAg-QFxQh3xfyUYUcwxA9xHVjitwSMeACCSl7-lyuivkwCHg8KvNflw9Xq94JT_PtcWw')"></div>
+<!-- Animated Particles / DNA Strands -->
+<div class="absolute top-0 right-10 w-64 h-full dna-strand">
+
+</div>
+<div class="absolute bottom-0 left-10 w-64 h-full dna-strand rotate-180">
+
+</div>
+</div>
+<!-- Top Navigation Bar -->
+
+<!-- Main Content Canvas -->
+<main class="relative z-10 pt-32 pb-24 min-h-screen flex flex-col items-center justify-center px-container-padding-mobile lg:px-container-padding-desktop">
+<!-- Header Section -->
+<div class="text-center mb-stack-lg">
+<p class="font-label-caps text-label-caps text-secondary-container tracking-[0.3em] mb-2">CLASSEMENT FINAL</p>
+<h2 class="font-display-hero text-display-hero text-primary uppercase tracking-tighter filter drop-shadow-[0_0_20px_rgba(255,237,195,0.4)]">SCIENCE</h2>
+</div>
+<!-- Podium Stage Area -->
+<div class="grid grid-cols-3 gap-4 lg:gap-8 items-end max-w-5xl w-full h-[500px]">
+<!-- 2nd Place -->
+<div class="flex flex-col items-center h-[75%]">
+<div class="relative mb-stack-md animate-float" style="animation-delay: 0.5s">
+<div class="w-24 h-24 lg:w-32 lg:h-32 hex-clip bg-secondary-container/20 p-1">
+<div class="w-full h-full hex-clip bg-surface-variant overflow-hidden border-2 border-secondary-container">
+<img class="w-full h-full object-cover" data-alt="A portrait of a futuristic young scientist avatar, wearing high-tech silver goggles and a white lab coat with neon green accents. The character has a determined expression and is set against a dark background with floating digital particles in electric blue. The style is crisp, high-contrast, and cinematic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD01I556QMBCpPHNuhic5ZwkhpvqDIif1KLNtdXuzs0LyxtmkDS-rIyDj4P9kYKtShsBj_WMxh1Ik7uzP5KwNa6YkzOQVJrfL2Mc7UB7nMQwOwucrn_2WCBJT4dhSMlNlokjQ5KAL8oClB20Zs8h4z5J7r1IMTvnvw_Ek3E-4hsoo9JMbvedt60wAYlF7HvM3QQDXeHrs2AXTH2_4YUezBM1FphCtA3bH6D_kzDFjmJ2LAIc5ED3XjL">
+</div>
+</div>
+<div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold shadow-lg">2</div>
+</div>
+<div class="w-full h-full glass-panel border-t-4 border-secondary-container/50 rounded-t-xl flex flex-col items-center pt-6 px-4">
+<span class="font-label-caps text-label-caps text-secondary-fixed mb-1">DR. QUANTUM</span>
+<span class="font-headline-md text-headline-md text-white">2,450 XP</span>
+<div class="mt-auto mb-4 w-full h-1 bg-secondary-container/20 overflow-hidden">
+<div class="w-[70%] h-full bg-secondary-container shadow-[0_0_10px_#00eefc]"></div>
+</div>
+</div>
+</div>
+<!-- 1st Place (The Hero) -->
+<div class="flex flex-col items-center h-[90%]">
+<div class="relative mb-stack-md animate-float">
+<!-- Aura Glow -->
+<div class="absolute inset-0 bg-primary/20 blur-3xl scale-150 rounded-full opacity-50"></div>
+<div class="w-32 h-32 lg:w-44 lg:h-44 hex-clip bg-primary/30 p-1.5 relative z-10">
+<div class="w-full h-full hex-clip bg-surface-variant overflow-hidden border-4 border-primary shadow-[0_0_30px_rgba(255,237,195,0.4)]">
+<img class="w-full h-full object-cover" data-alt="A striking portrait of a master scientist avatar, featuring a sleek metallic headset and glowing cybernetic eyes in electric blue. The scientist wears a premium dark grey tactical lab coat with gold trim. The background shows blurred DNA helix strands and hexagonal bokeh. The lighting is dramatic, highlighting the high-detail textures and cinematic quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNf-WRRG4yiUiJ3aw_itOawZbRe2vGlb_qY_YsS6eY1oVs5JShy4dY0G8deeEWJSBSX9QSqycXCr7kmmgWNh_vfnKXs_LxbS1Ni4aZDzlnhHGlpWiuOaUD6k0f7vFUDH_UuNmj4GjAHh6Avzwve2uI3Bn0DvuvOr3RvJTDE6Rh3ugzvNSZ6iAzew5BJ3UAmSzg3TbTrh-bZjJPYfK26Ksq8GW8nlEblpfgcD8W0qbZAUP22kQEEcws">
+</div>
+</div>
+<div class="absolute -bottom-4 -right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary font-black text-xl shadow-[0_0_20px_rgba(255,237,195,0.6)] z-20">1</div>
+</div>
+<div class="w-full h-full glass-panel border-t-8 border-primary/50 rounded-t-2xl flex flex-col items-center pt-8 px-6 shadow-[0_-20px_40px_rgba(255,237,195,0.1)] relative">
+<!-- Digital Readout Decoration -->
+<div class="absolute top-2 left-4 font-label-caps text-[8px] text-primary/40 leading-none">
+                        AUTH: 99.8%<br>V_STABLE
+                    </div>
+<span class="font-label-caps text-label-caps text-primary mb-1">PROF. NEBULA</span>
+<span class="font-headline-lg-mobile lg:font-headline-lg text-white">3,120 XP</span>
+<div class="mt-4 px-4 py-1 bg-primary/10 border border-primary/30 rounded-full font-label-caps text-[10px] text-primary animate-pulse">
+                        NEW HIGH SCORE
+                    </div>
+<div class="mt-auto mb-6 w-full h-2 bg-primary/10 overflow-hidden rounded-full p-[2px]">
+<div class="w-full h-full bg-primary shadow-[0_0_15px_#ffedc3]"></div>
+</div>
+</div>
+</div>
+<!-- 3rd Place -->
+<div class="flex flex-col items-center h-[60%]">
+<div class="relative mb-stack-md animate-float" style="animation-delay: 1s">
+<div class="w-24 h-24 lg:w-28 lg:h-28 hex-clip bg-secondary-fixed-dim/20 p-1">
+<div class="w-full h-full hex-clip bg-surface-variant overflow-hidden border-2 border-secondary-fixed-dim">
+<img class="w-full h-full object-cover" data-alt="A portrait of a junior lab assistant avatar, with short messy hair and orange-tinted safety goggles. Wearing a simple grey lab jumpsuit with small neon blue glowing icons. The expression is one of happy excitement. Soft laboratory lighting with teal color grading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhj8zs2ph6lrnFMN20I2K5VM6eVUdv1S9qXOnkdZtZlZ-HzoFNy-R_HMhBTdUmrIXdBGdAqY4UTeKHx4tYIpIrctYv4LDr_Gbjz1f-fQ4kKYLDEGwsx1evErUU5iei0Iz4fjmUmtV-rUuPJZbxmBmwkOrp_hdNShiaxPDZDYlDm4Xcagm6zV40vhpsjRn0hoJNCJxqJTLLiAS7TX5B4WTcWKrx9jFvhVpUSypVeki3Ju8QocHlXigT">
+</div>
+</div>
+<div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-secondary-fixed-dim flex items-center justify-center text-on-secondary-fixed font-bold shadow-lg">3</div>
+</div>
+<div class="w-full h-full glass-panel border-t-4 border-secondary-fixed-dim/50 rounded-t-xl flex flex-col items-center pt-4 px-4">
+<span class="font-label-caps text-label-caps text-secondary-fixed-dim mb-1">LAB_ASSISTANT</span>
+<span class="font-headline-md text-headline-md text-white">1,890 XP</span>
+<div class="mt-auto mb-4 w-full h-1 bg-secondary-fixed-dim/20 overflow-hidden">
+<div class="w-[50%] h-full bg-secondary-fixed-dim shadow-[0_0_10px_#00dbe9]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-stack-lg flex gap-4 w-full max-w-md">
+<button class="flex-1 glass-panel py-4 rounded-xl border-b-4 border-secondary/50 font-label-caps text-label-caps text-secondary hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">refresh</span>
+                REJOUER
+            </button>
+<button class="flex-1 bg-primary text-on-primary py-4 rounded-xl border-b-4 border-on-primary-fixed-variant font-label-caps text-label-caps hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+                CONTINUER
+            </button>
+</div>
+</main>
+<!-- Global Footer Bar -->
+
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Trigger celebratory effects
+            console.log('Science podium sequence initialized...');
+            
+            // Subtle parallax effect on background
+            document.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+                const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+                document.querySelector('.dna-strand').style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body></html>

@@ -33,6 +33,7 @@
   },
   "quizz": {
     "answerEmpty": "Une réponse ne peut pas être vide",
+    "conflict": "Ce quiz a été modifié ailleurs depuis votre dernière ouverture",
     "failedToDelete": "Suppression du quizz a échoué",
     "failedToSave": "Le quizz est incomplet, vérifiez que chaque question a un titre et au moins une bonne réponse",
     "failedToUpdate": "La mise à jour du quizz a échoué",

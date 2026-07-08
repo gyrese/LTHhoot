@@ -24,7 +24,10 @@ import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import { fadeUp, MOTION_SPRING } from "@rahoot/web/features/game/utils/motion"
 import clsx from "clsx"
+import { Check, Loader2 } from "lucide-react"
+import { motion } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
@@ -75,7 +78,11 @@ const Answers = ({
   const { player, gameId } = usePlayerStore()
   const { cooldown: storeCooldown } = useQuestionStore()
   const [answered, setAnswered] = useState(false)
-  const [sendError, setSendError] = useState(false)
+  // Cycle visuel d'envoi piloté par l'ack serveur (cf. sendAnswer) : on
+  // n'affiche « Réponse envoyée ! » qu'à la confirmation, pas à l'émission.
+  const [sendState, setSendState] = useState<
+    "idle" | "sending" | "sent" | "failed"
+  >("idle")
 
   const [endTime, setEndTime] = useState(() => {
     const initialCooldown = storeCooldown && storeCooldown > 0 ? storeCooldown : time
@@ -179,7 +186,7 @@ const Answers = ({
             // Échec définitif : on rouvre la saisie pour permettre un nouvel essai.
             sendingRef.current = false
             setAnswered(false)
-            setSendError(true)
+            setSendState("failed")
 
             return
           }
@@ -187,7 +194,8 @@ const Answers = ({
           // Accusé reçu : ok / duplicate / closed / no_player / not_found.
           // Tous sont terminaux côté client (plus de retry). On garde « répondu ».
           sendingRef.current = false
-          setSendError(false)
+          setSendState("sent")
+          vibrate(HAPTIC_PATTERNS.ANSWER_CONFIRMED)
         },
       )
   }
@@ -204,8 +212,8 @@ const Answers = ({
 
     vibrate(HAPTIC_PATTERNS.TAP)
     sendingRef.current = true
-    setSendError(false)
-    // Feedback immédiat ; rétabli (answered=false) en cas d'échec définitif.
+    setSendState("sending")
+    // Verrouillage immédiat de la saisie ; rouvert (answered=false) si échec définitif.
     setAnswered(true)
     sendAnswer(payload, 0)
   }
@@ -409,7 +417,7 @@ const Answers = ({
           </div>
         </div>
 
-        {isPlayer && sendError && (
+        {isPlayer && sendState === "failed" && (
           <div className="mx-auto mb-3 w-full max-w-7xl px-2">
             <div className="rounded-xl border border-red-400/40 bg-red-600/30 px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur-sm">
               {t("game:answerSendFailed")}
@@ -484,9 +492,28 @@ const Answers = ({
 
         {isPlayer && answered && (
           <div className="mx-auto mb-4 flex w-full max-w-7xl justify-center px-2">
-            <div className="rounded-xl bg-black/40 px-6 py-3 text-lg font-bold text-white">
-              {t("game:answerSent")}
-            </div>
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="flex items-center gap-3 rounded-xl bg-black/40 px-6 py-3 text-lg font-bold text-white"
+            >
+              {sendState === "sent" ? (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={MOTION_SPRING}
+                  className="flex size-6 shrink-0 items-center justify-center rounded-full bg-green-500"
+                >
+                  <Check className="size-4 stroke-4 text-white" />
+                </motion.span>
+              ) : (
+                <Loader2 className="size-5 shrink-0 animate-spin text-white/70" />
+              )}
+              {sendState === "sent"
+                ? t("game:answerSent")
+                : t("game:answerSending")}
+            </motion.div>
           </div>
         )}
       </div>

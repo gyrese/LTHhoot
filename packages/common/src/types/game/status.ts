@@ -3,6 +3,7 @@ import type {
   Award,
   DropPinZone,
   Player,
+  PodiumThemeId,
   QuestionMedia,
   QuestionType,
   SlideBackground,
@@ -104,6 +105,8 @@ export type CommonStatusDataMap = {
     rank?: number
     totalPlayers?: number
     awards?: Award[]
+    // Thème visuel du podium, résolu côté serveur (jamais "random").
+    podiumTheme?: PodiumThemeId
   }
   PAUSED: { text: string }
   SHOW_TIE_BREAK: { statement: string; opponents: string[] }

@@ -90,9 +90,12 @@ export interface PowerUp {
 // power-ups sont activés pour la partie.
 export const SHOP = {
   // Solde de départ à l'arrivée d'un joueur
-  STARTING_COINS: 300,
-  // Pièces gagnées = round(points de la manche × COIN_RATE)
-  COIN_RATE: 0.5,
+  STARTING_COINS: 200,
+  // Pièces gagnées par bonne réponse (montant fixe, indépendant de la vitesse)
+  COINS_PER_CORRECT: 50,
+  // Bonus toutes les STREAK_LENGTH bonnes réponses d'affilée
+  STREAK_LENGTH: 5,
+  STREAK_BONUS: 200,
   // Bonus de fin de quiz (mode soirée)
   QUIZ_WIN_BONUS: 500,
   PERFECT_BONUS: 1000,

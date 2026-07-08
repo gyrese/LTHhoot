@@ -179,7 +179,7 @@ export const renderPodiumToCanvas = async (
   ctx.textAlign = "center"
   ctx.fillStyle = "rgba(255,255,255,0.3)"
   ctx.font = "24px monospace"
-  ctx.fillText("LTNHOOT", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 40)
+  ctx.fillText("L'APÉRO QUIZ & LES TOILES NOIRES", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 40)
 
   return canvas
 }
@@ -297,7 +297,7 @@ export const renderScorecardToCanvas = async (
   ctx.textAlign = "center"
   ctx.fillStyle = themeColor
   ctx.font = "bold 20px monospace"
-  ctx.fillText("RAHOOT SCORECARD", size / 2, 115)
+  ctx.fillText("L'APÉRO QUIZ & LES TOILES NOIRES", size / 2, 115)
 
   ctx.fillStyle = "#ffffff"
   ctx.font = "bold 52px sans-serif"
@@ -420,7 +420,7 @@ export const renderScorecardToCanvas = async (
   ctx.textAlign = "center"
   ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
   ctx.font = "bold 24px monospace"
-  ctx.fillText("LTNHOOT", size / 2, size - 85)
+  ctx.fillText("L'APÉRO QUIZ & LES TOILES NOIRES", size / 2, size - 85)
 
   return canvas
 }

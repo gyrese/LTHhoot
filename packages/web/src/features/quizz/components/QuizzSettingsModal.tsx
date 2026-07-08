@@ -1,5 +1,7 @@
+import { PODIUM_THEMES } from "@rahoot/common/constants"
+import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { X, Upload, Sparkles } from "lucide-react"
+import { X, Upload, Sparkles, Dices } from "lucide-react"
 import { useRef, useState, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
@@ -22,6 +24,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   )
   const [localSalonImage, setLocalSalonImage] = useState<string | undefined>(
     ctx.salonImage,
+  )
+  const [localPodiumTheme, setLocalPodiumTheme] = useState<PodiumThemeSetting>(
+    ctx.podiumTheme ?? "random",
   )
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
@@ -48,6 +53,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     ctx.setTags(localTags)
     ctx.setListingImage(localImage)
     ctx.setSalonImage(localSalonImage)
+    // "random" est le défaut : on ne stocke rien dans le quiz dans ce cas.
+    ctx.setPodiumTheme(
+      localPodiumTheme === "random" ? undefined : localPodiumTheme,
+    )
     onClose()
   }
 
@@ -58,6 +67,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     setLocalTags(ctx.tags)
     setLocalImage(ctx.listingImage)
     setLocalSalonImage(ctx.salonImage)
+    setLocalPodiumTheme(ctx.podiumTheme ?? "random")
     onClose()
   }
 
@@ -217,10 +227,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   value={localSubject}
                   onChange={(e) => setLocalSubject(e.target.value)}
                   maxLength={90}
-                  className="w-full rounded-lg border border-border px-4 py-3 pr-14 text-sm outline-none focus:border-primary"
+                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
                   placeholder={t("quizz:titleQuizzPlaceholder")}
                 />
-                <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-ink-subtle">
+                <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                   {localSubject.length}/90
                 </span>
               </div>
@@ -243,10 +253,10 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   onChange={(e) => setLocalDescription(e.target.value)}
                   maxLength={500}
                   rows={4}
-                  className="w-full resize-none rounded-lg border border-border px-4 py-3 pr-14 text-sm outline-none focus:border-primary"
+                  className="border-border focus:border-primary w-full resize-none rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
                   placeholder={t("quizz:settings.descriptionPlaceholder")}
                 />
-                <span className="absolute right-3 bottom-3 text-xs text-ink-subtle">
+                <span className="text-ink-subtle absolute right-3 bottom-3 text-xs">
                   {localDescription.length}/500
                 </span>
               </div>
@@ -261,7 +271,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 type="text"
                 value={localFolder}
                 onChange={(e) => setLocalFolder(e.target.value)}
-                className="w-full rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-primary"
+                className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 text-sm outline-none"
                 placeholder={t("quizz:folderPlaceholder")}
               />
             </div>
@@ -332,7 +342,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || generating}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
+                  className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
@@ -351,7 +361,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   }
                   disabled={!localSubject.trim() || generating || uploading}
                   title={t("quizz:settings.aiGenerateTooltip")}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft disabled:opacity-50"
+                  className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
                 >
                   <Sparkles className="size-5" />
                   <span className="text-xs font-medium">
@@ -360,7 +370,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 </button>
 
                 {localImage && (
-                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-border">
+                  <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
                     <img
                       src={localImage}
                       alt="cover"
@@ -411,7 +421,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   type="button"
                   onClick={() => salonFileInputRef.current?.click()}
                   disabled={uploadingSalon || generatingSalon}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink disabled:opacity-50"
+                  className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
                 >
                   <Upload className="size-5" />
                   <span className="text-xs">
@@ -428,9 +438,11 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                       setGeneratingSalon,
                     )
                   }
-                  disabled={!localSubject.trim() || generatingSalon || uploadingSalon}
+                  disabled={
+                    !localSubject.trim() || generatingSalon || uploadingSalon
+                  }
                   title={t("quizz:settings.aiGenerateTooltip")}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft disabled:opacity-50"
+                  className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
                 >
                   <Sparkles className="size-5" />
                   <span className="text-xs font-medium">
@@ -439,7 +451,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 </button>
 
                 {localSalonImage && (
-                  <div className="relative h-24 w-36 overflow-hidden rounded-lg border border-border">
+                  <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
                     <img
                       src={localSalonImage}
                       alt="salon"
@@ -454,6 +466,57 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Thème du podium */}
+            <div>
+              <label className="text-ink mb-1 block text-sm font-bold">
+                {t("quizz:settings.podiumThemeLabel")}
+              </label>
+              <p className="text-ink-subtle mb-3 text-xs">
+                {t("quizz:settings.podiumThemeHint")}
+              </p>
+
+              <div className="grid grid-cols-3 gap-2">
+                {/* Aléatoire (défaut) */}
+                <button
+                  type="button"
+                  onClick={() => setLocalPodiumTheme("random")}
+                  className={`bg-panel flex h-16 flex-col items-center justify-center gap-1 rounded-lg border-2 transition-colors ${
+                    localPodiumTheme === "random"
+                      ? "border-primary"
+                      : "border-border hover:border-border-strong"
+                  }`}
+                >
+                  <Dices className="text-ink-muted size-5" />
+                  <span className="text-ink text-[11px] font-semibold">
+                    {t("quizz:settings.podiumThemes.random")}
+                  </span>
+                </button>
+
+                {PODIUM_THEMES.map((themeId) => (
+                  <button
+                    key={themeId}
+                    type="button"
+                    onClick={() => setLocalPodiumTheme(themeId)}
+                    className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
+                      localPodiumTheme === themeId
+                        ? "border-primary"
+                        : "border-border hover:border-border-strong"
+                    }`}
+                  >
+                    <img
+                      src={`/podium/${themeId}.jpg`}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                    <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
+                      {t(`quizz:settings.podiumThemes.${themeId}`)}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

@@ -29,6 +29,11 @@ type SlideCanvasProps = {
   onChange: (_elements: SlideElement[]) => void
   selectedId?: string
   onSelect: (_id: string | undefined) => void
+  // Sélection multiple d'éléments (rubber-band / shift-clic) — optionnelle :
+  // les consommateurs en lecture seule (affichage in-game, aperçu) n'en ont
+  // pas besoin et continuent de fonctionner sans rien changer.
+  selectedIds?: string[]
+  onSelectMultiple?: (_ids: string[]) => void
   readOnly?: boolean
   noBackground?: boolean
   background?: SlideBackground
@@ -39,12 +44,17 @@ type SlideCanvasProps = {
 
 const CANVAS_W = 1920
 const CANVAS_H = 1080
+const MIN_ZOOM = 0.25
+const MAX_ZOOM = 3
+const MARQUEE_CLICK_THRESHOLD = 4
 
 const SlideCanvas = ({
   elements,
   onChange,
   selectedId,
   onSelect,
+  selectedIds,
+  onSelectMultiple,
   readOnly = false,
   noBackground = false,
   background,
@@ -53,11 +63,14 @@ const SlideCanvas = ({
   hideYoutube = false,
 }: SlideCanvasProps) => {
   const stageRef = useRef<Konva.Stage>(null)
+  const layerRef = useRef<Konva.Layer>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const outerRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const dragCounterRef = useRef(0)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
+
+  const multiSelected = selectedIds ?? []
 
   // Computed 16:9 canvas size fitted into the available space
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
@@ -66,11 +79,11 @@ const SlideCanvas = ({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect
-        const scale = Math.min(width / CANVAS_W, height / CANVAS_H)
+        const fit = Math.min(width / CANVAS_W, height / CANVAS_H)
 
         setCanvasSize({
-          width: Math.round(CANVAS_W * scale),
-          height: Math.round(CANVAS_H * scale),
+          width: Math.round(CANVAS_W * fit),
+          height: Math.round(CANVAS_H * fit),
         })
       }
     })
@@ -82,46 +95,355 @@ const SlideCanvas = ({
     return () => observer.disconnect()
   }, [])
 
-  const scale = canvasSize.width / CANVAS_W
+  // `fitScale` ajuste le canvas 1920×1080 à l'espace dispo ; `zoom` est le
+  // niveau de zoom utilisateur (Ctrl+molette) par-dessus. `scale` (le produit
+  // des deux) reste le nom utilisé partout ailleurs dans ce fichier pour les
+  // conversions écran ↔ contenu, inchangé en dehors de sa définition.
+  const fitScale = canvasSize.width / CANVAS_W
+  const [zoom, setZoom] = useState(1)
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 })
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const scale = fitScale * zoom
+
+  const resetZoom = () => {
+    setZoom(1)
+    setStagePos({ x: 0, y: 0 })
+  }
+
+  const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+    if (readOnly || (!e.evt.ctrlKey && !e.evt.metaKey)) {
+      return
+    }
+
+    e.evt.preventDefault()
+
+    const stage = stageRef.current
+    const pointer = stage?.getPointerPosition()
+
+    if (!pointer) {
+      return
+    }
+
+    const oldScale = fitScale * zoom
+    const contentX = (pointer.x - stagePos.x) / oldScale
+    const contentY = (pointer.y - stagePos.y) / oldScale
+
+    const scaleBy = 1.05
+    const rawZoom = e.evt.deltaY > 0 ? zoom / scaleBy : zoom * scaleBy
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, rawZoom))
+    const newScale = fitScale * newZoom
+
+    setZoom(newZoom)
+    setStagePos({
+      x: pointer.x - contentX * newScale,
+      y: pointer.y - contentY * newScale,
+    })
+  }
+
+  // Espace maintenu = mode pan (glisser le calque). Désactivé si le focus est
+  // dans un champ texte, même garde que les autres raccourcis de l'éditeur.
+  useEffect(() => {
+    if (readOnly) {
+      return
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") {
+        return
+      }
+
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName.toLowerCase()
+
+      if (tag === "input" || tag === "textarea" || target?.isContentEditable) {
+        return
+      }
+
+      e.preventDefault()
+      setIsSpacePressed(true)
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        setIsSpacePressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [readOnly])
 
   const checkDeselect = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const clickedOnEmpty = e.target === e.target.getStage()
 
     if (clickedOnEmpty) {
+      applySelectionResult([])
+    }
+  }
+
+  // ─── Sélection (simple + multiple) ─────────────────────────────────────────
+
+  const applySelectionResult = (ids: string[]) => {
+    if (ids.length >= 2) {
+      onSelectMultiple?.(ids)
+      onSelect(undefined)
+    } else if (ids.length === 1) {
+      onSelectMultiple?.([])
+      onSelect(ids[0])
+    } else {
+      onSelectMultiple?.([])
       onSelect(undefined)
     }
   }
 
-  useEffect(() => {
-    if (selectedId && transformerRef.current) {
-      const stage = transformerRef.current.getStage()
+  const handleElementClick = (e: KonvaEventObject<MouseEvent>, id: string) => {
+    if (e.evt.shiftKey) {
+      const current = multiSelected.length
+        ? multiSelected
+        : selectedId
+          ? [selectedId]
+          : []
+      const next = current.includes(id)
+        ? current.filter((existing) => existing !== id)
+        : [...current, id]
 
-      if (!stage) {
+      applySelectionResult(next)
+
+      return
+    }
+
+    applySelectionResult([id])
+  }
+
+  const handleElementTap = (id: string) => {
+    applySelectionResult([id])
+  }
+
+  useEffect(() => {
+    const stage = transformerRef.current?.getStage()
+
+    if (!transformerRef.current || !stage) {
+      return
+    }
+
+    const idsForTransform =
+      multiSelected.length >= 2
+        ? multiSelected
+        : selectedId
+          ? [selectedId]
+          : []
+
+    const nodes = idsForTransform
+      .map((id) => {
+        const node = stage.findOne(`#${id}`)
+        const el = elements.find((element) => element.id === id)
+
+        return node && !el?.isLocked ? node : null
+      })
+      .filter((node): node is Konva.Node => node !== null)
+
+    transformerRef.current.nodes(nodes)
+    transformerRef.current.getLayer()?.batchDraw()
+  }, [selectedId, multiSelected, elements])
+
+  // ─── Rubber-band (rectangle de sélection) ──────────────────────────────────
+
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null)
+  const marqueeRectRef = useRef<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
+  const [marquee, setMarquee] = useState<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
+  const [isMarqueeTracking, setIsMarqueeTracking] = useState(false)
+  const finalizeMarqueeRef = useRef<() => void>(() => {})
+
+  useEffect(() => {
+    finalizeMarqueeRef.current = () => {
+      const rect = marqueeRectRef.current
+      marqueeStartRef.current = null
+      marqueeRectRef.current = null
+      setIsMarqueeTracking(false)
+      setMarquee(null)
+
+      if (!rect) {
         return
       }
 
-      const selectedNode = stage.findOne(`#${selectedId}`)
-      const selectedEl = elements.find((el) => el.id === selectedId)
+      if (
+        rect.width < MARQUEE_CLICK_THRESHOLD &&
+        rect.height < MARQUEE_CLICK_THRESHOLD
+      ) {
+        applySelectionResult([])
 
-      if (selectedNode && !selectedEl?.isLocked) {
-        transformerRef.current.nodes([selectedNode])
-        transformerRef.current.getLayer()?.batchDraw()
-      } else {
-        transformerRef.current.nodes([])
+        return
       }
-    } else if (transformerRef.current) {
-      transformerRef.current.nodes([])
+
+      const rectX = (rect.x - stagePos.x) / scale
+      const rectY = (rect.y - stagePos.y) / scale
+      const rectW = rect.width / scale
+      const rectH = rect.height / scale
+
+      const matched = elements
+        .filter((el) => !el.isLocked)
+        .filter((el) => {
+          const left = el.x
+          const right = el.x + el.width
+          const top = el.y
+          const bottom = el.y + el.height
+
+          return (
+            left < rectX + rectW &&
+            right > rectX &&
+            top < rectY + rectH &&
+            bottom > rectY
+          )
+        })
+        .map((el) => el.id)
+
+      applySelectionResult(matched)
     }
-  }, [selectedId, elements])
+  })
+
+  useEffect(() => {
+    if (!isMarqueeTracking) {
+      return
+    }
+
+    const handleWindowMouseUp = () => finalizeMarqueeRef.current()
+
+    window.addEventListener("mouseup", handleWindowMouseUp)
+
+    return () => window.removeEventListener("mouseup", handleWindowMouseUp)
+  }, [isMarqueeTracking])
+
+  const handleStageMouseDown = (
+    e: KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => {
+    if (e.target === e.target.getStage() || e.target.id() !== editingId) {
+      setEditingId(undefined)
+    }
+
+    if (readOnly || isSpacePressed) {
+      return
+    }
+
+    const clickedOnEmpty = e.target === e.target.getStage()
+
+    if (!clickedOnEmpty) {
+      return
+    }
+
+    const stage = stageRef.current
+    const pointer = stage?.getPointerPosition()
+
+    if (!pointer) {
+      return
+    }
+
+    marqueeStartRef.current = pointer
+    marqueeRectRef.current = { x: pointer.x, y: pointer.y, width: 0, height: 0 }
+    setIsMarqueeTracking(true)
+    setMarquee(marqueeRectRef.current)
+  }
+
+  const handleStageMouseMove = () => {
+    if (!marqueeStartRef.current) {
+      return
+    }
+
+    const stage = stageRef.current
+    const pointer = stage?.getPointerPosition()
+
+    if (!pointer) {
+      return
+    }
+
+    const start = marqueeStartRef.current
+    const rect = {
+      x: Math.min(start.x, pointer.x),
+      y: Math.min(start.y, pointer.y),
+      width: Math.abs(pointer.x - start.x),
+      height: Math.abs(pointer.y - start.y),
+    }
+
+    marqueeRectRef.current = rect
+    setMarquee(rect)
+  }
 
   const [guideLines, setGuideLines] = useState<{ x1: number; y1: number; x2: number; y2: number }[]>([])
+  const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(
+    new Map(),
+  )
+
+  const handleDragStart = (_e: KonvaEventObject<DragEvent>, dragId: string) => {
+    if (readOnly) return
+
+    if (multiSelected.length >= 2 && multiSelected.includes(dragId)) {
+      const positions = new Map<string, { x: number; y: number }>()
+
+      multiSelected.forEach((id) => {
+        const el = elements.find((element) => element.id === id)
+
+        if (el) {
+          positions.set(id, { x: el.x, y: el.y })
+        }
+      })
+
+      dragStartPositionsRef.current = positions
+    }
+  }
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>, dragId: string) => {
     if (readOnly) return
+
+    // Déplacement groupé : applique le même delta à tous les autres éléments
+    // sélectionnés, sans passer par la logique de snap (pensée pour un seul
+    // élément à la fois).
+    if (
+      multiSelected.length >= 2 &&
+      multiSelected.includes(dragId) &&
+      dragStartPositionsRef.current.has(dragId)
+    ) {
+      const dragNode = e.target
+      const start = dragStartPositionsRef.current.get(dragId)!
+      const deltaX = dragNode.x() - start.x
+      const deltaY = dragNode.y() - start.y
+      const stage = stageRef.current
+
+      multiSelected.forEach((id) => {
+        if (id === dragId || !stage) return
+
+        const otherStart = dragStartPositionsRef.current.get(id)
+
+        if (!otherStart) return
+
+        const node = stage.findOne(`#${id}`)
+
+        if (node) {
+          node.x(otherStart.x + deltaX)
+          node.y(otherStart.y + deltaY)
+        }
+      })
+
+      return
+    }
+
     const dragNode = e.target
     const dragWidth = dragNode.width() * dragNode.scaleX()
     const dragHeight = dragNode.height() * dragNode.scaleY()
-    
+
     const dragLeft = dragNode.x()
     const dragRight = dragLeft + dragWidth
     const dragCenterX = dragLeft + dragWidth / 2
@@ -147,7 +469,7 @@ const SlideCanvas = ({
 
     elements.forEach((el) => {
       if (el.id === dragId) return
-      
+
       const left = el.x
       const right = el.x + el.width
       const centerX = el.x + el.width / 2
@@ -177,7 +499,7 @@ const SlideCanvas = ({
         if (diff < minDiffX) {
           minDiffX = diff
           snapX = line.coord + pos.offset
-          
+
           newGuides.push({
             x1: line.coord,
             y1: 0,
@@ -224,6 +546,34 @@ const SlideCanvas = ({
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>, id: string) => {
     setGuideLines([])
+
+    if (
+      multiSelected.length >= 2 &&
+      multiSelected.includes(id) &&
+      dragStartPositionsRef.current.has(id)
+    ) {
+      const node = e.target
+      const start = dragStartPositionsRef.current.get(id)!
+      const deltaX = node.x() - start.x
+      const deltaY = node.y() - start.y
+
+      onChange(
+        elements.map((el) => {
+          if (!multiSelected.includes(el.id)) return el
+
+          const elStart = dragStartPositionsRef.current.get(el.id)
+
+          if (!elStart) return el
+
+          return { ...el, x: elStart.x + deltaX, y: elStart.y + deltaY }
+        }),
+      )
+
+      dragStartPositionsRef.current = new Map()
+
+      return
+    }
+
     const node = e.target
     onChange(
       elements.map((el) =>
@@ -475,8 +825,8 @@ const SlideCanvas = ({
     }
 
     const rect = innerRef.current?.getBoundingClientRect()
-    const dropX = rect ? (e.clientX - rect.left) / scale : 200
-    const dropY = rect ? (e.clientY - rect.top) / scale : 200
+    const dropX = rect ? (e.clientX - rect.left - stagePos.x) / scale : 200
+    const dropY = rect ? (e.clientY - rect.top - stagePos.y) / scale : 200
 
     processDroppedFile(files[0], dropX, dropY)
   }
@@ -492,7 +842,11 @@ const SlideCanvas = ({
         <div
           ref={innerRef}
           className="relative"
-          style={{ width: canvasSize.width, height: canvasSize.height }}
+          style={{
+            width: canvasSize.width,
+            height: canvasSize.height,
+            cursor: isSpacePressed && !readOnly ? "grab" : undefined,
+          }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -501,25 +855,26 @@ const SlideCanvas = ({
           <Stage
             width={canvasSize.width}
             height={canvasSize.height}
-            onMouseDown={(e) => {
-              checkDeselect(e)
-
-              if (
-                e.target === e.target.getStage() ||
-                e.target.id() !== editingId
-              ) {
-                setEditingId(undefined)
-              }
-            }}
+            onMouseDown={handleStageMouseDown}
+            onMouseMove={handleStageMouseMove}
+            onMouseUp={() => finalizeMarqueeRef.current()}
+            onWheel={handleWheel}
             onTouchStart={checkDeselect}
             onContextMenu={(e) => {
               e.evt.preventDefault()
               const clickedOnEmpty = e.target === e.target.getStage()
 
               if (!clickedOnEmpty && e.target.id()) {
-                onSelect(e.target.id())
+                const id = e.target.id()
+
+                // Un clic droit sur un membre de la sélection multiple la
+                // conserve intacte (pour agir sur tout le groupe) ; sur un
+                // élément hors sélection, il redevient la sélection unique.
+                if (!multiSelected.includes(id)) {
+                  applySelectionResult([id])
+                }
               } else if (clickedOnEmpty) {
-                onSelect(undefined)
+                applySelectionResult([])
               }
 
               if (onContextMenuEvent) {
@@ -528,18 +883,35 @@ const SlideCanvas = ({
             }}
             ref={stageRef}
           >
-            <Layer scaleX={scale} scaleY={scale}>
+            <Layer
+              ref={layerRef}
+              x={stagePos.x}
+              y={stagePos.y}
+              scaleX={scale}
+              scaleY={scale}
+              draggable={!readOnly && isSpacePressed}
+              onDragEnd={(e) => {
+                if (e.target.getClassName() !== "Layer") return
+                setStagePos({ x: e.target.x(), y: e.target.y() })
+              }}
+            >
               {!noBackground && (
                 <>
                   {hasBackground ? (
                     <>
-                      <Rect width={CANVAS_W} height={CANVAS_H} fill="#000000" />
+                      <Rect
+                        width={CANVAS_W}
+                        height={CANVAS_H}
+                        fill="#000000"
+                        listening={false}
+                      />
                       {bgColor ? (
                         <Rect
                           width={CANVAS_W}
                           height={CANVAS_H}
                           fill={bgColor}
                           opacity={bgOpacity}
+                          listening={false}
                         />
                       ) : (
                         <KonvaImage
@@ -547,18 +919,25 @@ const SlideCanvas = ({
                           width={CANVAS_W}
                           height={CANVAS_H}
                           opacity={bgOpacity}
+                          listening={false}
                         />
                       )}
                     </>
                   ) : (
                     <>
                       {/* Fond par défaut : dark base + salon à 50% */}
-                      <Rect width={CANVAS_W} height={CANVAS_H} fill="#0f172a" />
+                      <Rect
+                        width={CANVAS_W}
+                        height={CANVAS_H}
+                        fill="#0f172a"
+                        listening={false}
+                      />
                       <KonvaImage
                         image={defaultBgImage || undefined}
                         width={CANVAS_W}
                         height={CANVAS_H}
                         opacity={0.5}
+                        listening={false}
                       />
                     </>
                   )}
@@ -585,15 +964,16 @@ const SlideCanvas = ({
                       align={el.align}
                       draggable={!isEditing && !el.isLocked}
                       visible={!isEditing}
-                      onClick={() => {
-                        if (selectedId === el.id) {
+                      onClick={(e) => {
+                        if (selectedId === el.id && !e.evt.shiftKey) {
                           setEditingId(el.id)
                         }
 
-                        onSelect(el.id)
+                        handleElementClick(e, el.id)
                       }}
                       onDblClick={() => setEditingId(el.id)}
-                      onTap={() => onSelect(el.id)}
+                      onTap={() => handleElementTap(el.id)}
+                      onDragStart={(e) => handleDragStart(e, el.id)}
                       onDragMove={(e) => handleDragMove(e, el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
@@ -611,8 +991,11 @@ const SlideCanvas = ({
                     width: el.width,
                     height: el.height,
                     draggable: !el.isLocked,
-                    onClick: () => onSelect(el.id),
-                    onTap: () => onSelect(el.id),
+                    onClick: (e: KonvaEventObject<MouseEvent>) =>
+                      handleElementClick(e, el.id),
+                    onTap: () => handleElementTap(el.id),
+                    onDragStart: (e: KonvaEventObject<DragEvent>) =>
+                      handleDragStart(e, el.id),
                     onDragMove: (e: KonvaEventObject<DragEvent>) =>
                       handleDragMove(e, el.id),
                     onDragEnd: (e: KonvaEventObject<DragEvent>) =>
@@ -681,8 +1064,9 @@ const SlideCanvas = ({
                       fill={el.fill || "#ccc"}
                       cornerRadius={el.cornerRadius || 0}
                       draggable={!el.isLocked}
-                      onClick={() => onSelect(el.id)}
-                      onTap={() => onSelect(el.id)}
+                      onClick={(e) => handleElementClick(e, el.id)}
+                      onTap={() => handleElementTap(el.id)}
+                      onDragStart={(e) => handleDragStart(e, el.id)}
                       onDragMove={(e) => handleDragMove(e, el.id)}
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
@@ -704,7 +1088,9 @@ const SlideCanvas = ({
                     <CanvasImageElement
                       key={el.id}
                       el={el}
-                      onSelect={onSelect}
+                      onElementClick={handleElementClick}
+                      onElementTap={handleElementTap}
+                      handleDragStart={handleDragStart}
                       handleDragMove={handleDragMove}
                       handleDragEnd={handleDragEnd}
                       handleTransformEnd={handleTransformEnd}
@@ -717,7 +1103,9 @@ const SlideCanvas = ({
                     <CanvasYoutubeElement
                       key={el.id}
                       el={el}
-                      onSelect={onSelect}
+                      onElementClick={handleElementClick}
+                      onElementTap={handleElementTap}
+                      handleDragStart={handleDragStart}
                       handleDragMove={handleDragMove}
                       handleDragEnd={handleDragEnd}
                       handleTransformEnd={handleTransformEnd}
@@ -742,6 +1130,34 @@ const SlideCanvas = ({
             </Layer>
           </Stage>
 
+          {/* Rectangle de sélection multiple (rubber-band) */}
+          {marquee && (
+            <div
+              className="border-primary bg-primary/10 pointer-events-none absolute z-40 border"
+              style={{
+                left: marquee.x,
+                top: marquee.y,
+                width: marquee.width,
+                height: marquee.height,
+              }}
+            />
+          )}
+
+          {/* Indicateur de zoom + réinitialisation */}
+          {!readOnly && (
+            <div className="pointer-events-auto absolute right-2 bottom-2 z-40 flex items-center gap-2 rounded-lg bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+              <span>{Math.round(zoom * 100)}%</span>
+              <button
+                type="button"
+                onClick={resetZoom}
+                className="rounded px-1.5 py-0.5 hover:bg-white/20"
+                title="Réinitialiser le zoom"
+              >
+                Réinitialiser
+              </button>
+            </div>
+          )}
+
           {/* Text editing overlay — positioned relative to the 16:9 inner div */}
           {!readOnly &&
             editingId &&
@@ -765,8 +1181,8 @@ const SlideCanvas = ({
                     }
                   }}
                   style={{
-                    left: el.x * scale,
-                    top: el.y * scale,
+                    left: el.x * scale + stagePos.x,
+                    top: el.y * scale + stagePos.y,
                     width: el.width * scale,
                     height: (el.height || 100) * scale,
                     fontSize: el.fontSize * scale,
@@ -828,8 +1244,8 @@ const SlideCanvas = ({
                     allowFullScreen
                     className="absolute rounded-md"
                     style={{
-                      left: el.x * scale,
-                      top: el.y * scale,
+                      left: el.x * scale + stagePos.x,
+                      top: el.y * scale + stagePos.y,
                       width: el.width * scale,
                       height: el.height * scale,
                       transform: `rotate(${el.rotation}deg)`,
@@ -859,8 +1275,8 @@ const SlideCanvas = ({
                   alt=""
                   className="absolute rounded-md pointer-events-none"
                   style={{
-                    left: el.x * scale,
-                    top: el.y * scale,
+                    left: el.x * scale + stagePos.x,
+                    top: el.y * scale + stagePos.y,
                     width: el.width * scale,
                     height: el.height * scale,
                     transform: `rotate(${el.rotation}deg)`,
@@ -889,13 +1305,17 @@ const useSimpleImage = (url: string) => {
 
 const CanvasImageElement = ({
   el,
-  onSelect,
+  onElementClick,
+  onElementTap,
+  handleDragStart,
   handleDragMove,
   handleDragEnd,
   handleTransformEnd,
 }: {
   el: Extract<SlideElement, { type: "image" }>
-  onSelect: (_id: string) => void
+  onElementClick: (_e: KonvaEventObject<MouseEvent>, _id: string) => void
+  onElementTap: (_id: string) => void
+  handleDragStart: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragMove: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
@@ -913,8 +1333,9 @@ const CanvasImageElement = ({
       rotation={el.rotation}
       opacity={el.opacity}
       draggable={!el.isLocked}
-      onClick={() => onSelect(el.id)}
-      onTap={() => onSelect(el.id)}
+      onClick={(e) => onElementClick(e, el.id)}
+      onTap={() => onElementTap(el.id)}
+      onDragStart={(e) => handleDragStart(e, el.id)}
       onDragMove={(e) => handleDragMove(e, el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}
@@ -924,13 +1345,17 @@ const CanvasImageElement = ({
 
 const CanvasYoutubeElement = ({
   el,
-  onSelect,
+  onElementClick,
+  onElementTap,
+  handleDragStart,
   handleDragMove,
   handleDragEnd,
   handleTransformEnd,
 }: {
   el: Extract<SlideElement, { type: "youtube" }>
-  onSelect: (_id: string) => void
+  onElementClick: (_e: KonvaEventObject<MouseEvent>, _id: string) => void
+  onElementTap: (_id: string) => void
+  handleDragStart: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragMove: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleDragEnd: (_e: KonvaEventObject<DragEvent>, _id: string) => void
   handleTransformEnd: (_e: KonvaEventObject<Event>, _id: string) => void
@@ -948,8 +1373,9 @@ const CanvasYoutubeElement = ({
       height={el.height}
       rotation={el.rotation}
       draggable={!el.isLocked}
-      onClick={() => onSelect(el.id)}
-      onTap={() => onSelect(el.id)}
+      onClick={(e) => onElementClick(e, el.id)}
+      onTap={() => onElementTap(el.id)}
+      onDragStart={(e) => handleDragStart(e, el.id)}
       onDragMove={(e) => handleDragMove(e, el.id)}
       onDragEnd={(e) => handleDragEnd(e, el.id)}
       onTransformEnd={(e) => handleTransformEnd(e, el.id)}

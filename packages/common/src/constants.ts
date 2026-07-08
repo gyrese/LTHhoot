@@ -109,6 +109,16 @@ export const MEDIA_TYPES = {
   AUDIO: "audio",
 } as const
 
+// Thèmes visuels du podium de fin de partie (maquettes .stitch). "random"
+// (défaut quand absent) : le serveur en tire un au sort à la fin du quiz.
+export const PODIUM_THEMES = [
+  "espace",
+  "jurassic",
+  "manga",
+  "science",
+  "heros",
+] as const
+
 export const EXAMPLE_QUIZZ = {
   subject: "Example Quizz",
   questions: [
