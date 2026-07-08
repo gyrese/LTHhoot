@@ -23,6 +23,8 @@ import {
   ArrowDownToLine,
   Minimize2,
   Image as ImageIcon,
+  Radius,
+  Droplet,
 } from "lucide-react"
 import clsx from "clsx"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
@@ -176,6 +178,9 @@ const SlideToolbar = () => {
 
   const hasColor = (el: SlideElement): el is TextElement | ShapeElement =>
     el.type === "text" || el.type === "shape"
+
+  const isRectShape = (el: SlideElement): el is ShapeElement =>
+    el.type === "shape" && el.shapeType === "rect"
 
   const CANVAS_W = 1920
   const CANVAS_H = 1080
@@ -458,6 +463,40 @@ const SlideToolbar = () => {
                 />
               </div>
             )}
+
+            {isRectShape(selectedElement) && (
+              <div className="mr-1 flex items-center gap-1" title="Angles arrondis">
+                <Radius className="text-ink-muted size-4 shrink-0" />
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.min(selectedElement.width, selectedElement.height) / 2}
+                  value={selectedElement.cornerRadius || 0}
+                  onChange={(e) =>
+                    updateSelected({ cornerRadius: Number(e.target.value) })
+                  }
+                  className="accent-primary h-1 w-16 cursor-pointer"
+                />
+              </div>
+            )}
+
+            <div className="mr-1 flex items-center gap-1" title="Opacité">
+              <Droplet className="text-ink-muted size-4 shrink-0" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={selectedElement.opacity ?? 1}
+                onChange={(e) =>
+                  updateSelected({ opacity: Number(e.target.value) })
+                }
+                className="accent-primary h-1 w-16 cursor-pointer"
+              />
+              <span className="text-ink-subtle w-8 text-right text-[10px] tabular-nums">
+                {Math.round((selectedElement.opacity ?? 1) * 100)}%
+              </span>
+            </div>
 
             <div className="bg-border mx-1 h-6 w-px" />
 
