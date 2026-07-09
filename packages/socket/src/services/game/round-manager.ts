@@ -1018,6 +1018,8 @@ export class RoundManager {
       totalPlayers: leaderboard.length,
       // Thème résolu une seule fois : hôte et joueurs voient le même.
       podiumTheme: resolvePodiumTheme(this.opts.quizz.podiumTheme),
+      // Fond du podium "neutre" : couverture du quiz, sinon image du salon.
+      coverImage: this.opts.quizz.listingImage || this.opts.quizz.salonImage,
     }
 
     this.opts.send(this.opts.getManagerId(), STATUS.FINISHED, base)

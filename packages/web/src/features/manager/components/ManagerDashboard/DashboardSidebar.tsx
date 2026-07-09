@@ -11,8 +11,17 @@ import {
   Trash2,
   X,
 } from "lucide-react"
-import { ARCHIVE_FOLDER, isArchived } from "@rahoot/web/features/manager/utils/folders"
-import { useMemo, useState, useEffect, type DragEvent, type KeyboardEvent } from "react"
+import {
+  ARCHIVE_FOLDER,
+  isArchived,
+} from "@rahoot/web/features/manager/utils/folders"
+import {
+  useMemo,
+  useState,
+  useEffect,
+  type DragEvent,
+  type KeyboardEvent,
+} from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
@@ -72,7 +81,9 @@ const DashboardSidebar = ({
   const { quizz, results } = useConfig()
   const { t } = useTranslation()
 
-  const [dragOverFolder, setDragOverFolder] = useState<string | "root" | null>(null)
+  const [dragOverFolder, setDragOverFolder] = useState<string | "root" | null>(
+    null,
+  )
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
@@ -110,13 +121,16 @@ const DashboardSidebar = ({
   )
 
   const countInFolder = (path: string) =>
-    quizz.filter((q) => q.folder === path || q.folder?.startsWith(`${path  }/`)).length
+    quizz.filter((q) => q.folder === path || q.folder?.startsWith(`${path}/`))
+      .length
 
   const handleDrop = (e: DragEvent, folder: string | null) => {
     e.preventDefault()
     const quizzId = e.dataTransfer.getData("quizzId")
 
-    if (quizzId) {onMoveToFolder(quizzId, folder)}
+    if (quizzId) {
+      onMoveToFolder(quizzId, folder)
+    }
 
     setDragOverFolder(null)
   }
@@ -131,10 +145,13 @@ const DashboardSidebar = ({
     setCollapsed((prev) => {
       const next = new Set(prev)
 
-      if (next.has(path)) {next.delete(path)}
-      else {next.add(path)}
-      
-return next
+      if (next.has(path)) {
+        next.delete(path)
+      } else {
+        next.add(path)
+      }
+
+      return next
     })
   }
 
@@ -147,8 +164,7 @@ return next
         const next = new Set(prev)
         next.delete(parentPath)
 
-        
-return next
+        return next
       })
     }
   }
@@ -169,9 +185,14 @@ return next
   }
 
   const handleCreateKey = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {confirmCreate()}
+    if (e.key === "Enter") {
+      confirmCreate()
+    }
 
-    if (e.key === "Escape") { setCreatingIn(null); setNewFolderName("") }
+    if (e.key === "Escape") {
+      setCreatingIn(null)
+      setNewFolderName("")
+    }
   }
 
   const startRename = (path: string) => {
@@ -183,7 +204,9 @@ return next
     const newLabel = editName.trim()
     setEditingFolder(null)
 
-    if (!newLabel || newLabel === oldPath.split("/").pop()) {return}
+    if (!newLabel || newLabel === oldPath.split("/").pop()) {
+      return
+    }
 
     const parts = oldPath.split("/")
     parts[parts.length - 1] = newLabel
@@ -191,46 +214,55 @@ return next
 
     setUserFolders((prev) =>
       prev.map((f) => {
-        if (f === oldPath) {return newPath}
+        if (f === oldPath) {
+          return newPath
+        }
 
-        if (f.startsWith(`${oldPath  }/`)) {return newPath + f.slice(oldPath.length)}
-        
-return f
+        if (f.startsWith(`${oldPath}/`)) {
+          return newPath + f.slice(oldPath.length)
+        }
+
+        return f
       }),
     )
 
     quizz.forEach((q) => {
       if (q.folder === oldPath) {
         onMoveToFolder(q.id, newPath)
-      } else if (q.folder?.startsWith(`${oldPath  }/`)) {
+      } else if (q.folder?.startsWith(`${oldPath}/`)) {
         onMoveToFolder(q.id, newPath + q.folder.slice(oldPath.length))
       }
     })
 
-    if (activeFolder === oldPath) {setActiveFolder(newPath)}
-    else if (activeFolder?.startsWith(`${oldPath  }/`)) {
+    if (activeFolder === oldPath) {
+      setActiveFolder(newPath)
+    } else if (activeFolder?.startsWith(`${oldPath}/`)) {
       setActiveFolder(newPath + activeFolder.slice(oldPath.length))
     }
   }
 
   const handleRenameKey = (e: KeyboardEvent, path: string) => {
-    if (e.key === "Enter") {confirmRename(path)}
+    if (e.key === "Enter") {
+      confirmRename(path)
+    }
 
-    if (e.key === "Escape") {setEditingFolder(null)}
+    if (e.key === "Escape") {
+      setEditingFolder(null)
+    }
   }
 
   const handleDeleteFolder = (path: string) => {
     quizz
-      .filter((q) => q.folder === path || q.folder?.startsWith(`${path  }/`))
+      .filter((q) => q.folder === path || q.folder?.startsWith(`${path}/`))
       .forEach((q) => {
         onMoveToFolder(q.id, null)
       })
 
     setUserFolders((prev) =>
-      prev.filter((f) => f !== path && !f.startsWith(`${path  }/`)),
+      prev.filter((f) => f !== path && !f.startsWith(`${path}/`)),
     )
 
-    if (activeFolder === path || activeFolder?.startsWith(`${path  }/`)) {
+    if (activeFolder === path || activeFolder?.startsWith(`${path}/`)) {
       setActiveFolder(null)
     }
   }
@@ -255,7 +287,9 @@ return f
             onClick={() => toggleCollapse(node.path)}
             className={clsx(
               "shrink-0 rounded p-0.5 text-white/30 transition-colors",
-              node.children.length > 0 ? "hover:text-white/70" : "pointer-events-none opacity-0",
+              node.children.length > 0
+                ? "hover:text-white/70"
+                : "pointer-events-none opacity-0",
             )}
           >
             <ChevronRight
@@ -285,8 +319,12 @@ return f
               className={clsx(
                 "flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl px-2 py-1.5 text-sm transition-colors",
                 isDragOver && "bg-orange-500/30 ring-1 ring-orange-400",
-                !isDragOver && isActive && "bg-white/20 font-semibold text-white",
-                !isDragOver && !isActive && "text-white/60 hover:bg-white/10 hover:text-white",
+                !isDragOver &&
+                  isActive &&
+                  "bg-white/20 font-semibold text-white",
+                !isDragOver &&
+                  !isActive &&
+                  "text-white/60 hover:bg-white/10 hover:text-white",
               )}
             >
               <span className="flex min-w-0 items-center gap-1.5">
@@ -297,7 +335,9 @@ return f
                 )}
                 <span className="truncate">{node.label}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-white/10 px-1.5 text-xs">{count}</span>
+              <span className="shrink-0 rounded-full bg-white/10 px-1.5 text-xs">
+                {count}
+              </span>
             </button>
           )}
 
@@ -344,11 +384,17 @@ return f
               placeholder="Nom du sous-dossier"
               className="min-w-0 flex-1 rounded-lg bg-white/10 px-2 py-1 text-xs text-white placeholder-white/30 outline-none focus:bg-white/15"
             />
-            <button onClick={confirmCreate} className="rounded p-1 text-orange-400 hover:bg-white/10">
+            <button
+              onClick={confirmCreate}
+              className="rounded p-1 text-orange-400 hover:bg-white/10"
+            >
               <Plus className="size-3" />
             </button>
             <button
-              onClick={() => { setCreatingIn(null); setNewFolderName("") }}
+              onClick={() => {
+                setCreatingIn(null)
+                setNewFolderName("")
+              }}
               className="rounded p-1 text-white/40 hover:bg-white/10"
             >
               <X className="size-3" />
@@ -358,7 +404,9 @@ return f
 
         {/* Enfants */}
         {!isCollapsed && node.children.length > 0 && (
-          <div>{node.children.map((child) => renderFolder(child, depth + 1))}</div>
+          <div>
+            {node.children.map((child) => renderFolder(child, depth + 1))}
+          </div>
         )}
       </div>
     )
@@ -428,11 +476,17 @@ return f
                   placeholder={t("manager:sidebar.newFolderPlaceholder")}
                   className="min-w-0 flex-1 rounded-lg bg-white/10 px-2 py-1 text-xs text-white placeholder-white/30 outline-none focus:bg-white/15"
                 />
-                <button onClick={confirmCreate} className="rounded p-1 text-orange-400 hover:bg-white/10">
+                <button
+                  onClick={confirmCreate}
+                  className="rounded p-1 text-orange-400 hover:bg-white/10"
+                >
                   <Plus className="size-3" />
                 </button>
                 <button
-                  onClick={() => { setCreatingIn(null); setNewFolderName("") }}
+                  onClick={() => {
+                    setCreatingIn(null)
+                    setNewFolderName("")
+                  }}
                   className="rounded p-1 text-white/40 hover:bg-white/10"
                 >
                   <X className="size-3" />
@@ -449,9 +503,14 @@ return f
                 onDrop={(e) => handleDrop(e, null)}
                 className={clsx(
                   "flex items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                  dragOverFolder === "root" && "bg-orange-500/30 ring-1 ring-orange-400",
-                  dragOverFolder !== "root" && activeFolder === null && "bg-white/20 font-semibold text-white",
-                  dragOverFolder !== "root" && activeFolder !== null && "text-white/60 hover:bg-white/10 hover:text-white",
+                  dragOverFolder === "root" &&
+                    "bg-orange-500/30 ring-1 ring-orange-400",
+                  dragOverFolder !== "root" &&
+                    activeFolder === null &&
+                    "bg-white/20 font-semibold text-white",
+                  dragOverFolder !== "root" &&
+                    activeFolder !== null &&
+                    "text-white/60 hover:bg-white/10 hover:text-white",
                 )}
               >
                 <span className="flex items-center gap-2">

@@ -41,8 +41,16 @@ export const BackgroundRevealer = ({
 
     const rand = seedString ? createPRNG(seedString) : Math.random
 
-    const styles = ["random-grid", "center-out", "diagonal-wave", "left-to-right", "top-to-bottom", "spiral", "blur"]
-    
+    const styles = [
+      "random-grid",
+      "center-out",
+      "diagonal-wave",
+      "left-to-right",
+      "top-to-bottom",
+      "spiral",
+      "blur",
+    ]
+
     let selectedStyle = configuredStyle
     if (!selectedStyle || selectedStyle === "random") {
       const styleIndex = Math.floor(rand() * styles.length)
@@ -55,7 +63,7 @@ export const BackgroundRevealer = ({
     const cellsWithScore = cells.map((cell) => {
       let score = 0
       const randVal = rand()
-      
+
       switch (selectedStyle) {
         case "center-out": {
           const dist = Math.sqrt((cell.c - cx) ** 2 + (cell.r - cy) ** 2)
@@ -63,7 +71,7 @@ export const BackgroundRevealer = ({
           break
         }
         case "diagonal-wave": {
-          score = (cell.c + cell.r) + randVal * 0.5
+          score = cell.c + cell.r + randVal * 0.5
           break
         }
         case "left-to-right": {
@@ -115,7 +123,7 @@ export const BackgroundRevealer = ({
     const timer = setInterval(() => {
       const elapsedMs = Date.now() - startTime
       const currentProgress = Math.min(1, elapsedMs / (duration * 1000))
-      
+
       setProgress(currentProgress)
 
       if (currentProgress >= 1) {
@@ -133,7 +141,7 @@ export const BackgroundRevealer = ({
 
     return (
       <div
-        className="absolute inset-0 select-none pointer-events-none z-[5] transition-all duration-75"
+        className="pointer-events-none absolute inset-0 z-[5] transition-all duration-75 select-none"
         style={{
           backdropFilter: `blur(${currentBlur}px)`,
           WebkitBackdropFilter: `blur(${currentBlur}px)`,
@@ -149,7 +157,7 @@ export const BackgroundRevealer = ({
 
   return (
     <div
-      className="absolute inset-0 grid overflow-hidden select-none pointer-events-none z-[5] p-0.5 gap-0.5"
+      className="pointer-events-none absolute inset-0 z-[5] grid gap-0.5 overflow-hidden p-0.5 select-none"
       style={{
         gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
         gridTemplateRows: `repeat(${gridRows}, 1fr)`,
@@ -160,7 +168,7 @@ export const BackgroundRevealer = ({
         return (
           <div
             key={index}
-            className="bg-[#0f172a] border border-white/5 transition-all ease-out"
+            className="border border-white/5 bg-[#0f172a] transition-all ease-out"
             style={{
               opacity: isRevealed ? 0 : 1,
               transform: isRevealed ? "scale(0.9)" : "scale(1)",

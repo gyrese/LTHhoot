@@ -144,8 +144,9 @@
     "aiGenerate": "Generate",
     "aiGenerateTooltip": "Automatically generate an image from the title",
     "podiumThemeLabel": "Podium theme",
-    "podiumThemeHint": "Backdrop of the final ranking. \"Random\" picks one each game.",
+    "podiumThemeHint": "Backdrop of the final ranking. \"Neutral\" (default) uses the quiz cover, \"Random\" picks a themed one each game.",
     "podiumThemes": {
+      "neutre": "Neutral",
       "random": "Random",
       "espace": "Space",
       "jurassic": "Jurassic",

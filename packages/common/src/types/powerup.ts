@@ -30,7 +30,8 @@ export const POWER_UP_RARITY = {
   LEGENDARY: "LEGENDARY",
 } as const
 
-export type PowerUpRarity = (typeof POWER_UP_RARITY)[keyof typeof POWER_UP_RARITY]
+export type PowerUpRarity =
+  (typeof POWER_UP_RARITY)[keyof typeof POWER_UP_RARITY]
 
 export const POWER_UP_TARGET = {
   SELF: "SELF",
@@ -40,7 +41,8 @@ export const POWER_UP_TARGET = {
   LEADER_AUTO: "LEADER_AUTO",
 } as const
 
-export type PowerUpTarget = (typeof POWER_UP_TARGET)[keyof typeof POWER_UP_TARGET]
+export type PowerUpTarget =
+  (typeof POWER_UP_TARGET)[keyof typeof POWER_UP_TARGET]
 
 export interface PowerUpMeta {
   type: PowerUpType
@@ -50,32 +52,50 @@ export interface PowerUpMeta {
 
 export const POWER_UP_CATALOG: Record<PowerUpType, PowerUpMeta> = {
   // Commun
-  SHIELD:        { type: "SHIELD",        rarity: "COMMON", target: "SELF" },
-  FREEZE:        { type: "FREEZE",        rarity: "COMMON", target: "ALL_OPPONENTS" },
-  SAFETY_NET:    { type: "SAFETY_NET",    rarity: "COMMON", target: "SELF" },
-  SCRAMBLE:      { type: "SCRAMBLE",      rarity: "COMMON", target: "ONE_OPPONENT" },
-  SPARK:         { type: "SPARK",         rarity: "COMMON", target: "SELF" },
+  SHIELD: { type: "SHIELD", rarity: "COMMON", target: "SELF" },
+  FREEZE: { type: "FREEZE", rarity: "COMMON", target: "ALL_OPPONENTS" },
+  SAFETY_NET: { type: "SAFETY_NET", rarity: "COMMON", target: "SELF" },
+  SCRAMBLE: { type: "SCRAMBLE", rarity: "COMMON", target: "ONE_OPPONENT" },
+  SPARK: { type: "SPARK", rarity: "COMMON", target: "SELF" },
 
   // Rare
-  DOUBLE_POINTS: { type: "DOUBLE_POINTS", rarity: "RARE",   target: "SELF" },
-  STEAL_POINTS:  { type: "STEAL_POINTS",  rarity: "RARE",   target: "LEADER_AUTO" },
-  BOMB:          { type: "BOMB",          rarity: "RARE",   target: "ONE_OPPONENT" },
-  SWAP:          { type: "SWAP",          rarity: "RARE",   target: "ONE_OPPONENT" },
-  SNIPER:        { type: "SNIPER",        rarity: "RARE",   target: "TWO_OPPONENTS" },
-  MIRROR:        { type: "MIRROR",        rarity: "RARE",   target: "SELF" },
-  POISONED_GIFT: { type: "POISONED_GIFT", rarity: "RARE",   target: "ONE_OPPONENT" },
+  DOUBLE_POINTS: { type: "DOUBLE_POINTS", rarity: "RARE", target: "SELF" },
+  STEAL_POINTS: { type: "STEAL_POINTS", rarity: "RARE", target: "LEADER_AUTO" },
+  BOMB: { type: "BOMB", rarity: "RARE", target: "ONE_OPPONENT" },
+  SWAP: { type: "SWAP", rarity: "RARE", target: "ONE_OPPONENT" },
+  SNIPER: { type: "SNIPER", rarity: "RARE", target: "TWO_OPPONENTS" },
+  MIRROR: { type: "MIRROR", rarity: "RARE", target: "SELF" },
+  POISONED_GIFT: {
+    type: "POISONED_GIFT",
+    rarity: "RARE",
+    target: "ONE_OPPONENT",
+  },
 
   // Légendaire
   TRIPLE_POINTS: { type: "TRIPLE_POINTS", rarity: "LEGENDARY", target: "SELF" },
-  APOCALYPSE:    { type: "APOCALYPSE",    rarity: "LEGENDARY", target: "ALL_OPPONENTS" },
-  MEGA_BOMB:     { type: "MEGA_BOMB",     rarity: "LEGENDARY", target: "ONE_OPPONENT" },
-  ROYAL_THEFT:   { type: "ROYAL_THEFT",   rarity: "LEGENDARY", target: "LEADER_AUTO" },
+  APOCALYPSE: {
+    type: "APOCALYPSE",
+    rarity: "LEGENDARY",
+    target: "ALL_OPPONENTS",
+  },
+  MEGA_BOMB: { type: "MEGA_BOMB", rarity: "LEGENDARY", target: "ONE_OPPONENT" },
+  ROYAL_THEFT: {
+    type: "ROYAL_THEFT",
+    rarity: "LEGENDARY",
+    target: "LEADER_AUTO",
+  },
 }
 
 export const POWER_UPS_BY_RARITY: Record<PowerUpRarity, PowerUpType[]> = {
-  COMMON: Object.values(POWER_UP_CATALOG).filter((m) => m.rarity === "COMMON").map((m) => m.type),
-  RARE: Object.values(POWER_UP_CATALOG).filter((m) => m.rarity === "RARE").map((m) => m.type),
-  LEGENDARY: Object.values(POWER_UP_CATALOG).filter((m) => m.rarity === "LEGENDARY").map((m) => m.type),
+  COMMON: Object.values(POWER_UP_CATALOG)
+    .filter((m) => m.rarity === "COMMON")
+    .map((m) => m.type),
+  RARE: Object.values(POWER_UP_CATALOG)
+    .filter((m) => m.rarity === "RARE")
+    .map((m) => m.type),
+  LEGENDARY: Object.values(POWER_UP_CATALOG)
+    .filter((m) => m.rarity === "LEGENDARY")
+    .map((m) => m.type),
 }
 
 export interface PowerUp {

@@ -144,8 +144,9 @@
     "aiGenerate": "Generieren",
     "aiGenerateTooltip": "Bild automatisch aus dem Titel generieren",
     "podiumThemeLabel": "Podium-Design",
-    "podiumThemeHint": "Hintergrund der Endwertung. „Zufällig“ wählt jedes Spiel eines aus.",
+    "podiumThemeHint": "Hintergrund der Endwertung. „Neutral“ (Standard) nutzt das Quiz-Cover, „Zufällig“ wählt jedes Spiel ein Design aus.",
     "podiumThemes": {
+      "neutre": "Neutral",
       "random": "Zufällig",
       "espace": "Weltraum",
       "jurassic": "Jurassic",

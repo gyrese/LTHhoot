@@ -8,7 +8,11 @@ import type {
   Question,
 } from "@rahoot/common/types/game"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
-import type { PowerUp, PowerUpEffect, PowerUpType } from "@rahoot/common/types/powerup"
+import type {
+  PowerUp,
+  PowerUpEffect,
+  PowerUpType,
+} from "@rahoot/common/types/powerup"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
@@ -125,8 +129,14 @@ export interface ServerToClientEvents {
   }) => void
 
   // Quizz events
-  [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string; updatedAt: number }) => void
-  [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string; updatedAt: number }) => void
+  [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: {
+    id: string
+    updatedAt: number
+  }) => void
+  [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: {
+    id: string
+    updatedAt: number
+  }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: { questions: Question[] }) => void
@@ -143,18 +153,36 @@ export interface ServerToClientEvents {
     quizIndex: number
     totalQuizzes: number
     subject: string
-    leaderboard: { id: string; username: string; avatar?: string; points: number; rank: number }[]
+    leaderboard: {
+      id: string
+      username: string
+      avatar?: string
+      points: number
+      rank: number
+    }[]
   }) => void
   [EVENTS.EVENING.COMPLETE]: (_data: {
-    leaderboard: { id: string; username: string; avatar?: string; points: number; rank: number }[]
+    leaderboard: {
+      id: string
+      username: string
+      avatar?: string
+      points: number
+      rank: number
+    }[]
   }) => void
 
   // Power-up events
   [EVENTS.POWER_UP.EARNED]: (_powerUp: PowerUp) => void
   [EVENTS.POWER_UP.EFFECT]: (_effect: PowerUpEffect) => void
-  [EVENTS.POWER_UP.BLOCKED]: (_data: { powerUpType: PowerUpType; defenderId: string }) => void
+  [EVENTS.POWER_UP.BLOCKED]: (_data: {
+    powerUpType: PowerUpType
+    defenderId: string
+  }) => void
   [EVENTS.POWER_UP.INVENTORY]: (_powerUps: PowerUp[]) => void
-  [EVENTS.POWER_UP.COINS]: (_data: { coins: number; disabledPowerUps?: string[] }) => void
+  [EVENTS.POWER_UP.COINS]: (_data: {
+    coins: number
+    disabledPowerUps?: string[]
+  }) => void
 }
 
 export interface ClientToServerEvents {
@@ -162,7 +190,11 @@ export interface ClientToServerEvents {
   [EVENTS.GAME.CREATE]: (
     _payload:
       | string
-      | { quizId: string; powerUpsEnabled?: boolean; disabledPowerUps?: string[] },
+      | {
+          quizId: string
+          powerUpsEnabled?: boolean
+          disabledPowerUps?: string[]
+        },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
@@ -196,18 +228,17 @@ export interface ClientToServerEvents {
     id: string
     folder: string | null
   }) => void
-  [EVENTS.QUIZZ.AI_GENERATE]: (
-    _data: {
-      prompt: string
-      count: number
-      questionTypes: string[]
-      level: string
-    },
-  ) => void
+  [EVENTS.QUIZZ.AI_GENERATE]: (_data: {
+    prompt: string
+    count: number
+    questionTypes: string[]
+    level: string
+  }) => void
   [EVENTS.QUIZZ.AI_REPHRASE]: (_data: { currentText: string }) => void
-  [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (
-    _data: { correctAnswer: string; questionContext: string },
-  ) => void
+  [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (_data: {
+    correctAnswer: string
+    questionContext: string
+  }) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void
@@ -245,13 +276,19 @@ export interface ClientToServerEvents {
   [EVENTS.RESULTS.DELETE]: (_id: string) => void
 
   // Evening actions
-  [EVENTS.EVENING.START]: (
-    _data: { quizIds: string[]; powerUpsEnabled?: boolean; disabledPowerUps?: string[] },
-  ) => void
+  [EVENTS.EVENING.START]: (_data: {
+    quizIds: string[]
+    powerUpsEnabled?: boolean
+    disabledPowerUps?: string[]
+  }) => void
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 
   // Power-up actions
-  [EVENTS.POWER_UP.USE]: (_data: { gameId: string; powerUpId: string; targetIds?: string[] }) => void
+  [EVENTS.POWER_UP.USE]: (_data: {
+    gameId: string
+    powerUpId: string
+    targetIds?: string[]
+  }) => void
   [EVENTS.POWER_UP.GET_INVENTORY]: () => void
 
   // Sonde de vivacité (watchdog client au retour de premier plan) : le serveur

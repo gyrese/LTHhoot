@@ -29,7 +29,7 @@ export class AIService {
     level: string
   }): Promise<Question[]> {
     const client = this.getClient()
-    
+
     // Constructing a detailed prompt for Gemini
     const systemInstruction = `You are a fun, cool, and engaging quiz generator. Your task is to output a JSON array containing exactly ${params.count} quiz questions about the topic: "${params.prompt}".
 The target audience or difficulty level is: "${params.level}".
@@ -142,13 +142,15 @@ The output MUST be a valid JSON array of question objects. Every object must str
             "AI generated an invalid question object:",
             JSON.stringify(rawQuestion),
             "Errors:",
-            parseResult.error.format()
+            parseResult.error.format(),
           )
         }
       }
 
       if (validatedQuestions.length === 0) {
-        throw new Error("None of the AI-generated questions matched the validation schema")
+        throw new Error(
+          "None of the AI-generated questions matched the validation schema",
+        )
       }
 
       return validatedQuestions
@@ -241,7 +243,9 @@ Output MUST be a valid JSON object: { "wrongAnswers": ["wrong 1", "wrong 2", "wr
         wrongAnswers.length !== 3 ||
         !wrongAnswers.every((a: unknown) => typeof a === "string" && a.trim())
       ) {
-        throw new Error("Gemini response missing a valid 'wrongAnswers' array of 3 strings")
+        throw new Error(
+          "Gemini response missing a valid 'wrongAnswers' array of 3 strings",
+        )
       }
 
       return wrongAnswers

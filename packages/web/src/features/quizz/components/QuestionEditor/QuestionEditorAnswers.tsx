@@ -45,11 +45,18 @@ const QuestionEditorAnswers = () => {
   const hasEmptySlot = mcq.answers.some(
     (a, i) => !mcq.solutions.includes(i) && !a.trim(),
   )
-  const correctAnswerText = mcq.solutions.length > 0 ? mcq.answers[mcq.solutions[0]!] : undefined
-  const canSuggestWrongAnswers = Boolean(correctAnswerText?.trim()) && hasEmptySlot
+  const correctAnswerText =
+    mcq.solutions.length > 0 ? mcq.answers[mcq.solutions[0]!] : undefined
+  const canSuggestWrongAnswers =
+    Boolean(correctAnswerText?.trim()) && hasEmptySlot
 
   const handleSuggestWrongAnswers = () => {
-    if (!socket || isSuggesting || !canSuggestWrongAnswers || !correctAnswerText) {
+    if (
+      !socket ||
+      isSuggesting ||
+      !canSuggestWrongAnswers ||
+      !correctAnswerText
+    ) {
       return
     }
 
@@ -61,38 +68,45 @@ const QuestionEditorAnswers = () => {
     })
   }
 
-  useEvent(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, ({ wrongAnswers }) => {
-    const request = pendingRef.current
+  useEvent(
+    EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS,
+    ({ wrongAnswers }) => {
+      const request = pendingRef.current
 
-    if (!request) {
-      return
-    }
-
-    pendingRef.current = null
-    setIsSuggesting(false)
-
-    // On remplit le slide d'ORIGINE (pas celui affiché), et seulement s'il
-    // est toujours à cet index avec le même type.
-    const target = questions[request.index]
-
-    if (!target || target.id !== request.id || target.type !== "mcq") {
-      return
-    }
-
-    const next = [...target.answers]
-    let suggestionIndex = 0
-
-    for (let i = 0; i < next.length && suggestionIndex < wrongAnswers.length; i += 1) {
-      if (target.solutions.includes(i) || next[i]?.trim()) {
-        continue
+      if (!request) {
+        return
       }
 
-      next[i] = wrongAnswers[suggestionIndex]!
-      suggestionIndex += 1
-    }
+      pendingRef.current = null
+      setIsSuggesting(false)
 
-    updateQuestion(request.index, { answers: next })
-  })
+      // On remplit le slide d'ORIGINE (pas celui affiché), et seulement s'il
+      // est toujours à cet index avec le même type.
+      const target = questions[request.index]
+
+      if (!target || target.id !== request.id || target.type !== "mcq") {
+        return
+      }
+
+      const next = [...target.answers]
+      let suggestionIndex = 0
+
+      for (
+        let i = 0;
+        i < next.length && suggestionIndex < wrongAnswers.length;
+        i += 1
+      ) {
+        if (target.solutions.includes(i) || next[i]?.trim()) {
+          continue
+        }
+
+        next[i] = wrongAnswers[suggestionIndex]!
+        suggestionIndex += 1
+      }
+
+      updateQuestion(request.index, { answers: next })
+    },
+  )
 
   useEvent(EVENTS.QUIZZ.AI_ERROR, (message) => {
     if (!pendingRef.current) {
@@ -203,7 +217,9 @@ const QuestionEditorAnswers = () => {
                 layout={!reduceMotion}
                 initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                exit={
+                  reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }
+                }
                 transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 className={clsx(
                   "shadow-inset flex items-center gap-3 rounded-xl px-4 py-6",

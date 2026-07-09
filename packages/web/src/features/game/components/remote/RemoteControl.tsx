@@ -59,7 +59,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   const [activeTab, setActiveTab] = useState<RemoteTab>("jeu")
   const [logs, setLogs] = useState<
-    { id: string; timestamp: number; level: "info" | "warn" | "error"; message: string }[]
+    {
+      id: string
+      timestamp: number
+      level: "info" | "warn" | "error"
+      message: string
+    }[]
   >([])
   const [kickTargetId, setKickTargetId] = useState<string | null>(null)
   const [actionPending, setActionPending] = useState(false)
@@ -125,7 +130,13 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
-    ({ gameId: gId, inviteCode: code, status: s, players: p, currentQuestion }) => {
+    ({
+      gameId: gId,
+      inviteCode: code,
+      status: s,
+      players: p,
+      currentQuestion,
+    }) => {
       if (gId !== gameId) {
         return
       }
@@ -139,7 +150,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       setStatus({ name: s.name, data: s.data as Record<string, unknown> })
       setPlayers(p)
       setQuestionStates(currentQuestion)
-      
+
       if (code) {
         setInviteCode(code)
       }
@@ -416,7 +427,9 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         isPending={actionPending}
         playerCount={players.length}
         statusName={status?.name}
-        errorCount={logs.filter((l) => l.level === "error" || l.level === "warn").length}
+        errorCount={
+          logs.filter((l) => l.level === "error" || l.level === "warn").length
+        }
       />
 
       {kickTargetId && (

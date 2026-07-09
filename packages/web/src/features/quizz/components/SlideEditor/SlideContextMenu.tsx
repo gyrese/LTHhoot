@@ -13,6 +13,8 @@ import {
   ArrowDown,
   Maximize,
   Sun,
+  Lock,
+  Unlock,
 } from "lucide-react"
 import React, { type CSSProperties, useEffect, useRef } from "react"
 
@@ -31,12 +33,14 @@ export type ContextMenuAction =
   | "sendBackward"
   | "setAsBackground"
   | "opacity"
+  | "toggleLock"
 
 type ContextMenuProps = {
   x: number
   y: number
   hasSelection: boolean
   selectedType?: string
+  isLocked?: boolean
   canPaste: boolean
   onClose: () => void
   onAction: (_action: ContextMenuAction) => void
@@ -47,6 +51,7 @@ const SlideContextMenu = ({
   y,
   hasSelection,
   selectedType,
+  isLocked,
   canPaste,
   onClose,
   onAction,
@@ -158,6 +163,21 @@ const SlideContextMenu = ({
               </button>
             </>
           )}
+          <div className="bg-border mx-2 my-1 h-px" />
+          <button
+            onClick={() => handleAction("toggleLock")}
+            className="focus-ring hover:bg-panel flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors"
+          >
+            {isLocked ? (
+              <>
+                <Unlock className="size-4" /> Déverrouiller
+              </>
+            ) : (
+              <>
+                <Lock className="size-4" /> Verrouiller
+              </>
+            )}
+          </button>
           <div className="bg-border mx-2 my-1 h-px" />
           <button
             onClick={() => handleAction("delete")}

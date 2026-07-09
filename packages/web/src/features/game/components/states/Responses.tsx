@@ -1,4 +1,8 @@
-import type { AnswerReveal, DropPinZone, SlideElement } from "@rahoot/common/types/game"
+import type {
+  AnswerReveal,
+  DropPinZone,
+  SlideElement,
+} from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
@@ -426,7 +430,8 @@ const CorrectSplitBar = ({
   totalAnswered: number
 }) => {
   const { t } = useTranslation()
-  const pct = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0
+  const pct =
+    totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0
 
   return (
     <div className="anim-show mx-auto w-full max-w-lg px-4">
@@ -477,7 +482,7 @@ const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
             <img
               src={reveal.image}
               alt=""
-              className="max-h-[55vh] w-full object-contain bg-black/20"
+              className="max-h-[55vh] w-full bg-black/20 object-contain"
             />
           )
         )}
@@ -563,7 +568,9 @@ const Responses = ({
 
   const reveal = answerReveal
   const hasRevealCard = Boolean(
-    revealed && reveal?.enabled && (reveal.image || reveal.videoId || reveal.text),
+    revealed &&
+    reveal?.enabled &&
+    (reveal.image || reveal.videoId || reveal.text),
   )
 
   return (
@@ -600,16 +607,16 @@ const Responses = ({
 
       <div
         className={clsx(
-          "relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 py-4 items-center justify-center transition-all duration-500",
+          "relative z-10 mx-auto w-full max-w-7xl flex-1 items-center justify-center px-6 py-4 transition-all duration-500",
           hasRevealCard
-            ? "grid grid-cols-1 lg:grid-cols-12 gap-8"
+            ? "grid grid-cols-1 gap-8 lg:grid-cols-12"
             : "flex flex-col gap-5",
         )}
       >
         <div
           className={clsx(
-            "flex flex-col items-center justify-center w-full transition-all duration-500",
-            hasRevealCard ? "lg:col-span-7 gap-5" : "gap-5",
+            "flex w-full flex-col items-center justify-center transition-all duration-500",
+            hasRevealCard ? "gap-5 lg:col-span-7" : "gap-5",
           )}
         >
           {type === "mcq" && (
@@ -634,7 +641,10 @@ const Responses = ({
           {/* Types sans dénombrement par valeur exacte (slider/date/puzzle/
               drop_pin/open/image_sequence) : split correct/incorrect générique */}
           {type !== "mcq" && type !== "true_false" && type !== "title" && (
-            <CorrectSplitBar correctCount={correctCount} totalAnswered={totalAnswered} />
+            <CorrectSplitBar
+              correctCount={correctCount}
+              totalAnswered={totalAnswered}
+            />
           )}
 
           {(type === "open" || type === "image_sequence") &&
@@ -661,7 +671,7 @@ const Responses = ({
         </div>
 
         {hasRevealCard && reveal && (
-          <div className="lg:col-span-5 w-full flex items-center justify-center anim-show">
+          <div className="anim-show flex w-full items-center justify-center lg:col-span-5">
             <AnswerRevealCard reveal={reveal} />
           </div>
         )}

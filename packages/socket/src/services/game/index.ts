@@ -323,6 +323,8 @@ class Game {
         totalPlayers: leaderboard.length,
         awards: calculateAwards(this.eveningGameResults, leaderboard),
         podiumTheme: resolvePodiumTheme(lastQuizz?.podiumTheme),
+        // Fond du podium "neutre" : couverture du quiz, sinon image du salon.
+        coverImage: lastQuizz?.listingImage || lastQuizz?.salonImage,
       }
 
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {

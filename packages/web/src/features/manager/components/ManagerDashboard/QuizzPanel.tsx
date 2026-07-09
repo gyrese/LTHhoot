@@ -177,7 +177,10 @@ const QuizzPanel = ({
         }
 
         if (activeFolder) {
-          if (q.folder !== activeFolder && !q.folder?.startsWith(`${activeFolder}/`)) {
+          if (
+            q.folder !== activeFolder &&
+            !q.folder?.startsWith(`${activeFolder}/`)
+          ) {
             return false
           }
         } else if (isArchived(q.folder)) {
@@ -253,7 +256,9 @@ const QuizzPanel = ({
               const isSelected = eveningMode
                 ? eveningQuizIds.includes(q.id)
                 : selectedQuizz === q.id
-              const eveningOrder = eveningMode ? eveningQuizIds.indexOf(q.id) + 1 : 0
+              const eveningOrder = eveningMode
+                ? eveningQuizIds.indexOf(q.id) + 1
+                : 0
 
               return (
                 <div

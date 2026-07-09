@@ -155,7 +155,7 @@ const QuestionEditorImageSequence = () => {
 
         <div className="flex gap-2">
           <input
-            className="border-border text-ink focus:border-primary flex-1 rounded-lg border px-3 py-1.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/30"
+            className="border-border text-ink focus:border-primary focus:ring-primary/30 flex-1 rounded-lg border px-3 py-1.5 text-sm transition-colors outline-none focus:ring-2"
             placeholder={t("quizz:imageSequence.urlPlaceholder")}
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
@@ -216,7 +216,9 @@ const QuestionEditorImageSequence = () => {
             onChange={(v) => updateQuestion(currentIndex, { imageInterval: v })}
           />
         </div>
-        <p className="text-xs text-white/50">{t("quizz:imageSequence.intervalHint")}</p>
+        <p className="text-xs text-white/50">
+          {t("quizz:imageSequence.intervalHint")}
+        </p>
       </div>
 
       {/* ── Reponses correctes (miroir open) ───────────────────────────────── */}

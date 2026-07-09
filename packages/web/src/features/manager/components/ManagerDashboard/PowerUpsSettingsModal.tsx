@@ -4,7 +4,10 @@ import {
   POWER_UPS_BY_RARITY,
   type PowerUpRarity,
 } from "@rahoot/common/types/powerup"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
 import clsx from "clsx"
 import { X, Sparkles, CheckSquare, Square } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -56,7 +59,7 @@ const PowerUpsSettingsModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
@@ -82,15 +85,18 @@ const PowerUpsSettingsModal = ({
         </div>
 
         {/* Scrollable grid area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-4">
           {/* Global toggle */}
-          <div className="flex items-center justify-between rounded-xl bg-white/5 p-4 border border-white/5">
+          <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4">
             <div>
               <p className="font-bold text-white">
                 {t("manager:powerups.enableTitle", "Activer les Power-ups")}
               </p>
               <p className="text-xs text-white/50">
-                {t("manager:powerups.enableDesc", "Permet aux joueurs d'acheter des power-ups à la boutique.")}
+                {t(
+                  "manager:powerups.enableDesc",
+                  "Permet aux joueurs d'acheter des power-ups à la boutique.",
+                )}
               </p>
             </div>
             <label className="relative inline-flex cursor-pointer items-center">
@@ -100,7 +106,7 @@ const PowerUpsSettingsModal = ({
                 onChange={(e) => onTogglePowerUps(e.target.checked)}
                 className="peer sr-only"
               />
-              <div className="peer h-6 w-11 rounded-full bg-slate-700 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-orange-500 peer-checked:after:translate-x-full peer-focus:outline-none" />
+              <div className="peer h-6 w-11 rounded-full bg-slate-700 peer-checked:bg-orange-500 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full" />
             </label>
           </div>
 
@@ -110,14 +116,14 @@ const PowerUpsSettingsModal = ({
               <div className="flex justify-end gap-3 text-xs">
                 <button
                   onClick={handleSelectAll}
-                  className="text-orange-400 hover:text-orange-300 font-bold"
+                  className="font-bold text-orange-400 hover:text-orange-300"
                 >
                   {t("manager:powerups.selectAll", "Tout cocher")}
                 </button>
                 <span className="text-white/20">|</span>
                 <button
                   onClick={handleSelectNone}
-                  className="text-orange-400 hover:text-orange-300 font-bold"
+                  className="font-bold text-orange-400 hover:text-orange-300"
                 >
                   {t("manager:powerups.selectNone", "Tout décocher")}
                 </button>
@@ -129,7 +135,12 @@ const PowerUpsSettingsModal = ({
 
                 return (
                   <div key={rarity} className="space-y-2">
-                    <h4 className={clsx("text-xs font-black uppercase tracking-wider", style.text)}>
+                    <h4
+                      className={clsx(
+                        "text-xs font-black tracking-wider uppercase",
+                        style.text,
+                      )}
+                    >
                       {style.label}
                     </h4>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -142,10 +153,10 @@ const PowerUpsSettingsModal = ({
                             key={type}
                             onClick={() => handleTogglePowerUp(type)}
                             className={clsx(
-                              "flex items-start gap-3 rounded-xl border p-3 cursor-pointer select-none transition-all",
+                              "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all select-none",
                               isEnabled
-                                ? "bg-white/5 border-white/10 hover:bg-white/10"
-                                : "bg-black/40 border-white/5 opacity-40 hover:opacity-50"
+                                ? "border-white/10 bg-white/5 hover:bg-white/10"
+                                : "border-white/5 bg-black/40 opacity-40 hover:opacity-50",
                             )}
                           >
                             <div className="mt-0.5 shrink-0 text-orange-400">
@@ -158,7 +169,7 @@ const PowerUpsSettingsModal = ({
                             <div
                               className={clsx(
                                 "flex size-8 shrink-0 items-center justify-center rounded-lg border",
-                                style.border
+                                style.border,
                               )}
                             >
                               <meta.Icon
@@ -169,7 +180,7 @@ const PowerUpsSettingsModal = ({
                               <p className="truncate text-sm font-bold text-white">
                                 {meta.label}
                               </p>
-                              <p className="line-clamp-2 text-[10px] text-white/50 leading-relaxed">
+                              <p className="line-clamp-2 text-[10px] leading-relaxed text-white/50">
                                 {meta.description}
                               </p>
                             </div>
@@ -188,7 +199,7 @@ const PowerUpsSettingsModal = ({
         <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-xl bg-orange-500 hover:bg-orange-400 px-6 py-2 text-sm font-bold text-white transition-colors"
+            className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-400"
           >
             {t("manager:powerups.save", "Enregistrer")}
           </button>

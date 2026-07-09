@@ -44,7 +44,9 @@ const drawFallbackAvatar = (
 
 // Spritesheet local d'abord, fallback CDN distant si le fichier n'est pas
 // synchronisé localement (cf. `tasks/petdex-sync.ps1`).
-const loadSpritesheet = async (pet: PetdexAvatar): Promise<HTMLImageElement> => {
+const loadSpritesheet = async (
+  pet: PetdexAvatar,
+): Promise<HTMLImageElement> => {
   try {
     return await loadImage(pet.spritesheetUrl)
   } catch {
@@ -179,7 +181,11 @@ export const renderPodiumToCanvas = async (
   ctx.textAlign = "center"
   ctx.fillStyle = "rgba(255,255,255,0.3)"
   ctx.font = "24px monospace"
-  ctx.fillText("L'APÉRO QUIZ & LES TOILES NOIRES", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 40)
+  ctx.fillText(
+    "L'APÉRO QUIZ & LES TOILES NOIRES",
+    CANVAS_WIDTH / 2,
+    CANVAS_HEIGHT - 40,
+  )
 
   return canvas
 }
@@ -209,7 +215,10 @@ const sanitizeFilename = (name: string): string => {
   return slug || "podium"
 }
 
-export const downloadCanvasAsPng = (canvas: HTMLCanvasElement, filename: string) => {
+export const downloadCanvasAsPng = (
+  canvas: HTMLCanvasElement,
+  filename: string,
+) => {
   canvas.toBlob((blob) => {
     if (blob) {
       downloadBlob(blob, `${sanitizeFilename(filename)}.png`)
@@ -346,7 +355,11 @@ export const renderScorecardToCanvas = async (
   if (rank && rank <= 3) {
     ctx.save()
     ctx.font = "56px sans-serif"
-    ctx.fillText(MEDAL_BY_RANK[rank] || "", avatarCx + localAvatarSize / 2 - 10, avatarCy - localAvatarSize / 2 + 20)
+    ctx.fillText(
+      MEDAL_BY_RANK[rank] || "",
+      avatarCx + localAvatarSize / 2 - 10,
+      avatarCy - localAvatarSize / 2 + 20,
+    )
     ctx.restore()
   }
 

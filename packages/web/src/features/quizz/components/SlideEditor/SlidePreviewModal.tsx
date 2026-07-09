@@ -1,4 +1,7 @@
-import { type QuestionWithId, useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import {
+  type QuestionWithId,
+  useQuizzEditor,
+} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { X } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import { useEffect, type CSSProperties } from "react"
@@ -99,12 +102,21 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
       {/* Background */}
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ ...bgStyle, opacity: backgroundOpacity ?? (question.revelationEnabled ? 1.0 : 0.5) }}
+        style={{
+          ...bgStyle,
+          opacity:
+            backgroundOpacity ?? (question.revelationEnabled ? 1.0 : 0.5),
+        }}
       />
 
       {question.revelationEnabled && (
         <BackgroundRevealer
-          duration={revealDuration ?? (type === "title" ? question.cooldown : (question.cooldown + question.time))}
+          duration={
+            revealDuration ??
+            (type === "title"
+              ? question.cooldown
+              : question.cooldown + question.time)
+          }
           gridCols={gridCols ?? 8}
           gridRows={gridRows ?? 6}
           seedString={title || question.background?.value}
@@ -163,54 +175,54 @@ const SlidePreviewModal = ({ question, onClose }: Props) => {
           className="relative z-10 w-full pb-8"
           onClick={(e) => e.stopPropagation()}
         >
-        <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
-          <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
-            <span className="translate-y-1 text-sm opacity-60">
-              {t("game:hud.time")}
-            </span>
-            <span className="tabular-nums">{question.time}</span>
-          </div>
-          <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
-            <span className="translate-y-1 text-sm opacity-60">
-              {t("game:hud.answers")}
-            </span>
-            <span className="tabular-nums">0/10</span>
-          </div>
-        </div>
-
-        <div className="w-full">
-          {type === "mcq" && answers && (
-            <McqAnswers answers={answers} onAnswer={() => undefined} />
-          )}
-          {type === "true_false" && <TrueFalseAnswers />}
-          {type === "open" && <OpenAnswerPlaceholder />}
-          {type === "date" && (
-            <DateAnswer
-              minYear={minYear}
-              maxYear={maxYear}
-              onNumberAnswer={() => undefined}
-            />
-          )}
-          {type === "slider" && (
-            <SliderAnswer
-              min={min ?? 0}
-              max={max ?? 100}
-              onNumberAnswer={() => undefined}
-            />
-          )}
-          {type === "puzzle" && items && (
-            <PuzzleAnswer items={items} onOrderAnswer={() => undefined} />
-          )}
-          {type === "drop_pin" && pinImage && (
-            <div className="pointer-events-none scale-90 opacity-80">
-              <DropPinAnswer
-                pinImage={pinImage}
-                onTextAnswer={() => undefined}
-              />
+          <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
+            <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
+              <span className="translate-y-1 text-sm opacity-60">
+                {t("game:hud.time")}
+              </span>
+              <span className="tabular-nums">{question.time}</span>
             </div>
-          )}
+            <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
+              <span className="translate-y-1 text-sm opacity-60">
+                {t("game:hud.answers")}
+              </span>
+              <span className="tabular-nums">0/10</span>
+            </div>
+          </div>
+
+          <div className="w-full">
+            {type === "mcq" && answers && (
+              <McqAnswers answers={answers} onAnswer={() => undefined} />
+            )}
+            {type === "true_false" && <TrueFalseAnswers />}
+            {type === "open" && <OpenAnswerPlaceholder />}
+            {type === "date" && (
+              <DateAnswer
+                minYear={minYear}
+                maxYear={maxYear}
+                onNumberAnswer={() => undefined}
+              />
+            )}
+            {type === "slider" && (
+              <SliderAnswer
+                min={min ?? 0}
+                max={max ?? 100}
+                onNumberAnswer={() => undefined}
+              />
+            )}
+            {type === "puzzle" && items && (
+              <PuzzleAnswer items={items} onOrderAnswer={() => undefined} />
+            )}
+            {type === "drop_pin" && pinImage && (
+              <div className="pointer-events-none scale-90 opacity-80">
+                <DropPinAnswer
+                  pinImage={pinImage}
+                  onTextAnswer={() => undefined}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Close Button */}

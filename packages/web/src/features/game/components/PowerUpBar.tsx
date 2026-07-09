@@ -1,5 +1,8 @@
 import type { PowerUp } from "@rahoot/common/types/powerup"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
 import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
 
@@ -25,7 +28,10 @@ const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
             return (
               <div
                 key={`empty-${i}`}
-                className={clsx("rounded-xl border border-white/10 bg-white/5", slotSize)}
+                className={clsx(
+                  "rounded-xl border border-white/10 bg-white/5",
+                  slotSize,
+                )}
               />
             )
           }
@@ -56,7 +62,11 @@ const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
                 stiffness: 400,
                 damping: 25,
                 ...(isLegendary && {
-                  boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                  boxShadow: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
                 }),
               }}
               onClick={() => onUse(powerUp)}
@@ -72,7 +82,11 @@ const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
             >
               <meta.Icon
                 className={clsx(iconSize, style.text)}
-                style={isLegendary ? { filter: "drop-shadow(0 0 6px #FBBF24)" } : undefined}
+                style={
+                  isLegendary
+                    ? { filter: "drop-shadow(0 0 6px #FBBF24)" }
+                    : undefined
+                }
               />
               <span
                 className={clsx(

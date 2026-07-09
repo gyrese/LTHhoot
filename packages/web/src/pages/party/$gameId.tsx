@@ -26,26 +26,23 @@ const PlayerGamePage = () => {
   // La reconnexion est maintenant gérée globalement par le SocketProvider
   // pour assurer que l'overlay Reconnecting s'affiche correctement.
 
-  useEvent(
-    EVENTS.PLAYER.SUCCESS_RECONNECT,
-    (data) => {
-      console.log(
-        `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer}`,
-      )
-      // On utilise hydrate pour un remplacement atomique de l'état
-      usePlayerStore.getState().hydrate({
-        gameId: data.gameId,
-        player: data.player,
-        status: data.status as any,
-      })
-      setQuestionStates(data.currentQuestion)
+  useEvent(EVENTS.PLAYER.SUCCESS_RECONNECT, (data) => {
+    console.log(
+      `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer}`,
+    )
+    // On utilise hydrate pour un remplacement atomique de l'état
+    usePlayerStore.getState().hydrate({
+      gameId: data.gameId,
+      player: data.player,
+      status: data.status as any,
+    })
+    setQuestionStates(data.currentQuestion)
 
-      // Si un timer est en cours, on l'injecte dans le store pour resync immédiate
-      if (data.timer && data.timer > 0) {
-        useQuestionStore.getState().setCooldown(data.timer)
-      }
-    },
-  )
+    // Si un timer est en cours, on l'injecte dans le store pour resync immédiate
+    if (data.timer && data.timer > 0) {
+      useQuestionStore.getState().setCooldown(data.timer)
+    }
+  })
 
   useEvent(EVENTS.GAME.STATUS, ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS) {

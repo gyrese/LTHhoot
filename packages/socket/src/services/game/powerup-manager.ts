@@ -46,9 +46,11 @@ export interface PowerUpUseResult {
   mirroredTo?: string
 }
 
-const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
+const pick = <T>(arr: readonly T[]): T =>
+  arr[Math.floor(Math.random() * arr.length)]
 
-const randomFromRarity = (rarity: PowerUpRarity): PowerUpType => pick(POWER_UPS_BY_RARITY[rarity])
+const randomFromRarity = (rarity: PowerUpRarity): PowerUpType =>
+  pick(POWER_UPS_BY_RARITY[rarity])
 
 const consumeFromSet = (set: Set<string>, playerId: string): boolean => {
   if (!set.has(playerId)) {
@@ -171,7 +173,10 @@ export class PowerUpManager {
       this.consecutiveWinsByPlayer.set(winnerId, newWins)
 
       if (newWins >= 2) {
-        const legendary = this.addPowerUp(winnerId, randomFromRarity("LEGENDARY"))
+        const legendary = this.addPowerUp(
+          winnerId,
+          randomFromRarity("LEGENDARY"),
+        )
 
         if (legendary) {
           earned.push({ playerId: winnerId, powerUp: legendary })
@@ -256,7 +261,9 @@ export class PowerUpManager {
     }
 
     const meta = POWER_UP_CATALOG[powerUp.type]
-    const targets = (targetIds ?? []).map((id) => players.find((p) => p.id === id)).filter((p): p is Player => Boolean(p))
+    const targets = (targetIds ?? [])
+      .map((id) => players.find((p) => p.id === id))
+      .filter((p): p is Player => Boolean(p))
 
     // Vérification ciblage
     if (meta.target === "ONE_OPPONENT" && targets.length !== 1) {
@@ -318,13 +325,21 @@ export class PowerUpManager {
         return {
           success: true,
           type: powerUp.type,
-          affectedPlayers: others.map((p) => ({ id: p.id, username: p.username, pointsDelta: 0 })),
+          affectedPlayers: others.map((p) => ({
+            id: p.id,
+            username: p.username,
+            pointsDelta: 0,
+          })),
         }
       }
 
       case POWER_UP_TYPE.APOCALYPSE: {
         const others = players.filter((p) => p.id !== activatorId)
-        const affected: { id: string; username: string; pointsDelta: number }[] = []
+        const affected: {
+          id: string
+          username: string
+          pointsDelta: number
+        }[] = []
 
         for (const target of others) {
           if (this.activeEffects.shields.has(target.id)) {
@@ -335,7 +350,11 @@ export class PowerUpManager {
 
           const amount = Math.min(300, target.points)
           target.points -= amount
-          affected.push({ id: target.id, username: target.username, pointsDelta: -amount })
+          affected.push({
+            id: target.id,
+            username: target.username,
+            pointsDelta: -amount,
+          })
         }
 
         return { success: true, type: powerUp.type, affectedPlayers: affected }
@@ -343,7 +362,9 @@ export class PowerUpManager {
 
       // ── Leader auto ──────────────────────────────────────────────────────────
       case POWER_UP_TYPE.STEAL_POINTS: {
-        const [leader] = [...players].filter((p) => p.id !== activatorId).sort((a, b) => b.points - a.points)
+        const [leader] = [...players]
+          .filter((p) => p.id !== activatorId)
+          .sort((a, b) => b.points - a.points)
 
         if (!leader) {
           return { success: false }
@@ -364,13 +385,19 @@ export class PowerUpManager {
           type: powerUp.type,
           affectedPlayers: [
             { id: leader.id, username: leader.username, pointsDelta: -amount },
-            { id: activator.id, username: activator.username, pointsDelta: amount },
+            {
+              id: activator.id,
+              username: activator.username,
+              pointsDelta: amount,
+            },
           ],
         }
       }
 
       case POWER_UP_TYPE.ROYAL_THEFT: {
-        const [leader] = [...players].filter((p) => p.id !== activatorId).sort((a, b) => b.points - a.points)
+        const [leader] = [...players]
+          .filter((p) => p.id !== activatorId)
+          .sort((a, b) => b.points - a.points)
 
         if (!leader) {
           return { success: false }
@@ -391,7 +418,11 @@ export class PowerUpManager {
           type: powerUp.type,
           affectedPlayers: [
             { id: leader.id, username: leader.username, pointsDelta: -amount },
-            { id: activator.id, username: activator.username, pointsDelta: amount },
+            {
+              id: activator.id,
+              username: activator.username,
+              pointsDelta: amount,
+            },
           ],
         }
       }
@@ -409,7 +440,13 @@ export class PowerUpManager {
             success: true,
             type: powerUp.type,
             mirroredTo: activator.id,
-            affectedPlayers: [{ id: activator.id, username: activator.username, pointsDelta: -amount }],
+            affectedPlayers: [
+              {
+                id: activator.id,
+                username: activator.username,
+                pointsDelta: -amount,
+              },
+            ],
           }
         }
 
@@ -425,7 +462,9 @@ export class PowerUpManager {
         return {
           success: true,
           type: powerUp.type,
-          affectedPlayers: [{ id: target.id, username: target.username, pointsDelta: -amount }],
+          affectedPlayers: [
+            { id: target.id, username: target.username, pointsDelta: -amount },
+          ],
         }
       }
 
@@ -442,7 +481,13 @@ export class PowerUpManager {
             success: true,
             type: powerUp.type,
             mirroredTo: activator.id,
-            affectedPlayers: [{ id: activator.id, username: activator.username, pointsDelta: -amount }],
+            affectedPlayers: [
+              {
+                id: activator.id,
+                username: activator.username,
+                pointsDelta: -amount,
+              },
+            ],
           }
         }
 
@@ -452,7 +497,9 @@ export class PowerUpManager {
         return {
           success: true,
           type: powerUp.type,
-          affectedPlayers: [{ id: target.id, username: target.username, pointsDelta: -amount }],
+          affectedPlayers: [
+            { id: target.id, username: target.username, pointsDelta: -amount },
+          ],
         }
       }
 
@@ -476,8 +523,16 @@ export class PowerUpManager {
           success: true,
           type: powerUp.type,
           affectedPlayers: [
-            { id: activator.id, username: activator.username, pointsDelta: deltaForActivator },
-            { id: target.id, username: target.username, pointsDelta: deltaForTarget },
+            {
+              id: activator.id,
+              username: activator.username,
+              pointsDelta: deltaForActivator,
+            },
+            {
+              id: target.id,
+              username: target.username,
+              pointsDelta: deltaForTarget,
+            },
           ],
         }
       }
@@ -489,7 +544,9 @@ export class PowerUpManager {
         return {
           success: true,
           type: powerUp.type,
-          affectedPlayers: [{ id: target.id, username: target.username, pointsDelta: 0 }],
+          affectedPlayers: [
+            { id: target.id, username: target.username, pointsDelta: 0 },
+          ],
         }
       }
 
@@ -510,13 +567,19 @@ export class PowerUpManager {
         return {
           success: true,
           type: powerUp.type,
-          affectedPlayers: [{ id: target.id, username: target.username, pointsDelta: 0 }],
+          affectedPlayers: [
+            { id: target.id, username: target.username, pointsDelta: 0 },
+          ],
         }
       }
 
       // ── Two opponents ────────────────────────────────────────────────────────
       case POWER_UP_TYPE.SNIPER: {
-        const affected: { id: string; username: string; pointsDelta: number }[] = []
+        const affected: {
+          id: string
+          username: string
+          pointsDelta: number
+        }[] = []
 
         for (const target of targets) {
           if (this.activeEffects.shields.has(target.id)) {
@@ -527,7 +590,11 @@ export class PowerUpManager {
 
           const amount = Math.min(100, target.points)
           target.points -= amount
-          affected.push({ id: target.id, username: target.username, pointsDelta: -amount })
+          affected.push({
+            id: target.id,
+            username: target.username,
+            pointsDelta: -amount,
+          })
         }
 
         return { success: true, type: powerUp.type, affectedPlayers: affected }
@@ -541,12 +608,22 @@ export class PowerUpManager {
   // ── Consommation des effets actifs (à appeler depuis RoundManager) ────────
 
   /** Applique tous les modificateurs de points actifs pour ce joueur. */
-  applyPointModifiers(playerId: string, basePoints: number, isCorrect: boolean): number {
+  applyPointModifiers(
+    playerId: string,
+    basePoints: number,
+    isCorrect: boolean,
+  ): number {
     let points = basePoints
 
-    if (isCorrect && consumeFromSet(this.activeEffects.triplePoints, playerId)) {
+    if (
+      isCorrect &&
+      consumeFromSet(this.activeEffects.triplePoints, playerId)
+    ) {
       points *= 3
-    } else if (isCorrect && consumeFromSet(this.activeEffects.doublePoints, playerId)) {
+    } else if (
+      isCorrect &&
+      consumeFromSet(this.activeEffects.doublePoints, playerId)
+    ) {
       points *= 2
     }
 

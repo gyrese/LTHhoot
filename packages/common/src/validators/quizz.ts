@@ -1,4 +1,8 @@
-import { MEDIA_TYPES, PODIUM_THEMES } from "@rahoot/common/constants"
+import {
+  MEDIA_TYPES,
+  PODIUM_THEME_NEUTRAL,
+  PODIUM_THEMES,
+} from "@rahoot/common/constants"
 import { z } from "zod"
 
 export const questionMediaValidator = z.object({
@@ -29,6 +33,9 @@ const textElementValidator = slideElementBaseValidator.extend({
   textDecoration: z.string(),
   fill: z.string(),
   align: z.enum(["left", "center", "right"]),
+  textBackground: z.string().optional(),
+  stroke: z.string().optional(),
+  strokeWidth: z.number().optional(),
 })
 
 const shapeElementValidator = slideElementBaseValidator.extend({
@@ -36,6 +43,8 @@ const shapeElementValidator = slideElementBaseValidator.extend({
   shapeType: z.enum(["rect", "circle", "triangle", "star"]),
   fill: z.string(),
   cornerRadius: z.number().optional(),
+  stroke: z.string().optional(),
+  strokeWidth: z.number().optional(),
 })
 
 const imageElementValidator = slideElementBaseValidator.extend({
@@ -221,10 +230,10 @@ export const quizzValidator = z.object({
   tags: z.array(z.string()).optional(),
   salonImage: z.string().optional(),
   listingImage: z.string().optional(),
-  // .catch(undefined) : un thème retiré du catalogue (ex-"jurassic") déjà
-  // stocké sur disque retombe sur "aléatoire" au lieu d'invalider le quiz.
+  // .catch(undefined) : un thème retiré du catalogue déjà stocké sur disque
+  // retombe sur le défaut (neutre) au lieu d'invalider le quiz.
   podiumTheme: z
-    .enum(["random", ...PODIUM_THEMES])
+    .enum(["random", PODIUM_THEME_NEUTRAL, ...PODIUM_THEMES])
     .optional()
     .catch(undefined),
   questions: z.array(questionValidator).min(1, "errors:quizz.noQuestions"),

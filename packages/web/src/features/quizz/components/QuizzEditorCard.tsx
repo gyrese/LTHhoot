@@ -238,7 +238,9 @@ const QuizzEditorCard = ({
       <span
         className={clsx(
           "w-4 shrink-0 text-center text-xs font-bold tabular-nums transition-colors",
-          isActive || isSelected ? "text-primary-ink" : "text-ink-subtle group-hover:text-ink-muted",
+          isActive || isSelected
+            ? "text-primary-ink"
+            : "text-ink-subtle group-hover:text-ink-muted",
         )}
       >
         {index + 1}
@@ -271,7 +273,7 @@ const QuizzEditorCard = ({
 
         {validationErrors.length > 0 && (
           <div
-            className="absolute bottom-1 left-1 z-10 flex h-4.5 w-4.5 items-center justify-center rounded bg-danger text-white shadow-sm cursor-help"
+            className="bg-danger absolute bottom-1 left-1 z-10 flex h-4.5 w-4.5 cursor-help items-center justify-center rounded text-white shadow-sm"
             title={validationErrors.join("\n")}
           >
             <AlertTriangle className="size-3 animate-pulse" />

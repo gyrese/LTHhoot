@@ -109,8 +109,8 @@ export const MEDIA_TYPES = {
   AUDIO: "audio",
 } as const
 
-// Thèmes visuels du podium de fin de partie (maquettes .stitch). "random"
-// (défaut quand absent) : le serveur en tire un au sort à la fin du quiz.
+// Univers visuels du podium de fin de partie (maquettes .stitch) — pool du
+// tirage au sort quand le quiz est réglé sur "random".
 export const PODIUM_THEMES = [
   "espace",
   "jurassic",
@@ -118,6 +118,10 @@ export const PODIUM_THEMES = [
   "science",
   "heros",
 ] as const
+
+// Thème par défaut (réglage absent) : podium sobre qui reprend l'image de
+// couverture du quiz en fond.
+export const PODIUM_THEME_NEUTRAL = "neutre" as const
 
 export const EXAMPLE_QUIZZ = {
   subject: "Example Quizz",

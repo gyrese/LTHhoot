@@ -72,7 +72,9 @@
 /* Anneau de focus clavier cohérent sur toute l'UI éditeur */
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--ring-primary);
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--ring-primary);
 }
 
 body {

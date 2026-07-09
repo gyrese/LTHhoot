@@ -26,7 +26,7 @@ const TieBreakSpectate = ({ data: { duelPlayerNames } }: Props) => {
       {/* Compte à rebours du duel (events GAME.COOLDOWN déjà diffusés) */}
       {typeof cooldown === "number" && cooldown > 0 && (
         <div
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl font-black text-white ring-2 ring-orange-500/60 tabular-nums backdrop-blur-sm"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl font-black text-white tabular-nums ring-2 ring-orange-500/60 backdrop-blur-sm"
           aria-live="polite"
         >
           {cooldown}
@@ -34,7 +34,10 @@ const TieBreakSpectate = ({ data: { duelPlayerNames } }: Props) => {
       )}
 
       <p className="anim-slide-up text-center text-sm text-white/50">
-        {t("game:tieBreak.spectateHint", "Le classement final se joue maintenant…")}
+        {t(
+          "game:tieBreak.spectateHint",
+          "Le classement final se joue maintenant…",
+        )}
       </p>
     </section>
   )

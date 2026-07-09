@@ -34,7 +34,9 @@ const ManagerDashboard = ({ data }: Props) => {
   const [singlePowerUpsEnabled, setSinglePowerUpsEnabled] = useState(false)
   const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [powerUpsModalOpen, setPowerUpsModalOpen] = useState(false)
-  const [powerUpsModalMode, setPowerUpsModalMode] = useState<"single" | "evening">("single")
+  const [powerUpsModalMode, setPowerUpsModalMode] = useState<
+    "single" | "evening"
+  >("single")
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
@@ -141,18 +143,18 @@ const ManagerDashboard = ({ data }: Props) => {
 
         {/* Footer */}
         {eveningMode ? (
-            <EveningFooter
-              eveningQuizIds={eveningQuizIds}
-              quizzList={data.quizz}
-              powerUpsEnabled={powerUpsEnabled}
-              onRemove={handleToggleEveningQuizz}
-              onStart={handleEveningStart}
-              onToggleOff={handleToggleEveningOff}
-              onOpenPowerUpsConfig={() => {
-                setPowerUpsModalMode("evening")
-                setPowerUpsModalOpen(true)
-              }}
-            />
+          <EveningFooter
+            eveningQuizIds={eveningQuizIds}
+            quizzList={data.quizz}
+            powerUpsEnabled={powerUpsEnabled}
+            onRemove={handleToggleEveningQuizz}
+            onStart={handleEveningStart}
+            onToggleOff={handleToggleEveningOff}
+            onOpenPowerUpsConfig={() => {
+              setPowerUpsModalMode("evening")
+              setPowerUpsModalOpen(true)
+            }}
+          />
         ) : (
           <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -165,15 +167,19 @@ const ManagerDashboard = ({ data }: Props) => {
                     setEveningMode(true)
                   }
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/60 ring-1 ring-white/10 transition-colors hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40 cursor-pointer select-none"
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/60 ring-1 ring-white/10 transition-colors select-none hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40"
                 title={t("manager:evening.enable", "Mode Soirée")}
               >
                 <PartyPopper className="size-4" />
-                <span className="hidden sm:inline">{t("manager:evening.mode", "Mode Soirée")}</span>
+                <span className="hidden sm:inline">
+                  {t("manager:evening.mode", "Mode Soirée")}
+                </span>
               </div>
               <p className="truncate text-sm text-white/50">
                 {selectedName ? (
-                  <span className="font-semibold text-white">{selectedName}</span>
+                  <span className="font-semibold text-white">
+                    {selectedName}
+                  </span>
                 ) : (
                   t("manager:quizz.pleaseSelect")
                 )}
@@ -215,15 +221,23 @@ const ManagerDashboard = ({ data }: Props) => {
           </footer>
         )}
       </div>
-        <PowerUpsSettingsModal
-          isOpen={powerUpsModalOpen}
-          onClose={() => setPowerUpsModalOpen(false)}
-          powerUpsEnabled={powerUpsModalMode === "single" ? singlePowerUpsEnabled : powerUpsEnabled}
-          onTogglePowerUps={powerUpsModalMode === "single" ? setSinglePowerUpsEnabled : setPowerUpsEnabled}
-          disabledPowerUps={disabledPowerUps}
-          onChangeDisabledPowerUps={setDisabledPowerUps}
-        />
-      </ConfigProvider>
+      <PowerUpsSettingsModal
+        isOpen={powerUpsModalOpen}
+        onClose={() => setPowerUpsModalOpen(false)}
+        powerUpsEnabled={
+          powerUpsModalMode === "single"
+            ? singlePowerUpsEnabled
+            : powerUpsEnabled
+        }
+        onTogglePowerUps={
+          powerUpsModalMode === "single"
+            ? setSinglePowerUpsEnabled
+            : setPowerUpsEnabled
+        }
+        disabledPowerUps={disabledPowerUps}
+        onChangeDisabledPowerUps={setDisabledPowerUps}
+      />
+    </ConfigProvider>
   )
 }
 

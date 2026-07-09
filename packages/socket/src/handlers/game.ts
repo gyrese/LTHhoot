@@ -80,7 +80,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     } else if (payload && typeof payload === "object") {
       quizzId = payload.quizId
       powerUpsEnabled = Boolean(payload.powerUpsEnabled)
-      disabledPowerUps = Array.isArray(payload.disabledPowerUps) ? payload.disabledPowerUps : []
+      disabledPowerUps = Array.isArray(payload.disabledPowerUps)
+        ? payload.disabledPowerUps
+        : []
     } else {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
 
@@ -96,7 +98,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz, { powerUpsEnabled, disabledPowerUps })
+    const game = new Game(io, socket, quizz, {
+      powerUpsEnabled,
+      disabledPowerUps,
+    })
     registry.addGame(game)
   })
 
@@ -221,36 +226,42 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     withManagerGame(gameId, socket, (game) => game.resumeGame()),
   )
 
-  socket.on(EVENTS.EVENING.START, ({ quizIds, powerUpsEnabled, disabledPowerUps }) => {
-    if (!Manager.isLogged(socket)) {
-      socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+  socket.on(
+    EVENTS.EVENING.START,
+    ({ quizIds, powerUpsEnabled, disabledPowerUps }) => {
+      if (!Manager.isLogged(socket)) {
+        socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
-      return
-    }
+        return
+      }
 
-    if (!Array.isArray(quizIds) || quizIds.length < 2) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:evening.notEnoughQuizzes")
+      if (!Array.isArray(quizIds) || quizIds.length < 2) {
+        socket.emit(
+          EVENTS.GAME.ERROR_MESSAGE,
+          "errors:evening.notEnoughQuizzes",
+        )
 
-      return
-    }
+        return
+      }
 
-    const quizzList = Config.quizz()
-    const firstQuizz = quizzList.find((q) => q.id === quizIds[0])
+      const quizzList = Config.quizz()
+      const firstQuizz = quizzList.find((q) => q.id === quizIds[0])
 
-    if (!firstQuizz) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
+      if (!firstQuizz) {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
 
-      return
-    }
+        return
+      }
 
-    const game = new Game(io, socket, firstQuizz)
-    game.initEveningMode(
-      quizIds,
-      powerUpsEnabled ?? true,
-      Array.isArray(disabledPowerUps) ? disabledPowerUps : [],
-    )
-    registry.addGame(game)
-  })
+      const game = new Game(io, socket, firstQuizz)
+      game.initEveningMode(
+        quizIds,
+        powerUpsEnabled ?? true,
+        Array.isArray(disabledPowerUps) ? disabledPowerUps : [],
+      )
+      registry.addGame(game)
+    },
+  )
 
   socket.on(EVENTS.EVENING.NEXT, ({ gameId }) =>
     withManagerGame(gameId, socket, (game) => game.startNextEveningQuiz()),

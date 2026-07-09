@@ -5,7 +5,10 @@ import {
   type PowerUpRarity,
   type PowerUpType,
 } from "@rahoot/common/types/powerup"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
 import clsx from "clsx"
 import { Coins, X } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
@@ -28,7 +31,14 @@ const RARITY_ORDER: PowerUpRarity[] = [
   POWER_UP_RARITY.LEGENDARY,
 ]
 
-const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy, onClose }: Props) => {
+const ShopDrawer = ({
+  open,
+  coins,
+  inventoryCount,
+  disabledPowerUps = [],
+  onBuy,
+  onClose,
+}: Props) => {
   const { t } = useTranslation()
   const inventoryFull = inventoryCount >= MAX_POWER_UPS
 
@@ -54,7 +64,7 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300/70">
+                <p className="text-[10px] font-black tracking-widest text-yellow-300/70 uppercase">
                   {t("game:shop.subtitle", "Dépense tes pièces")}
                 </p>
                 <p className="text-xl font-black text-white">
@@ -77,7 +87,10 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
 
             {inventoryFull && (
               <div className="shrink-0 border-b border-white/10 bg-orange-500/10 px-5 py-2 text-center text-xs font-bold text-orange-300">
-                {t("game:shop.inventoryFull", "Inventaire plein (3/3) — utilise un power-up avant d'en acheter")}
+                {t(
+                  "game:shop.inventoryFull",
+                  "Inventaire plein (3/3) — utilise un power-up avant d'en acheter",
+                )}
               </div>
             )}
 
@@ -86,7 +99,7 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
               {RARITY_ORDER.map((rarity) => {
                 const style = RARITY_STYLE[rarity]
                 const items = POWER_UPS_BY_RARITY[rarity].filter(
-                  (type) => !disabledPowerUps.includes(type)
+                  (type) => !disabledPowerUps.includes(type),
                 )
 
                 if (items.length === 0) {
@@ -95,7 +108,12 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
 
                 return (
                   <div key={rarity}>
-                    <p className={clsx("mb-2 px-1 text-xs font-black uppercase tracking-widest", style.text)}>
+                    <p
+                      className={clsx(
+                        "mb-2 px-1 text-xs font-black tracking-widest uppercase",
+                        style.text,
+                      )}
+                    >
                       {style.label}
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -122,12 +140,20 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
                             >
                               <meta.Icon
                                 className={clsx("size-5", style.text)}
-                                style={rarity === "LEGENDARY" ? { filter: "drop-shadow(0 0 6px #FBBF24)" } : undefined}
+                                style={
+                                  rarity === "LEGENDARY"
+                                    ? { filter: "drop-shadow(0 0 6px #FBBF24)" }
+                                    : undefined
+                                }
                               />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-black text-white">{meta.label}</p>
-                              <p className="line-clamp-2 text-xs text-white/50">{meta.description}</p>
+                              <p className="truncate text-sm font-black text-white">
+                                {meta.label}
+                              </p>
+                              <p className="line-clamp-2 text-xs text-white/50">
+                                {meta.description}
+                              </p>
                             </div>
                             <button
                               onClick={() => canBuy && onBuy(type)}
@@ -138,7 +164,14 @@ const ShopDrawer = ({ open, coins, inventoryCount, disabledPowerUps = [], onBuy,
                                   ? "bg-yellow-500 text-slate-900 hover:scale-105 hover:bg-yellow-400 active:scale-95"
                                   : "cursor-not-allowed bg-white/5 text-white/30",
                               )}
-                              title={affordable ? t("game:shop.buy", "Acheter") : t("game:shop.notEnough", "Pièces insuffisantes")}
+                              title={
+                                affordable
+                                  ? t("game:shop.buy", "Acheter")
+                                  : t(
+                                      "game:shop.notEnough",
+                                      "Pièces insuffisantes",
+                                    )
+                              }
                             >
                               <Coins className="size-3.5" />
                               <span className="tabular-nums">{price}</span>

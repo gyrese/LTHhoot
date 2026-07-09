@@ -1,6 +1,9 @@
 import { POWER_UP_CATALOG, type PowerUp } from "@rahoot/common/types/powerup"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
 import clsx from "clsx"
 import { X } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
@@ -15,7 +18,12 @@ type Props = {
   onCancel: () => void
 }
 
-const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) => {
+const PowerUpConfirmDrawer = ({
+  powerUp,
+  players,
+  onConfirm,
+  onCancel,
+}: Props) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const meta = powerUp ? POWER_UP_META_UI[powerUp.type] : null
@@ -46,7 +54,8 @@ const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) 
     rarityTextColor = "text-blue-200"
   }
 
-  const canConfirm = requiredTargets === 0 || selectedIds.length === requiredTargets
+  const canConfirm =
+    requiredTargets === 0 || selectedIds.length === requiredTargets
 
   const handleClose = () => {
     setSelectedIds([])
@@ -114,13 +123,17 @@ const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) 
                 >
                   <meta.Icon
                     className={clsx("size-7", style.text)}
-                    style={meta.rarity === "LEGENDARY" ? { filter: "drop-shadow(0 0 6px #FBBF24)" } : undefined}
+                    style={
+                      meta.rarity === "LEGENDARY"
+                        ? { filter: "drop-shadow(0 0 6px #FBBF24)" }
+                        : undefined
+                    }
                   />
                 </div>
                 <div>
                   <p
                     className={clsx(
-                      "text-[10px] font-black uppercase tracking-widest",
+                      "text-[10px] font-black tracking-widest uppercase",
                       rarityTextColor,
                     )}
                   >
@@ -141,10 +154,14 @@ const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) 
 
             {requiredTargets > 0 && players.length > 0 && (
               <div className="mb-4 max-h-44 overflow-y-auto">
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-white/50">
-                  {requiredTargets === 1 ? "Choisir une cible" : `Choisir ${requiredTargets} cibles`}
+                <p className="mb-2 text-xs font-bold tracking-wide text-white/50 uppercase">
+                  {requiredTargets === 1
+                    ? "Choisir une cible"
+                    : `Choisir ${requiredTargets} cibles`}
                   {selectedIds.length > 0 && (
-                    <span className="ml-2 text-white/30">({selectedIds.length}/{requiredTargets})</span>
+                    <span className="ml-2 text-white/30">
+                      ({selectedIds.length}/{requiredTargets})
+                    </span>
                   )}
                 </p>
                 <div className="flex flex-col gap-2">
@@ -163,12 +180,22 @@ const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) 
                         )}
                       >
                         <div className="flex h-8 w-8 shrink-0 overflow-hidden rounded-full bg-white/10">
-                          <GameAvatar seed={p.avatar ?? p.username} className="h-full w-full" />
+                          <GameAvatar
+                            seed={p.avatar ?? p.username}
+                            className="h-full w-full"
+                          />
                         </div>
-                        <p className={clsx("flex-1 text-sm font-bold", selected ? "text-orange-300" : "text-white")}>
+                        <p
+                          className={clsx(
+                            "flex-1 text-sm font-bold",
+                            selected ? "text-orange-300" : "text-white",
+                          )}
+                        >
                           {p.username}
                         </p>
-                        {selected && <div className="h-2 w-2 rounded-full bg-orange-500" />}
+                        {selected && (
+                          <div className="h-2 w-2 rounded-full bg-orange-500" />
+                        )}
                       </button>
                     )
                   })}
@@ -201,7 +228,7 @@ const PowerUpConfirmDrawer = ({ powerUp, players, onConfirm, onCancel }: Props) 
                 className={clsx(
                   "flex-1 rounded-2xl py-3 text-sm font-bold text-white transition-all",
                   canConfirm
-                    ? "bg-orange-500 hover:scale-[1.02] hover:bg-orange-400 shadow-lg shadow-orange-500/30"
+                    ? "bg-orange-500 shadow-lg shadow-orange-500/30 hover:scale-[1.02] hover:bg-orange-400"
                     : "cursor-not-allowed bg-white/10 text-white/30",
                 )}
               >

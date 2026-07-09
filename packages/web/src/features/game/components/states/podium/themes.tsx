@@ -1,5 +1,4 @@
 import type { PodiumThemeId } from "@rahoot/common/types/game"
-import { PODIUM_THEMES } from "@rahoot/common/constants"
 import { motion } from "motion/react"
 import { useMemo, type CSSProperties, type ReactNode } from "react"
 
@@ -22,13 +21,15 @@ export type PodiumThemeTokens = {
   id: PodiumThemeId
   titleStyle: CSSProperties
   subtitleStyle: CSSProperties
-  // Fond : dégradé de base + image .stitch voilée + voile de lisibilité.
+  // Fond : dégradé de base + image voilée + voile de lisibilité. Pour le
+  // thème "neutre", bgImage est vide : la couverture du quiz (envoyée dans
+  // le statut FINISHED) est utilisée à la place.
   baseGradient: string
   bgImage: string
   bgStyle: CSSProperties
   overlayGradient: string
-  ambient: "stars" | "amber" | "manga" | "lab" | "comic"
-  avatarShape: "hologram" | "fossil" | "burst" | "hex" | "crest"
+  ambient: "none" | "stars" | "amber" | "manga" | "lab" | "comic"
+  avatarShape: "ring" | "hologram" | "fossil" | "burst" | "hex" | "crest"
   winnerLabel: string
   confetti: string[]
   blockRadiusClass: string
@@ -54,6 +55,35 @@ const stoneBlock = (accent: string): CSSProperties => ({
 })
 
 export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
+  // Défaut : podium sobre or/argent/bronze sur la couverture du quiz.
+  neutre: {
+    id: "neutre",
+    titleStyle: {
+      fontFamily: DISPLAY_FONT,
+      fontWeight: 900,
+      textTransform: "uppercase",
+      letterSpacing: "-0.02em",
+      color: "#ffffff",
+      textShadow: "0 2px 24px rgba(0,0,0,0.7)",
+    },
+    subtitleStyle: { color: "#e4e1e7", fontFamily: BODY_FONT },
+    baseGradient:
+      "radial-gradient(ellipse at 50% 30%, #26262c 0%, #131317 60%, #0e0e12 100%)",
+    bgImage: "",
+    bgStyle: { opacity: 0.35, filter: "blur(6px)", transform: "scale(1.1)" },
+    overlayGradient:
+      "linear-gradient(to top, #131317 0%, rgba(19,19,23,0.35) 45%, rgba(19,19,23,0.6) 100%)",
+    ambient: "none",
+    avatarShape: "ring",
+    winnerLabel: "Champion",
+    confetti: ["#f5d67a", "#e7e4dc", "#ffffff", "#e0a468"],
+    blockRadiusClass: "rounded-t-xl",
+    ranks: {
+      1: { accent: "#f5d67a", blockStyle: glassBlock("#f5d67a", true) },
+      2: { accent: "#e7e4dc", blockStyle: glassBlock("#e7e4dc") },
+      3: { accent: "#e0a468", blockStyle: glassBlock("#e0a468") },
+    },
+  },
   espace: {
     id: "espace",
     titleStyle: {
@@ -215,10 +245,6 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     },
   },
 }
-
-// Tirage client de secours si un ancien serveur n'envoie pas le thème.
-export const pickRandomPodiumTheme = (): PodiumThemeId =>
-  PODIUM_THEMES[Math.floor(Math.random() * PODIUM_THEMES.length)]!
 
 // ─── Keyframes injectés une seule fois ───────────────────────────────────────
 
@@ -464,6 +490,21 @@ export const ThemeAvatarFrame = ({
   children: ReactNode
 }) => {
   switch (theme.avatarShape) {
+    case "ring":
+      return (
+        <div
+          className="overflow-hidden rounded-full"
+          style={{
+            width: size,
+            height: size,
+            border: `3px solid ${accent}`,
+            boxShadow: `0 0 ${isWinner ? 30 : 14}px ${accent}66`,
+          }}
+        >
+          {children}
+        </div>
+      )
+
     case "hologram":
       return (
         <div className="relative" style={{ width: size, height: size }}>

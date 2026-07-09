@@ -44,7 +44,14 @@ const rankMedal = (rank: number) => {
   return `#${rank}`
 }
 
-const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderboard, onContinue }: Props) => {
+const EveningInterstitiel = ({
+  gameId,
+  quizIndex,
+  totalQuizzes,
+  subject,
+  leaderboard,
+  onContinue,
+}: Props) => {
   const { socket } = useSocket()
   const { isHost } = useGameConfig()
   const { player } = usePlayerStore()
@@ -142,7 +149,7 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
           className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black/80 backdrop-blur-xl"
         >
           {/* Header */}
-          <div className="flex shrink-0 flex-col items-center gap-1 py-6 px-4">
+          <div className="flex shrink-0 flex-col items-center gap-1 px-4 py-6">
             <div className="flex items-center gap-2 rounded-full bg-orange-500/20 px-4 py-1.5 text-sm font-bold text-orange-300 ring-1 ring-orange-500/40">
               <Trophy className="size-4" />
               {t("game:evening.quizComplete", "Quiz terminé !")}
@@ -184,21 +191,40 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
                     className={clsx(
                       "flex items-center gap-3 rounded-2xl px-4 py-3",
                       isFirst && "border border-yellow-500/30 bg-yellow-500/10",
-                      !isFirst && isMe && "border border-orange-500/40 bg-orange-500/10",
+                      !isFirst &&
+                        isMe &&
+                        "border border-orange-500/40 bg-orange-500/10",
                       !isFirst && !isMe && "bg-white/5",
                     )}
                   >
-                    <span className="w-8 text-center text-lg">{rankMedal(entry.rank)}</span>
+                    <span className="w-8 text-center text-lg">
+                      {rankMedal(entry.rank)}
+                    </span>
                     <div className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/10">
-                      <GameAvatar seed={entry.avatar || entry.username} className="h-full w-full" />
+                      <GameAvatar
+                        seed={entry.avatar || entry.username}
+                        className="h-full w-full"
+                      />
                     </div>
-                    <p className={clsx("flex-1 truncate text-sm font-bold", isMe ? "text-orange-300" : "text-white")}>
+                    <p
+                      className={clsx(
+                        "flex-1 truncate text-sm font-bold",
+                        isMe ? "text-orange-300" : "text-white",
+                      )}
+                    >
                       {entry.username}
                       {isMe && (
-                        <span className="ml-1 text-xs text-white/50">({t("game:you", "toi")})</span>
+                        <span className="ml-1 text-xs text-white/50">
+                          ({t("game:you", "toi")})
+                        </span>
                       )}
                     </p>
-                    <span className={clsx("text-sm font-black tabular-nums", isFirst ? "text-yellow-400" : "text-white")}>
+                    <span
+                      className={clsx(
+                        "text-sm font-black tabular-nums",
+                        isFirst ? "text-yellow-400" : "text-white",
+                      )}
+                    >
                       {entry.points.toLocaleString()}
                     </span>
                   </motion.div>
@@ -216,19 +242,28 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
                   transition={{ delay: 0.4 }}
                   className="flex items-center gap-3 rounded-2xl border border-orange-500/40 bg-orange-500/10 px-4 py-3"
                 >
-                  <span className="w-8 text-center text-sm font-bold text-white/60">#{myEntry.rank}</span>
+                  <span className="w-8 text-center text-sm font-bold text-white/60">
+                    #{myEntry.rank}
+                  </span>
                   <div className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/10">
-                    <GameAvatar seed={myEntry.avatar || myEntry.username} className="h-full w-full" />
+                    <GameAvatar
+                      seed={myEntry.avatar || myEntry.username}
+                      className="h-full w-full"
+                    />
                   </div>
-                  <p className="flex-1 truncate text-sm font-bold text-orange-300">{myEntry.username}</p>
-                  <span className="text-sm font-black tabular-nums text-white">{myEntry.points.toLocaleString()}</span>
+                  <p className="flex-1 truncate text-sm font-bold text-orange-300">
+                    {myEntry.username}
+                  </p>
+                  <span className="text-sm font-black text-white tabular-nums">
+                    {myEntry.points.toLocaleString()}
+                  </span>
                 </motion.div>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-white/10 py-4 px-4">
+          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-white/10 px-4 py-4">
             {isHost ? (
               <button
                 onClick={handleNext}
@@ -236,7 +271,9 @@ const EveningInterstitiel = ({ gameId, quizIndex, totalQuizzes, subject, leaderb
               >
                 {t("game:evening.nextQuiz", "Quiz suivant")}
                 <ChevronRight className="size-5" />
-                <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-sm">{countdown}</span>
+                <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-sm">
+                  {countdown}
+                </span>
               </button>
             ) : (
               <p className="text-sm text-white/50">

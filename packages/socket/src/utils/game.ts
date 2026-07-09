@@ -1,4 +1,8 @@
-import { EVENTS, PODIUM_THEMES } from "@rahoot/common/constants"
+import {
+  EVENTS,
+  PODIUM_THEME_NEUTRAL,
+  PODIUM_THEMES,
+} from "@rahoot/common/constants"
 import type {
   Answer,
   Award,
@@ -228,18 +232,22 @@ export const detectTopTie = (leaderboard: Player[]): string[] | null => {
   return null
 }
 
-// Résout le thème visuel du podium : réglage du quiz s'il est précis, tirage
-// au sort sinon ("random", absent, ou thème retiré du catalogue encore stocké
-// dans un vieux quiz). Résolu UNE fois côté serveur pour que hôte et joueurs
-// voient le même thème.
+// Résout le thème visuel du podium, UNE fois côté serveur pour que hôte et
+// joueurs voient le même : thème précis si réglé, tirage au sort parmi les
+// univers si "random", sinon (absent ou valeur retirée du catalogue) le
+// défaut "neutre" — podium sobre sur l'image de couverture du quiz.
 export const resolvePodiumTheme = (
   setting?: PodiumThemeSetting,
 ): PodiumThemeId => {
+  if (setting === "random") {
+    return PODIUM_THEMES[Math.floor(Math.random() * PODIUM_THEMES.length)]!
+  }
+
   if (setting && (PODIUM_THEMES as readonly string[]).includes(setting)) {
     return setting as PodiumThemeId
   }
 
-  return PODIUM_THEMES[Math.floor(Math.random() * PODIUM_THEMES.length)]!
+  return PODIUM_THEME_NEUTRAL
 }
 
 // Nombre minimum de réponses pour être éligible à l'award "sniper" (évite

@@ -50,13 +50,13 @@ const QuestionEditorMedia = () => {
       </div>
 
       {!questionMedia?.type && (
-        <Card className="ring-border my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 bg-surface shadow-lg shadow-black/5 ring-1">
+        <Card className="ring-border bg-surface my-14 flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-2 shadow-lg ring-1 shadow-black/5">
           <ImageOff className="stroke-ink-subtle size-16" />
           <p className="text-ink-muted text-center text-sm">
             {t("quizz:question.addMediaHint")}
           </p>
           <input
-            className="border-border text-ink focus:border-primary w-full max-w-md rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className="border-border text-ink focus:border-primary focus:ring-primary/30 w-full max-w-md rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
             placeholder={t("quizz:question.mediaUrlPlaceholder")}
             value={questionMedia?.url || ""}
             onChange={handleChangeMedia}

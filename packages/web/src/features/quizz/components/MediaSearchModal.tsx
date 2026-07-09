@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef } from "react"
-import { X, Search, Upload, Image as ImageIcon, Film, Loader2, Check, Crop } from "lucide-react"
+import {
+  X,
+  Search,
+  Upload,
+  Image as ImageIcon,
+  Film,
+  Loader2,
+  Check,
+  Crop,
+} from "lucide-react"
 import toast from "react-hot-toast"
 
 type Props = {
@@ -29,7 +38,9 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
 
   // Cropping State
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
-  const [cropRatio, setCropRatio] = useState<"none" | "16:9" | "4:3" | "1:1">("none")
+  const [cropRatio, setCropRatio] = useState<"none" | "16:9" | "4:3" | "1:1">(
+    "none",
+  )
   const [cropOffset, setCropOffset] = useState(50) // Percentage from top or left (0 to 100)
   const [croppingInProgress, setCroppingInProgress] = useState(false)
 
@@ -54,17 +65,21 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
     setLoading(true)
     const targetPage = resetPage ? 1 : page
     try {
-      const endpoint = tab === "unsplash" ? "/api/media/unsplash" : "/api/media/giphy"
-      const res = await fetch(`${endpoint}?query=${encodeURIComponent(query)}&page=${targetPage}`, {
-        headers: {
-          "x-client-id": localStorage.getItem("client_id") ?? "",
+      const endpoint =
+        tab === "unsplash" ? "/api/media/unsplash" : "/api/media/giphy"
+      const res = await fetch(
+        `${endpoint}?query=${encodeURIComponent(query)}&page=${targetPage}`,
+        {
+          headers: {
+            "x-client-id": localStorage.getItem("client_id") ?? "",
+          },
         },
-      })
+      )
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
         throw new Error(errorData.error || "Erreur de recherche")
       }
-      const data = await res.json() as { results: MediaItem[] }
+      const data = (await res.json()) as { results: MediaItem[] }
       if (resetPage) {
         setResults(data.results)
       } else {
@@ -74,7 +89,9 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
       setPage(targetPage + 1)
     } catch (err) {
       console.error(err)
-      toast.error(err instanceof Error ? err.message : "Erreur lors de la recherche")
+      toast.error(
+        err instanceof Error ? err.message : "Erreur lors de la recherche",
+      )
     } finally {
       setLoading(false)
     }
@@ -147,7 +164,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
       // Convert base64 to Blob
       const response = await fetch(base64Data)
       const blob = await response.blob()
-      
+
       const formData = new FormData()
       formData.append("image", blob, `cropped-${Date.now()}.png`)
 
@@ -164,7 +181,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
         throw new Error(errorData.error || "Upload failed")
       }
 
-      const data = await res.json() as { url: string }
+      const data = (await res.json()) as { url: string }
       toast.success("Image importée !", { id: loadingToast })
       onSelect(data.url)
       onClose()
@@ -240,7 +257,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
           0,
           0,
           canvas.width,
-          canvas.height
+          canvas.height,
         )
 
         // Return base64 URL
@@ -260,11 +277,10 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-panel border-border flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        
+      <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-2 text-primary">
+          <div className="text-primary flex items-center gap-2">
             <ImageIcon className="size-5" />
             <h2 className="text-ink text-lg font-bold">
               {selectedImageSrc ? "Recadrer l'image" : "Bibliothèque de Médias"}
@@ -282,7 +298,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
         {selectedImageSrc ? (
           /* CROP WORKSPACE */
           <div className="flex flex-1 flex-col overflow-hidden bg-zinc-950">
-            <div className="flex flex-1 items-center justify-center overflow-hidden p-6 relative">
+            <div className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
               <img
                 src={selectedImageSrc}
                 alt="To crop"
@@ -290,18 +306,23 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
               />
               {/* Dynamic Crop Overlay Guidelines */}
               {cropRatio !== "none" && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div 
-                    className="border-2 border-primary border-dashed shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] relative"
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div
+                    className="border-primary relative border-2 border-dashed shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
                     style={{
-                      aspectRatio: cropRatio === "16:9" ? "16/9" : cropRatio === "4:3" ? "4/3" : "1/1",
+                      aspectRatio:
+                        cropRatio === "16:9"
+                          ? "16/9"
+                          : cropRatio === "4:3"
+                            ? "4/3"
+                            : "1/1",
                       maxHeight: "45vh",
                       maxWidth: "85%",
                       width: "100%",
-                      height: "auto"
+                      height: "auto",
                     }}
                   >
-                    <div className="absolute bottom-2 right-2 bg-primary text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                    <div className="bg-primary text-secondary absolute right-2 bottom-2 rounded px-1.5 py-0.5 text-[10px] font-bold shadow">
                       Zone de découpe ({cropRatio})
                     </div>
                   </div>
@@ -310,10 +331,10 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
             </div>
 
             {/* Crop Settings Footer */}
-            <div className="bg-panel border-border border-t px-6 py-4 flex flex-col gap-4">
+            <div className="bg-panel border-border flex flex-col gap-4 border-t px-6 py-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-ink text-sm font-semibold mr-2 flex items-center gap-1">
+                  <span className="text-ink mr-2 flex items-center gap-1 text-sm font-semibold">
                     <Crop className="size-4" /> Recadrer :
                   </span>
                   {(["none", "16:9", "4:3", "1:1"] as const).map((ratio) => (
@@ -321,7 +342,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                       key={ratio}
                       type="button"
                       onClick={() => setCropRatio(ratio)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                         cropRatio === ratio
                           ? "bg-primary text-secondary border-primary"
                           : "border-border text-ink-muted hover:bg-border/20"
@@ -333,21 +354,23 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                 </div>
 
                 {cropRatio !== "none" && (
-                  <div className="flex items-center gap-3 min-w-[240px]">
-                    <span className="text-ink-subtle text-xs whitespace-nowrap">Ajustement :</span>
+                  <div className="flex min-w-[240px] items-center gap-3">
+                    <span className="text-ink-subtle text-xs whitespace-nowrap">
+                      Ajustement :
+                    </span>
                     <input
                       type="range"
                       min="0"
                       max="100"
                       value={cropOffset}
                       onChange={(e) => setCropOffset(Number(e.target.value))}
-                      className="accent-primary flex-1 h-1.5 bg-border rounded-lg appearance-none cursor-pointer"
+                      className="accent-primary bg-border h-1.5 flex-1 cursor-pointer appearance-none rounded-lg"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between border-t border-border pt-4">
+              <div className="border-border flex items-center justify-between border-t pt-4">
                 <button
                   type="button"
                   onClick={() => setSelectedImageSrc(null)}
@@ -397,10 +420,10 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                       setTab(tItem.id as TabType)
                       setResults([])
                     }}
-                    className={`border-b-2 px-4 py-3 text-sm font-semibold flex items-center gap-1.5 transition-colors ${
+                    className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
                       isActive
                         ? "border-primary text-primary"
-                        : "border-transparent text-ink-subtle hover:text-ink"
+                        : "text-ink-subtle hover:text-ink border-transparent"
                     }`}
                   >
                     <Icon className="size-4" />
@@ -412,7 +435,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
 
             {/* Search Input (For Unsplash / Giphy) */}
             {tab !== "upload" && (
-              <div className="px-6 py-4 border-b border-border flex gap-2">
+              <div className="border-border flex gap-2 border-b px-6 py-4">
                 <div className="relative flex-1">
                   <Search className="text-ink-subtle absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                   <input
@@ -421,7 +444,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={`Rechercher des ${tab === "unsplash" ? "images libres de droits" : "GIFs animés"}...`}
-                    className="border-border text-ink bg-transparent focus:border-primary w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none transition-colors"
+                    className="border-border text-ink focus:border-primary w-full rounded-lg border bg-transparent py-2 pr-4 pl-9 text-sm transition-colors outline-none"
                   />
                 </div>
                 <button
@@ -436,19 +459,23 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
             )}
 
             {/* Panel Body */}
-            <div className="flex-1 overflow-y-auto p-6 scrollbar-light">
+            <div className="scrollbar-light flex-1 overflow-y-auto p-6">
               {tab === "upload" ? (
                 <div className="flex h-full flex-col items-center justify-center py-10">
                   <div
                     onClick={handleFileUploadClick}
                     className="border-border-strong hover:border-primary group ease-out-soft flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed px-12 py-16 transition-colors duration-150"
                   >
-                    <div className="bg-primary-soft text-primary group-hover:scale-110 ease-out-soft rounded-full p-4 transition-transform">
+                    <div className="bg-primary-soft text-primary ease-out-soft rounded-full p-4 transition-transform group-hover:scale-110">
                       <Upload className="size-8" />
                     </div>
                     <div className="text-center">
-                      <p className="text-ink text-sm font-bold">Sélectionner un fichier local</p>
-                      <p className="text-ink-subtle text-xs mt-1">Glissez-déposez ou cliquez pour parcourir</p>
+                      <p className="text-ink text-sm font-bold">
+                        Sélectionner un fichier local
+                      </p>
+                      <p className="text-ink-subtle mt-1 text-xs">
+                        Glissez-déposez ou cliquez pour parcourir
+                      </p>
                     </div>
                   </div>
                   <input
@@ -468,7 +495,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                         <div
                           key={item.id}
                           onClick={() => handleSelectMedia(item)}
-                          className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-border bg-border/20 transition-all hover:border-primary hover:shadow"
+                          className="group border-border bg-border/20 hover:border-primary relative aspect-square cursor-pointer overflow-hidden rounded-lg border transition-all hover:shadow"
                         >
                           <img
                             src={item.thumb}
@@ -477,7 +504,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                             loading="lazy"
                           />
                           {item.author && (
-                            <div className="absolute inset-x-0 bottom-0 bg-black/75 p-1 px-2 text-[9px] text-zinc-300 truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-x-0 bottom-0 truncate bg-black/75 p-1 px-2 text-[9px] text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100">
                               Photo : {item.author}
                             </div>
                           )}
@@ -487,11 +514,14 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                   ) : (
                     <div className="text-ink-subtle flex h-48 flex-col items-center justify-center gap-2 text-center">
                       {loading ? (
-                        <Loader2 className="size-8 animate-spin text-primary" />
+                        <Loader2 className="text-primary size-8 animate-spin" />
                       ) : (
                         <>
                           <ImageIcon className="size-8 opacity-40" />
-                          <p className="text-sm">Saisissez un mot-clé ci-dessus pour lancer la recherche.</p>
+                          <p className="text-sm">
+                            Saisissez un mot-clé ci-dessus pour lancer la
+                            recherche.
+                          </p>
                         </>
                       )}
                     </div>

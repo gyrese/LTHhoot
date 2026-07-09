@@ -39,7 +39,10 @@ const OpenAnswersManager = ({
     }
 
     setValidating(text)
-    socket?.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, { gameId, data: { text } })
+    socket?.emit(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, {
+      gameId,
+      data: { text },
+    })
   }
 
   const unique = Array.from(

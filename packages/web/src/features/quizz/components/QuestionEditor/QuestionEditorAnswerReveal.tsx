@@ -53,7 +53,9 @@ const QuestionEditorAnswerReveal = () => {
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [uploading, setUploading] = useState(false)
 
-  const reveal: AnswerReveal = currentQuestion.answerReveal ?? { enabled: false }
+  const reveal: AnswerReveal = currentQuestion.answerReveal ?? {
+    enabled: false,
+  }
 
   const updateReveal = (patch: Partial<AnswerReveal>) => {
     updateQuestion(currentIndex, {
@@ -133,8 +135,8 @@ const QuestionEditorAnswerReveal = () => {
       </div>
 
       <p className="text-ink-subtle text-xs leading-relaxed">
-        Affiche une carte (image, vidéo YouTube et/ou texte) centrée sur
-        l'écran des résultats.
+        Affiche une carte (image, vidéo YouTube et/ou texte) centrée sur l'écran
+        des résultats.
       </p>
 
       {reveal.enabled && (
@@ -222,7 +224,7 @@ const QuestionEditorAnswerReveal = () => {
                         }
                       }}
                       placeholder="https://..."
-                      className="border-border text-ink focus:border-primary flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
+                      className="border-border text-ink focus:border-primary focus:ring-primary/30 flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2"
                     />
                     <button
                       type="button"
@@ -270,7 +272,7 @@ const QuestionEditorAnswerReveal = () => {
                 value={youtubeUrl}
                 onChange={handleChangeYoutube}
                 placeholder="URL ou ID de la vidéo"
-                className="border-border text-ink focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
+                className="border-border text-ink focus:border-primary focus:ring-primary/30 w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2"
               />
             )}
           </div>
@@ -285,7 +287,7 @@ const QuestionEditorAnswerReveal = () => {
               onChange={(e) => updateReveal({ text: e.target.value })}
               rows={3}
               placeholder="Explication, anecdote, détail de la réponse..."
-              className="border-border text-ink focus:border-primary w-full resize-none rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30"
+              className="border-border text-ink focus:border-primary focus:ring-primary/30 w-full resize-none rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2"
             />
           </div>
         </div>

@@ -107,6 +107,8 @@ export type CommonStatusDataMap = {
     awards?: Award[]
     // Thème visuel du podium, résolu côté serveur (jamais "random").
     podiumTheme?: PodiumThemeId
+    // Image de couverture du quiz — fond du podium "neutre".
+    coverImage?: string
   }
   PAUSED: { text: string }
   SHOW_TIE_BREAK: { statement: string; opponents: string[] }

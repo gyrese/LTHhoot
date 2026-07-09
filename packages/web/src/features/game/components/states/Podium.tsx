@@ -1,3 +1,4 @@
+import { PODIUM_THEME_NEUTRAL } from "@rahoot/common/constants"
 import type { AwardType } from "@rahoot/common/types/game"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
@@ -10,7 +11,6 @@ import {
   PODIUM_THEME_TOKENS,
   ThemeAmbient,
   ThemeAvatarFrame,
-  pickRandomPodiumTheme,
   type PodiumThemeTokens,
 } from "@rahoot/web/features/game/components/states/podium/themes"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
@@ -536,7 +536,9 @@ const PodiumPlace = ({
 // réservé au grand final apparition=4) — sert au mini burst de confettis.
 const APPARITION_RANK: Partial<Record<number, 1 | 2 | 3>> = { 1: 3, 2: 2 }
 
-const Podium = ({ data: { subject, top, awards, podiumTheme } }: Props) => {
+const Podium = ({
+  data: { subject, top, awards, podiumTheme, coverImage },
+}: Props) => {
   const apparition = usePodiumAnimation(top.length)
   const { isHost, isEveningFinale } = useGameConfig()
   const { player } = usePlayerStore()
@@ -545,12 +547,15 @@ const Podium = ({ data: { subject, top, awards, podiumTheme } }: Props) => {
   const reducedMotion = useReducedMotion() ?? false
   const isFinal = apparition >= 4
 
-  // Thème résolu côté serveur ; tirage local de secours si absent (ancien
-  // serveur). useMemo : le tirage ne doit pas changer entre deux renders.
+  // Thème résolu côté serveur ; défaut "neutre" si absent (ancien serveur).
   const theme = useMemo(
-    () => PODIUM_THEME_TOKENS[podiumTheme ?? pickRandomPodiumTheme()],
+    () => PODIUM_THEME_TOKENS[podiumTheme ?? PODIUM_THEME_NEUTRAL],
     [podiumTheme],
   )
+
+  // Le thème neutre prend la couverture du quiz en fond ; les univers .stitch
+  // gardent leur image dédiée.
+  const bgImage = theme.id === PODIUM_THEME_NEUTRAL ? coverImage : theme.bgImage
 
   let subtitle = "Et maintenant, le classement final..."
 
@@ -650,14 +655,17 @@ const Podium = ({ data: { subject, top, awards, podiumTheme } }: Props) => {
           style={{ background: theme.baseGradient }}
         />
 
-        {/* Image d'ambiance .stitch, voilée */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${theme.bgImage})`,
-            ...theme.bgStyle,
-          }}
-        />
+        {/* Image d'ambiance voilée : univers .stitch, ou couverture du quiz
+            pour le thème neutre (rien si le quiz n'a pas d'image). */}
+        {bgImage && (
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${bgImage})`,
+              ...theme.bgStyle,
+            }}
+          />
+        )}
 
         {/* Voile de lisibilité */}
         <div

@@ -21,8 +21,7 @@ const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
   const { socket } = useSocket()
-  const { gameId, status, setStatus, setPlayers, reset } =
-    useManagerStore()
+  const { gameId, status, setStatus, setPlayers, reset } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
 
@@ -41,8 +40,7 @@ const ManagerGamePage = () => {
       // Mettre à jour le joueur existant (ex. points modifiés par un power-up)
       setPlayers(current.map((p) => (p.id === newPlayer.id ? newPlayer : p)))
 
-      
-return
+      return
     }
 
     setPlayers([...current, newPlayer])
@@ -73,25 +71,24 @@ return
     }
   }, [socket, gameIdParam])
 
-  useEvent(
-    EVENTS.MANAGER.SUCCESS_RECONNECT,
-    (data) => {
-      console.log(`[RECONNECT_MANAGER] Succès → gameId=${data.gameId} players=${data.players.length} status=${data.status.name} timer=${data.timer}`)
-      
-      // Hydratation atomique du store manager
-      useManagerStore.getState().hydrate({
-        gameId: data.gameId,
-        inviteCode: data.inviteCode,
-        status: data.status as any,
-        players: data.players,
-      })
-      setQuestionStates(data.currentQuestion)
+  useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, (data) => {
+    console.log(
+      `[RECONNECT_MANAGER] Succès → gameId=${data.gameId} players=${data.players.length} status=${data.status.name} timer=${data.timer}`,
+    )
 
-      if (data.timer && data.timer > 0) {
-        useQuestionStore.getState().setCooldown(data.timer)
-      }
-    },
-  )
+    // Hydratation atomique du store manager
+    useManagerStore.getState().hydrate({
+      gameId: data.gameId,
+      inviteCode: data.inviteCode,
+      status: data.status as any,
+      players: data.players,
+    })
+    setQuestionStates(data.currentQuestion)
+
+    if (data.timer && data.timer > 0) {
+      useQuestionStore.getState().setCooldown(data.timer)
+    }
+  })
 
   // UseSocket déplacé en haut
 

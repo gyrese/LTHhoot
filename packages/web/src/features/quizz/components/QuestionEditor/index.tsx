@@ -14,7 +14,7 @@ import SlideEditor from "@rahoot/web/features/quizz/components/SlideEditor"
 
 const QuestionAnswerEditor = () => {
   const { currentQuestion } = useQuizzEditor()
-  
+
   if (!currentQuestion) {
     return null
   }
@@ -58,7 +58,7 @@ const QuestionEditor = () => {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <main className="relative mx-auto flex max-w-7xl flex-1 flex-col gap-4 overflow-y-auto p-6">
+      <main className="relative mx-auto flex max-w-7xl flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <SlideEditor
             elements={currentQuestion.elements || []}

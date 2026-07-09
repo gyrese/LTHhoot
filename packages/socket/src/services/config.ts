@@ -28,7 +28,7 @@ const getPath = (path: string = "") =>
     : resolve(process.cwd(), "../../config", path)
 
 class Config {
-  private static quizzCache: QuizzWithId[] | null = null;
+  private static quizzCache: QuizzWithId[] | null = null
 
   static init() {
     const isConfigFolderExists = fs.existsSync(getPath())
@@ -176,7 +176,10 @@ class Config {
     }
   }
 
-  static updateQuizz(id: string, data: unknown): { id: string; updatedAt: number } {
+  static updateQuizz(
+    id: string,
+    data: unknown,
+  ): { id: string; updatedAt: number } {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {

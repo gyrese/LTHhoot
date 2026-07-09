@@ -143,39 +143,43 @@ const SlideCanvas = ({
   // Espace maintenu = mode pan (glisser le calque). Désactivé si le focus est
   // dans un champ texte, même garde que les autres raccourcis de l'éditeur.
   useEffect(() => {
-    if (readOnly) {
-      return
-    }
+    if (!readOnly) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.code !== "Space") {
+          return
+        }
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== "Space") {
-        return
+        const target = e.target as HTMLElement | null
+        const tag = target?.tagName.toLowerCase()
+
+        if (
+          tag === "input" ||
+          tag === "textarea" ||
+          target?.isContentEditable
+        ) {
+          return
+        }
+
+        e.preventDefault()
+        setIsSpacePressed(true)
       }
 
-      const target = e.target as HTMLElement | null
-      const tag = target?.tagName.toLowerCase()
-
-      if (tag === "input" || tag === "textarea" || target?.isContentEditable) {
-        return
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.code === "Space") {
+          setIsSpacePressed(false)
+        }
       }
 
-      e.preventDefault()
-      setIsSpacePressed(true)
-    }
+      window.addEventListener("keydown", handleKeyDown)
+      window.addEventListener("keyup", handleKeyUp)
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        setIsSpacePressed(false)
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown)
+        window.removeEventListener("keyup", handleKeyUp)
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
-    }
+    return undefined
   }, [readOnly])
 
   const checkDeselect = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -203,11 +207,14 @@ const SlideCanvas = ({
 
   const handleElementClick = (e: KonvaEventObject<MouseEvent>, id: string) => {
     if (e.evt.shiftKey) {
-      const current = multiSelected.length
-        ? multiSelected
-        : selectedId
-          ? [selectedId]
-          : []
+      let current: string[] = []
+
+      if (multiSelected.length) {
+        current = multiSelected
+      } else if (selectedId) {
+        current = [selectedId]
+      }
+
       const next = current.includes(id)
         ? current.filter((existing) => existing !== id)
         : [...current, id]
@@ -231,12 +238,13 @@ const SlideCanvas = ({
       return
     }
 
-    const idsForTransform =
-      multiSelected.length >= 2
-        ? multiSelected
-        : selectedId
-          ? [selectedId]
-          : []
+    let idsForTransform: string[] = []
+
+    if (multiSelected.length >= 2) {
+      idsForTransform = multiSelected
+    } else if (selectedId) {
+      idsForTransform = [selectedId]
+    }
 
     const nodes = idsForTransform
       .map((id) => {
@@ -267,7 +275,9 @@ const SlideCanvas = ({
     height: number
   } | null>(null)
   const [isMarqueeTracking, setIsMarqueeTracking] = useState(false)
-  const finalizeMarqueeRef = useRef<() => void>(() => {})
+  const finalizeMarqueeRef = useRef<() => void>(() => {
+    /* Noop */
+  })
 
   useEffect(() => {
     finalizeMarqueeRef.current = () => {
@@ -317,15 +327,19 @@ const SlideCanvas = ({
   })
 
   useEffect(() => {
-    if (!isMarqueeTracking) {
-      return
+    if (isMarqueeTracking) {
+      const handleWindowMouseUp = () => {
+        finalizeMarqueeRef.current()
+      }
+
+      window.addEventListener("mouseup", handleWindowMouseUp)
+
+      return () => {
+        window.removeEventListener("mouseup", handleWindowMouseUp)
+      }
     }
 
-    const handleWindowMouseUp = () => finalizeMarqueeRef.current()
-
-    window.addEventListener("mouseup", handleWindowMouseUp)
-
-    return () => window.removeEventListener("mouseup", handleWindowMouseUp)
+    return undefined
   }, [isMarqueeTracking])
 
   const handleStageMouseDown = (
@@ -382,13 +396,17 @@ const SlideCanvas = ({
     setMarquee(rect)
   }
 
-  const [guideLines, setGuideLines] = useState<{ x1: number; y1: number; x2: number; y2: number }[]>([])
+  const [guideLines, setGuideLines] = useState<
+    { x1: number; y1: number; x2: number; y2: number }[]
+  >([])
   const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(
     new Map(),
   )
 
   const handleDragStart = (_e: KonvaEventObject<DragEvent>, dragId: string) => {
-    if (readOnly) return
+    if (readOnly) {
+      return
+    }
 
     if (multiSelected.length >= 2 && multiSelected.includes(dragId)) {
       const positions = new Map<string, { x: number; y: number }>()
@@ -406,7 +424,9 @@ const SlideCanvas = ({
   }
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>, dragId: string) => {
-    if (readOnly) return
+    if (readOnly) {
+      return
+    }
 
     // Déplacement groupé : applique le même delta à tous les autres éléments
     // sélectionnés, sans passer par la logique de snap (pensée pour un seul
@@ -423,11 +443,15 @@ const SlideCanvas = ({
       const stage = stageRef.current
 
       multiSelected.forEach((id) => {
-        if (id === dragId || !stage) return
+        if (id === dragId || !stage) {
+          return
+        }
 
         const otherStart = dragStartPositionsRef.current.get(id)
 
-        if (!otherStart) return
+        if (!otherStart) {
+          return
+        }
 
         const node = stage.findOne(`#${id}`)
 
@@ -459,16 +483,18 @@ const SlideCanvas = ({
     const vLines = [
       { coord: 0, type: "left" },
       { coord: CANVAS_W / 2, type: "center" },
-      { coord: CANVAS_W, type: "right" }
+      { coord: CANVAS_W, type: "right" },
     ]
     const hLines = [
       { coord: 0, type: "top" },
       { coord: CANVAS_H / 2, type: "center" },
-      { coord: CANVAS_H, type: "bottom" }
+      { coord: CANVAS_H, type: "bottom" },
     ]
 
     elements.forEach((el) => {
-      if (el.id === dragId) return
+      if (el.id === dragId) {
+        return
+      }
 
       const left = el.x
       const right = el.x + el.width
@@ -491,11 +517,12 @@ const SlideCanvas = ({
       const positions = [
         { val: dragLeft, offset: 0 },
         { val: dragCenterX, offset: -dragWidth / 2 },
-        { val: dragRight, offset: -dragWidth }
+        { val: dragRight, offset: -dragWidth },
       ]
 
       positions.forEach((pos) => {
         const diff = Math.abs(pos.val - line.coord)
+
         if (diff < minDiffX) {
           minDiffX = diff
           snapX = line.coord + pos.offset
@@ -515,11 +542,12 @@ const SlideCanvas = ({
       const positions = [
         { val: dragTop, offset: 0 },
         { val: dragCenterY, offset: -dragHeight / 2 },
-        { val: dragBottom, offset: -dragHeight }
+        { val: dragBottom, offset: -dragHeight },
       ]
 
       positions.forEach((pos) => {
         const diff = Math.abs(pos.val - line.coord)
+
         if (diff < minDiffY) {
           minDiffY = diff
           snapY = line.coord + pos.offset
@@ -537,6 +565,7 @@ const SlideCanvas = ({
     if (snapX !== null) {
       dragNode.x(snapX)
     }
+
     if (snapY !== null) {
       dragNode.y(snapY)
     }
@@ -559,11 +588,15 @@ const SlideCanvas = ({
 
       onChange(
         elements.map((el) => {
-          if (!multiSelected.includes(el.id)) return el
+          if (!multiSelected.includes(el.id)) {
+            return el
+          }
 
           const elStart = dragStartPositionsRef.current.get(el.id)
 
-          if (!elStart) return el
+          if (!elStart) {
+            return el
+          }
 
           return { ...el, x: elStart.x + deltaX, y: elStart.y + deltaY }
         }),
@@ -891,7 +924,10 @@ const SlideCanvas = ({
               scaleY={scale}
               draggable={!readOnly && isSpacePressed}
               onDragEnd={(e) => {
-                if (e.target.getClassName() !== "Layer") return
+                if (e.target.getClassName() !== "Layer") {
+                  return
+                }
+
                 setStagePos({ x: e.target.x(), y: e.target.y() })
               }}
             >
@@ -949,35 +985,55 @@ const SlideCanvas = ({
                   const isEditing = editingId === el.id
 
                   return (
-                    <Text
-                      key={el.id}
-                      id={el.id}
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rotation={el.rotation}
-                      text={isEditing ? "" : el.text}
-                      fontSize={el.fontSize}
-                      fontFamily={el.fontFamily}
-                      fill={el.fill || "#000"}
-                      align={el.align}
-                      draggable={!isEditing && !el.isLocked}
-                      visible={!isEditing}
-                      onClick={(e) => {
-                        if (selectedId === el.id && !e.evt.shiftKey) {
-                          setEditingId(el.id)
-                        }
+                    <React.Fragment key={el.id}>
+                      {el.textBackground && !isEditing && (
+                        <Rect
+                          x={el.x}
+                          y={el.y}
+                          width={el.width}
+                          height={el.height}
+                          rotation={el.rotation}
+                          fill={el.textBackground}
+                          opacity={el.opacity}
+                          cornerRadius={4}
+                          listening={false}
+                        />
+                      )}
+                      <Text
+                        id={el.id}
+                        x={el.x}
+                        y={el.y}
+                        width={el.width}
+                        height={el.height}
+                        rotation={el.rotation}
+                        text={isEditing ? "" : el.text}
+                        fontSize={el.fontSize}
+                        fontFamily={el.fontFamily}
+                        fontStyle={el.fontStyle || "normal"}
+                        textDecoration={el.textDecoration || "none"}
+                        fill={el.fill || "#000"}
+                        align={el.align}
+                        opacity={el.opacity}
+                        stroke={el.stroke || undefined}
+                        strokeWidth={el.strokeWidth || 0}
+                        fillAfterStrokeEnabled={true}
+                        draggable={!isEditing && !el.isLocked}
+                        visible={!isEditing}
+                        onClick={(e) => {
+                          if (selectedId === el.id && !e.evt.shiftKey) {
+                            setEditingId(el.id)
+                          }
 
-                        handleElementClick(e, el.id)
-                      }}
-                      onDblClick={() => setEditingId(el.id)}
-                      onTap={() => handleElementTap(el.id)}
-                      onDragStart={(e) => handleDragStart(e, el.id)}
-                      onDragMove={(e) => handleDragMove(e, el.id)}
-                      onDragEnd={(e) => handleDragEnd(e, el.id)}
-                      onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                    />
+                          handleElementClick(e, el.id)
+                        }}
+                        onDblClick={() => setEditingId(el.id)}
+                        onTap={() => handleElementTap(el.id)}
+                        onDragStart={(e) => handleDragStart(e, el.id)}
+                        onDragMove={(e) => handleDragMove(e, el.id)}
+                        onDragEnd={(e) => handleDragEnd(e, el.id)}
+                        onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                      />
+                    </React.Fragment>
                   )
                 }
 
@@ -1013,6 +1069,8 @@ const SlideCanvas = ({
                           radiusX={el.width / 2}
                           radiusY={el.height / 2}
                           fill={el.fill || "#ccc"}
+                          stroke={el.stroke || undefined}
+                          strokeWidth={el.strokeWidth || 0}
                         />
                       </Group>
                     )
@@ -1023,12 +1081,17 @@ const SlideCanvas = ({
                       <Group key={el.id} {...commonGroup}>
                         <Line
                           points={[
-                            el.width / 2, 0,
-                            el.width, el.height,
-                            0, el.height,
+                            el.width / 2,
+                            0,
+                            el.width,
+                            el.height,
+                            0,
+                            el.height,
                           ]}
                           closed
                           fill={el.fill || "#ccc"}
+                          stroke={el.stroke || undefined}
+                          strokeWidth={el.strokeWidth || 0}
                         />
                       </Group>
                     )
@@ -1046,6 +1109,8 @@ const SlideCanvas = ({
                           innerRadius={r / 2}
                           outerRadius={r}
                           fill={el.fill || "#ccc"}
+                          stroke={el.stroke || undefined}
+                          strokeWidth={el.strokeWidth || 0}
                         />
                       </Group>
                     )
@@ -1063,6 +1128,8 @@ const SlideCanvas = ({
                       opacity={el.opacity}
                       fill={el.fill || "#ccc"}
                       cornerRadius={el.cornerRadius || 0}
+                      stroke={el.stroke || undefined}
+                      strokeWidth={el.strokeWidth || 0}
                       draggable={!el.isLocked}
                       onClick={(e) => handleElementClick(e, el.id)}
                       onTap={() => handleElementTap(el.id)}
@@ -1189,6 +1256,7 @@ const SlideCanvas = ({
                     fontFamily: el.fontFamily || "Arial",
                     color: el.fill || "#000",
                     textAlign: el.align,
+                    backgroundColor: el.textBackground || "transparent",
                     transform: `rotate(${el.rotation}deg)`,
                     transformOrigin: "top left",
                     lineHeight: 1.2,
@@ -1262,18 +1330,17 @@ const SlideCanvas = ({
             elements
               .filter(
                 (el): el is Extract<SlideElement, { type: "image" }> =>
-                  el.type === "image" && (
-                    el.url.toLowerCase().endsWith(".gif") ||
+                  el.type === "image" &&
+                  (el.url.toLowerCase().endsWith(".gif") ||
                     el.url.toLowerCase().includes(".gif?") ||
-                    el.url.startsWith("data:image/gif")
-                  ),
+                    el.url.startsWith("data:image/gif")),
               )
               .map((el) => (
                 <img
                   key={el.id}
                   src={el.url}
                   alt=""
-                  className="absolute rounded-md pointer-events-none"
+                  className="pointer-events-none absolute rounded-md"
                   style={{
                     left: el.x * scale + stagePos.x,
                     top: el.y * scale + stagePos.y,

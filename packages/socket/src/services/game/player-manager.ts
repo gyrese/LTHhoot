@@ -33,7 +33,9 @@ export class PlayerManager {
         .emit(EVENTS.MANAGER.REMOVE_PLAYER, existingPlayer.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, existingPlayer.id)
 
-      this.players = this.players.filter((p) => p.clientId !== socket.handshake.auth.clientId)
+      this.players = this.players.filter(
+        (p) => p.clientId !== socket.handshake.auth.clientId,
+      )
     }
 
     const trimmedUsername = username.trim()

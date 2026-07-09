@@ -13,8 +13,14 @@ import { useEffect } from "react"
 
 const ManagerConfigPage = () => {
   const { isConnected, socket } = useSocket()
-  const { setGameId, setInviteCode, setStatus, setConfig, setSalonImage, config } =
-    useManagerStore()
+  const {
+    setGameId,
+    setInviteCode,
+    setStatus,
+    setConfig,
+    setSalonImage,
+    config,
+  } = useManagerStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -26,7 +32,7 @@ const ManagerConfigPage = () => {
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
     setConfig(data)
   })
-  
+
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
     navigate({ to: "/manager" })
   })

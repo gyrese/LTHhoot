@@ -34,7 +34,12 @@
  * slider,En quelle année a été fondée Paris ?,20,5,,,,,0,2000,300,50
  */
 
-import type { McqQuestion, OpenQuestion, Question, SliderQuestion } from "@rahoot/common/types/game"
+import type {
+  McqQuestion,
+  OpenQuestion,
+  Question,
+  SliderQuestion,
+} from "@rahoot/common/types/game"
 
 export interface CsvImportResult {
   questions: Question[]
@@ -102,7 +107,9 @@ function parseRow(line: string, sep: string): string[] {
   return fields
 }
 
-function parseCsvToRows(text: string): { headers: string[]; rows: string[][] } | null {
+function parseCsvToRows(
+  text: string,
+): { headers: string[]; rows: string[][] } | null {
   // Supprime le BOM UTF-8 si présent
   const clean = text.startsWith("﻿") ? text.slice(1) : text
 
@@ -129,11 +136,7 @@ function parseCsvToRows(text: string): { headers: string[]; rows: string[][] } |
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getField(
-  row: string[],
-  headers: string[],
-  name: string,
-): string {
+function getField(row: string[], headers: string[], name: string): string {
   const idx = headers.indexOf(name)
   if (idx === -1) return ""
   return (row[idx] ?? "").trim()
@@ -165,21 +168,32 @@ function buildMcq(
   const correctRaw = getField(row, headers, "correct")
 
   if (!answersRaw) {
-    errors.push(`Ligne ${rowNum} : colonne "answers" manquante pour le type mcq.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "answers" manquante pour le type mcq.`,
+    )
     return null
   }
   if (!correctRaw && correctRaw !== "0") {
-    errors.push(`Ligne ${rowNum} : colonne "correct" manquante pour le type mcq.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "correct" manquante pour le type mcq.`,
+    )
     return null
   }
 
-  const answers = answersRaw.split("|").map((a) => a.trim()).filter((a) => a.length > 0)
+  const answers = answersRaw
+    .split("|")
+    .map((a) => a.trim())
+    .filter((a) => a.length > 0)
   if (answers.length < 2) {
-    errors.push(`Ligne ${rowNum} : au moins 2 réponses requises pour le type mcq (trouvé : ${answers.length}).`)
+    errors.push(
+      `Ligne ${rowNum} : au moins 2 réponses requises pour le type mcq (trouvé : ${answers.length}).`,
+    )
     return null
   }
   if (answers.length > 4) {
-    errors.push(`Ligne ${rowNum} : maximum 4 réponses pour le type mcq (trouvé : ${answers.length}).`)
+    errors.push(
+      `Ligne ${rowNum} : maximum 4 réponses pour le type mcq (trouvé : ${answers.length}).`,
+    )
     return null
   }
 
@@ -189,7 +203,9 @@ function buildMcq(
     .filter((n): n is number => n !== null)
 
   if (solutions.length === 0) {
-    errors.push(`Ligne ${rowNum} : au moins 1 solution requise pour le type mcq.`)
+    errors.push(
+      `Ligne ${rowNum} : au moins 1 solution requise pour le type mcq.`,
+    )
     return null
   }
 
@@ -202,7 +218,11 @@ function buildMcq(
     }
   }
 
-  return { type: "mcq", answers, solutions } as Omit<McqQuestion, keyof ReturnType<typeof buildBase>> & McqQuestion
+  return { type: "mcq", answers, solutions } as Omit<
+    McqQuestion,
+    keyof ReturnType<typeof buildBase>
+  > &
+    McqQuestion
 }
 
 function buildOpen(
@@ -214,7 +234,9 @@ function buildOpen(
   const correctAnswersRaw = getField(row, headers, "correctanswers")
 
   if (!correctAnswersRaw) {
-    errors.push(`Ligne ${rowNum} : colonne "correctAnswers" manquante pour le type open.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "correctAnswers" manquante pour le type open.`,
+    )
     return null
   }
 
@@ -224,11 +246,17 @@ function buildOpen(
     .filter((a) => a.length > 0)
 
   if (correctAnswers.length === 0) {
-    errors.push(`Ligne ${rowNum} : au moins 1 réponse correcte requise pour le type open.`)
+    errors.push(
+      `Ligne ${rowNum} : au moins 1 réponse correcte requise pour le type open.`,
+    )
     return null
   }
 
-  return { type: "open", correctAnswers } as Omit<OpenQuestion, keyof ReturnType<typeof buildBase>> & OpenQuestion
+  return { type: "open", correctAnswers } as Omit<
+    OpenQuestion,
+    keyof ReturnType<typeof buildBase>
+  > &
+    OpenQuestion
 }
 
 function buildSlider(
@@ -248,27 +276,41 @@ function buildSlider(
   const tolerance = parseFloatSafe(toleranceRaw)
 
   if (min === null) {
-    errors.push(`Ligne ${rowNum} : colonne "min" manquante ou invalide pour le type slider.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "min" manquante ou invalide pour le type slider.`,
+    )
     return null
   }
   if (max === null) {
-    errors.push(`Ligne ${rowNum} : colonne "max" manquante ou invalide pour le type slider.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "max" manquante ou invalide pour le type slider.`,
+    )
     return null
   }
   if (correctValue === null) {
-    errors.push(`Ligne ${rowNum} : colonne "correctValue" manquante ou invalide pour le type slider.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "correctValue" manquante ou invalide pour le type slider.`,
+    )
     return null
   }
   if (tolerance === null) {
-    errors.push(`Ligne ${rowNum} : colonne "tolerance" manquante ou invalide pour le type slider.`)
+    errors.push(
+      `Ligne ${rowNum} : colonne "tolerance" manquante ou invalide pour le type slider.`,
+    )
     return null
   }
   if (min >= max) {
-    errors.push(`Ligne ${rowNum} : "min" (${min}) doit être inférieur à "max" (${max}).`)
+    errors.push(
+      `Ligne ${rowNum} : "min" (${min}) doit être inférieur à "max" (${max}).`,
+    )
     return null
   }
 
-  return { type: "slider", min, max, correctValue, tolerance } as Omit<SliderQuestion, keyof ReturnType<typeof buildBase>> & SliderQuestion
+  return { type: "slider", min, max, correctValue, tolerance } as Omit<
+    SliderQuestion,
+    keyof ReturnType<typeof buildBase>
+  > &
+    SliderQuestion
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -301,18 +343,26 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
   const { headers, rows } = parsed
 
   if (!headers.includes("type") || !headers.includes("question")) {
-    errors.push('En-tête invalide : les colonnes "type" et "question" sont obligatoires.')
+    errors.push(
+      'En-tête invalide : les colonnes "type" et "question" sont obligatoires.',
+    )
     return { questions, errors }
   }
 
   rows.forEach((row, i) => {
     const rowNum = i + 2 // ligne 1 = en-tête, donc data commence à 2
 
-    const typeRaw = getField(row, headers, "type").toLowerCase() as SupportedType
+    const typeRaw = getField(
+      row,
+      headers,
+      "type",
+    ).toLowerCase() as SupportedType
     const question = getField(row, headers, "question")
 
     if (!question) {
-      errors.push(`Ligne ${rowNum} : la colonne "question" est vide — ligne ignorée.`)
+      errors.push(
+        `Ligne ${rowNum} : la colonne "question" est vide — ligne ignorée.`,
+      )
       return
     }
 
@@ -357,9 +407,9 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
 export function downloadCsvTemplate(): void {
   const lines = [
     "type,question,time,cooldown,answers,correct,correctAnswers,min,max,correctValue,tolerance",
-    'mcq,Quelle est la capitale de la France ?,20,5,Paris|Lyon|Marseille|Bordeaux,0,,,,,',
-    'open,Quel est le synonyme de « rapide » ?,30,5,,,vite|rapide|prompt,,,,',
-    'slider,En quelle année a été fondée la ville de Paris ?,20,5,,,,,0,2000,300,50',
+    "mcq,Quelle est la capitale de la France ?,20,5,Paris|Lyon|Marseille|Bordeaux,0,,,,,",
+    "open,Quel est le synonyme de « rapide » ?,30,5,,,vite|rapide|prompt,,,,",
+    "slider,En quelle année a été fondée la ville de Paris ?,20,5,,,,,0,2000,300,50",
   ]
 
   const csvContent = lines.join("\n")

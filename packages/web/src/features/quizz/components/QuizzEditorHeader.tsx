@@ -158,12 +158,21 @@ const QuizzEditorHeader = () => {
     }
   }
 
-  const status: SaveStatus = isSaving ? "saving" : isDirty ? "dirty" : "saved"
+  let status: SaveStatus = "saved"
+
+  if (isSaving) {
+    status = "saving"
+  } else if (isDirty) {
+    status = "dirty"
+  }
 
   const statusLabel: Record<SaveStatus, string> = {
     saving: t("quizz:saving", "Sauvegarde..."),
     dirty: t("quizz:unsavedChanges", "Modifications non enregistrées"),
-    saved: t("quizz:allChangesSaved", "Toutes les modifications sont enregistrées"),
+    saved: t(
+      "quizz:allChangesSaved",
+      "Toutes les modifications sont enregistrées",
+    ),
   }
 
   const dotColor: Record<SaveStatus, string> = {
@@ -174,24 +183,32 @@ const QuizzEditorHeader = () => {
 
   return (
     <>
-      <header className="border-border bg-surface z-20 flex h-16 items-center gap-3 border-b px-4">
+      <header className="border-border bg-surface relative z-40 flex h-13 items-center gap-3 border-b px-4">
         {/* Gauche : logo + titre + autosave (tronqué sur petits écrans) */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
             type="button"
             onClick={() => {
               if (isDirty) {
-                if (confirm(t("common:unsavedChangesConfirm", "Attention : vous avez des modifications non enregistrées. Voulez-vous vraiment quitter sans sauvegarder ?"))) {
+                if (
+                  // eslint-disable-next-line no-alert
+                  confirm(
+                    t(
+                      "common:unsavedChangesConfirm",
+                      "Attention : vous avez des modifications non enregistrées. Voulez-vous vraiment quitter sans sauvegarder ?",
+                    ),
+                  )
+                ) {
                   navigate({ to: "/manager" })
                 }
               } else {
                 navigate({ to: "/manager" })
               }
             }}
-            className="focus-ring rounded-lg transition-transform active:scale-95 shrink-0"
+            className="focus-ring shrink-0 rounded-lg transition-transform active:scale-95"
             title={t("common:backToManager", "Retour au manager")}
           >
-            <Logo className="h-10 shrink-0" />
+            <Logo className="h-8 shrink-0" />
           </button>
 
           <div className="bg-border-strong/70 h-7 w-px shrink-0" />
@@ -222,9 +239,17 @@ const QuizzEditorHeader = () => {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={status}
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, filter: "blur(2px)" }}
+                  initial={
+                    reduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, filter: "blur(2px)" }
+                  }
                   animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, filter: "blur(2px)" }}
+                  exit={
+                    reduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, filter: "blur(2px)" }
+                  }
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   className="hidden items-baseline gap-1.5 whitespace-nowrap 2xl:flex"
                 >
@@ -246,14 +271,8 @@ const QuizzEditorHeader = () => {
           )}
         </div>
 
-        {/* Centre : barre d'outils intégrée */}
-        <div className="shrink-0">
-          <SlideToolbar />
-        </div>
-
         {/* Droite : actions */}
         <div className="flex flex-1 items-center justify-end gap-2">
-
           <input
             ref={csvInputRef}
             type="file"
@@ -272,18 +291,16 @@ const QuizzEditorHeader = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-ink-muted gap-2"
+            className="text-ink-muted h-8 gap-2"
             onClick={() => setShowAIGenerator(true)}
           >
-            <Sparkles className="size-4 text-primary animate-pulse" />
-            <span className="hidden md:inline">
-              Générer par IA
-            </span>
+            <Sparkles className="text-primary size-4 animate-pulse" />
+            <span className="hidden md:inline">Générer par IA</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="text-ink-muted gap-2"
+            className="text-ink-muted h-8 gap-2"
             disabled={!quizzId || questions.length === 0 || isTestDriving}
             onClick={handleTestDrive}
             title={
@@ -303,7 +320,7 @@ const QuizzEditorHeader = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-ink-muted gap-2"
+            className="text-ink-muted h-8 gap-2"
             onClick={() => csvInputRef.current?.click()}
           >
             <Upload className="size-4" />
@@ -311,20 +328,30 @@ const QuizzEditorHeader = () => {
               {t("quizz:importCsv", "Importer")}
             </span>
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleExport}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-8"
+            onClick={handleExport}
+          >
             <Download className="size-4" />
             <span className="hidden md:inline">{t("common:export")}</span>
           </Button>
           <Button
             variant="primary"
             size="sm"
-            className="px-5"
+            className="h-8 px-5"
             onClick={() => saveQuizz({ navigate: true })}
           >
             {t("common:save")}
           </Button>
         </div>
       </header>
+
+      {/* Barre d'outils dédiée juste en dessous */}
+      <div className="border-border bg-surface relative z-30 flex h-10 w-full shrink-0 items-center border-b px-4">
+        <SlideToolbar />
+      </div>
 
       <QuizzSettingsModal
         open={showSettings}

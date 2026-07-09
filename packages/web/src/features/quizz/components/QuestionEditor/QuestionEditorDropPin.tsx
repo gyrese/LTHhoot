@@ -79,8 +79,14 @@ const QuestionEditorDropPin = () => {
     }
 
     const rect = imgRef.current.getBoundingClientRect()
-    const xPct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
-    const yPct = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
+    const xPct = Math.max(
+      0,
+      Math.min(100, ((clientX - rect.left) / rect.width) * 100),
+    )
+    const yPct = Math.max(
+      0,
+      Math.min(100, ((clientY - rect.top) / rect.height) * 100),
+    )
 
     return { x: parseFloat(xPct.toFixed(1)), y: parseFloat(yPct.toFixed(1)) }
   }
@@ -137,7 +143,9 @@ const QuestionEditorDropPin = () => {
     }
 
     updateZones(
-      zones.map((z) => (z.id === draggedZoneId ? { ...z, x: pos.x, y: pos.y } : z)),
+      zones.map((z) =>
+        z.id === draggedZoneId ? { ...z, x: pos.x, y: pos.y } : z,
+      ),
     )
   }
 
@@ -252,7 +260,8 @@ const QuestionEditorDropPin = () => {
                       : `${zones.length} zone${zones.length > 1 ? "s" : ""} définie${zones.length > 1 ? "s" : ""}`}
                   </h4>
                   <p className="mt-0.5 text-xs text-white/60">
-                    Cliquez sur l'image pour ajouter une zone. Glissez pour déplacer.
+                    Cliquez sur l'image pour ajouter une zone. Glissez pour
+                    déplacer.
                   </p>
                 </div>
               </div>
@@ -359,9 +368,7 @@ const QuestionEditorDropPin = () => {
                           </div>
                         )}
 
-                        <div
-                          className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-lg border border-white/10 bg-black/90 px-2.5 py-1 text-[10px] font-bold whitespace-nowrap text-white shadow-xl backdrop-blur-xl"
-                        >
+                        <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-lg border border-white/10 bg-black/90 px-2.5 py-1 text-[10px] font-bold whitespace-nowrap text-white shadow-xl backdrop-blur-xl">
                           {zone.label || `Zone ${index + 1}`}
                         </div>
                       </div>
@@ -451,7 +458,7 @@ const QuestionEditorDropPin = () => {
                         updateZone(zone.id, { isCorrect: !zone.isCorrect })
                       }}
                       className={clsx(
-                        "flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                        "flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase transition-colors",
                         zone.isCorrect
                           ? "bg-green-500/20 text-green-300"
                           : "bg-red-500/20 text-red-300",

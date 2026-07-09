@@ -144,8 +144,9 @@
     "aiGenerate": "Generar",
     "aiGenerateTooltip": "Generar una imagen automáticamente desde el título",
     "podiumThemeLabel": "Tema del podio",
-    "podiumThemeHint": "Decorado de la clasificación final. «Aleatorio» elige uno en cada partida.",
+    "podiumThemeHint": "Decorado de la clasificación final. «Neutro» (por defecto) usa la portada del cuestionario; «Aleatorio» elige un universo en cada partida.",
     "podiumThemes": {
+      "neutre": "Neutro",
       "random": "Aleatorio",
       "espace": "Espacio",
       "jurassic": "Jurásico",

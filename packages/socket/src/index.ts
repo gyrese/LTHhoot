@@ -7,7 +7,10 @@ import type { SocketHandler } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
-import { logHandlerError, wrapListener } from "@rahoot/socket/utils/safe-handler"
+import {
+  logHandlerError,
+  wrapListener,
+} from "@rahoot/socket/utils/safe-handler"
 import { GoogleGenAI } from "@google/genai"
 import express from "express"
 import { existsSync, mkdirSync } from "fs"
@@ -165,12 +168,18 @@ app.post(
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      console.error("GEMINI_API_KEY manquante dans les variables d'environnement")
-      res.status(500).json({ error: "Clé API Gemini non configurée sur le serveur" })
+      console.error(
+        "GEMINI_API_KEY manquante dans les variables d'environnement",
+      )
+      res
+        .status(500)
+        .json({ error: "Clé API Gemini non configurée sur le serveur" })
       return
     }
 
-    console.log(`Génération d'image par Gemini Imagen pour le sujet : "${subject}"`)
+    console.log(
+      `Génération d'image par Gemini Imagen pour le sujet : "${subject}"`,
+    )
 
     const genAI = new GoogleGenAI({ apiKey })
 
@@ -182,10 +191,14 @@ app.post(
         contents: prompt,
       })
 
-      const part = response.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)
+      const part = response.candidates?.[0]?.content?.parts?.find(
+        (p) => p.inlineData,
+      )
       const imageData = part?.inlineData?.data
       if (!imageData) {
-        throw new Error("Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.")
+        throw new Error(
+          "Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.",
+        )
       }
 
       const buffer = Buffer.from(imageData, "base64")
@@ -194,9 +207,7 @@ app.post(
 
       // Conversion WebP
       sharp.concurrency(1)
-      await sharp(buffer)
-        .webp({ quality: 82 })
-        .toFile(outPath)
+      await sharp(buffer).webp({ quality: 82 }).toFile(outPath)
 
       res.json({ url: `/uploads/${outName}` })
     } catch (err) {
@@ -205,7 +216,6 @@ app.post(
         error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
       })
     }
-
   },
 )
 
@@ -223,7 +233,9 @@ app.get(
 
     const accessKey = process.env.UNSPLASH_ACCESS_KEY
     if (!accessKey) {
-      res.status(400).json({ error: "UNSPLASH_ACCESS_KEY non configurée sur le serveur" })
+      res
+        .status(400)
+        .json({ error: "UNSPLASH_ACCESS_KEY non configurée sur le serveur" })
       return
     }
 
@@ -234,14 +246,14 @@ app.get(
           headers: {
             Authorization: `Client-ID ${accessKey}`,
           },
-        }
+        },
       )
 
       if (!response.ok) {
         throw new Error(`Unsplash returned status ${response.status}`)
       }
 
-      const data = await response.json() as any
+      const data = (await response.json()) as any
       const results = (data.results || []).map((item: any) => ({
         id: item.id,
         url: item.urls?.regular,
@@ -255,7 +267,7 @@ app.get(
       console.error("Unsplash proxy error:", err)
       res.status(500).json({ error: "Échec de la recherche d'images" })
     }
-  }
+  },
 )
 
 app.get(
@@ -272,21 +284,23 @@ app.get(
 
     const apiKey = process.env.GIPHY_API_KEY
     if (!apiKey) {
-      res.status(400).json({ error: "GIPHY_API_KEY non configurée sur le serveur" })
+      res
+        .status(400)
+        .json({ error: "GIPHY_API_KEY non configurée sur le serveur" })
       return
     }
 
     try {
       const offset = (page - 1) * 24
       const response = await fetch(
-        `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&offset=${offset}`
+        `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&offset=${offset}`,
       )
 
       if (!response.ok) {
         throw new Error(`Giphy returned status ${response.status}`)
       }
 
-      const data = await response.json() as any
+      const data = (await response.json()) as any
       const results = (data.data || []).map((item: any) => ({
         id: item.id,
         url: item.images?.original?.url,
@@ -299,7 +313,7 @@ app.get(
       console.error("Giphy proxy error:", err)
       res.status(500).json({ error: "Échec de la recherche de GIFs" })
     }
-  }
+  },
 )
 
 const io: Server = new ServerIO(httpServer, {
@@ -348,7 +362,9 @@ io.engine.on("connection", (engineSocket) => {
   )
 
   engineSocket.on("close", (reason: string) => {
-    console.log(`[POLLING] Connexion close: sid=${engineSocket.id} raison=${reason}`)
+    console.log(
+      `[POLLING] Connexion close: sid=${engineSocket.id} raison=${reason}`,
+    )
   })
 })
 
@@ -451,8 +467,14 @@ io.on("connection", (socket) => {
   // try/catch. Une exception applicative est ainsi isolée au lieu de remonter
   // au process et d'éjecter toute la salle. cf. utils/safe-handler.
   const rawOn = socket.on.bind(socket)
-  socket.on = ((event: string | symbol, listener: (..._a: unknown[]) => unknown) =>
-    rawOn(event as never, wrapListener(event, listener) as never)) as typeof socket.on
+  socket.on = ((
+    event: string | symbol,
+    listener: (..._a: unknown[]) => unknown,
+  ) =>
+    rawOn(
+      event as never,
+      wrapListener(event, listener) as never,
+    )) as typeof socket.on
 
   socket.on("error", (err) => {
     console.error(`[IO_ERR] socketId=${socket.id}: ${err.message}`)

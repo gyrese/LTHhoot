@@ -1,6 +1,12 @@
 import type { PowerUp } from "@rahoot/common/types/powerup"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
-import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  HAPTIC_PATTERNS,
+  vibrate,
+} from "@rahoot/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { motion } from "motion/react"
 import { useEffect } from "react"
@@ -55,7 +61,11 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
   useEffect(() => {
     // Ce toast n'est monté que côté joueur (cf. GameWrapper.tsx) — pas besoin
     // de vérifier isHost ici.
-    vibrate(isLegendary ? HAPTIC_PATTERNS.POWERUP_LEGENDARY : HAPTIC_PATTERNS.POWERUP_RECEIVED)
+    vibrate(
+      isLegendary
+        ? HAPTIC_PATTERNS.POWERUP_LEGENDARY
+        : HAPTIC_PATTERNS.POWERUP_RECEIVED,
+    )
   }, [isLegendary])
 
   return (
@@ -78,7 +88,7 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
     >
       <div
         className={clsx(
-          "relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 px-5 py-3 backdrop-blur-xl shadow-2xl",
+          "relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 px-5 py-3 shadow-2xl backdrop-blur-xl",
           style.bg,
           style.border,
           isLegendary && "shadow-yellow-300/60",
@@ -89,7 +99,10 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
         {isLegendary && (
           <motion.span
             className="pointer-events-none absolute inset-0 rounded-2xl"
-            style={{ background: "radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)" }}
+            style={{
+              background:
+                "radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)",
+            }}
             animate={{ opacity: [0.4, 0.8, 0.4] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -101,24 +114,34 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
             rarityIconBg,
           )}
           animate={isLegendary ? { scale: [1, 1.1, 1] } : undefined}
-          transition={isLegendary ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : undefined}
+          transition={
+            isLegendary
+              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+              : undefined
+          }
         >
           <meta.Icon
             className={clsx("size-6", style.text)}
-            style={isLegendary ? { filter: "drop-shadow(0 0 8px #FBBF24)" } : undefined}
+            style={
+              isLegendary
+                ? { filter: "drop-shadow(0 0 8px #FBBF24)" }
+                : undefined
+            }
           />
         </motion.div>
 
         <div className="relative">
           <p
             className={clsx(
-              "text-[10px] font-black uppercase tracking-widest",
+              "text-[10px] font-black tracking-widest uppercase",
               rarityTextColor,
             )}
           >
             {rarityLabel}
           </p>
-          <p className="text-base font-extrabold text-white drop-shadow">{meta.label}</p>
+          <p className="text-base font-extrabold text-white drop-shadow">
+            {meta.label}
+          </p>
         </div>
       </div>
     </motion.div>

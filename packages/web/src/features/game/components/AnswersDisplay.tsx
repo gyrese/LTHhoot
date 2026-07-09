@@ -25,7 +25,9 @@ export const McqAnswers = ({
       {displayIndices.map((origIndex) => {
         const answer = answers[origIndex]
 
-        if (answer === undefined) {return null}
+        if (answer === undefined) {
+          return null
+        }
 
         return (
           <AnswerButton
@@ -74,19 +76,18 @@ export const TrueFalseAnswers = ({
             </AnswerButton>
           )
         }
- 
-          
-return (
-            <AnswerButton
-              key={1}
-              index={1}
-              className="bg-blue-500"
-              icon={ANSWERS_ICONS[1]}
-              onClick={() => onAnswer?.(1)}
-            >
-              {t("game:true")}
-            </AnswerButton>
-          )
+
+        return (
+          <AnswerButton
+            key={1}
+            index={1}
+            className="bg-blue-500"
+            icon={ANSWERS_ICONS[1]}
+            onClick={() => onAnswer?.(1)}
+          >
+            {t("game:true")}
+          </AnswerButton>
+        )
       })}
     </div>
   )

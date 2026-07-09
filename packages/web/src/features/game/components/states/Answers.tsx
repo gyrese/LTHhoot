@@ -23,7 +23,10 @@ import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
-import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  HAPTIC_PATTERNS,
+  vibrate,
+} from "@rahoot/web/features/game/utils/haptics"
 import { fadeUp, MOTION_SPRING } from "@rahoot/web/features/game/utils/motion"
 import clsx from "clsx"
 import { Check, Loader2 } from "lucide-react"
@@ -33,8 +36,6 @@ import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import ImageSequenceReveal from "@rahoot/web/features/game/components/states/ImageSequenceReveal"
-
-
 
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
@@ -85,17 +86,22 @@ const Answers = ({
   >("idle")
 
   const [endTime, setEndTime] = useState(() => {
-    const initialCooldown = storeCooldown && storeCooldown > 0 ? storeCooldown : time
+    const initialCooldown =
+      storeCooldown && storeCooldown > 0 ? storeCooldown : time
     return Date.now() + initialCooldown * 1000
   })
-  const [cooldown, setCooldown] = useState(() => storeCooldown && storeCooldown > 0 ? storeCooldown : time)
+  const [cooldown, setCooldown] = useState(() =>
+    storeCooldown && storeCooldown > 0 ? storeCooldown : time,
+  )
   const [progress, setProgress] = useState(100)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const { t } = useTranslation()
   const slideAudioRef = useRef<HTMLAudioElement>(null)
 
   const [isFreezeBlocked, setIsFreezeBlocked] = useState(false)
-  const [shuffledIndices, setShuffledIndices] = useState<number[] | undefined>(undefined)
+  const [shuffledIndices, setShuffledIndices] = useState<number[] | undefined>(
+    undefined,
+  )
 
   const { isHost } = useGameConfig()
   const isPlayer = !isHost
@@ -206,7 +212,13 @@ const Answers = ({
     numberAnswer?: number
     orderAnswer?: number[]
   }) => {
-    if (!player || !gameId || answered || sendingRef.current || isFreezeBlocked) {
+    if (
+      !player ||
+      !gameId ||
+      answered ||
+      sendingRef.current ||
+      isFreezeBlocked
+    ) {
       return
     }
 
@@ -251,7 +263,10 @@ const Answers = ({
       const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000))
       setCooldown(remainingSec)
 
-      const pct = time > 0 ? Math.max(0, Math.min(100, (remainingMs / (time * 1000)) * 100)) : 0
+      const pct =
+        time > 0
+          ? Math.max(0, Math.min(100, (remainingMs / (time * 1000)) * 100))
+          : 0
       setProgress(pct)
     }, 50)
 
@@ -334,7 +349,7 @@ const Answers = ({
       )}
 
       {elements && elements.length > 0 && (
-        <div className="pointer-events-none absolute inset-0">
+        <div className="pointer-events-none absolute inset-0 z-10">
           <SlideCanvas
             elements={elements}
             onChange={noopChange}
@@ -390,7 +405,7 @@ const Answers = ({
         <div className="flex-1" />
       )}
 
-      <div className={clsx("relative", isPlayer && "pb-12")}>
+      <div className={clsx("relative z-10", isPlayer && "pb-12")}>
         <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
           <div
             className={clsx(
@@ -521,10 +536,20 @@ const Answers = ({
       {isFreezeBlocked && isPlayer && (
         <div className="animate-in fade-in pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center bg-blue-500/10 backdrop-blur-md">
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/20 bg-blue-900/30 p-8 shadow-2xl backdrop-blur-2xl">
-            <svg className="size-16 animate-pulse text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18m-3-6L6 18M6 6l12 12m-6-9l2-2m-2 2l-2-2m2 11l2 2m-2-2l-2 2m-5-5l-2-2m2 2l-2 2m14-2l2-2m-2 2l2 2" />
+            <svg
+              className="size-16 animate-pulse text-blue-300"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 3v18M3 12h18m-3-6L6 18M6 6l12 12m-6-9l2-2m-2 2l-2-2m2 11l2 2m-2-2l-2 2m-5-5l-2-2m2 2l-2 2m14-2l2-2m-2 2l2 2"
+              />
             </svg>
-            <span className="text-2xl font-black uppercase tracking-wider text-blue-200">
+            <span className="text-2xl font-black tracking-wider text-blue-200 uppercase">
               {t("game:freeze.title")}
             </span>
             <span className="text-sm font-semibold text-blue-100/70">

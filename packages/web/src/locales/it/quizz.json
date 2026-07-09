@@ -144,8 +144,9 @@
     "aiGenerate": "Genera",
     "aiGenerateTooltip": "Genera automaticamente un'immagine dal titolo",
     "podiumThemeLabel": "Tema del podio",
-    "podiumThemeHint": "Sfondo della classifica finale. «Casuale» ne sceglie uno a ogni partita.",
+    "podiumThemeHint": "Sfondo della classifica finale. «Neutro» (predefinito) usa la copertina del quiz; «Casuale» sceglie un universo a ogni partita.",
     "podiumThemes": {
+      "neutre": "Neutro",
       "random": "Casuale",
       "espace": "Spazio",
       "jurassic": "Giurassico",

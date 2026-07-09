@@ -16,8 +16,7 @@ const LEVEL_LABELS = {
 const formatTime = (timestamp: number) => {
   const d = new Date(timestamp)
 
-  
-return d.toLocaleTimeString("fr-FR", {
+  return d.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -41,13 +40,13 @@ const ResultModalLogs = () => {
     <div className="min-h-0 flex-1 overflow-y-auto">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-gray-50">
-          <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-            <th className="px-4 py-2 w-36">Heure</th>
-            <th className="px-3 py-2 w-16">Niveau</th>
+          <tr className="border-b border-gray-200 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
+            <th className="w-36 px-4 py-2">Heure</th>
+            <th className="w-16 px-3 py-2">Niveau</th>
             <th className="px-4 py-2">Message</th>
           </tr>
         </thead>
-        <tbody className="font-mono divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 font-mono">
           {logs.map((entry) => (
             <tr
               key={entry.id}
@@ -57,7 +56,7 @@ const ResultModalLogs = () => {
                 entry.level === "warn" && "bg-yellow-50",
               )}
             >
-              <td className="px-4 py-1.5 text-gray-400 whitespace-nowrap">
+              <td className="px-4 py-1.5 whitespace-nowrap text-gray-400">
                 {formatTime(entry.timestamp)}
               </td>
               <td className="px-3 py-1.5">
@@ -70,7 +69,7 @@ const ResultModalLogs = () => {
                   {LEVEL_LABELS[entry.level]}
                 </span>
               </td>
-              <td className="px-4 py-1.5 text-gray-700 break-all">
+              <td className="px-4 py-1.5 break-all text-gray-700">
                 {entry.message}
               </td>
             </tr>

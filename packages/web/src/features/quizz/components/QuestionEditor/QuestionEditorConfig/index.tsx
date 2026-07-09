@@ -96,19 +96,21 @@ const QuestionEditorConfig = () => {
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null)
   const [editingLayerName, setEditingLayerName] = useState("")
 
-  const handleToggleLock = (id: string, isLocked: boolean) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const elements = (currentQuestion?.elements || []).map((el) =>
-      el.id === id ? { ...el, isLocked } : el,
-    )
-    updateQuestion(currentIndex, { elements })
-  }
+  const handleToggleLock =
+    (id: string, isLocked: boolean) => (e: React.MouseEvent) => {
+      e.stopPropagation()
+      const elements = (currentQuestion?.elements || []).map((el) =>
+        el.id === id ? { ...el, isLocked } : el,
+      )
+      updateQuestion(currentIndex, { elements })
+    }
 
-  const handleStartRename = (id: string, currentName: string) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setEditingLayerId(id)
-    setEditingLayerName(currentName)
-  }
+  const handleStartRename =
+    (id: string, currentName: string) => (e: React.MouseEvent) => {
+      e.stopPropagation()
+      setEditingLayerId(id)
+      setEditingLayerName(currentName)
+    }
 
   const handleFinishRename = (id: string) => {
     const elements = (currentQuestion?.elements || []).map((el) =>
@@ -343,7 +345,10 @@ const QuestionEditorConfig = () => {
         </ConfigSection>
 
         <ConfigSection
-          title={t("quizz:question.config.appearanceTitle", "Apparence & révélation")}
+          title={t(
+            "quizz:question.config.appearanceTitle",
+            "Apparence & révélation",
+          )}
           icon={<Sparkles className="size-4" />}
           defaultOpen={false}
         >
@@ -377,7 +382,10 @@ const QuestionEditorConfig = () => {
 
           <ConfigToggle
             icon={<Grid className="size-4" />}
-            label={t("quizz:question.config.revelationEnabled", "Activer l'effet")}
+            label={t(
+              "quizz:question.config.revelationEnabled",
+              "Activer l'effet",
+            )}
             checked={Boolean(currentQuestion?.revelationEnabled)}
             onChange={(value) =>
               updateQuestion(currentIndex, { revelationEnabled: value })
@@ -466,10 +474,13 @@ const QuestionEditorConfig = () => {
                   onChange={(e) =>
                     handleUpdateQuestion("revelationStyle")(e.target.value)
                   }
-                  className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold outline-none transition-all hover:border-border-strong focus:ring-2"
+                  className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
                 >
                   <option value="random">
-                    {t("quizz:question.config.revealStyleOpt.random", "Aléatoire")}
+                    {t(
+                      "quizz:question.config.revealStyleOpt.random",
+                      "Aléatoire",
+                    )}
                   </option>
                   <option value="blur">
                     {t(
@@ -496,7 +507,10 @@ const QuestionEditorConfig = () => {
                     )}
                   </option>
                   <option value="spiral">
-                    {t("quizz:question.config.revealStyleOpt.spiral", "Spirale")}
+                    {t(
+                      "quizz:question.config.revealStyleOpt.spiral",
+                      "Spirale",
+                    )}
                   </option>
                   <option value="left-to-right">
                     {t(
@@ -551,13 +565,16 @@ const QuestionEditorConfig = () => {
                           }
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-transparent text-ink border-primary focus:border-primary border-b outline-none font-medium flex-1 text-[11px] py-0.5"
+                        className="text-ink border-primary focus:border-primary flex-1 border-b bg-transparent py-0.5 text-[11px] font-medium outline-none"
                         autoFocus
                       />
                     ) : (
                       <div
                         className="flex flex-1 items-center gap-2 overflow-hidden"
-                        onDoubleClick={handleStartRename(el.id, el.name || el.type)}
+                        onDoubleClick={handleStartRename(
+                          el.id,
+                          el.name || el.type,
+                        )}
                       >
                         <div
                           className={clsx(
@@ -567,7 +584,7 @@ const QuestionEditorConfig = () => {
                         />
                         <span
                           className={clsx(
-                            "shrink-0 font-bold capitalize truncate max-w-[90px]",
+                            "max-w-[90px] shrink-0 truncate font-bold capitalize",
                             isSelected ? "text-primary-ink" : "text-ink",
                           )}
                           title="Double-cliquer pour renommer"

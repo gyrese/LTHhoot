@@ -16,7 +16,10 @@ export const uploadImageToServer = async (
     if (fileOrBase64 instanceof File) {
       blob = fileOrBase64
       finalFilename = fileOrBase64.name
-    } else if (typeof fileOrBase64 === "string" && fileOrBase64.startsWith("data:")) {
+    } else if (
+      typeof fileOrBase64 === "string" &&
+      fileOrBase64.startsWith("data:")
+    ) {
       const response = await fetch(fileOrBase64)
       blob = await response.blob()
     } else {

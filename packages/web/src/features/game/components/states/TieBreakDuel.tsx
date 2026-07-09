@@ -2,7 +2,10 @@ import { EVENTS } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import { ANSWERS_ICONS } from "@rahoot/web/features/game/utils/constants"
-import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  HAPTIC_PATTERNS,
+  vibrate,
+} from "@rahoot/web/features/game/utils/haptics"
 import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { Swords } from "lucide-react"
@@ -91,7 +94,7 @@ const TieBreakDuel = ({ data: { statement, opponents } }: Props) => {
       {/* Compte à rebours du duel (events GAME.COOLDOWN déjà diffusés) */}
       {typeof cooldown === "number" && cooldown > 0 && (
         <div
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl font-black text-white ring-2 ring-orange-500/60 tabular-nums backdrop-blur-sm"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl font-black text-white tabular-nums ring-2 ring-orange-500/60 backdrop-blur-sm"
           aria-live="polite"
         >
           {cooldown}

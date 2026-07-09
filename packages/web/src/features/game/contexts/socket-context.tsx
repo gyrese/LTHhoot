@@ -172,12 +172,16 @@ const createSocketClient = (
         // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
         // même après une déconnexion réseau ou un redémarrage du serveur.
         if (pwd) {
-          console.log(`[SESSION] Restauration authentification Manager (auth=true)`)
+          console.log(
+            `[SESSION] Restauration authentification Manager (auth=true)`,
+          )
           socketClient.emit(EVENTS.MANAGER.AUTH, pwd)
         }
 
         if (managerGameId) {
-          console.log(`[SESSION] Restauration session Manager: ${managerGameId}`)
+          console.log(
+            `[SESSION] Restauration session Manager: ${managerGameId}`,
+          )
           showOverlayAfterGrace()
           armReconnectTimeout()
           socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
@@ -282,9 +286,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const managerStore = useManagerStore()
 
   useEffect(() => {
-    const currentStatus = playerStore.status?.name || managerStore.status?.name || "NONE"
-    console.log(`[UI_TRACE_v1k8qp] isReconnecting=${isReconnecting} isConnected=${isConnected} currentStatus=${currentStatus} overlayVisible=${isReconnecting}`)
-  }, [isReconnecting, isConnected, playerStore.status?.name, managerStore.status?.name])
+    const currentStatus =
+      playerStore.status?.name || managerStore.status?.name || "NONE"
+    console.log(
+      `[UI_TRACE_v1k8qp] isReconnecting=${isReconnecting} isConnected=${isConnected} currentStatus=${currentStatus} overlayVisible=${isReconnecting}`,
+    )
+  }, [
+    isReconnecting,
+    isConnected,
+    playerStore.status?.name,
+    managerStore.status?.name,
+  ])
 
   // Déconnexion propre au démontage du provider.
   useEffect(
@@ -402,10 +414,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         reconnect,
       }}
     >
-      {isReconnecting && (
-        <ReconnectingOverlay key="global-reconnect-overlay" />
-      )}
-      <div 
+      {isReconnecting && <ReconnectingOverlay key="global-reconnect-overlay" />}
+      <div
         style={{ display: isReconnecting ? "none" : "block", height: "100%" }}
         id="app-content-root"
       >
@@ -439,7 +449,9 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
 
     const stableHandler = (...args: Parameters<ServerToClientEvents[E]>) => {
       if (event.includes("SUCCESS_RECONNECT")) {
-        console.log(`[RESYNC] Réussite de la resynchronisation métier: ${event}`)
+        console.log(
+          `[RESYNC] Réussite de la resynchronisation métier: ${event}`,
+        )
       }
 
       ;(callbackRef.current as (..._a: unknown[]) => void)(...args)

@@ -15,8 +15,13 @@ const TieBreakResult = ({ data: { winnerName } }: Props) => {
 
       <h2 className="anim-slide-up text-center text-3xl font-black text-white drop-shadow-lg md:text-4xl">
         {winnerName
-          ? t("game:tieBreak.winner", "{{name}} remporte le duel !", { name: winnerName })
-          : t("game:tieBreak.noWinner", "Personne n'a trouvé à temps — égalité conservée.")}
+          ? t("game:tieBreak.winner", "{{name}} remporte le duel !", {
+              name: winnerName,
+            })
+          : t(
+              "game:tieBreak.noWinner",
+              "Personne n'a trouvé à temps — égalité conservée.",
+            )}
       </h2>
     </section>
   )

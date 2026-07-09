@@ -114,8 +114,10 @@ const TAP_THRESHOLD = 8
 const clampNum = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value))
 
-const pointerDist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-  Math.hypot(a.x - b.x, a.y - b.y)
+const pointerDist = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) => Math.hypot(a.x - b.x, a.y - b.y)
 
 type PinTransform = { scale: number; tx: number; ty: number }
 
@@ -162,7 +164,10 @@ export const DropPinAnswer = ({
       return next
     }
 
-    const maxX = Math.max(0, (img.clientWidth * next.scale - vp.clientWidth) / 2)
+    const maxX = Math.max(
+      0,
+      (img.clientWidth * next.scale - vp.clientWidth) / 2,
+    )
     const maxY = Math.max(
       0,
       (img.clientHeight * next.scale - vp.clientHeight) / 2,
@@ -288,8 +293,10 @@ export const DropPinAnswer = ({
       const ratio = newScale / g.startScale
 
       // On garde le point sous les doigts immobile, puis on suit le pan à 2 doigts
-      const tx = g.focalX - (g.focalX - g.startTx) * ratio + (curMidX - g.startMidX)
-      const ty = g.focalY - (g.focalY - g.startTy) * ratio + (curMidY - g.startMidY)
+      const tx =
+        g.focalX - (g.focalX - g.startTx) * ratio + (curMidX - g.startMidX)
+      const ty =
+        g.focalY - (g.focalY - g.startTy) * ratio + (curMidY - g.startMidY)
 
       setTransform(clampTransform({ scale: newScale, tx, ty }))
     } else if (pointers.size === 1 && !g.isPinch) {
@@ -301,7 +308,9 @@ export const DropPinAnswer = ({
 
       // Pan uniquement quand on est zoomé, sinon le tap reste prioritaire
       if (g.startScale > 1) {
-        setTransform((tr) => clampTransform({ ...tr, tx: tr.tx + dx, ty: tr.ty + dy }))
+        setTransform((tr) =>
+          clampTransform({ ...tr, tx: tr.tx + dx, ty: tr.ty + dy }),
+        )
       }
     }
   }
@@ -311,8 +320,7 @@ export const DropPinAnswer = ({
     const g = gestureRef.current
     viewportRef.current?.releasePointerCapture(e.pointerId)
 
-    const wasTap =
-      pointers.size === 1 && !g.isPinch && g.moved < TAP_THRESHOLD
+    const wasTap = pointers.size === 1 && !g.isPinch && g.moved < TAP_THRESHOLD
 
     pointers.delete(e.pointerId)
 

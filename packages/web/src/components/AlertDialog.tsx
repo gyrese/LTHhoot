@@ -25,9 +25,9 @@ const AlertDialog = ({
       <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
 
       <RadixAlertDialog.Portal>
-        <RadixAlertDialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out" />
+        <RadixAlertDialog.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out fixed inset-0 z-50 bg-black/40" />
 
-        <RadixAlertDialog.Content className="fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded bg-white p-6 shadow-xl duration-200 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+        <RadixAlertDialog.Content className="data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded bg-white p-6 shadow-xl duration-200">
           <RadixAlertDialog.Title className="text-lg font-semibold text-gray-900">
             {title}
           </RadixAlertDialog.Title>

@@ -45,17 +45,21 @@ const EveningFooter = ({
       {/* Liste des quiz sélectionnés */}
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1">
         {eveningQuizIds.length === 0 && (
-          <p className="text-sm text-white/40">{t("manager:evening.selectTwo", "Sélectionne au moins 2 quiz…")}</p>
+          <p className="text-sm text-white/40">
+            {t("manager:evening.selectTwo", "Sélectionne au moins 2 quiz…")}
+          </p>
         )}
         {eveningQuizIds.map((id, index) => {
           const quiz = quizzList.find((q) => q.id === id)
 
-          if (!quiz) {return null}
+          if (!quiz) {
+            return null
+          }
 
           return (
             <div
               key={id}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-1 py-1 text-xs font-medium text-white ring-1 ring-white/10"
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 py-1 pr-1 pl-2 text-xs font-medium text-white ring-1 ring-white/10"
             >
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-black text-white">
                 {index + 1}
@@ -70,7 +74,7 @@ const EveningFooter = ({
                     onRemove(id)
                   }
                 }}
-                className="rounded-full p-0.5 text-white/40 hover:bg-white/10 hover:text-white cursor-pointer select-none"
+                className="cursor-pointer rounded-full p-0.5 text-white/40 select-none hover:bg-white/10 hover:text-white"
               >
                 <X className="size-3" />
               </span>
@@ -95,7 +99,10 @@ const EveningFooter = ({
               ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
               : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
           )}
-          title={t("manager:evening.powerUpsToggle", "Configurer les power-ups")}
+          title={t(
+            "manager:evening.powerUpsToggle",
+            "Configurer les power-ups",
+          )}
         >
           <Sparkles className="size-3.5" />
           <span>{t("manager:evening.powerUps", "Power-ups")}</span>

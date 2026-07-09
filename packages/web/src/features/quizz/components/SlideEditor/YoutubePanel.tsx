@@ -115,7 +115,7 @@ const YoutubePanel = ({ onAdd, onClose }: YoutubePanelProps) => {
         placeholder="URL ou ID de la vidéo"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="border-border text-ink focus:border-primary mb-3 w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/30"
+        className="border-border text-ink focus:border-primary focus:ring-primary/30 mb-3 w-full rounded-lg border px-2.5 py-1.5 text-sm transition-colors outline-none focus:ring-2"
       />
 
       {videoId && (

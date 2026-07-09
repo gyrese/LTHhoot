@@ -145,8 +145,9 @@
     "aiGenerate": "Générer",
     "aiGenerateTooltip": "Générer une image automatiquement depuis le titre",
     "podiumThemeLabel": "Thème du podium",
-    "podiumThemeHint": "Décor du classement final. « Aléatoire » en tire un au sort à chaque partie.",
+    "podiumThemeHint": "Décor du classement final. « Neutre » (défaut) reprend la couverture du quiz, « Aléatoire » tire un univers au sort à chaque partie.",
     "podiumThemes": {
+      "neutre": "Neutre",
       "random": "Aléatoire",
       "espace": "Espace",
       "jurassic": "Jurassique",

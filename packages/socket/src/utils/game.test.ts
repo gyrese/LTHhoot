@@ -58,14 +58,22 @@ describe("checkAnswer", () => {
 
   describe("true_false", () => {
     it("valide la solution 0", () => {
-      const question: TrueFalseQuestion = { ...base, type: "true_false", solution: 0 }
+      const question: TrueFalseQuestion = {
+        ...base,
+        type: "true_false",
+        solution: 0,
+      }
 
       expect(checkAnswer(question, buildAnswer({ answerId: 0 }))).toBe(true)
       expect(checkAnswer(question, buildAnswer({ answerId: 1 }))).toBe(false)
     })
 
     it("valide la solution 1", () => {
-      const question: TrueFalseQuestion = { ...base, type: "true_false", solution: 1 }
+      const question: TrueFalseQuestion = {
+        ...base,
+        type: "true_false",
+        solution: 1,
+      }
 
       expect(checkAnswer(question, buildAnswer({ answerId: 1 }))).toBe(true)
       expect(checkAnswer(question, buildAnswer({ answerId: 0 }))).toBe(false)
@@ -80,9 +88,9 @@ describe("checkAnswer", () => {
     }
 
     it("valide une correspondance exacte", () => {
-      expect(
-        checkAnswer(question, buildAnswer({ textAnswer: "Paris" })),
-      ).toBe(true)
+      expect(checkAnswer(question, buildAnswer({ textAnswer: "Paris" }))).toBe(
+        true,
+      )
     })
 
     it("ignore la casse et les espaces superflus", () => {
@@ -180,7 +188,15 @@ describe("checkAnswer", () => {
       type: "drop_pin",
       pinImage: "map.png",
       zones: [
-        { id: "z1", x: 100, y: 100, width: 10, height: 10, label: "Zone 1", isCorrect: true },
+        {
+          id: "z1",
+          x: 100,
+          y: 100,
+          width: 10,
+          height: 10,
+          label: "Zone 1",
+          isCorrect: true,
+        },
       ],
     }
 

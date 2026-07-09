@@ -35,7 +35,7 @@ const ConfigNumberInput = ({ value, min, max, onChange }: Props) => {
       value={input}
       onChange={(e) => handleChange(e.target.value)}
       onBlur={() => setInput(String(value))}
-      className="border-border text-ink focus:border-primary hover:border-border-strong w-full rounded-lg border px-3 py-1.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/30"
+      className="border-border text-ink focus:border-primary hover:border-border-strong focus:ring-primary/30 w-full rounded-lg border px-3 py-1.5 text-sm transition-colors outline-none focus:ring-2"
     />
   )
 }

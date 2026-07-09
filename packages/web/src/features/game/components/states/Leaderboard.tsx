@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useSpring, useTransform } from "motion/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
+import slideBg from "@rahoot/web/assets/slide-bg.png"
 
 type Props = {
   data: ManagerStatusDataMap["SHOW_LEADERBOARD"]
@@ -32,12 +33,7 @@ const AnimatedPoints = ({ from, to }: { from: number; to: number }) => {
 }
 
 const Leaderboard = ({
-  data: {
-    oldLeaderboard,
-    leaderboard,
-    roundLeaderboard,
-    totalPlayers,
-  },
+  data: { oldLeaderboard, leaderboard, roundLeaderboard, totalPlayers },
 }: Props) => {
   const [displayedPlayers, setDisplayedPlayers] = useState(roundLeaderboard)
   const [phase, setPhase] = useState<"round" | "adding" | "total">("round")
@@ -67,17 +63,11 @@ const Leaderboard = ({
     <section className="relative flex flex-1 flex-col justify-center overflow-hidden bg-slate-950">
       {/* Background with Ambient Glow matching Podium style */}
       <div className="pointer-events-none absolute inset-0">
-        {salonImage ? (
-          <>
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 blur-sm"
-              style={{ backgroundImage: `url(${salonImage})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-950 to-purple-950" />
-        )}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 blur-sm"
+          style={{ backgroundImage: `url(${salonImage || slideBg})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
         <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
       </div>

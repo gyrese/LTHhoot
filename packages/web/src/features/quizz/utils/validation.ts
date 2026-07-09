@@ -2,7 +2,7 @@ import type { Question } from "@rahoot/common/types/game"
 
 export const validateQuestion = (q: Question): string[] => {
   const errors: string[] = []
-  
+
   if (!q.question || !q.question.trim()) {
     errors.push("Le texte de la question est vide.")
   }
@@ -20,7 +20,8 @@ export const validateQuestion = (q: Question): string[] => {
       errors.push("Veuillez choisir si la réponse correcte est Vrai ou Faux.")
     }
   } else if (q.type === "open") {
-    const validCorrect = q.correctAnswers?.filter((a) => a.trim().length > 0) || []
+    const validCorrect =
+      q.correctAnswers?.filter((a) => a.trim().length > 0) || []
     if (validCorrect.length === 0) {
       errors.push("Veuillez indiquer au moins une réponse textuelle acceptée.")
     }
@@ -35,8 +36,14 @@ export const validateQuestion = (q: Question): string[] => {
     if (q.correctYear === undefined || q.correctYear === null) {
       errors.push("Veuillez indiquer l'année correcte.")
     }
-    if (q.minYear !== undefined && q.maxYear !== undefined && q.minYear >= q.maxYear) {
-      errors.push("Intervalle d'années du curseur temporel invalide (Min >= Max).")
+    if (
+      q.minYear !== undefined &&
+      q.maxYear !== undefined &&
+      q.minYear >= q.maxYear
+    ) {
+      errors.push(
+        "Intervalle d'années du curseur temporel invalide (Min >= Max).",
+      )
     }
   } else if (q.type === "puzzle") {
     const validItems = q.items?.filter((a) => a.trim().length > 0) || []

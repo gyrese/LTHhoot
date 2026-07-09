@@ -32,7 +32,9 @@ const QuestionEditorTitle = () => {
 
     pendingRef.current = { index: currentIndex, id: currentQuestion.id }
     setIsRephrasing(true)
-    socket.emit(EVENTS.QUIZZ.AI_REPHRASE, { currentText: currentQuestion.question })
+    socket.emit(EVENTS.QUIZZ.AI_REPHRASE, {
+      currentText: currentQuestion.question,
+    })
   }
 
   useEvent(EVENTS.QUIZZ.AI_REPHRASE_SUCCESS, ({ rephrased }) => {
@@ -72,7 +74,7 @@ const QuestionEditorTitle = () => {
   }, [currentQuestion.question])
 
   return (
-    <div className="focus-within:ring-primary/40 z-10 flex items-center gap-2 rounded-xl bg-white shadow-lg shadow-black/10 ring-1 ring-black/5 transition-shadow focus-within:ring-2">
+    <div className="focus-within:ring-primary/40 z-10 flex items-center gap-2 rounded-xl bg-white shadow-lg ring-1 shadow-black/10 ring-black/5 transition-shadow focus-within:ring-2">
       <textarea
         ref={textareaRef}
         rows={1}
@@ -85,7 +87,7 @@ const QuestionEditorTitle = () => {
         type="button"
         onClick={handleRephrase}
         disabled={isRephrasing || !currentQuestion.question.trim()}
-        className="mr-3 flex size-8 shrink-0 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-30"
+        className="text-primary hover:bg-primary-soft mr-3 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30"
         title={t("quizz:question.aiRephrase", "Reformuler par IA")}
       >
         {isRephrasing ? (

@@ -142,8 +142,7 @@ const QuizzEditorSidebar = () => {
                         {...provided.dragHandleProps}
                         className={clsx(
                           "ease-out-soft rounded-lg transition-shadow duration-150",
-                          snapshot.isDragging &&
-                            "shadow-2xl shadow-black/25",
+                          snapshot.isDragging && "shadow-2xl shadow-black/25",
                         )}
                       >
                         <QuizzEditorCard

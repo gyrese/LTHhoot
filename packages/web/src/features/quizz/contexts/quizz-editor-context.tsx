@@ -112,6 +112,8 @@ type QuizzEditorContextType = {
   redo: () => void
   canUndo: boolean
   canRedo: boolean
+  showLayersPanel: boolean
+  setShowLayersPanel: (_show: boolean) => void
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -246,6 +248,7 @@ export const QuizzEditorProvider = ({
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [pendingRestore, setPendingRestore] = useState<any | null>(null)
+  const [showLayersPanel, setShowLayersPanel] = useState(false)
   // `updatedAt` connu du client pour ce quiz : sert à détecter, côté serveur,
   // qu'une autre session a sauvegardé entre-temps (concurrence optimiste).
   const [updatedAt, setUpdatedAt] = useState<number | undefined>(
@@ -1108,6 +1111,8 @@ export const QuizzEditorProvider = ({
         redo,
         canUndo,
         canRedo,
+        showLayersPanel,
+        setShowLayersPanel,
       }}
     >
       {children}

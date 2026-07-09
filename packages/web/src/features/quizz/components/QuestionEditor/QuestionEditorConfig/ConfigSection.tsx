@@ -9,7 +9,12 @@ type Props = PropsWithChildren<{
   defaultOpen?: boolean
 }>
 
-const ConfigSection = ({ title, icon, defaultOpen = true, children }: Props) => {
+const ConfigSection = ({
+  title,
+  icon,
+  defaultOpen = true,
+  children,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const reduceMotion = useReducedMotion()
 

@@ -5,7 +5,10 @@ import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
 import StreakBadge from "@rahoot/web/features/game/components/StreakBadge"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
-import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  HAPTIC_PATTERNS,
+  vibrate,
+} from "@rahoot/web/features/game/utils/haptics"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"

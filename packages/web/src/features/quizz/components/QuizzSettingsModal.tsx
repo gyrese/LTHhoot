@@ -1,7 +1,7 @@
 import { PODIUM_THEMES } from "@rahoot/common/constants"
 import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { X, Upload, Sparkles, Dices } from "lucide-react"
+import { X, Upload, Sparkles, Dices, Trophy } from "lucide-react"
 import { useRef, useState, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
@@ -26,7 +26,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     ctx.salonImage,
   )
   const [localPodiumTheme, setLocalPodiumTheme] = useState<PodiumThemeSetting>(
-    ctx.podiumTheme ?? "random",
+    ctx.podiumTheme ?? "neutre",
   )
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
@@ -53,9 +53,9 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     ctx.setTags(localTags)
     ctx.setListingImage(localImage)
     ctx.setSalonImage(localSalonImage)
-    // "random" est le défaut : on ne stocke rien dans le quiz dans ce cas.
+    // "neutre" est le défaut : on ne stocke rien dans le quiz dans ce cas.
     ctx.setPodiumTheme(
-      localPodiumTheme === "random" ? undefined : localPodiumTheme,
+      localPodiumTheme === "neutre" ? undefined : localPodiumTheme,
     )
     onClose()
   }
@@ -67,7 +67,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     setLocalTags(ctx.tags)
     setLocalImage(ctx.listingImage)
     setLocalSalonImage(ctx.salonImage)
-    setLocalPodiumTheme(ctx.podiumTheme ?? "random")
+    setLocalPodiumTheme(ctx.podiumTheme ?? "neutre")
     onClose()
   }
 
@@ -479,7 +479,39 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
               </p>
 
               <div className="grid grid-cols-3 gap-2">
-                {/* Aléatoire (défaut) */}
+                {/* Neutre (défaut) — aperçu sur la couverture du quiz */}
+                <button
+                  type="button"
+                  onClick={() => setLocalPodiumTheme("neutre")}
+                  className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
+                    localPodiumTheme === "neutre"
+                      ? "border-primary"
+                      : "border-border hover:border-border-strong"
+                  }`}
+                >
+                  {localImage || localSalonImage ? (
+                    <img
+                      src={localImage || localSalonImage}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover blur-[2px]"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          "radial-gradient(ellipse at 50% 30%, #26262c 0%, #131317 100%)",
+                      }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                  <Trophy className="absolute top-2 left-1/2 size-4 -translate-x-1/2 text-[#f5d67a]" />
+                  <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
+                    {t("quizz:settings.podiumThemes.neutre")}
+                  </span>
+                </button>
+
+                {/* Aléatoire — tire un univers au sort à chaque partie */}
                 <button
                   type="button"
                   onClick={() => setLocalPodiumTheme("random")}

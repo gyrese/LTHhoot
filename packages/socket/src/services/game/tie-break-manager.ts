@@ -1,6 +1,13 @@
 import type { Player } from "@rahoot/common/types/game"
-import type { Socket, TieBreakAckStatus } from "@rahoot/common/types/game/socket"
-import { STATUS, type Status, type StatusDataMap } from "@rahoot/common/types/game/status"
+import type {
+  Socket,
+  TieBreakAckStatus,
+} from "@rahoot/common/types/game/socket"
+import {
+  STATUS,
+  type Status,
+  type StatusDataMap,
+} from "@rahoot/common/types/game/status"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 
@@ -26,7 +33,10 @@ type SendFn = <T extends Status>(
   _status: T,
   _data: StatusDataMap[T],
 ) => void
-type BroadcastFn = <T extends Status>(_status: T, _data: StatusDataMap[T]) => void
+type BroadcastFn = <T extends Status>(
+  _status: T,
+  _data: StatusDataMap[T],
+) => void
 
 export interface TieBreakManagerOptions {
   players: PlayerManager
@@ -71,7 +81,9 @@ export class TieBreakManager {
     this.playerClientIds = duelPlayers.map((p) => p.clientId)
     this.answers = new Map()
     this.question =
-      TIE_BREAK_QUESTIONS[Math.floor(Math.random() * TIE_BREAK_QUESTIONS.length)]!
+      TIE_BREAK_QUESTIONS[
+        Math.floor(Math.random() * TIE_BREAK_QUESTIONS.length)
+      ]!
 
     const duelNames = duelPlayers.map((p) => p.username)
     const spectators = this.opts.players

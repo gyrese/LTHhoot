@@ -1,7 +1,14 @@
-import type { MEDIA_TYPES, PODIUM_THEMES } from "@rahoot/common/constants"
+import type {
+  MEDIA_TYPES,
+  PODIUM_THEME_NEUTRAL,
+  PODIUM_THEMES,
+} from "@rahoot/common/constants"
 
-// Thème concret du podium, jamais "random" (résolu côté serveur).
-export type PodiumThemeId = (typeof PODIUM_THEMES)[number]
+// Thème concret du podium, jamais "random" (résolu côté serveur). "neutre"
+// est le défaut : podium sobre sur l'image de couverture du quiz.
+export type PodiumThemeId =
+  | (typeof PODIUM_THEMES)[number]
+  | typeof PODIUM_THEME_NEUTRAL
 
 // Réglage stocké dans le quiz : un thème précis ou tirage au sort.
 export type PodiumThemeSetting = PodiumThemeId | "random"
@@ -62,6 +69,9 @@ export type TextElement = SlideElementBase & {
   textDecoration: string
   fill: string
   align: "left" | "center" | "right"
+  textBackground?: string
+  stroke?: string
+  strokeWidth?: number
 }
 
 export type ShapeElement = SlideElementBase & {
@@ -69,6 +79,8 @@ export type ShapeElement = SlideElementBase & {
   shapeType: "rect" | "circle" | "triangle" | "star"
   fill: string
   cornerRadius?: number
+  stroke?: string
+  strokeWidth?: number
 }
 
 export type ImageElement = SlideElementBase & {

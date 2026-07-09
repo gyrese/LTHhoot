@@ -231,7 +231,11 @@ export function GamePanel({
   switch (status.name) {
     case STATUS.SHOW_ROOM:
       return (
-        <RoomPanel data={status.data} players={players} onPauseGame={onPauseGame} />
+        <RoomPanel
+          data={status.data}
+          players={players}
+          onPauseGame={onPauseGame}
+        />
       )
 
     case STATUS.SHOW_START:
@@ -465,8 +469,7 @@ function OpenAnswersManagerPanel({
               <button
                 key={answer.text}
                 disabled={
-                  (answer.isCorrect && !rescued) ||
-                  validating === answer.text
+                  (answer.isCorrect && !rescued) || validating === answer.text
                 }
                 onClick={() => {
                   if (rescued) {
@@ -509,7 +512,9 @@ function OpenAnswersManagerPanel({
                   <p className="truncate text-xs text-white/35">
                     {playerNames.join(", ")}
                     {rescued && (
-                      <span className="ml-1 text-orange-400/70">· repêchée</span>
+                      <span className="ml-1 text-orange-400/70">
+                        · repêchée
+                      </span>
                     )}
                   </p>
                 </div>
@@ -1475,7 +1480,12 @@ export function PlayersPanel({
 export function JournalPanel({
   logs,
 }: {
-  logs: { id: string; timestamp: number; level: "info" | "warn" | "error"; message: string }[]
+  logs: {
+    id: string
+    timestamp: number
+    level: "info" | "warn" | "error"
+    message: string
+  }[]
 }) {
   const levelStyle = {
     info: "text-blue-300 bg-blue-500/10 border-blue-500/20",
@@ -1525,7 +1535,9 @@ export function JournalPanel({
                 {levelIcon[entry.level]}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium leading-snug">{entry.message}</p>
+                <p className="text-sm leading-snug font-medium">
+                  {entry.message}
+                </p>
                 <p className="mt-0.5 font-mono text-[10px] opacity-50">
                   {fmt(entry.timestamp)}
                 </p>

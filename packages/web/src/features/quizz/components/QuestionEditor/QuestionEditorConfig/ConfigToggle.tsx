@@ -14,7 +14,13 @@ type Props = {
  * Interrupteur de configuration réutilisable (extrait des deux toggles dupliqués
  * de l'inspecteur). Accent orange unique, accessible (role=switch + aria).
  */
-const ConfigToggle = ({ icon, label, checked, onChange, description }: Props) => (
+const ConfigToggle = ({
+  icon,
+  label,
+  checked,
+  onChange,
+  description,
+}: Props) => (
   <ConfigField>
     <div className="flex items-center justify-between gap-3">
       <ConfigField.Label icon={icon} label={label} unit="" />
@@ -37,7 +43,9 @@ const ConfigToggle = ({ icon, label, checked, onChange, description }: Props) =>
         />
       </button>
     </div>
-    {description && <ConfigField.Description>{description}</ConfigField.Description>}
+    {description && (
+      <ConfigField.Description>{description}</ConfigField.Description>
+    )}
   </ConfigField>
 )
 

@@ -1,7 +1,13 @@
 import type { PowerUpEffect } from "@rahoot/common/types/powerup"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
-import { POWER_UP_META_UI, RARITY_STYLE } from "@rahoot/web/features/game/utils/powerupMeta"
-import { HAPTIC_PATTERNS, vibrate } from "@rahoot/web/features/game/utils/haptics"
+import {
+  POWER_UP_META_UI,
+  RARITY_STYLE,
+} from "@rahoot/web/features/game/utils/powerupMeta"
+import {
+  HAPTIC_PATTERNS,
+  vibrate,
+} from "@rahoot/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { motion } from "motion/react"
 import { useEffect } from "react"
@@ -46,7 +52,7 @@ const PowerUpEffectToast = ({ effect }: Props) => {
       exit={{ x: -300, opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className={clsx(
-        "pointer-events-auto flex items-center gap-3 rounded-2xl border-2 px-4 py-3 backdrop-blur-xl shadow-2xl",
+        "pointer-events-auto flex items-center gap-3 rounded-2xl border-2 px-4 py-3 shadow-2xl backdrop-blur-xl",
         style.bg,
         style.border,
       )}

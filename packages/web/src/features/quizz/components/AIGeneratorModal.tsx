@@ -1,4 +1,7 @@
-import { useSocket, useEvent } from "@rahoot/web/features/game/contexts/socket-context"
+import {
+  useSocket,
+  useEvent,
+} from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { EVENTS } from "@rahoot/common/constants"
 import { X, Sparkles, AlertTriangle, Loader2 } from "lucide-react"
@@ -28,7 +31,10 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
   const [prompt, setPrompt] = useState("")
   const [count, setCount] = useState(5)
   const [level, setLevel] = useState("Intermédiaire / Général")
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(["mcq", "true_false"])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([
+    "mcq",
+    "true_false",
+  ])
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -41,7 +47,7 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
         t("quizz:aiGenerateSuccessMsg", {
           count: data.questions.length,
           defaultValue: `{{count}} question(s) générée(s) avec succès !`,
-        })
+        }),
       )
       onClose()
       // Reset form
@@ -64,9 +70,7 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
 
   const handleToggleType = (type: string) => {
     setSelectedTypes((prev) =>
-      prev.includes(type)
-        ? prev.filter((t) => t !== type)
-        : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     )
   }
 
@@ -93,13 +97,14 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-panel border-border flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        
+      <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-2 text-primary">
+          <div className="text-primary flex items-center gap-2">
             <Sparkles className="size-5 animate-pulse" />
-            <h2 className="text-ink text-lg font-bold">Générer des questions par IA</h2>
+            <h2 className="text-ink text-lg font-bold">
+              Générer des questions par IA
+            </h2>
           </div>
           <button
             type="button"
@@ -112,24 +117,26 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
         </div>
 
         {/* Body */}
-        <div className="scrollbar-light flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="scrollbar-light flex-1 space-y-6 overflow-y-auto p-6">
           {errorMsg && (
             <div className="bg-danger/10 border-danger/30 text-danger flex items-start gap-2.5 rounded-lg border p-3 text-sm">
-              <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* Prompt */}
           <div className="space-y-2">
-            <label className="text-ink text-sm font-bold block">Sujet ou thème du quiz</label>
+            <label className="text-ink block text-sm font-bold">
+              Sujet ou thème du quiz
+            </label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ex: Les capitales européennes, La programmation JavaScript, L'Histoire de l'Egypte Antique..."
               rows={3}
               disabled={loading}
-              className="border-border text-ink bg-transparent focus:border-primary w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none transition-colors disabled:opacity-50"
+              className="border-border text-ink focus:border-primary w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm transition-colors outline-none disabled:opacity-50"
             />
           </div>
 
@@ -137,12 +144,14 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
           <div className="grid grid-cols-2 gap-4">
             {/* Number of questions */}
             <div className="space-y-2">
-              <label className="text-ink text-sm font-bold block">Nombre de questions</label>
+              <label className="text-ink block text-sm font-bold">
+                Nombre de questions
+              </label>
               <select
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
                 disabled={loading}
-                className="border-border text-ink bg-transparent focus:border-primary w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors disabled:opacity-50"
+                className="border-border text-ink focus:border-primary w-full rounded-lg border bg-transparent px-3 py-2 text-sm transition-colors outline-none disabled:opacity-50"
               >
                 {[3, 5, 8, 10, 15].map((n) => (
                   <option key={n} value={n} className="bg-panel">
@@ -154,14 +163,20 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
 
             {/* Level */}
             <div className="space-y-2">
-              <label className="text-ink text-sm font-bold block">Difficulté / Cible</label>
+              <label className="text-ink block text-sm font-bold">
+                Difficulté / Cible
+              </label>
               <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
                 disabled={loading}
-                className="border-border text-ink bg-transparent focus:border-primary w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors disabled:opacity-50"
+                className="border-border text-ink focus:border-primary w-full rounded-lg border bg-transparent px-3 py-2 text-sm transition-colors outline-none disabled:opacity-50"
               >
-                {["Facile / Enfants", "Intermédiaire / Général", "Difficile / Experts"].map((l) => (
+                {[
+                  "Facile / Enfants",
+                  "Intermédiaire / Général",
+                  "Difficile / Experts",
+                ].map((l) => (
                   <option key={l} value={l} className="bg-panel">
                     {l}
                   </option>
@@ -172,7 +187,9 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
 
           {/* Question types */}
           <div className="space-y-2">
-            <label className="text-ink text-sm font-bold block">Types de questions souhaités</label>
+            <label className="text-ink block text-sm font-bold">
+              Types de questions souhaités
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(QUESTION_TYPE_LABELS).map(([type, label]) => {
                 const isSelected = selectedTypes.includes(type)
@@ -182,7 +199,7 @@ const AIGeneratorModal = ({ open, onClose }: Props) => {
                     type="button"
                     onClick={() => handleToggleType(type)}
                     disabled={loading}
-                    className={`border text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`rounded-lg border px-3 py-2 text-left text-xs font-medium transition-colors ${
                       isSelected
                         ? "bg-primary-soft border-primary text-primary-ink"
                         : "border-border hover:bg-border/20 text-ink-muted"

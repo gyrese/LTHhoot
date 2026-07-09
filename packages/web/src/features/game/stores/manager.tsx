@@ -68,7 +68,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
       },
 
       reset: (clearConfig = false) => {
-        const {stack} = new Error()
+        const { stack } = new Error()
         console.warn(`[STORE] Manager reset called! Stack:`, stack)
         set((state) => ({
           gameId: null,

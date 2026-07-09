@@ -57,7 +57,7 @@ const ImageSequenceReveal = ({ images, imageInterval }: Props) => {
 
       {/* Indicateur image k / n */}
       <div className="absolute right-4 bottom-4 z-20 rounded-xl bg-black/50 px-3 py-1.5 backdrop-blur-md">
-        <span className="text-sm font-bold tabular-nums text-white/80">
+        <span className="text-sm font-bold text-white/80 tabular-nums">
           {t("game:imageSequence.indicator", {
             current: currentIndex + 1,
             total: images.length,
