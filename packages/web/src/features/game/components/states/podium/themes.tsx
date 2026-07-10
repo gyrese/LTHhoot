@@ -113,7 +113,7 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#7df4ff", fontFamily: BODY_FONT },
     baseGradient:
       "radial-gradient(ellipse at 50% 20%, #1c1030 0%, #131317 55%, #0e0e12 100%)",
-    bgImage: "/podium/espace.jpg",
+    bgImage: "/podium/espace.webp",
     bgStyle: { opacity: 0.55 },
     overlayGradient:
       "linear-gradient(to top, #131317 0%, transparent 40%, rgba(19,19,23,0.5) 100%)",
@@ -140,7 +140,7 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#d2c5ab", fontFamily: BODY_FONT },
     baseGradient:
       "radial-gradient(ellipse at 50% 100%, #1c1a0e 0%, #131317 60%, #0e0e12 100%)",
-    bgImage: "/podium/jurassic.jpg",
+    bgImage: "/podium/jurassic.webp",
     bgStyle: { opacity: 0.4, transform: "scale(1.1)" },
     overlayGradient:
       "linear-gradient(to bottom, transparent 0%, rgba(19,19,23,0.6) 60%, #131317 100%)",
@@ -168,7 +168,7 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     },
     subtitleStyle: { color: "#ffedc3", fontFamily: BODY_FONT },
     baseGradient: "linear-gradient(180deg, #1b1b1f 0%, #131317 100%)",
-    bgImage: "/podium/manga.jpg",
+    bgImage: "/podium/manga.webp",
     bgStyle: { opacity: 0.35, filter: "grayscale(1) contrast(1.25)" },
     overlayGradient:
       "linear-gradient(to top, #131317 0%, transparent 45%, rgba(19,19,23,0.5) 100%)",
@@ -217,7 +217,7 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#7df4ff", fontFamily: BODY_FONT },
     baseGradient:
       "radial-gradient(circle at 50% 40%, #23232a 0%, #131317 60%, #0e0e12 100%)",
-    bgImage: "/podium/science.jpg",
+    bgImage: "/podium/science.webp",
     bgStyle: { opacity: 0.3 },
     overlayGradient:
       "linear-gradient(to top, #131317 0%, transparent 50%, rgba(19,19,23,0.4) 100%)",
@@ -245,7 +245,7 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#d3fbff", fontFamily: BODY_FONT },
     baseGradient:
       "linear-gradient(180deg, #16203a 0%, #131317 55%, #0e0e12 100%)",
-    bgImage: "/podium/heros.jpg",
+    bgImage: "/podium/heros.webp",
     bgStyle: { opacity: 0.4 },
     overlayGradient:
       "linear-gradient(180deg, rgba(19,19,23,0) 0%, rgba(19,19,23,0.8) 70%, #131317 100%)",
@@ -260,8 +260,10 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
       3: { accent: "#ffb3b5", blockStyle: stoneBlock("#ffb3b5") },
     },
   },
-  // Univers "conte de fées" : dessiné en CSS/SVG (pas de photo) pour éviter
-  // toute image protégée — silhouette de château, feux d'artifice, ciel étoilé.
+  // Univers "conte de fées" : silhouette de château, feux d'artifice et ciel
+  // étoilé dessinés en CSS/SVG — s'affichent seuls tant que
+  // public/podium/disney.webp n'existe pas, et se superposent proprement à
+  // cette image dès qu'elle est ajoutée (aucun changement de code requis).
   disney: {
     id: "disney",
     titleStyle: {
@@ -275,13 +277,13 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#d9c9ff", fontFamily: BODY_FONT },
     baseGradient:
       "radial-gradient(ellipse at 50% 15%, #3a2a6b 0%, #1c1440 45%, #0e0b22 100%)",
-    bgImage: "",
-    bgStyle: {},
+    bgImage: "/podium/disney.webp",
+    bgStyle: { opacity: 0.5 },
     overlayGradient:
       "linear-gradient(to top, #1c1440 0%, transparent 45%, rgba(28,20,64,0.5) 100%)",
     ambient: "fireworks",
     avatarShape: "starburst",
-    winnerLabel: "Vœu exaucé",
+    winnerLabel: "Rêve ta vie en couleurs…",
     confetti: ["#ffd76a", "#c9a7ff", "#8fe3ff", "#ffffff"],
     blockRadiusClass: "rounded-t-2xl",
     ranks: {
@@ -290,8 +292,10 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
       3: { accent: "#8fe3ff", blockStyle: glassBlock("#8fe3ff") },
     },
   },
-  // Univers "école de sorcellerie" : dark academia dessiné en CSS/SVG — vieille
-  // pierre, chandelles, silhouette de tourelles gothiques.
+  // Univers "école de sorcellerie" : dark academia dessiné en CSS/SVG (vieille
+  // pierre, chandelles, tourelles gothiques) — même principe que "disney" :
+  // fonctionne seul, se superpose à public/podium/harrypotter.webp dès qu'elle
+  // existe.
   harrypotter: {
     id: "harrypotter",
     titleStyle: {
@@ -305,13 +309,13 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
     subtitleStyle: { color: "#d8c9a3", fontFamily: BODY_FONT },
     baseGradient:
       "radial-gradient(ellipse at 50% 20%, #3a1f1f 0%, #1c1010 55%, #0e0808 100%)",
-    bgImage: "",
-    bgStyle: {},
+    bgImage: "/podium/harrypotter.webp",
+    bgStyle: { opacity: 0.4 },
     overlayGradient:
       "linear-gradient(to top, #1c1010 0%, transparent 45%, rgba(28,16,16,0.55) 100%)",
     ambient: "candles",
     avatarShape: "seal",
-    winnerLabel: "L'Élu",
+    winnerLabel: "10 points pour Gryffondor",
     confetti: ["#e8c67a", "#c9a15a", "#8c1414", "#ffffff"],
     blockRadiusClass: "rounded-t-lg",
     ranks: {

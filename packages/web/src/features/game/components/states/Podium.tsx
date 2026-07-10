@@ -137,7 +137,7 @@ const WinnerBadge = ({ theme }: { theme: PodiumThemeTokens }) => {
   if (theme.id === "manga") {
     return (
       <div
-        className="skew-x-12 px-5 py-1"
+        className="max-w-[200px] skew-x-12 px-5 py-1"
         style={{
           background: badgeAccent,
           border: "3px solid #000000",
@@ -145,7 +145,7 @@ const WinnerBadge = ({ theme }: { theme: PodiumThemeTokens }) => {
         }}
       >
         <span
-          className="text-sm font-black uppercase italic"
+          className="text-sm leading-tight font-black text-balance uppercase italic"
           style={{ fontFamily: DISPLAY_FONT, color: "#131317" }}
         >
           {theme.winnerLabel}
@@ -156,14 +156,14 @@ const WinnerBadge = ({ theme }: { theme: PodiumThemeTokens }) => {
 
   return (
     <div
-      className="rounded-full px-5 py-1"
+      className="max-w-[200px] rounded-2xl px-5 py-1.5"
       style={{
         background: badgeAccent,
         boxShadow: `0 0 20px ${badgeAccent}80`,
       }}
     >
       <span
-        className="text-xs font-bold tracking-[0.2em] uppercase"
+        className="block text-center text-xs leading-tight font-bold tracking-widest text-balance uppercase"
         style={{ fontFamily: LABEL_FONT, color: "#131317" }}
       >
         {theme.winnerLabel}

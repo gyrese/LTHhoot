@@ -542,16 +542,20 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                           : "border-border hover:border-border-strong"
                       }`}
                     >
-                      {tokens.bgImage ? (
-                        <img
-                          src={tokens.bgImage}
-                          alt=""
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      ) : (
+                      {/* Dégradé toujours présent en base, image en CSS
+                          background par-dessus si elle existe : un fichier
+                          manquant ne casse jamais l'aperçu (pas d'icône
+                          "image brisée"). */}
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: tokens.baseGradient }}
+                      />
+                      {tokens.bgImage && (
                         <div
-                          className="absolute inset-0"
-                          style={{ background: tokens.baseGradient }}
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{
+                            backgroundImage: `url(${tokens.bgImage})`,
+                          }}
                         />
                       )}
                       <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
