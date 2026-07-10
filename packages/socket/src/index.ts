@@ -177,13 +177,23 @@ app.post(
       return
     }
 
-    console.log(
-      `Génération d'image par Gemini Imagen pour le sujet : "${subject}"`,
-    )
-
+    const IMAGE_STYLES = [
+      "Pixar style, vibrant colors, 3D render, studio lighting, square format",
+      "cinematic photo, highly detailed, realistic, dramatic lighting, 8k resolution, photorealistic, square format",
+      "cyberpunk style, neon lighting, futuristic, highly detailed, sci-fi aesthetic, square format",
+      "Studio Ghibli style, anime watercolor painting, soft lighting, detailed background, hand-drawn aesthetic, square format",
+      "vintage comic book style, pop art, retro color palette, ink outline, halftone shading, square format",
+      "minimalist vector illustration, clean lines, flat colors, modern abstract design, geometric shapes, square format",
+      "fantasy oil painting, classical art style, dramatic chiaroscuro lighting, rich textures, fine art, square format",
+      "cute claymation style, plasticine texture, stop-motion look, soft studio lighting, playful 3D, square format",
+      "watercolor and ink sketch illustration, artistic splatters, soft colors, elegant hand-drawn look, square format",
+      "low poly 3D style, geometric shapes, colorful facets, clean rendering, modern game art look, square format",
+      "3D model block style, voxel art, cute blocky characters, vibrant colors, isometric view, square format",
+      "origami paper art style, layered paper cuts, soft textures, pastel colors, elegant lighting, square format",
+    ]
+    const chosenStyle = IMAGE_STYLES[Math.floor(Math.random() * IMAGE_STYLES.length)]
+    const prompt = `${subject}, ${chosenStyle}`
     const genAI = new GoogleGenAI({ apiKey })
-
-    const prompt = `${subject}, Pixar style, vibrant colors, 3D render, studio lighting, square format`
 
     try {
       const response = await genAI.models.generateContent({
