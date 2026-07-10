@@ -152,7 +152,9 @@
       "jurassic": "Jurassic",
       "manga": "Manga",
       "science": "Wissenschaft",
-      "heros": "Superhelden"
+      "heros": "Superhelden",
+      "disney": "Disney",
+      "harrypotter": "Harry Potter"
     }
   },
   "titleQuizzPlaceholder": "Quiz-Titel...",

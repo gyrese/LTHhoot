@@ -19,7 +19,7 @@ import multer from "multer"
 import { extname, resolve } from "path"
 import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
-import { unlink, copyFile } from "fs/promises"
+import { unlink, copyFile, readdir, stat } from "fs/promises"
 
 // Natively load .env variables in Node.js if present (useful for local start without dotenv-cli)
 try {
@@ -215,6 +215,69 @@ app.post(
       res.status(500).json({
         error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
       })
+    }
+  },
+)
+
+// ─── Bibliothèque locale : liste toutes les images du dossier uploads/ ────────
+app.get(
+  "/api/media/library",
+  requireManager,
+  async (_req: express.Request, res: express.Response) => {
+    try {
+      const files = await readdir(uploadsDir)
+      const imageExts = new Set([".webp", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".bmp", ".ico"])
+
+      const entries = await Promise.all(
+        files
+          .filter((f) => imageExts.has(extname(f).toLowerCase()))
+          .map(async (f) => {
+            const fileStat = await stat(resolve(uploadsDir, f))
+
+            return {
+              id: f,
+              url: `/uploads/${f}`,
+              thumb: `/uploads/${f}`,
+              title: f,
+              size: fileStat.size,
+              modifiedAt: fileStat.mtimeMs,
+            }
+          }),
+      )
+
+      // Tri par date de modification décroissante (les plus récents en premier)
+      entries.sort((a, b) => b.modifiedAt - a.modifiedAt)
+
+      res.json({ results: entries })
+    } catch (err) {
+      console.error("Library listing error:", err)
+      res.status(500).json({ error: "Échec de la lecture de la bibliothèque" })
+    }
+  },
+)
+
+// ─── Suppression d'une image de la bibliothèque locale ────────────────────────
+app.delete(
+  "/api/media/library/:filename",
+  requireManager,
+  async (req: express.Request, res: express.Response) => {
+    const filename = req.params.filename as string
+
+    // Sécurité : empêcher le path traversal
+    if (!filename || filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+      res.status(400).json({ error: "Nom de fichier invalide" })
+
+      return
+    }
+
+    const filePath = resolve(uploadsDir, filename)
+
+    try {
+      await unlink(filePath)
+      res.json({ success: true })
+    } catch (err) {
+      console.error("Library delete error:", err)
+      res.status(404).json({ error: "Fichier introuvable" })
     }
   },
 )

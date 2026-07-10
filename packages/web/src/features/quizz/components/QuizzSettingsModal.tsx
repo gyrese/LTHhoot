@@ -1,5 +1,6 @@
 import { PODIUM_THEMES } from "@rahoot/common/constants"
 import type { PodiumThemeSetting } from "@rahoot/common/types/game"
+import { PODIUM_THEME_TOKENS } from "@rahoot/web/features/game/components/states/podium/themes"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { X, Upload, Sparkles, Dices, Trophy } from "lucide-react"
 import { useRef, useState, type KeyboardEvent } from "react"
@@ -527,28 +528,39 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   </span>
                 </button>
 
-                {PODIUM_THEMES.map((themeId) => (
-                  <button
-                    key={themeId}
-                    type="button"
-                    onClick={() => setLocalPodiumTheme(themeId)}
-                    className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
-                      localPodiumTheme === themeId
-                        ? "border-primary"
-                        : "border-border hover:border-border-strong"
-                    }`}
-                  >
-                    <img
-                      src={`/podium/${themeId}.jpg`}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-                    <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
-                      {t(`quizz:settings.podiumThemes.${themeId}`)}
-                    </span>
-                  </button>
-                ))}
+                {PODIUM_THEMES.map((themeId) => {
+                  const tokens = PODIUM_THEME_TOKENS[themeId]
+
+                  return (
+                    <button
+                      key={themeId}
+                      type="button"
+                      onClick={() => setLocalPodiumTheme(themeId)}
+                      className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
+                        localPodiumTheme === themeId
+                          ? "border-primary"
+                          : "border-border hover:border-border-strong"
+                      }`}
+                    >
+                      {tokens.bgImage ? (
+                        <img
+                          src={tokens.bgImage}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0"
+                          style={{ background: tokens.baseGradient }}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                      <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
+                        {t(`quizz:settings.podiumThemes.${themeId}`)}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -109,14 +109,17 @@ export const MEDIA_TYPES = {
   AUDIO: "audio",
 } as const
 
-// Univers visuels du podium de fin de partie (maquettes .stitch) — pool du
-// tirage au sort quand le quiz est réglé sur "random".
+// Univers visuels du podium de fin de partie (maquettes .stitch, + 2 univers
+// dessinés en CSS/SVG) — pool du tirage au sort quand le quiz est réglé sur
+// "random".
 export const PODIUM_THEMES = [
   "espace",
   "jurassic",
   "manga",
   "science",
   "heros",
+  "disney",
+  "harrypotter",
 ] as const
 
 // Thème par défaut (réglage absent) : podium sobre qui reprend l'image de

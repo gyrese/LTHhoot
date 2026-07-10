@@ -28,8 +28,24 @@ export type PodiumThemeTokens = {
   bgImage: string
   bgStyle: CSSProperties
   overlayGradient: string
-  ambient: "none" | "stars" | "amber" | "manga" | "lab" | "comic"
-  avatarShape: "ring" | "hologram" | "fossil" | "burst" | "hex" | "crest"
+  ambient:
+    | "none"
+    | "stars"
+    | "amber"
+    | "manga"
+    | "lab"
+    | "comic"
+    | "fireworks"
+    | "candles"
+  avatarShape:
+    | "ring"
+    | "hologram"
+    | "fossil"
+    | "burst"
+    | "hex"
+    | "crest"
+    | "starburst"
+    | "seal"
   winnerLabel: string
   confetti: string[]
   blockRadiusClass: string
@@ -244,6 +260,66 @@ export const PODIUM_THEME_TOKENS: Record<PodiumThemeId, PodiumThemeTokens> = {
       3: { accent: "#ffb3b5", blockStyle: stoneBlock("#ffb3b5") },
     },
   },
+  // Univers "conte de fées" : dessiné en CSS/SVG (pas de photo) pour éviter
+  // toute image protégée — silhouette de château, feux d'artifice, ciel étoilé.
+  disney: {
+    id: "disney",
+    titleStyle: {
+      fontFamily: DISPLAY_FONT,
+      fontWeight: 900,
+      textTransform: "uppercase",
+      letterSpacing: "-0.02em",
+      color: "#fff9e8",
+      textShadow: "0 0 20px rgba(255,215,120,0.5)",
+    },
+    subtitleStyle: { color: "#d9c9ff", fontFamily: BODY_FONT },
+    baseGradient:
+      "radial-gradient(ellipse at 50% 15%, #3a2a6b 0%, #1c1440 45%, #0e0b22 100%)",
+    bgImage: "",
+    bgStyle: {},
+    overlayGradient:
+      "linear-gradient(to top, #1c1440 0%, transparent 45%, rgba(28,20,64,0.5) 100%)",
+    ambient: "fireworks",
+    avatarShape: "starburst",
+    winnerLabel: "Vœu exaucé",
+    confetti: ["#ffd76a", "#c9a7ff", "#8fe3ff", "#ffffff"],
+    blockRadiusClass: "rounded-t-2xl",
+    ranks: {
+      1: { accent: "#ffd76a", blockStyle: glassBlock("#ffd76a", true) },
+      2: { accent: "#c9a7ff", blockStyle: glassBlock("#c9a7ff") },
+      3: { accent: "#8fe3ff", blockStyle: glassBlock("#8fe3ff") },
+    },
+  },
+  // Univers "école de sorcellerie" : dark academia dessiné en CSS/SVG — vieille
+  // pierre, chandelles, silhouette de tourelles gothiques.
+  harrypotter: {
+    id: "harrypotter",
+    titleStyle: {
+      fontFamily: DISPLAY_FONT,
+      fontWeight: 900,
+      textTransform: "uppercase",
+      letterSpacing: "-0.02em",
+      color: "#e8c67a",
+      textShadow: "0 0 18px rgba(140,20,20,0.5)",
+    },
+    subtitleStyle: { color: "#d8c9a3", fontFamily: BODY_FONT },
+    baseGradient:
+      "radial-gradient(ellipse at 50% 20%, #3a1f1f 0%, #1c1010 55%, #0e0808 100%)",
+    bgImage: "",
+    bgStyle: {},
+    overlayGradient:
+      "linear-gradient(to top, #1c1010 0%, transparent 45%, rgba(28,16,16,0.55) 100%)",
+    ambient: "candles",
+    avatarShape: "seal",
+    winnerLabel: "L'Élu",
+    confetti: ["#e8c67a", "#c9a15a", "#8c1414", "#ffffff"],
+    blockRadiusClass: "rounded-t-lg",
+    ranks: {
+      1: { accent: "#e8c67a", blockStyle: stoneBlock("#e8c67a") },
+      2: { accent: "#c9a15a", blockStyle: stoneBlock("#c9a15a") },
+      3: { accent: "#8c1414", blockStyle: stoneBlock("#8c1414") },
+    },
+  },
 }
 
 // ─── Keyframes injectés une seule fois ───────────────────────────────────────
@@ -413,6 +489,118 @@ const ComicLayer = () => (
   </>
 )
 
+// Silhouette de château de conte de fées — formes génériques dessinées en
+// SVG (aucune image protégée), tourelles à toit conique + fanion.
+const FairytaleCastleSilhouette = () => (
+  <svg
+    viewBox="0 0 400 120"
+    preserveAspectRatio="xMidYMax slice"
+    className="pointer-events-none absolute inset-x-0 bottom-0 h-[30%] w-full opacity-90"
+    aria-hidden
+  >
+    <path
+      d="M0,120 L0,70 L20,70 L20,50 L35,35 L50,50 L50,70 L70,70 L70,40 L90,20 L110,40 L110,70 L150,70 L150,55 L165,40 L180,55 L180,70 L220,70 L220,45 L235,30 L250,45 L250,70 L290,70 L290,55 L305,40 L320,55 L320,70 L340,70 L340,50 L355,35 L370,50 L370,70 L400,70 L400,120 Z"
+      fill="#0e0b22"
+    />
+    <rect x="88" y="8" width="3" height="14" fill="#0e0b22" />
+    <path d="M91,8 L100,12.5 L91,17 Z" fill="#ffd76a" opacity="0.85" />
+  </svg>
+)
+
+// Silhouette de tourelles gothiques — dark academia dessinée en SVG, une
+// fenêtre éclairée pour l'ambiance chandelles.
+const GothicCastleSilhouette = () => (
+  <svg
+    viewBox="0 0 400 130"
+    preserveAspectRatio="xMidYMax slice"
+    className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] w-full opacity-90"
+    aria-hidden
+  >
+    <path
+      d="M0,130 L0,60 L15,60 L15,20 L25,20 L25,10 L35,10 L35,20 L45,20 L45,60 L70,60 L70,75 L90,75 L90,30 L100,30 L100,15 L110,15 L110,30 L120,30 L120,75 L160,75 L160,55 L175,55 L175,40 L185,40 L185,55 L200,55 L200,75 L240,75 L240,45 L250,20 L260,45 L260,75 L300,75 L300,60 L310,60 L310,25 L320,25 L320,60 L330,60 L330,75 L370,75 L370,50 L380,50 L380,20 L390,20 L390,50 L400,50 L400,130 Z"
+      fill="#0e0808"
+    />
+    <rect x="248" y="32" width="5" height="9" fill="#e8c67a" opacity="0.85" />
+  </svg>
+)
+
+// Points d'origine des feux d'artifice (Disney) — positions et délais fixes,
+// pas de tirage aléatoire pour rester stable entre les renders.
+const FIREWORK_ORIGINS = [
+  { x: 22, delay: 0, color: "#ffd76a" },
+  { x: 55, delay: 1.6, color: "#c9a7ff" },
+  { x: 80, delay: 3.1, color: "#8fe3ff" },
+] as const
+
+const FireworkBurst = ({
+  x,
+  delay,
+  color,
+}: {
+  x: number
+  delay: number
+  color: string
+}) => (
+  <motion.div
+    className="absolute top-[16%]"
+    style={{ left: `${x}%` }}
+    initial={{ opacity: 0, scale: 0.3 }}
+    animate={{ opacity: [0, 1, 0], scale: [0.3, 1.3, 1.5] }}
+    transition={{
+      duration: 2.4,
+      delay,
+      repeat: Infinity,
+      repeatDelay: 4.2,
+      ease: "easeOut",
+    }}
+  >
+    {range(10).map((i) => (
+      <span
+        key={i}
+        className="absolute block h-9 w-0.5 origin-bottom rounded-full"
+        style={{
+          background: `linear-gradient(to top, ${color}, transparent)`,
+          transform: `rotate(${i * 36}deg)`,
+        }}
+      />
+    ))}
+  </motion.div>
+)
+
+// Chandelles flottantes (Harry Potter) — lueurs chaudes qui vacillent,
+// positions fixes réparties le long du bas de l'écran.
+const CANDLE_POSITIONS = [
+  { x: 10, y: 78, delay: 0 },
+  { x: 28, y: 85, delay: 0.6 },
+  { x: 50, y: 80, delay: 1.1 },
+  { x: 68, y: 88, delay: 0.3 },
+  { x: 88, y: 76, delay: 0.9 },
+] as const
+
+const CandleGlow = ({
+  x,
+  y,
+  delay,
+}: {
+  x: number
+  y: number
+  delay: number
+}) => (
+  <motion.div
+    className="absolute rounded-full"
+    style={{
+      left: `${x}%`,
+      top: `${y}%`,
+      width: 6,
+      height: 6,
+      background: "#ffdca0",
+      boxShadow: "0 0 12px 4px rgba(255,200,110,0.6)",
+    }}
+    animate={{ opacity: [0.5, 1, 0.6, 0.9], scale: [1, 1.15, 0.95, 1.05] }}
+    transition={{ duration: 2.4, delay, repeat: Infinity, ease: "easeInOut" }}
+  />
+)
+
 export const ThemeAmbient = ({
   theme,
   reducedMotion,
@@ -455,6 +643,41 @@ export const ThemeAmbient = ({
         </>
       )
 
+    case "fireworks":
+      return (
+        <>
+          <FairytaleCastleSilhouette />
+          {!reducedMotion && (
+            <>
+              <Starfield />
+              {FIREWORK_ORIGINS.map((o, i) => (
+                <FireworkBurst
+                  key={i}
+                  x={o.x}
+                  delay={o.delay}
+                  color={o.color}
+                />
+              ))}
+            </>
+          )}
+        </>
+      )
+
+    case "candles":
+      return (
+        <>
+          <GothicCastleSilhouette />
+          {!reducedMotion && (
+            <>
+              <RisingParticles colors={["#e8c67a", "#8c1414"]} count={10} />
+              {CANDLE_POSITIONS.map((c, i) => (
+                <CandleGlow key={i} x={c.x} y={c.y} delay={c.delay} />
+              ))}
+            </>
+          )}
+        </>
+      )
+
     default:
       return null
   }
@@ -471,7 +694,8 @@ const IMPACT_STAR_CLIP =
   "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)"
 
 // Enveloppe l'avatar du joueur dans le cadre du thème (halo hologramme,
-// fossile, explosion manga, hexagone labo, blason héros).
+// fossile, explosion manga, hexagone labo, blason héros, étoile féerique,
+// médaillon sorcier).
 export const ThemeAvatarFrame = ({
   theme,
   accent,
@@ -630,6 +854,62 @@ export const ThemeAvatarFrame = ({
           <div
             className="h-full w-full overflow-hidden"
             style={{ clipPath: CREST_CLIP, background: "#2a2a2e" }}
+          >
+            {children}
+          </div>
+        </div>
+      )
+
+    // Halo étoilé pastel, rotation lente : plus doux/féerique que le "burst"
+    // manga (comparativement statique et anguleux).
+    case "starburst":
+      return (
+        <div className="relative" style={{ width: size, height: size }}>
+          <div
+            className="pointer-events-none absolute"
+            style={{
+              inset: -size * 0.25,
+              clipPath: IMPACT_STAR_CLIP,
+              background: `radial-gradient(circle, ${accent} 0%, ${accent}00 70%)`,
+              opacity: isWinner ? 0.7 : 0.45,
+              filter: "blur(1px)",
+              animation: reducedMotion
+                ? undefined
+                : "podium-rotate-glow 8s linear infinite",
+            }}
+          />
+          <div
+            className="relative h-full w-full overflow-hidden rounded-full"
+            style={{
+              border: `3px solid ${accent}`,
+              boxShadow: `0 0 ${isWinner ? 30 : 16}px ${accent}80`,
+            }}
+          >
+            {children}
+          </div>
+        </div>
+      )
+
+    // Médaillon à double liseré doré, façon sceau ancien.
+    case "seal":
+      return (
+        <div className="relative" style={{ width: size, height: size }}>
+          <div
+            className="pointer-events-none absolute rounded-full"
+            style={{ inset: -6, border: `2px solid ${accent}`, opacity: 0.6 }}
+          />
+          <div
+            className="pointer-events-none absolute rounded-full"
+            style={{ inset: -2, border: `1px solid ${accent}`, opacity: 0.9 }}
+          />
+          <div
+            className="h-full w-full overflow-hidden rounded-full"
+            style={{
+              border: `3px solid ${accent}`,
+              boxShadow: isWinner
+                ? `0 0 26px ${accent}80`
+                : `0 0 10px ${accent}55`,
+            }}
           >
             {children}
           </div>

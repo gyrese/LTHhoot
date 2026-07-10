@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   X,
   Search,
@@ -8,6 +8,9 @@ import {
   Loader2,
   Check,
   Crop,
+  FolderOpen,
+  HardDrive,
+  Trash2,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -17,7 +20,7 @@ type Props = {
   onSelect: (url: string) => void
 }
 
-type TabType = "upload" | "unsplash" | "giphy"
+type TabType = "library" | "upload" | "unsplash" | "giphy" | "gdrive"
 
 type MediaItem = {
   id: string
@@ -26,13 +29,26 @@ type MediaItem = {
   author?: string
   authorUrl?: string
   title?: string
+  size?: number
+  modifiedAt?: number
+}
+
+/** Formate la taille d'un fichier en texte lisible. */
+const formatSize = (bytes?: number): string => {
+  if (!bytes) return ""
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
 }
 
 const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
-  const [tab, setTab] = useState<TabType>("upload")
+  const [tab, setTab] = useState<TabType>("library")
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<MediaItem[]>([])
+  const [libraryItems, setLibraryItems] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [libraryLoading, setLibraryLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
 
@@ -47,16 +63,36 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  /** Charge la liste des images du serveur (bibliothèque locale). */
+  const loadLibrary = useCallback(async () => {
+    setLibraryLoading(true)
+    try {
+      const res = await fetch("/api/media/library", {
+        headers: {
+          "x-client-id": localStorage.getItem("client_id") ?? "",
+        },
+      })
+      if (!res.ok) throw new Error("Failed to load library")
+      const data = (await res.json()) as { results: MediaItem[] }
+      setLibraryItems(data.results)
+    } catch (err) {
+      console.error("Library load error:", err)
+    } finally {
+      setLibraryLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
-    if (!open) {
-      // Reset state
+    if (open) {
+      setTab("library")
+      setSelectedImageSrc(null)
+      setCropRatio("none")
       setResults([])
       setQuery("")
       setPage(1)
-      setSelectedImageSrc(null)
-      setCropRatio("none")
+      void loadLibrary()
     }
-  }, [open])
+  }, [open, loadLibrary])
 
   if (!open) return null
 
@@ -127,6 +163,63 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
       onClose()
     } else {
       setSelectedImageSrc(item.url)
+    }
+  }
+
+  const handleSelectLibraryItem = (item: MediaItem) => {
+    // Les images de la bibliothèque locale : sélection directe sans crop
+    onSelect(item.url)
+    onClose()
+  }
+
+  const handleDeleteLibraryItem = async (
+    item: MediaItem,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation()
+    if (
+      // eslint-disable-next-line no-alert
+      !confirm(`Supprimer l'image "${item.title}" du serveur ?`)
+    ) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/media/library/${item.id}`, {
+        method: "DELETE",
+        headers: {
+          "x-client-id": localStorage.getItem("client_id") ?? "",
+        },
+      })
+      if (!res.ok) throw new Error("Échec de la suppression")
+      setLibraryItems((prev) => prev.filter((i) => i.id !== item.id))
+      toast.success("Image supprimée")
+    } catch (err) {
+      console.error(err)
+      toast.error("Impossible de supprimer l'image")
+    }
+  }
+
+  const handleGoogleDrivePick = () => {
+    // Ouvre une nouvelle fenêtre pour sélectionner un fichier Google Drive
+    // On utilise un input URL simple pour coller le lien de partage Google Drive
+    const url = prompt(
+      "Collez le lien de partage Google Drive de l'image :\n\n(Assurez-vous que l'image est en accès public ou via lien)",
+    )
+    if (!url?.trim()) return
+
+    // Extraire l'ID de fichier Google Drive et construire l'URL directe
+    const match = url.match(
+      /(?:\/d\/|id=|\/file\/d\/)([a-zA-Z0-9_-]+)/,
+    )
+    if (match?.[1]) {
+      const directUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`
+      onSelect(directUrl)
+      onClose()
+    } else {
+      // Tenter d'utiliser le lien tel quel
+      onSelect(url.trim())
+      onClose()
     }
   }
 
@@ -275,6 +368,15 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
     })
   }
 
+  // Onglets de la modale
+  const tabs = [
+    { id: "library" as const, label: "Bibliothèque", icon: FolderOpen },
+    { id: "upload" as const, label: "Uploader", icon: Upload },
+    { id: "unsplash" as const, label: "Unsplash", icon: ImageIcon },
+    { id: "giphy" as const, label: "GIFs Giphy", icon: Film },
+    { id: "gdrive" as const, label: "Google Drive", icon: HardDrive },
+  ]
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
@@ -406,18 +508,14 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
           <>
             {/* Tabs */}
             <div className="border-border bg-border/5 flex border-b px-6">
-              {[
-                { id: "upload", label: "Uploader", icon: Upload },
-                { id: "unsplash", label: "Unsplash", icon: ImageIcon },
-                { id: "giphy", label: "GIFs Giphy", icon: Film },
-              ].map((tItem) => {
+              {tabs.map((tItem) => {
                 const Icon = tItem.icon
                 const isActive = tab === tItem.id
                 return (
                   <button
                     key={tItem.id}
                     onClick={() => {
-                      setTab(tItem.id as TabType)
+                      setTab(tItem.id)
                       setResults([])
                     }}
                     className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
@@ -434,7 +532,7 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
             </div>
 
             {/* Search Input (For Unsplash / Giphy) */}
-            {tab !== "upload" && (
+            {(tab === "unsplash" || tab === "giphy") && (
               <div className="border-border flex gap-2 border-b px-6 py-4">
                 <div className="relative flex-1">
                   <Search className="text-ink-subtle absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -460,7 +558,59 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
 
             {/* Panel Body */}
             <div className="scrollbar-light flex-1 overflow-y-auto p-6">
-              {tab === "upload" ? (
+              {/* ─── BIBLIOTHÈQUE ─── */}
+              {tab === "library" && (
+                <div className="space-y-4">
+                  {libraryLoading ? (
+                    <div className="flex h-48 items-center justify-center">
+                      <Loader2 className="text-primary size-8 animate-spin" />
+                    </div>
+                  ) : libraryItems.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                      {libraryItems.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => handleSelectLibraryItem(item)}
+                          className="group border-border bg-border/20 hover:border-primary relative aspect-square cursor-pointer overflow-hidden rounded-lg border transition-all hover:shadow"
+                        >
+                          <img
+                            src={item.thumb}
+                            alt={item.title || "media"}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/75 px-2 py-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="truncate text-[9px] text-zinc-300">
+                              {formatSize(item.size)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteLibraryItem(item, e)}
+                              className="text-red-400 transition-colors hover:text-red-300"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-ink-subtle flex h-48 flex-col items-center justify-center gap-2 text-center">
+                      <FolderOpen className="size-8 opacity-40" />
+                      <p className="text-sm">
+                        Aucune image sur le serveur pour le moment.
+                      </p>
+                      <p className="text-xs opacity-60">
+                        Uploadez des images via l'onglet &quot;Uploader&quot;.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ─── UPLOAD ─── */}
+              {tab === "upload" && (
                 <div className="flex h-full flex-col items-center justify-center py-10">
                   <div
                     onClick={handleFileUploadClick}
@@ -486,8 +636,33 @@ const MediaSearchModal = ({ open, onClose, onSelect }: Props) => {
                     onChange={handleFileChange}
                   />
                 </div>
-              ) : (
-                /* Results grid */
+              )}
+
+              {/* ─── GOOGLE DRIVE ─── */}
+              {tab === "gdrive" && (
+                <div className="flex h-full flex-col items-center justify-center py-10">
+                  <div
+                    onClick={handleGoogleDrivePick}
+                    className="border-border-strong hover:border-primary group ease-out-soft flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed px-12 py-16 transition-colors duration-150"
+                  >
+                    <div className="bg-primary-soft text-primary ease-out-soft rounded-full p-4 transition-transform group-hover:scale-110">
+                      <HardDrive className="size-8" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-ink text-sm font-bold">
+                        Importer depuis Google Drive
+                      </p>
+                      <p className="text-ink-subtle mt-1 max-w-xs text-xs">
+                        Collez le lien de partage d'une image Google Drive
+                        (accessible en lien public)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── UNSPLASH / GIPHY RESULTS ─── */}
+              {(tab === "unsplash" || tab === "giphy") && (
                 <div className="space-y-6">
                   {results.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
