@@ -20,6 +20,59 @@ import { extname, resolve } from "path"
 import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
 import { unlink, copyFile, readdir, stat } from "fs/promises"
+import { z } from "zod"
+
+// Schémas TOLÉRANTS des réponses des API média tierces : tous les champs sont
+// optionnels et on parse au plus près de ce qu'on consomme. But : isoler la forme
+// de la réponse externe (qui peut dériver) du reste du code sans faire échouer la
+// recherche entière si un item est légèrement malformé — on filtre ensuite les
+// items sans URL exploitable. Remplace les anciens `as any`.
+const unsplashResponseSchema = z.object({
+  results: z
+    .array(
+      z
+        .object({
+          id: z.string().optional(),
+          urls: z
+            .object({
+              regular: z.string().optional(),
+              small: z.string().optional(),
+              thumb: z.string().optional(),
+            })
+            .optional(),
+          user: z
+            .object({
+              name: z.string().optional(),
+              links: z.object({ html: z.string().optional() }).optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+    )
+    .optional(),
+})
+
+const giphyResponseSchema = z.object({
+  data: z
+    .array(
+      z
+        .object({
+          id: z.string().optional(),
+          title: z.string().optional(),
+          images: z
+            .object({
+              original: z.object({ url: z.string().optional() }).optional(),
+              // Clés natives de l'API Giphy (snake_case) — quotées pour rester
+              // hors du champ de la règle camelcase.
+              "fixed_width": z.object({ url: z.string().optional() }).optional(),
+              "preview_gif": z.object({ url: z.string().optional() }).optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+    )
+    .optional(),
+})
 
 // Natively load .env variables in Node.js if present (useful for local start without dotenv-cli)
 try {
@@ -292,6 +345,32 @@ app.delete(
   },
 )
 
+// ─── Nettoyage des images orphelines ──────────────────────────────────────────
+// Supprime les fichiers de uploads/ que plus aucun quiz/résultat ne référence.
+// SÛR PAR DÉFAUT : dry-run (liste seulement) tant qu'on ne passe pas `?dryRun=0`.
+// La purge réelle exige donc un geste explicite après avoir vérifié la liste.
+app.post(
+  "/api/media/prune",
+  requireManager,
+  (req: express.Request, res: express.Response) => {
+    const dryRun = req.query.dryRun !== "0"
+
+    try {
+      const { kept, removed } = Config.pruneOrphanUploads({ dryRun })
+
+      res.json({
+        dryRun,
+        removed,
+        removedCount: removed.length,
+        keptCount: kept.length,
+      })
+    } catch (err) {
+      console.error("Media prune error:", err)
+      res.status(500).json({ error: "Échec du nettoyage des images" })
+    }
+  },
+)
+
 app.get(
   "/api/media/unsplash",
   requireManager,
@@ -326,14 +405,25 @@ app.get(
         throw new Error(`Unsplash returned status ${response.status}`)
       }
 
-      const data = (await response.json()) as any
-      const results = (data.results || []).map((item: any) => ({
-        id: item.id,
-        url: item.urls?.regular,
-        thumb: item.urls?.small || item.urls?.thumb,
-        author: item.user?.name,
-        authorUrl: item.user?.links?.html,
-      }))
+      const parsed = unsplashResponseSchema.safeParse(await response.json())
+      const items = parsed.success ? (parsed.data.results ?? []) : []
+      const results = items.flatMap((item) => {
+        const url = item?.urls?.regular
+
+        if (!item || !url) {
+          return []
+        }
+
+        return [
+          {
+            id: item.id,
+            url,
+            thumb: item.urls?.small || item.urls?.thumb,
+            author: item.user?.name,
+            authorUrl: item.user?.links?.html,
+          },
+        ]
+      })
 
       res.json({ results })
     } catch (err) {
@@ -373,13 +463,25 @@ app.get(
         throw new Error(`Giphy returned status ${response.status}`)
       }
 
-      const data = (await response.json()) as any
-      const results = (data.data || []).map((item: any) => ({
-        id: item.id,
-        url: item.images?.original?.url,
-        thumb: item.images?.fixed_width?.url || item.images?.preview_gif?.url,
-        title: item.title,
-      }))
+      const parsed = giphyResponseSchema.safeParse(await response.json())
+      const items = parsed.success ? (parsed.data.data ?? []) : []
+      const results = items.flatMap((item) => {
+        const url = item?.images?.original?.url
+
+        if (!item || !url) {
+          return []
+        }
+
+        return [
+          {
+            id: item.id,
+            url,
+            thumb:
+              item.images?.fixed_width?.url || item.images?.preview_gif?.url,
+            title: item.title,
+          },
+        ]
+      })
 
       res.json({ results })
     } catch (err) {
@@ -504,6 +606,21 @@ process.on("unhandledRejection", (reason) => {
 })
 
 Config.init()
+
+// Diagnostic images orphelines au boot : dry-run (log seulement, AUCUNE
+// suppression). Signale combien de fichiers uploads/ ne sont plus référencés et
+// rappelle comment lancer la purge réelle (POST /api/media/prune?dryRun=0).
+try {
+  const { removed } = Config.pruneOrphanUploads({ dryRun: true })
+
+  if (removed.length > 0) {
+    console.log(
+      `[MEDIA] ${removed.length} image(s) orpheline(s) détectée(s) (dry-run, rien supprimé). Purge réelle : POST /api/media/prune?dryRun=0`,
+    )
+  }
+} catch (err) {
+  logHandlerError("media.prune.boot", err)
+}
 
 // Reprise après crash/redéploiement : on recharge les parties persistées avant
 // d'accepter des connexions. Les clients se rebrancheront par clientId.

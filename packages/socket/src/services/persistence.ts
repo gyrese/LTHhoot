@@ -1,12 +1,7 @@
 import type { Player, Quizz, QuestionResult } from "@rahoot/common/types/game"
+import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 import { logHandlerError } from "@rahoot/socket/utils/safe-handler"
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  writeFileSync,
-} from "fs"
+import { existsSync, readFileSync } from "fs"
 import { resolve } from "path"
 
 // Persistance d'état pour une instance UNIQUE (cible ≤ 50 joueurs / 1 partie).
@@ -50,6 +45,7 @@ export interface GameSnapshot {
   } | null
   singleQuizPowerUpsEnabled: boolean
   disabledPowerUps?: string[]
+  demoOnly?: boolean
   savedAt: number
 }
 
@@ -75,33 +71,22 @@ export const snapshotToPlayer = (s: PlayerSnapshot): Player => ({
 })
 
 class Persistence {
-  private readonly dir: string
   private readonly file: string
-  private readonly tmpFile: string
 
   constructor() {
     const configPath = process.env.CONFIG_PATH
       ? resolve(process.env.CONFIG_PATH)
       : resolve(process.cwd(), "../../config")
 
-    this.dir = resolve(configPath, "state")
-    this.file = resolve(this.dir, "games.json")
-    this.tmpFile = resolve(this.dir, "games.json.tmp")
+    // Le dossier `state/` est créé au besoin par writeFileAtomic (mkdir récursif).
+    this.file = resolve(configPath, "state", "games.json")
   }
 
-  private ensureDir(): void {
-    if (!existsSync(this.dir)) {
-      mkdirSync(this.dir, { recursive: true })
-    }
-  }
-
-  // Écriture atomique : on écrit dans un fichier temporaire puis on renomme, pour
-  // ne jamais laisser un games.json tronqué si le process meurt en plein write.
+  // Écriture atomique (tmp + rename) déléguée au util partagé, pour ne jamais
+  // laisser un games.json tronqué si le process meurt en plein write.
   write(json: string): void {
     try {
-      this.ensureDir()
-      writeFileSync(this.tmpFile, json, "utf-8")
-      renameSync(this.tmpFile, this.file)
+      writeFileAtomic(this.file, json)
     } catch (err) {
       logHandlerError("persistence.write", err)
     }

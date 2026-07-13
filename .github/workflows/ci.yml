@@ -36,3 +36,47 @@ jobs:
 
       - name: Test
         run: pnpm --filter socket test
+
+  e2e:
+    name: E2E (crash-recovery, self-hosted)
+    runs-on: ubuntu-latest
+    # Non bloquant tant que le job n'est pas éprouvé en CI : il fournit le signal
+    # sans gater les merges. Retirer une fois stable (ou le rendre "required").
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # La suite auto-hébergée (helpers/recoveryServer) lance le socket compilé
+      # (dist/index.cjs) et sert le build web via `vite preview` — d'où ces builds.
+      - name: Build socket & web
+        run: pnpm --filter @rahoot/socket build && pnpm --filter @rahoot/web build
+
+      - name: Install e2e deps
+        working-directory: ltnhoot-tests
+        run: npm ci
+
+      - name: Install Playwright (chromium)
+        working-directory: ltnhoot-tests
+        run: npx playwright install --with-deps chromium
+
+      # Sous-ensemble DÉTERMINISTE et isolé (ports 3020/3021, config seedée) :
+      # reprise après SIGKILL, livraison/scoring des réponses, garde-fous
+      # d'exception, coupure réseau au clic, multi-joueurs. Ne touche pas la prod.
+      - name: Run e2e (crash-recovery)
+        working-directory: ltnhoot-tests
+        run: npm run test:recovery
