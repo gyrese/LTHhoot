@@ -802,14 +802,18 @@ const Podium = ({
               <div />
             )}
 
-            <PodiumPlace
-              player={top[0]}
-              rank={1}
-              show={apparition >= 3}
-              apparition={apparition}
-              theme={theme}
-              reducedMotion={reducedMotion}
-            />
+            {top[0] ? (
+              <PodiumPlace
+                player={top[0]}
+                rank={1}
+                show={apparition >= 3}
+                apparition={apparition}
+                theme={theme}
+                reducedMotion={reducedMotion}
+              />
+            ) : (
+              <div />
+            )}
 
             {top[2] ? (
               <PodiumPlace

@@ -37,6 +37,7 @@ const QuizzEditorHeader = () => {
     salonImage,
     listingImage,
     questions,
+    currentIndex,
     importQuestions,
     saveQuizz,
     isDirty,
@@ -71,7 +72,11 @@ const QuizzEditorHeader = () => {
 
     setIsTestDriving(true)
     pendingTestDriveRef.current = true
-    socket.emit(EVENTS.GAME.CREATE, { quizId: quizzId, powerUpsEnabled: false })
+    socket.emit(EVENTS.GAME.CREATE, {
+      quizId: quizzId,
+      powerUpsEnabled: false,
+      questionIndex: currentIndex,
+    })
   }
 
   const handleImportCsv = async (file: File) => {

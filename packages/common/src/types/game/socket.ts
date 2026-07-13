@@ -194,6 +194,7 @@ export interface ClientToServerEvents {
           quizId: string
           powerUpsEnabled?: boolean
           disabledPowerUps?: string[]
+          questionIndex?: number
         },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
@@ -218,6 +219,15 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.FINALIZE_OPEN_ANSWERS]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.PAUSE_GAME]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.RESUME_GAME]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.GUEST_AUTH]: (_data: {
+    name: string
+    password: string
+  }) => void
+  [EVENTS.MANAGER.GUEST_CREATE]: (_data: {
+    name: string
+    password: string
+  }) => void
+  [EVENTS.MANAGER.GUEST_DELETE]: (_id: string) => void
 
   // Quizz actions
   [EVENTS.QUIZZ.GET]: (_id: string) => void

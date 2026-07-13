@@ -65,7 +65,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   socket.on(EVENTS.GAME.CREATE, (payload) => {
-    if (!Manager.isLogged(socket)) {
+    const session = Manager.getSession(socket)
+
+    if (!session) {
       socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
       return
@@ -74,6 +76,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     let quizzId = ""
     let powerUpsEnabled = false
     let disabledPowerUps: string[] = []
+    let questionIndex = -1
 
     if (typeof payload === "string") {
       quizzId = payload
@@ -83,14 +86,31 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       disabledPowerUps = Array.isArray(payload.disabledPowerUps)
         ? payload.disabledPowerUps
         : []
+
+      const { questionIndex: qi } = payload
+
+      if (typeof qi === "number") {
+        questionIndex = qi
+      }
     } else {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
 
       return
     }
 
-    const quizzList = Config.quizz()
-    const quizz = quizzList.find((q) => q.id === quizzId)
+    // Un invité ne résout que SA bibliothèque (partie de test uniquement) ;
+    // l'admin résout la sienne ou celle d'un invité via un id préfixé `guest:`.
+    const resolveQuizz = () => {
+      try {
+        return session.role === "guest"
+          ? Config.quizzById(quizzId, session.guestId)
+          : Config.findQuizzByAnyId(quizzId)
+      } catch {
+        return undefined
+      }
+    }
+
+    const quizz = resolveQuizz()
 
     if (!quizz) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
@@ -98,9 +118,23 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz, {
+    let finalQuizz = quizz
+
+    if (
+      questionIndex >= 0 &&
+      questionIndex < quizz.questions.length
+    ) {
+      finalQuizz = {
+        ...quizz,
+        questions: [quizz.questions[questionIndex]],
+      }
+    }
+
+    const game = new Game(io, socket, finalQuizz, {
       powerUpsEnabled,
       disabledPowerUps,
+      // Partie invité = test solo : seul START_DEMO pourra la démarrer.
+      demoOnly: session.role === "guest",
     })
     registry.addGame(game)
   })
@@ -136,7 +170,16 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   )
 
   socket.on(EVENTS.MANAGER.START_GAME, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.start(socket)),
+    withGame(gameId, socket, (game) => {
+      // Partie de test d'un invité : seul le mode démo (solo) est autorisé.
+      if (game.demoOnly) {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.demoOnly")
+
+        return
+      }
+
+      game.start(socket)
+    }),
   )
 
   socket.on(EVENTS.MANAGER.START_DEMO, ({ gameId }) =>
@@ -244,8 +287,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
         return
       }
 
-      const quizzList = Config.quizz()
-      const firstQuizz = quizzList.find((q) => q.id === quizIds[0])
+      const firstQuizz = Config.findQuizzByAnyId(quizIds[0])
 
       if (!firstQuizz) {
         socket.emit(EVENTS.GAME.ERROR_MESSAGE, "quizz.notFound")
