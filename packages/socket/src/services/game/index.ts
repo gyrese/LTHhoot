@@ -55,6 +55,9 @@ class Game {
   } | null = null
   private singleQuizPowerUpsEnabled = false
   private disabledPowerUps: string[] = []
+  // Partie de test créée par un compte invité : seul le mode démo (solo) peut
+  // la démarrer — START_GAME est refusé (cf. handlers/game).
+  readonly demoOnly: boolean = false
   // Accumulateur des résultats de chaque quiz d'une soirée — en mémoire
   // uniquement (pas de persistance disque), sert au calcul des awards
   // "Wrapped" au dernier quiz. Purgé/non pertinent hors mode soirée.
@@ -99,6 +102,7 @@ class Game {
     options?: {
       powerUpsEnabled?: boolean
       disabledPowerUps?: string[]
+      demoOnly?: boolean
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
   ) {
@@ -121,6 +125,7 @@ class Game {
     }
     this.singleQuizPowerUpsEnabled = powerUpsEnabled
     this.disabledPowerUps = options?.disabledPowerUps ?? []
+    this.demoOnly = options?.demoOnly ?? false
 
     this.cooldown = new CooldownTimer(io, this.gameId)
     this.playerManager = new PlayerManager(io, this.gameId)
@@ -182,6 +187,7 @@ class Game {
         : null,
       singleQuizPowerUpsEnabled: this.singleQuizPowerUpsEnabled,
       disabledPowerUps: this.disabledPowerUps,
+      demoOnly: this.demoOnly,
       savedAt: Date.now(),
     }
   }
@@ -200,6 +206,7 @@ class Game {
     const game = new Game(io, null, snapshot.quizz, {
       powerUpsEnabled: snapshot.singleQuizPowerUpsEnabled,
       disabledPowerUps: snapshot.disabledPowerUps,
+      demoOnly: snapshot.demoOnly,
       restore: {
         gameId: snapshot.gameId,
         inviteCode: snapshot.inviteCode,
@@ -282,7 +289,7 @@ class Game {
   ) {
     this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
     this.disabledPowerUps = disabledPowerUps
-    const firstQuizz = Config.quizz().find((q) => q.id === quizIds[0])
+    const firstQuizz = Config.findQuizzByAnyId(quizIds[0])
 
     if (!firstQuizz) {
       return
@@ -314,9 +321,7 @@ class Game {
 
     if (isLastQuiz) {
       // Thème du podium final de soirée : réglage du dernier quiz joué.
-      const lastQuizz = Config.quizz().find(
-        (q) => q.id === quizIds[currentIndex],
-      )
+      const lastQuizz = Config.findQuizzByAnyId(quizIds[currentIndex])
       const data = {
         subject: result.subject,
         top: leaderboard.slice(0, 3),
@@ -381,7 +386,7 @@ class Game {
     }
 
     const { quizIds, currentIndex } = this.eveningSession
-    const quizz = Config.quizz().find((q) => q.id === quizIds[currentIndex])
+    const quizz = Config.findQuizzByAnyId(quizIds[currentIndex])
 
     if (!quizz) {
       return

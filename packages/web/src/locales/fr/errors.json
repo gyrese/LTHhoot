@@ -6,6 +6,7 @@
     "usernameTaken": "Ce pseudo est déjà pris"
   },
   "game": {
+    "demoOnly": "Cette partie de test ne peut être lancée qu'en mode démo",
     "expired": "La partie a expiré",
     "kickedByManager": "Vous avez été expulsé par le manager",
     "managerAlreadyConnected": "Un manager est déjà connecté",
@@ -17,6 +18,10 @@
   },
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",
+    "guestAlreadyExists": "Un compte invité avec ce nom existe déjà",
+    "guestInvalidName": "Nom de compte invalide",
+    "guestInvalidPassword": "Le mot de passe doit faire au moins 4 caractères",
+    "guestNotFound": "Compte invité introuvable",
     "invalidPassword": "Mot de passe invalide",
     "passwordNotConfigured": "Mot de passe manager non configuré",
     "tooManyAttempts": "Trop de tentatives. Réessayez dans une minute."
@@ -34,6 +39,7 @@
   "quizz": {
     "answerEmpty": "Une réponse ne peut pas être vide",
     "conflict": "Ce quiz a été modifié ailleurs depuis votre dernière ouverture",
+    "guestReadonly": "Les quiz invités sont en lecture seule ici",
     "failedToDelete": "Suppression du quizz a échoué",
     "failedToSave": "Le quizz est incomplet, vérifiez que chaque question a un titre et au moins une bonne réponse",
     "failedToUpdate": "La mise à jour du quizz a échoué",

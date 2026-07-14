@@ -161,6 +161,7 @@ const createSocketClient = (
       const playerGameId = usePlayerStore.getState().gameId
       const managerGameId = useManagerStore.getState().gameId
       const pwd = localStorage.getItem("rc_pwd")
+      const guestRaw = localStorage.getItem("rc_guest")
 
       if (playerGameId) {
         console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
@@ -171,7 +172,19 @@ const createSocketClient = (
         // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
         // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
         // même après une déconnexion réseau ou un redémarrage du serveur.
-        if (pwd) {
+        // Une session invité (rc_guest) est exclusive de la session admin (rc_pwd).
+        if (guestRaw) {
+          try {
+            const { name, password } = JSON.parse(guestRaw)
+
+            console.log(
+              `[SESSION] Restauration authentification Invité (guest=true)`,
+            )
+            socketClient.emit(EVENTS.MANAGER.GUEST_AUTH, { name, password })
+          } catch {
+            localStorage.removeItem("rc_guest")
+          }
+        } else if (pwd) {
           console.log(
             `[SESSION] Restauration authentification Manager (auth=true)`,
           )

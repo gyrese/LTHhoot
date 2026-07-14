@@ -11,7 +11,8 @@ const REMOTE_PIN = "1234"
 export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.MANAGER.GET_CONFIG,
-    manager.withAuth(socket, () => {
+    // Admin ET invité : emitConfig scope la réponse selon le rôle de la session.
+    manager.withAnyAuth(socket, () => {
       emitConfig(socket)
     }),
   )
@@ -19,6 +20,74 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(EVENTS.MANAGER.LOGOUT, () => {
     manager.logout(socket)
   })
+
+  // Connexion d'un compte invité (nom + mot de passe créés par l'admin).
+  // Même rate-limit IP que l'auth admin : les deux flux partagent le compteur.
+  socket.on(EVENTS.MANAGER.GUEST_AUTH, ({ name, password }) => {
+    try {
+      if (manager.isRateLimited(socket)) {
+        socket.emit(
+          EVENTS.MANAGER.ERROR_MESSAGE,
+          "errors:manager.tooManyAttempts",
+        )
+
+        return
+      }
+
+      const guest =
+        typeof name === "string" ? Config.guestByName(name) : undefined
+
+      if (
+        !guest ||
+        typeof password !== "string" ||
+        !verifyPassword(password, guest.passwordHash)
+      ) {
+        manager.registerFailedAuth(socket)
+        socket.emit(
+          EVENTS.MANAGER.ERROR_MESSAGE,
+          "errors:manager.invalidPassword",
+        )
+
+        return
+      }
+
+      manager.loginGuest(socket, guest.id)
+      emitConfig(socket)
+    } catch (error) {
+      console.error("Failed to authenticate guest:", error)
+      socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, "errors:failedToReadConfig")
+    }
+  })
+
+  socket.on(
+    EVENTS.MANAGER.GUEST_CREATE,
+    manager.withAuth(socket, ({ name, password }) => {
+      try {
+        Config.createGuest(name, password)
+        emitConfig(socket)
+      } catch (error) {
+        console.error("Failed to create guest:", error)
+        const message =
+          error instanceof Error ? error.message : "errors:failedToReadConfig"
+        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.MANAGER.GUEST_DELETE,
+    manager.withAuth(socket, (id) => {
+      try {
+        Config.deleteGuest(id)
+        emitConfig(socket)
+      } catch (error) {
+        console.error("Failed to delete guest:", error)
+        const message =
+          error instanceof Error ? error.message : "errors:failedToReadConfig"
+        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
+      }
+    }),
+  )
 
   socket.on(EVENTS.MANAGER.AUTH, (password) => {
     try {

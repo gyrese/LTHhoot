@@ -22,6 +22,12 @@ const ManagerAuthPage = () => {
   }, [isConnected])
 
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
+    // Symétrique de la page invité : une session invitée encore active ne
+    // doit pas aspirer la page de connexion admin vers le dashboard.
+    if (data.role === "guest") {
+      return
+    }
+
     setConfig(data)
     navigate({ to: "/manager/config" })
   })
@@ -29,6 +35,8 @@ const ManagerAuthPage = () => {
   const handleAuth = (password: string) => {
     // Stocké en localStorage : le PIN doit survivre à la fermeture de l'onglet
     // pour que la ré-authentification automatique fonctionne (cf. socket-context).
+    // Exclusif de la session invité (rc_guest) : une seule identité à la fois.
+    localStorage.removeItem("rc_guest")
     localStorage.setItem("rc_pwd", password)
     socket?.emit(EVENTS.MANAGER.AUTH, password)
   }

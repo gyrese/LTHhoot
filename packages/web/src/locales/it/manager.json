@@ -49,5 +49,18 @@
     "newFolderPlaceholder": "Nome cartella",
     "deleteFolder": "Elimina cartella",
     "newFolder": "Nuova cartella"
+  },
+  "guest": {
+    "modalTitle": "Account ospite",
+    "modalDesc": "Un account ospite accede da /manager/guest e ha una propria libreria: crea i suoi quiz senza vedere i tuoi. I suoi quiz compaiono nella cartella «Invités».",
+    "createTitle": "Crea un account",
+    "namePlaceholder": "Nome dell'account ospite",
+    "passwordPlaceholder": "Password (min. 4 caratteri)",
+    "create": "Crea",
+    "createInvalid": "Nome obbligatorio e password di almeno 4 caratteri",
+    "empty": "Nessun account ospite per ora",
+    "delete": "Elimina l'account",
+    "deleteConfirm": "Eliminare l'account «{{name}}»? Anche la sua libreria di quiz verrà eliminata.",
+    "testQuizz": "Prova il quiz"
   }
 }

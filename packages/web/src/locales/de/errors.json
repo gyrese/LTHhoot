@@ -12,13 +12,18 @@
     "managerDisconnected": "Manager getrennt",
     "noPlayersConnected": "Keine Spieler verbunden",
     "notFound": "Spiel nicht gefunden",
-    "playerAlreadyConnected": "Spieler bereits verbunden"
+    "playerAlreadyConnected": "Spieler bereits verbunden",
+    "demoOnly": "Dieses Testspiel kann nur im Demo-Modus gestartet werden"
   },
   "manager": {
     "failedToReadConfig": "Spielkonfiguration konnte nicht gelesen werden",
     "invalidPassword": "Ungültiges Passwort",
     "passwordNotConfigured": "Manager-Passwort ist nicht konfiguriert",
-    "tooManyAttempts": "Zu viele Versuche. Bitte in einer Minute erneut versuchen."
+    "tooManyAttempts": "Zu viele Versuche. Bitte in einer Minute erneut versuchen.",
+    "guestAlreadyExists": "Ein Gast-Konto mit diesem Namen existiert bereits",
+    "guestInvalidName": "Ungültiger Kontoname",
+    "guestInvalidPassword": "Das Passwort muss mindestens 4 Zeichen lang sein",
+    "guestNotFound": "Gast-Konto nicht gefunden"
   },
   "upload": {
     "failed": "Upload fehlgeschlagen. Stellen Sie sicher, dass der Server läuft."
@@ -36,6 +41,7 @@
     "tooFewAnswers": "Eine Frage muss mindestens 2 Antworten haben",
     "tooFewCorrectAnswers": "Mindestens eine richtige Antwort ist erforderlich",
     "tooFewImages": "Mindestens ein Bild ist erforderlich",
-    "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben"
+    "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben",
+    "guestReadonly": "Gast-Quizze sind hier schreibgeschützt"
   }
 }

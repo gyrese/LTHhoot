@@ -34,7 +34,10 @@ const ManagerConfigPage = () => {
   })
 
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
-    navigate({ to: "/manager" })
+    // Une session invitée se ré-authentifie sur son propre écran de connexion.
+    navigate({
+      to: localStorage.getItem("rc_guest") ? "/manager/guest" : "/manager",
+    })
   })
 
   useEvent(

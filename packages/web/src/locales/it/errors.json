@@ -12,13 +12,18 @@
     "managerDisconnected": "Gestore disconnesso",
     "noPlayersConnected": "Nessun giocatore connesso",
     "notFound": "Partita non trovata",
-    "playerAlreadyConnected": "Giocatore già connesso"
+    "playerAlreadyConnected": "Giocatore già connesso",
+    "demoOnly": "Questa partita di prova può essere avviata solo in modalità demo"
   },
   "manager": {
     "failedToReadConfig": "Impossibile leggere la configurazione del gioco",
     "invalidPassword": "Password non valida",
     "passwordNotConfigured": "La password del gestore non è configurata",
-    "tooManyAttempts": "Troppi tentativi. Riprova tra un minuto."
+    "tooManyAttempts": "Troppi tentativi. Riprova tra un minuto.",
+    "guestAlreadyExists": "Esiste già un account ospite con questo nome",
+    "guestInvalidName": "Nome account non valido",
+    "guestInvalidPassword": "La password deve contenere almeno 4 caratteri",
+    "guestNotFound": "Account ospite non trovato"
   },
   "upload": {
     "failed": "Caricamento fallito. Assicurarsi che il server sia in esecuzione."
@@ -36,6 +41,7 @@
     "tooFewAnswers": "Una domanda deve avere almeno 2 risposte",
     "tooFewCorrectAnswers": "È richiesta almeno una risposta corretta",
     "tooFewImages": "È richiesta almeno un'immagine",
-    "tooManyAnswers": "Una domanda non può avere più di 4 risposte"
+    "tooManyAnswers": "Una domanda non può avere più di 4 risposte",
+    "guestReadonly": "I quiz degli ospiti sono di sola lettura qui"
   }
 }

@@ -9,11 +9,12 @@ const getClientId = (socket: SocketContext["socket"]) =>
 const getClientIp = (socket: SocketContext["socket"]) =>
   socket.handshake.address || "unknown"
 
-export const emitConfig = (socket: SocketContext["socket"]) =>
-  socket.emit(EVENTS.MANAGER.CONFIG, {
-    quizz: Config.quizzMeta(),
-    results: Config.resultsMeta(),
-  })
+// Session d'un client authentifié. Le rôle `admin` (mot de passe manager)
+// conserve tous les droits ; le rôle `guest` est confiné à sa propre
+// bibliothèque de quiz (cf. services/config, scoping `owner`).
+export type ManagerSession =
+  | { role: "admin" }
+  | { role: "guest"; guestId: string }
 
 // Rate-limiting des tentatives d'authentification manager. Le verrouillage se
 // fait par IP (et non par clientId, qui est fourni par le client donc facile à
@@ -23,16 +24,22 @@ const MAX_AUTH_ATTEMPTS = 5
 const AUTH_WINDOW_MS = 60_000
 
 class Manager {
-  private loggedClients = new Set<string>()
+  private loggedClients = new Map<string, ManagerSession>()
   private failedAuth = new Map<string, { count: number; resetAt: number }>()
 
+  // Admin uniquement : tous les gardes existants (lancement de partie,
+  // résultats, réglages…) restent donc fermés aux invités par défaut.
   isLogged(socket: Socket) {
-    return this.loggedClients.has(getClientId(socket))
+    return this.loggedClients.get(getClientId(socket))?.role === "admin"
   }
 
-  // Utilisé hors-socket (endpoint HTTP /upload) : on ne dispose alors que du
-  // clientId transmis par le client, qui doit figurer parmi les clients
-  // authentifiés via le mot de passe manager.
+  getSession(socket: Socket): ManagerSession | undefined {
+    return this.loggedClients.get(getClientId(socket))
+  }
+
+  // Utilisé hors-socket (endpoints HTTP /upload, médias) : on ne dispose alors
+  // que du clientId transmis par le client, qui doit correspondre à une session
+  // authentifiée — admin OU invité (les invités uploadent aussi des images).
   isAuthorized(clientId: string | undefined) {
     return Boolean(clientId) && this.loggedClients.has(clientId as string)
   }
@@ -69,7 +76,12 @@ class Manager {
   }
 
   login(socket: Socket) {
-    this.loggedClients.add(getClientId(socket))
+    this.loggedClients.set(getClientId(socket), { role: "admin" })
+    this.failedAuth.delete(getClientIp(socket))
+  }
+
+  loginGuest(socket: Socket, guestId: string) {
+    this.loggedClients.set(getClientId(socket), { role: "guest", guestId })
     this.failedAuth.delete(getClientIp(socket))
   }
 
@@ -77,6 +89,7 @@ class Manager {
     this.loggedClients.delete(getClientId(socket))
   }
 
+  // Garde admin strict (historique) : un invité reçoit UNAUTHORIZED.
   withAuth<T extends unknown[]>(
     socket: Socket,
     handler: (..._args: T) => void,
@@ -91,6 +104,64 @@ class Manager {
       handler(..._args)
     }
   }
+
+  // Garde admin OU invité : la session est passée au handler pour scoper les
+  // opérations (bibliothèque de quiz) sans jamais faire confiance au client.
+  withAnyAuth<T extends unknown[]>(
+    socket: Socket,
+    handler: (_session: ManagerSession, ..._args: T) => void,
+  ) {
+    return (..._args: T) => {
+      const session = this.getSession(socket)
+
+      if (!session) {
+        socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+        return
+      }
+
+      handler(session, ..._args)
+    }
+  }
 }
 
-export default new Manager()
+const manager = new Manager()
+
+// Config émise selon le rôle de la session : l'admin voit sa bibliothèque, les
+// quiz invités (dossier virtuel « Invités/<nom> ») et la liste des comptes ;
+// un invité ne voit QUE sa bibliothèque (ni résultats, ni quiz admin, ni hash).
+export const emitConfig = (socket: SocketContext["socket"]) => {
+  const session = manager.getSession(socket)
+
+  if (!session) {
+    socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+    return
+  }
+
+  if (session.role === "guest") {
+    const guest = Config.guestById(session.guestId)
+
+    socket.emit(EVENTS.MANAGER.CONFIG, {
+      quizz: Config.quizzMeta(session.guestId),
+      results: [],
+      role: "guest",
+      guestName: guest?.name ?? session.guestId,
+    })
+
+    return
+  }
+
+  socket.emit(EVENTS.MANAGER.CONFIG, {
+    quizz: [...Config.quizzMeta(), ...Config.allGuestQuizzMeta()],
+    results: Config.resultsMeta(),
+    role: "admin",
+    guests: Config.listGuests().map(({ id, name, createdAt }) => ({
+      id,
+      name,
+      createdAt,
+    })),
+  })
+}
+
+export default manager

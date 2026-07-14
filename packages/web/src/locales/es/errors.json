@@ -12,13 +12,18 @@
     "managerDisconnected": "El administrador se ha desconectado",
     "noPlayersConnected": "No hay jugadores conectados",
     "notFound": "Partida no encontrada",
-    "playerAlreadyConnected": "El jugador ya está conectado"
+    "playerAlreadyConnected": "El jugador ya está conectado",
+    "demoOnly": "Esta partida de prueba solo puede iniciarse en modo demo"
   },
   "manager": {
     "failedToReadConfig": "Error al leer la configuración del juego",
     "invalidPassword": "Contraseña incorrecta",
     "passwordNotConfigured": "La contraseña del administrador no está configurada",
-    "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en un minuto."
+    "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en un minuto.",
+    "guestAlreadyExists": "Ya existe una cuenta de invitado con este nombre",
+    "guestInvalidName": "Nombre de cuenta no válido",
+    "guestInvalidPassword": "La contraseña debe tener al menos 4 caracteres",
+    "guestNotFound": "Cuenta de invitado no encontrada"
   },
   "upload": {
     "failed": "La carga falló. Asegúrese de que el servidor esté en funcionamiento."
@@ -36,6 +41,7 @@
     "tooFewAnswers": "Una pregunta debe tener al menos 2 respuestas",
     "tooFewCorrectAnswers": "Se requiere al menos una respuesta correcta",
     "tooFewImages": "Se requiere al menos una imagen",
-    "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas"
+    "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas",
+    "guestReadonly": "Los quizzes de invitados son de solo lectura aquí"
   }
 }

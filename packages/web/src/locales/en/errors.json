@@ -12,13 +12,18 @@
     "managerDisconnected": "Manager disconnected",
     "noPlayersConnected": "No players connected",
     "notFound": "Game not found",
-    "playerAlreadyConnected": "Player already connected"
+    "playerAlreadyConnected": "Player already connected",
+    "demoOnly": "This test game can only be started in demo mode"
   },
   "manager": {
     "failedToReadConfig": "Failed to read game config",
     "invalidPassword": "Invalid password",
     "passwordNotConfigured": "Manager password is not configured",
-    "tooManyAttempts": "Too many attempts. Try again in a minute."
+    "tooManyAttempts": "Too many attempts. Try again in a minute.",
+    "guestAlreadyExists": "A guest account with this name already exists",
+    "guestInvalidName": "Invalid account name",
+    "guestInvalidPassword": "Password must be at least 4 characters",
+    "guestNotFound": "Guest account not found"
   },
   "upload": {
     "failed": "Upload failed. Make sure the server is running."
@@ -44,6 +49,7 @@
     "tooFewAnswers": "A question must have at least 2 answers",
     "tooFewCorrectAnswers": "At least one correct answer is required",
     "tooFewImages": "At least one image is required",
-    "tooManyAnswers": "A question cannot have more than 4 answers"
+    "tooManyAnswers": "A question cannot have more than 4 answers",
+    "guestReadonly": "Guest quizzes are read-only here"
   }
 }

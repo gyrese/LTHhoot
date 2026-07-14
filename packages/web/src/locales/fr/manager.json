@@ -29,6 +29,19 @@
     "powerUps": "Power-ups",
     "powerUpsToggle": "Activer ou désactiver les power-ups pour cette soirée"
   },
+  "guest": {
+    "modalTitle": "Comptes invités",
+    "modalDesc": "Un compte invité se connecte sur /manager/guest et dispose de sa propre bibliothèque : il crée ses quiz sans voir les vôtres. Vous retrouvez ses quiz dans le dossier « Invités ».",
+    "createTitle": "Créer un compte",
+    "namePlaceholder": "Nom du compte invité",
+    "passwordPlaceholder": "Mot de passe (4 caractères min.)",
+    "create": "Créer",
+    "createInvalid": "Nom requis et mot de passe d'au moins 4 caractères",
+    "empty": "Aucun compte invité pour le moment",
+    "delete": "Supprimer le compte",
+    "deleteConfirm": "Supprimer le compte « {{name}} » ? Sa bibliothèque de quiz sera aussi supprimée.",
+    "testQuizz": "Tester le quiz"
+  },
   "result": {
     "delete": "Supprimer le résultat",
     "deleteConfirm": "Supprimer le résultat \"{{name}}\" ? Cette action est irréversible.",

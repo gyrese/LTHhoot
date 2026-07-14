@@ -49,5 +49,18 @@
     "newFolderPlaceholder": "Ordnername",
     "deleteFolder": "Ordner löschen",
     "newFolder": "Neuer Ordner"
+  },
+  "guest": {
+    "modalTitle": "Gast-Konten",
+    "modalDesc": "Ein Gast-Konto meldet sich unter /manager/guest an und hat eine eigene Bibliothek: Es erstellt eigene Quizze, ohne deine zu sehen. Seine Quizze erscheinen im Ordner „Invités“.",
+    "createTitle": "Konto erstellen",
+    "namePlaceholder": "Name des Gast-Kontos",
+    "passwordPlaceholder": "Passwort (mind. 4 Zeichen)",
+    "create": "Erstellen",
+    "createInvalid": "Name erforderlich und Passwort mit mindestens 4 Zeichen",
+    "empty": "Noch keine Gast-Konten",
+    "delete": "Konto löschen",
+    "deleteConfirm": "Konto „{{name}}“ löschen? Seine Quiz-Bibliothek wird ebenfalls gelöscht.",
+    "testQuizz": "Quiz testen"
   }
 }

@@ -3,7 +3,10 @@ import Logo from "@rahoot/web/components/Logo"
 import LanguageSwitcher from "@rahoot/web/components/LanguageSwitcher"
 import { EVENTS } from "@rahoot/common/constants"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
-import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
+import {
+  useEvent,
+  useSocket,
+} from "@rahoot/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { ConfigProvider } from "@rahoot/web/features/manager/contexts/config-context"
 import DashboardSidebar from "./DashboardSidebar"
@@ -11,7 +14,16 @@ import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
 import EveningFooter from "./EveningFooter"
 import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
-import { LogOut, Play, PartyPopper, Sparkles } from "lucide-react"
+import GuestAccountsModal from "./GuestAccountsModal"
+import { useNavigate } from "@tanstack/react-router"
+import {
+  LogOut,
+  Play,
+  PlayCircle,
+  PartyPopper,
+  Sparkles,
+  Users,
+} from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -23,7 +35,13 @@ const ManagerDashboard = ({ data }: Props) => {
   const { reset } = useManagerStore()
   const { socket } = useSocket()
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  // Session invité : bibliothèque personnelle uniquement, pas de vraie partie
+  // (le bouton Démarrer devient un test solo en mode démo), pas de soirée,
+  // pas de power-ups, pas de résultats.
+  const isGuest = data.role === "guest"
   const [selectedQuizz, setSelectedQuizz] = useState<string | null>(null)
+  const [guestsModalOpen, setGuestsModalOpen] = useState(false)
   const [activeFolder, setActiveFolder] = useState<string | null>(null)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [search, setSearch] = useState("")
@@ -40,7 +58,12 @@ const ManagerDashboard = ({ data }: Props) => {
 
   const handleLogout = () => {
     socket?.emit(EVENTS.MANAGER.LOGOUT)
+    // Sans purge, socket-context ré-authentifierait automatiquement à la
+    // prochaine reconnexion (cf. restauration de session).
+    localStorage.removeItem("rc_pwd")
+    localStorage.removeItem("rc_guest")
     reset(true)
+    navigate({ to: isGuest ? "/manager/guest" : "/manager" })
   }
 
   const handleMoveToFolder = (quizzId: string, folder: string | null) => {
@@ -56,10 +79,19 @@ const ManagerDashboard = ({ data }: Props) => {
 
     socket?.emit(EVENTS.GAME.CREATE, {
       quizId: selectedQuizz,
-      powerUpsEnabled: singlePowerUpsEnabled,
-      disabledPowerUps,
+      powerUpsEnabled: isGuest ? false : singlePowerUpsEnabled,
+      disabledPowerUps: isGuest ? [] : disabledPowerUps,
     })
   }
+
+  // Test solo invité : la partie vient d'être créée (demoOnly côté serveur),
+  // on la bascule aussitôt en mode démo — même flux que le test-drive de
+  // l'éditeur. La navigation vers /party/manager est faite par la page config.
+  useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId }) => {
+    if (isGuest) {
+      socket?.emit(EVENTS.MANAGER.START_DEMO, { gameId })
+    }
+  })
 
   const handleEveningStart = () => {
     if (eveningQuizIds.length < 2) {
@@ -98,9 +130,26 @@ const ManagerDashboard = ({ data }: Props) => {
 
         {/* Header */}
         <header className="relative z-10 flex h-20 shrink-0 items-center justify-between border-b border-white/10 bg-black/30 px-5 backdrop-blur-md">
-          <Logo className="h-16" />
+          <div className="flex items-center gap-3">
+            <Logo className="h-16" />
+            {isGuest && (
+              <span className="flex items-center gap-1.5 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-300 ring-1 ring-orange-500/40">
+                <Users className="size-3.5" />
+                {data.guestName}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+            {!isGuest && (
+              <button
+                onClick={() => setGuestsModalOpen(true)}
+                className="rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                title={t("manager:guest.modalTitle", "Comptes invités")}
+              >
+                <Users className="size-4" />
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
@@ -158,23 +207,25 @@ const ManagerDashboard = ({ data }: Props) => {
         ) : (
           <footer className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-white/10 bg-black/30 px-5 backdrop-blur-md">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setEveningMode(true)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    setEveningMode(true)
-                  }
-                }}
-                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/60 ring-1 ring-white/10 transition-colors select-none hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40"
-                title={t("manager:evening.enable", "Mode Soirée")}
-              >
-                <PartyPopper className="size-4" />
-                <span className="hidden sm:inline">
-                  {t("manager:evening.mode", "Mode Soirée")}
-                </span>
-              </div>
+              {!isGuest && (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setEveningMode(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setEveningMode(true)
+                    }
+                  }}
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/60 ring-1 ring-white/10 transition-colors select-none hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40"
+                  title={t("manager:evening.enable", "Mode Soirée")}
+                >
+                  <PartyPopper className="size-4" />
+                  <span className="hidden sm:inline">
+                    {t("manager:evening.mode", "Mode Soirée")}
+                  </span>
+                </div>
+              )}
               <p className="truncate text-sm text-white/50">
                 {selectedName ? (
                   <span className="font-semibold text-white">
@@ -186,23 +237,25 @@ const ManagerDashboard = ({ data }: Props) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setPowerUpsModalMode("single")
-                  setPowerUpsModalOpen(true)
-                }}
-                className={clsx(
-                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
-                  singlePowerUpsEnabled
-                    ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
-                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
-                )}
-                title={t("manager:quizz.powerUpsToggle")}
-              >
-                <Sparkles className="size-3.5" />
-                <span>{t("manager:quizz.powerUps")}</span>
-              </button>
+              {!isGuest && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPowerUpsModalMode("single")
+                    setPowerUpsModalOpen(true)
+                  }}
+                  className={clsx(
+                    "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+                    singlePowerUpsEnabled
+                      ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
+                      : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+                  )}
+                  title={t("manager:quizz.powerUpsToggle")}
+                >
+                  <Sparkles className="size-3.5" />
+                  <span>{t("manager:quizz.powerUps")}</span>
+                </button>
+              )}
 
               <button
                 onClick={handleStart}
@@ -214,13 +267,29 @@ const ManagerDashboard = ({ data }: Props) => {
                     : "cursor-not-allowed bg-white/10 text-white/30",
                 )}
               >
-                <Play className="size-4 fill-current" />
-                {t("manager:quizz.startGame")}
+                {isGuest ? (
+                  <>
+                    <PlayCircle className="size-4" />
+                    {t("manager:guest.testQuizz", "Tester le quiz")}
+                  </>
+                ) : (
+                  <>
+                    <Play className="size-4 fill-current" />
+                    {t("manager:quizz.startGame")}
+                  </>
+                )}
               </button>
             </div>
           </footer>
         )}
       </div>
+      {!isGuest && (
+        <GuestAccountsModal
+          isOpen={guestsModalOpen}
+          onClose={() => setGuestsModalOpen(false)}
+          guests={data.guests ?? []}
+        />
+      )}
       <PowerUpsSettingsModal
         isOpen={powerUpsModalOpen}
         onClose={() => setPowerUpsModalOpen(false)}

@@ -1,17 +1,50 @@
 import { EVENTS } from "@rahoot/common/constants"
+import {
+  GUEST_FOLDER,
+  isGuestQuizId,
+  parseGuestQuizId,
+} from "@rahoot/common/utils/guest"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
-import manager, { emitConfig } from "@rahoot/socket/services/manager"
+import manager, {
+  emitConfig,
+  type ManagerSession,
+} from "@rahoot/socket/services/manager"
 import { AIService } from "@rahoot/socket/services/ai"
+
+// Bibliothèque ciblée par une session : celle de l'invité connecté, ou celle
+// de l'admin. Le scoping vient TOUJOURS de la session serveur, jamais du client.
+const ownerFor = (session: ManagerSession) =>
+  session.role === "guest" ? session.guestId : undefined
+
+// Lecture : l'admin peut résoudre un id préfixé `guest:` (dossier Invités,
+// export, lancement) vers la bibliothèque du compte correspondant.
+const readScope = (session: ManagerSession, id: string) => {
+  if (session.role === "admin") {
+    const parsed = parseGuestQuizId(id)
+
+    if (parsed) {
+      return { id: parsed.quizId, owner: parsed.guestId }
+    }
+  }
+
+  return { id, owner: ownerFor(session) }
+}
+
+// Écriture : les quiz invités sont en lecture seule pour l'admin (v1).
+const isReadonlyForSession = (session: ManagerSession, id: string) =>
+  session.role === "admin" && isGuestQuizId(id)
 
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.QUIZZ.GET,
-    manager.withAuth(socket, (id) => {
+    manager.withAnyAuth(socket, (session, id) => {
       try {
-        const quizz = Config.quizzById(id)
+        const scope = readScope(session, id)
+        const quizz = Config.quizzById(scope.id, scope.owner)
 
-        socket.emit(EVENTS.QUIZZ.DATA, quizz)
+        // On renvoie l'id tel que le client le connaît (préfixé côté admin).
+        socket.emit(EVENTS.QUIZZ.DATA, { ...quizz, id })
       } catch (error) {
         console.error("Failed to get quizz:", error)
         socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.notFound")
@@ -21,9 +54,9 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.SAVE,
-    manager.withAuth(socket, (data) => {
+    manager.withAnyAuth(socket, (session, data) => {
       try {
-        const { id, updatedAt } = Config.saveQuizz(data)
+        const { id, updatedAt } = Config.saveQuizz(data, ownerFor(session))
 
         socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id, updatedAt })
         emitConfig(socket)
@@ -38,9 +71,15 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.DELETE,
-    manager.withAuth(socket, (id) => {
+    manager.withAnyAuth(socket, (session, id) => {
       try {
-        Config.deleteQuizz(id)
+        if (isReadonlyForSession(session, id)) {
+          socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+
+          return
+        }
+
+        Config.deleteQuizz(id, ownerFor(session))
 
         emitConfig(socket)
       } catch (error) {
@@ -52,9 +91,19 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.UPDATE,
-    manager.withAuth(socket, ({ id, ...data }) => {
+    manager.withAnyAuth(socket, (session, { id, ...data }) => {
       try {
-        const { id: newId, updatedAt } = Config.updateQuizz(id, data)
+        if (isReadonlyForSession(session, id)) {
+          socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+
+          return
+        }
+
+        const { id: newId, updatedAt } = Config.updateQuizz(
+          id,
+          data,
+          ownerFor(session),
+        )
 
         socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId, updatedAt })
         emitConfig(socket)
@@ -69,9 +118,26 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.MOVE_FOLDER,
-    manager.withAuth(socket, ({ id, folder }) => {
+    manager.withAnyAuth(socket, (session, { id, folder }) => {
       try {
-        Config.moveToFolder(id, folder)
+        if (isReadonlyForSession(session, id)) {
+          socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+
+          return
+        }
+
+        // « Invités » est un dossier virtuel (vue admin des bibliothèques
+        // guest) : on refuse d'y ranger un vrai quiz admin.
+        if (
+          session.role === "admin" &&
+          (folder === GUEST_FOLDER || folder?.startsWith(`${GUEST_FOLDER}/`))
+        ) {
+          socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+
+          return
+        }
+
+        Config.moveToFolder(id, folder, ownerFor(session))
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to move quizz to folder:", error)
@@ -82,9 +148,9 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_GENERATE,
-    manager.withAuth(
+    manager.withAnyAuth(
       socket,
-      async ({ prompt, count, questionTypes, level }) => {
+      async (_session, { prompt, count, questionTypes, level }) => {
         try {
           const questions = await AIService.generateQuestions({
             prompt,
@@ -110,7 +176,7 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_REPHRASE,
-    manager.withAuth(socket, async ({ currentText }) => {
+    manager.withAnyAuth(socket, async (_session, { currentText }) => {
       try {
         const rephrased = await AIService.rephraseQuestion(currentText)
 
@@ -128,24 +194,27 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS,
-    manager.withAuth(socket, async ({ correctAnswer, questionContext }) => {
-      try {
-        const wrongAnswers = await AIService.generateWrongAnswers(
-          correctAnswer,
-          questionContext,
-        )
+    manager.withAnyAuth(
+      socket,
+      async (_session, { correctAnswer, questionContext }) => {
+        try {
+          const wrongAnswers = await AIService.generateWrongAnswers(
+            correctAnswer,
+            questionContext,
+          )
 
-        socket.emit(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, {
-          wrongAnswers,
-        })
-      } catch (error) {
-        console.error("Failed to generate wrong answers with AI:", error)
-        const message =
-          error instanceof Error
-            ? error.message
-            : "errors:quizz.aiGenerationFailed"
-        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
-      }
-    }),
+          socket.emit(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, {
+            wrongAnswers,
+          })
+        } catch (error) {
+          console.error("Failed to generate wrong answers with AI:", error)
+          const message =
+            error instanceof Error
+              ? error.message
+              : "errors:quizz.aiGenerationFailed"
+          socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+        }
+      },
+    ),
   )
 }

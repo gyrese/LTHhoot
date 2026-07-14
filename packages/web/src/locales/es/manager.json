@@ -49,5 +49,18 @@
     "newFolderPlaceholder": "Nombre de carpeta",
     "deleteFolder": "Eliminar carpeta",
     "newFolder": "Nueva carpeta"
+  },
+  "guest": {
+    "modalTitle": "Cuentas de invitado",
+    "modalDesc": "Una cuenta de invitado se conecta en /manager/guest y tiene su propia biblioteca: crea sus quizzes sin ver los tuyos. Sus quizzes aparecen en la carpeta «Invités».",
+    "createTitle": "Crear una cuenta",
+    "namePlaceholder": "Nombre de la cuenta de invitado",
+    "passwordPlaceholder": "Contraseña (mín. 4 caracteres)",
+    "create": "Crear",
+    "createInvalid": "Nombre obligatorio y contraseña de al menos 4 caracteres",
+    "empty": "Todavía no hay cuentas de invitado",
+    "delete": "Eliminar la cuenta",
+    "deleteConfirm": "¿Eliminar la cuenta «{{name}}»? Su biblioteca de quizzes también se eliminará.",
+    "testQuizz": "Probar el quiz"
   }
 }

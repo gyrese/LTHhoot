@@ -5,6 +5,7 @@ import type {
   QuizzMeta,
   QuizzWithId,
 } from "@rahoot/common/types/game"
+import { isArchived } from "@rahoot/common/utils/folders"
 import {
   formatGuestQuizId,
   GUEST_FOLDER,
@@ -416,7 +417,12 @@ class Config {
   // Chaque compte possède sa bibliothèque physiquement isolée (guests/<id>/quizz).
 
   static listGuests(): GuestAccount[] {
-    const guests = Config.game().guests
+    // Pas de game.json (premier démarrage avant init) → pas de comptes.
+    if (!fs.existsSync(getPath("game.json"))) {
+      return []
+    }
+
+    const { guests } = Config.game()
 
     if (!Array.isArray(guests)) {
       return []
@@ -508,11 +514,17 @@ class Config {
   // dossier virtuel « Invités/<nom> » — la sidebar les classe automatiquement.
   static allGuestQuizzMeta(): QuizzMeta[] {
     return Config.listGuests().flatMap((guest) =>
-      Config.quizzMeta(guest.id).map((meta) => ({
-        ...meta,
-        id: formatGuestQuizId(guest.id, meta.id),
-        folder: `${GUEST_FOLDER}/${guest.name}`,
-      })),
+      Config.quizzMeta(guest.id)
+        // Un quiz archivé par le guest DANS SA PROPRE bibliothèque reste invisible
+        // côté admin — même sémantique que l'Archive admin (jamais mélangé aux
+        // autres dossiers). Conséquence voulue : un guest sans quiz non-archivé
+        // ne produit aucun sous-dossier « Invités/<nom> ».
+        .filter((meta) => !isArchived(meta.folder))
+        .map((meta) => ({
+          ...meta,
+          id: formatGuestQuizId(guest.id, meta.id),
+          folder: `${GUEST_FOLDER}/${guest.name}`,
+        })),
     )
   }
 

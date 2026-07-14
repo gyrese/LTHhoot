@@ -25,7 +25,11 @@ import {
 } from "@rahoot/web/features/quizz/utils/export"
 import { exportQuizzToPptx } from "@rahoot/web/features/quizz/utils/export-pptx"
 import { parseQuestionsCsv } from "@rahoot/web/features/quizz/utils/import-csv"
-import { isArchived } from "@rahoot/web/features/manager/utils/folders"
+import {
+  isArchived,
+  isGuestFolder,
+} from "@rahoot/web/features/manager/utils/folders"
+import { isGuestQuizId } from "@rahoot/common/utils/guest"
 import toast from "react-hot-toast"
 import clsx from "clsx"
 
@@ -183,7 +187,9 @@ const QuizzPanel = ({
           ) {
             return false
           }
-        } else if (isArchived(q.folder)) {
+        } else if (isArchived(q.folder) || isGuestFolder(q.folder)) {
+          // Comme l'Archive, les bibliothèques invités ne polluent pas la vue
+          // « Tous » : elles se consultent via le dossier Invités.
           return false
         }
 
@@ -259,12 +265,20 @@ const QuizzPanel = ({
               const eveningOrder = eveningMode
                 ? eveningQuizIds.indexOf(q.id) + 1
                 : 0
+              // Quiz d'une bibliothèque invité (vue admin) : consultable,
+              // exportable et lançable, mais ni éditable, ni supprimable,
+              // ni déplaçable.
+              const isReadonly = isGuestQuizId(q.id)
 
               return (
                 <div
                   key={q.id}
-                  draggable
+                  draggable={!isReadonly}
                   onDragStart={(e) => {
+                    if (isReadonly) {
+                      return
+                    }
+
                     e.dataTransfer.setData("quizzId", q.id)
                     e.dataTransfer.effectAllowed = "move"
                   }}
@@ -305,19 +319,21 @@ const QuizzPanel = ({
                   )}
 
                   <div className="absolute top-2 left-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate({
-                          to: "/manager/quizz/$quizzId",
-                          params: { quizzId: q.id },
-                        })
-                      }}
-                      className="rounded-lg bg-black/50 p-1.5 text-white backdrop-blur-sm hover:bg-black/70"
-                      title={t("common:edit")}
-                    >
-                      <SquarePen className="size-3.5" />
-                    </button>
+                    {!isReadonly && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate({
+                            to: "/manager/quizz/$quizzId",
+                            params: { quizzId: q.id },
+                          })
+                        }}
+                        className="rounded-lg bg-black/50 p-1.5 text-white backdrop-blur-sm hover:bg-black/70"
+                        title={t("common:edit")}
+                      >
+                        <SquarePen className="size-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={handleExport(q.id)}
                       className="rounded-lg bg-black/50 p-1.5 text-blue-400 backdrop-blur-sm hover:bg-black/70"
@@ -332,23 +348,25 @@ const QuizzPanel = ({
                     >
                       <FileDown className="size-3.5" />
                     </button>
-                    <AlertDialog
-                      trigger={
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="rounded-lg bg-black/50 p-1.5 text-red-400 backdrop-blur-sm hover:bg-black/70"
-                          title={t("common:delete")}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      }
-                      title={t("manager:quizz.delete")}
-                      description={t("manager:quizz.deleteConfirm", {
-                        name: q.subject,
-                      })}
-                      confirmLabel={t("common:delete")}
-                      onConfirm={handleDelete(q.id)}
-                    />
+                    {!isReadonly && (
+                      <AlertDialog
+                        trigger={
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded-lg bg-black/50 p-1.5 text-red-400 backdrop-blur-sm hover:bg-black/70"
+                            title={t("common:delete")}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        }
+                        title={t("manager:quizz.delete")}
+                        description={t("manager:quizz.deleteConfirm", {
+                          name: q.subject,
+                        })}
+                        confirmLabel={t("common:delete")}
+                        onConfirm={handleDelete(q.id)}
+                      />
+                    )}
                   </div>
 
                   <div className="absolute right-0 bottom-0 left-0 p-3">
@@ -356,7 +374,14 @@ const QuizzPanel = ({
                       {q.subject}
                     </p>
                     {q.folder && (
-                      <p className="mt-0.5 truncate text-xs text-white/60">
+                      <p
+                        className={clsx(
+                          "mt-0.5 truncate text-xs",
+                          isReadonly
+                            ? "font-semibold text-orange-300"
+                            : "text-white/60",
+                        )}
+                      >
                         {q.folder}
                       </p>
                     )}

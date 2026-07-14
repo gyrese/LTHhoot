@@ -51,5 +51,18 @@
     "newFolderPlaceholder": "Folder name",
     "deleteFolder": "Delete folder",
     "newFolder": "New folder"
+  },
+  "guest": {
+    "modalTitle": "Guest accounts",
+    "modalDesc": "A guest account signs in at /manager/guest and has its own library: they create their own quizzes without seeing yours. Their quizzes appear in the “Invités” folder.",
+    "createTitle": "Create an account",
+    "namePlaceholder": "Guest account name",
+    "passwordPlaceholder": "Password (min. 4 characters)",
+    "create": "Create",
+    "createInvalid": "Name required and password of at least 4 characters",
+    "empty": "No guest accounts yet",
+    "delete": "Delete account",
+    "deleteConfirm": "Delete account “{{name}}”? Their quiz library will also be deleted.",
+    "testQuizz": "Test the quiz"
   }
 }

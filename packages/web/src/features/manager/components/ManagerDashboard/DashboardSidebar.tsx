@@ -9,11 +9,14 @@ import {
   Plus,
   Tag,
   Trash2,
+  Users,
   X,
 } from "lucide-react"
 import {
   ARCHIVE_FOLDER,
+  GUEST_FOLDER,
   isArchived,
+  isGuestFolder,
 } from "@rahoot/web/features/manager/utils/folders"
 import {
   useMemo,
@@ -25,7 +28,14 @@ import {
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
-const FOLDERS_KEY = "rahoot:folders"
+// Clé localStorage des dossiers custom (créés côté client, sans quiz dedans).
+// SCOPÉE par session : sans ça, un dossier créé par l'admin (ex. "hauf") reste
+// dans le localStorage du navigateur et fuite vers toute session invité ouverte
+// sur le même appareil, alors que ce dossier n'existe dans aucune bibliothèque.
+const foldersStorageKey = (role: string | undefined, guestName?: string) =>
+  role === "guest"
+    ? `rahoot:folders:guest:${guestName ?? "unknown"}`
+    : "rahoot:folders"
 
 type FolderNode = {
   path: string
@@ -78,8 +88,10 @@ const DashboardSidebar = ({
   setView,
   onMoveToFolder,
 }: Props) => {
-  const { quizz, results } = useConfig()
+  const { quizz, results, role, guestName } = useConfig()
   const { t } = useTranslation()
+  const isGuestSession = role === "guest"
+  const foldersKey = foldersStorageKey(role, guestName)
 
   const [dragOverFolder, setDragOverFolder] = useState<string | "root" | null>(
     null,
@@ -93,7 +105,7 @@ const DashboardSidebar = ({
 
   const [userFolders, setUserFolders] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem(FOLDERS_KEY) ?? "[]")
+      return JSON.parse(localStorage.getItem(foldersKey) ?? "[]")
     } catch {
       return []
     }
@@ -104,16 +116,33 @@ const DashboardSidebar = ({
     [quizz],
   )
 
+  // « Invités/<nom> » n'existe que comme sous-chemin (aucun quiz n'a le folder
+  // "Invités" seul) : buildTree ne peut donc pas créer le nœud parent tout
+  // seul et pousse chaque compte à la racine. On l'ajoute explicitement dès
+  // qu'au moins un guest a un quiz non-archivé, pour un unique dossier
+  // « Invités » regroupant tous les comptes en sous-dossiers.
+  const hasGuestFolder = useMemo(
+    () => foldersFromQuizz.some((f) => isGuestFolder(f)),
+    [foldersFromQuizz],
+  )
+
   const allFolders = useMemo(
-    () => [...new Set([ARCHIVE_FOLDER, ...foldersFromQuizz, ...userFolders])],
-    [foldersFromQuizz, userFolders],
+    () => [
+      ...new Set([
+        ARCHIVE_FOLDER,
+        ...(hasGuestFolder ? [GUEST_FOLDER] : []),
+        ...foldersFromQuizz,
+        ...userFolders,
+      ]),
+    ],
+    [foldersFromQuizz, hasGuestFolder, userFolders],
   )
 
   const tree = useMemo(() => buildTree(allFolders), [allFolders])
 
   useEffect(() => {
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(userFolders))
-  }, [userFolders])
+    localStorage.setItem(foldersKey, JSON.stringify(userFolders))
+  }, [foldersKey, userFolders])
 
   const tags = useMemo(
     () => [...new Set(quizz.flatMap((q) => q.tags ?? []))],
@@ -275,6 +304,17 @@ const DashboardSidebar = ({
     const isCreatingSub = creatingIn === node.path
     const count = countInFolder(node.path)
     const indent = depth * 12
+    // Dossier virtuel « Invités » : classement automatique par compte, aucune
+    // action possible (ni drop, ni renommage, ni suppression, ni sous-dossier).
+    const isGuest = isGuestFolder(node.path)
+
+    let folderIcon = <FolderOpen className="size-3.5 shrink-0" />
+
+    if (node.path === ARCHIVE_FOLDER) {
+      folderIcon = <Archive className="size-3.5 shrink-0 text-amber-300/80" />
+    } else if (isGuest) {
+      folderIcon = <Users className="size-3.5 shrink-0 text-orange-300/80" />
+    }
 
     return (
       <div key={node.path}>
@@ -313,9 +353,9 @@ const DashboardSidebar = ({
           ) : (
             <button
               onClick={() => setActiveFolder(isActive ? null : node.path)}
-              onDragOver={(e) => handleDragOver(e, node.path)}
-              onDragLeave={() => setDragOverFolder(null)}
-              onDrop={(e) => handleDrop(e, node.path)}
+              onDragOver={isGuest ? undefined : (e) => handleDragOver(e, node.path)}
+              onDragLeave={isGuest ? undefined : () => setDragOverFolder(null)}
+              onDrop={isGuest ? undefined : (e) => handleDrop(e, node.path)}
               className={clsx(
                 "flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl px-2 py-1.5 text-sm transition-colors",
                 isDragOver && "bg-orange-500/30 ring-1 ring-orange-400",
@@ -328,11 +368,7 @@ const DashboardSidebar = ({
               )}
             >
               <span className="flex min-w-0 items-center gap-1.5">
-                {node.path === ARCHIVE_FOLDER ? (
-                  <Archive className="size-3.5 shrink-0 text-amber-300/80" />
-                ) : (
-                  <FolderOpen className="size-3.5 shrink-0" />
-                )}
+                {folderIcon}
                 <span className="truncate">{node.label}</span>
               </span>
               <span className="shrink-0 rounded-full bg-white/10 px-1.5 text-xs">
@@ -342,7 +378,7 @@ const DashboardSidebar = ({
           )}
 
           {/* Actions au hover */}
-          {!isEditing && (
+          {!isEditing && !isGuest && (
             <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100">
               <button
                 onClick={() => startCreate(node.path)}
@@ -428,23 +464,25 @@ const DashboardSidebar = ({
           <LayoutGrid className="size-4" />
           {t("manager:tabs.quizz")}
         </button>
-        <button
-          onClick={() => setView("results")}
-          className={clsx(
-            "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
-            view === "results"
-              ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
-              : "text-white/70 hover:bg-white/10 hover:text-white",
-          )}
-        >
-          <BarChart2 className="size-4" />
-          {t("manager:tabs.results")}
-          {results.length > 0 && (
-            <span className="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
-              {results.length}
-            </span>
-          )}
-        </button>
+        {!isGuestSession && (
+          <button
+            onClick={() => setView("results")}
+            className={clsx(
+              "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+              view === "results"
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                : "text-white/70 hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <BarChart2 className="size-4" />
+            {t("manager:tabs.results")}
+            {results.length > 0 && (
+              <span className="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
+                {results.length}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Dossiers */}
@@ -518,7 +556,11 @@ const DashboardSidebar = ({
                   {t("manager:sidebar.all")}
                 </span>
                 <span className="rounded-full bg-white/10 px-1.5 text-xs">
-                  {quizz.filter((q) => !isArchived(q.folder)).length}
+                  {
+                    quizz.filter(
+                      (q) => !isArchived(q.folder) && !isGuestFolder(q.folder),
+                    ).length
+                  }
                 </span>
               </button>
 

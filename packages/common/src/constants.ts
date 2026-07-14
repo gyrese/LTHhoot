@@ -53,6 +53,9 @@ export const EVENTS = {
     END_GAME: "manager:endGame",
     PAUSE_GAME: "manager:pauseGame",
     RESUME_GAME: "manager:resumeGame",
+    GUEST_AUTH: "manager:guestAuth",
+    GUEST_CREATE: "manager:guestCreate",
+    GUEST_DELETE: "manager:guestDelete",
   },
   QUIZZ: {
     GET: "quizz:get",
