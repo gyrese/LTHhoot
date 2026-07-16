@@ -1,238 +1,206 @@
+import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import useTestDrive from "@rahoot/web/features/quizz/hooks/useTestDrive"
+import PreviewPresenterView from "./PreviewPresenterView"
+import PreviewParticipantView from "./PreviewParticipantView"
+import Button from "@rahoot/web/components/Button"
 import {
-  type QuestionWithId,
-  useQuizzEditor,
-} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { X } from "lucide-react"
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Maximize,
+  Minimize,
+  Play,
+} from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
-import { useEffect, type CSSProperties } from "react"
-import SlideCanvas from "./SlideCanvas"
-import QuestionMedia from "@rahoot/web/components/QuestionMedia"
-import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
-import {
-  DateAnswer,
-  McqAnswers,
-  OpenAnswerPlaceholder,
-  SliderAnswer,
-  TrueFalseAnswers,
-} from "@rahoot/web/features/game/components/AnswersDisplay"
-import {
-  PuzzleAnswer,
-  DropPinAnswer,
-} from "@rahoot/web/features/game/components/states/AnswerInputs"
+import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
 
 type Props = {
-  question: QuestionWithId
   onClose: () => void
 }
 
-const SlidePreviewModal = ({ question, onClose }: Props) => {
+// Aperçu façon Kahoot : vue présentateur + vue participants côte à côte,
+// navigation entre toutes les questions du quiz, lancement de la démo.
+const SlidePreviewModal = ({ onClose }: Props) => {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
-  const { salonImage: quizSalonImage } = useQuizzEditor()
+  const { questions, currentIndex, quizzId, salonImage } = useQuizzEditor()
+  const [index, setIndex] = useState(() =>
+    Math.max(0, Math.min(currentIndex, questions.length - 1)),
+  )
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const { startTestDrive, isTestDriving } = useTestDrive()
+
+  const total = questions.length
+  const question = questions[index]
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose()
+      } else if (e.key === "ArrowLeft") {
+        setIndex((i) => Math.max(0, i - 1))
+      } else if (e.key === "ArrowRight") {
+        setIndex((i) => Math.min(total - 1, i + 1))
       }
     }
     window.addEventListener("keydown", onKey)
 
     return () => window.removeEventListener("keydown", onKey)
-  }, [onClose])
+  }, [onClose, total])
 
-  const {
-    type,
-    background,
-    backgroundOpacity,
-    elements,
-    question: title,
-    media,
-    answers,
-    min,
-    max,
-    minYear,
-    maxYear,
-    items,
-    pinImage,
-    revealDuration,
-    gridCols,
-    gridRows,
-    revelationStyle,
-  } = question as QuestionWithId & {
-    answers?: string[]
-    min?: number
-    max?: number
-    minYear?: number
-    maxYear?: number
-    items?: string[]
-    pinImage?: string
-    revealDuration?: number
-    gridCols?: number
-    gridRows?: number
-    revelationStyle?: string
-  }
+  useEffect(() => {
+    const onFsChange = () =>
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener("fullscreenchange", onFsChange)
 
-  let bgStyle: CSSProperties = {
-    backgroundImage: `url(${quizSalonImage || slideBg})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }
+    return () => document.removeEventListener("fullscreenchange", onFsChange)
+  }, [])
 
-  if (background?.type === "image") {
-    bgStyle = {
-      backgroundImage: `url(${background.value})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen()
+    } else {
+      void rootRef.current?.requestFullscreen()
     }
-  } else if (background?.type === "color") {
-    bgStyle = { backgroundColor: background.value }
   }
 
-  return (
+  if (!question) {
+    return null
+  }
+
+  const navButtonClass =
+    "flex size-9 cursor-pointer items-center justify-center rounded-lg text-white transition-colors hover:bg-white/15 disabled:cursor-default disabled:opacity-30"
+
+  // Portal vers <body> : le modal est monté dans un conteneur `relative z-30`
+  // (toolbar), son z-index serait sinon piégé sous l'header de l'éditeur.
+  return createPortal(
     <motion.div
+      ref={rootRef}
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed inset-0 z-[9999] flex flex-col bg-black text-white"
-      onClick={onClose}
+      className="fixed inset-0 z-9999 flex flex-col bg-black text-white"
     >
-      {/* Background */}
+      {/* Fond flouté façon Kahoot */}
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          ...bgStyle,
-          opacity:
-            backgroundOpacity ?? (question.revelationEnabled ? 1.0 : 0.5),
-        }}
+        className="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
+        style={{ backgroundImage: `url(${salonImage || slideBg})` }}
       />
+      <div className="absolute inset-0 bg-black/60" />
 
-      {question.revelationEnabled && (
-        <BackgroundRevealer
-          duration={
-            revealDuration ??
-            (type === "title"
-              ? question.cooldown
-              : question.cooldown + question.time)
-          }
-          gridCols={gridCols ?? 8}
-          gridRows={gridRows ?? 6}
-          seedString={title || question.background?.value}
-          configuredStyle={revelationStyle}
-        />
-      )}
+      {/* Zone centrale : présentateur + participants */}
+      <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center">
+        <div className="flex w-full items-start justify-center gap-6 px-6 lg:gap-10 lg:px-10">
+          <div className="flex min-w-0 flex-1 basis-2/3 flex-col gap-2">
+            <span className="text-sm font-semibold text-white/90 drop-shadow">
+              {t("quizz:previewPresenter", "Affichage du présentateur")}
+            </span>
+            <div className="w-full max-w-[min(100%,calc((100dvh-200px)*16/9))]">
+              <PreviewPresenterView question={question} />
+            </div>
+          </div>
 
-      {/* Slide Elements (Konva) */}
-      <div className="pointer-events-none absolute inset-0">
-        <SlideCanvas
-          elements={elements || []}
-          onChange={() => undefined}
-          selectedId={undefined}
-          onSelect={() => undefined}
-          readOnly={true}
-          noBackground={true}
-        />
+          <div className="flex w-52 shrink-0 flex-col gap-2 xl:w-64">
+            <span className="text-sm font-semibold text-white/90 drop-shadow">
+              {t("quizz:previewParticipants", "Affichage des participants")}
+            </span>
+            <PreviewParticipantView question={question} />
+          </div>
+        </div>
       </div>
 
-      {/* Header (Question Title) */}
-      {type !== "title" && (
-        <div
-          className="relative z-10 px-4 pt-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mx-auto max-w-7xl rounded-2xl border border-white/10 bg-black/50 px-6 py-4 shadow-2xl backdrop-blur-md">
-            <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
-              {title}
-            </h2>
-          </div>
+      {/* Barre basse : quitter / navigation / démonstration */}
+      <div className="relative z-10 grid grid-cols-3 items-center gap-4 px-4 pb-4">
+        <div className="justify-self-start">
+          <Button variant="ghost" className="gap-2 text-white" onClick={onClose}>
+            <ArrowLeft className="size-4" />
+            {t("common:exit", "Quitter")}
+          </Button>
         </div>
-      )}
 
-      {/* Media Section */}
-      {type !== "title" && (
-        <div
-          className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {(!elements || elements.length === 0) && (
-            <QuestionMedia
-              media={
-                type === "drop_pin" && pinImage
-                  ? { type: "image", url: pinImage }
-                  : media
-              }
-              alt={title}
-            />
-          )}
+        <div className="flex items-center gap-0.5 justify-self-center rounded-xl bg-black/60 px-1.5 py-1 backdrop-blur-md">
+          <button
+            type="button"
+            className={navButtonClass}
+            disabled={index === 0}
+            onClick={() => setIndex(0)}
+            title={t("quizz:previewFirstQuestion", "Première question")}
+          >
+            <ChevronsLeft className="size-5" />
+          </button>
+          <button
+            type="button"
+            className={navButtonClass}
+            disabled={index === 0}
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            title={t("quizz:previewPrevQuestion", "Question précédente")}
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <span className="min-w-14 px-1 text-center text-sm font-bold tabular-nums">
+            {index + 1} / {total}
+          </span>
+          <button
+            type="button"
+            className={navButtonClass}
+            disabled={index === total - 1}
+            onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+            title={t("quizz:previewNextQuestion", "Question suivante")}
+          >
+            <ChevronRight className="size-5" />
+          </button>
+          <button
+            type="button"
+            className={navButtonClass}
+            disabled={index === total - 1}
+            onClick={() => setIndex(total - 1)}
+            title={t("quizz:previewLastQuestion", "Dernière question")}
+          >
+            <ChevronsRight className="size-5" />
+          </button>
+          <div className="mx-1 h-5 w-px bg-white/20" />
+          <button
+            type="button"
+            className={navButtonClass}
+            onClick={toggleFullscreen}
+            title={t("quizz:previewFullscreen", "Plein écran")}
+          >
+            {isFullscreen ? (
+              <Minimize className="size-5" />
+            ) : (
+              <Maximize className="size-5" />
+            )}
+          </button>
         </div>
-      )}
 
-      {/* Footer (Answers / Controls) */}
-      {type !== "title" && (
-        <div
-          className="relative z-10 w-full pb-8"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
-            <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
-              <span className="translate-y-1 text-sm opacity-60">
-                {t("game:hud.time")}
-              </span>
-              <span className="tabular-nums">{question.time}</span>
-            </div>
-            <div className="flex flex-col items-center rounded-full border border-white/5 bg-black/40 px-4 text-lg font-bold">
-              <span className="translate-y-1 text-sm opacity-60">
-                {t("game:hud.answers")}
-              </span>
-              <span className="tabular-nums">0/10</span>
-            </div>
-          </div>
-
-          <div className="w-full">
-            {type === "mcq" && answers && (
-              <McqAnswers answers={answers} onAnswer={() => undefined} />
-            )}
-            {type === "true_false" && <TrueFalseAnswers />}
-            {type === "open" && <OpenAnswerPlaceholder />}
-            {type === "date" && (
-              <DateAnswer
-                minYear={minYear}
-                maxYear={maxYear}
-                onNumberAnswer={() => undefined}
-              />
-            )}
-            {type === "slider" && (
-              <SliderAnswer
-                min={min ?? 0}
-                max={max ?? 100}
-                onNumberAnswer={() => undefined}
-              />
-            )}
-            {type === "puzzle" && items && (
-              <PuzzleAnswer items={items} onOrderAnswer={() => undefined} />
-            )}
-            {type === "drop_pin" && pinImage && (
-              <div className="pointer-events-none scale-90 opacity-80">
-                <DropPinAnswer
-                  pinImage={pinImage}
-                  onTextAnswer={() => undefined}
-                />
-              </div>
-            )}
-          </div>
+        <div className="justify-self-end">
+          <Button
+            variant="primary"
+            className="gap-2"
+            disabled={!quizzId || isTestDriving}
+            onClick={() => startTestDrive(index)}
+            title={
+              !quizzId
+                ? t(
+                    "quizz:testDriveNeedsSave",
+                    "Sauvegardez le quiz avant de le tester",
+                  )
+                : undefined
+            }
+          >
+            <Play className="size-4" />
+            {t("quizz:launchDemo", "Lancer la démonstration")}
+          </Button>
         </div>
-      )}
-
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-[100] rounded-full border border-white/20 bg-white/10 p-2 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20"
-      >
-        <X className="size-6" />
-      </button>
-    </motion.div>
+      </div>
+    </motion.div>,
+    document.body,
   )
 }
 

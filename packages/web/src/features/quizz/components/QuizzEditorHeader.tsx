@@ -1,14 +1,10 @@
-import { EVENTS } from "@rahoot/common/constants"
 import Logo from "@rahoot/web/components/Logo"
 import Button from "@rahoot/web/components/Button"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
 import AIGeneratorModal from "@rahoot/web/features/quizz/components/AIGeneratorModal"
 import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
-import {
-  useEvent,
-  useSocket,
-} from "@rahoot/web/features/game/contexts/socket-context"
+import useTestDrive from "@rahoot/web/features/quizz/hooks/useTestDrive"
 import { useNavigate } from "@tanstack/react-router"
 import { Download, PlayCircle, Settings, Upload, Sparkles } from "lucide-react"
 import { useRef, useState } from "react"
@@ -45,39 +41,12 @@ const QuizzEditorHeader = () => {
     lastSaved,
   } = useQuizzEditor()
   const navigate = useNavigate()
-  const { socket } = useSocket()
   const { t, i18n } = useTranslation()
   const [showSettings, setShowSettings] = useState(false)
   const [showAIGenerator, setShowAIGenerator] = useState(false)
-  const [isTestDriving, setIsTestDriving] = useState(false)
+  const { startTestDrive, isTestDriving } = useTestDrive()
   const reduceMotion = useReducedMotion()
   const csvInputRef = useRef<HTMLInputElement>(null)
-  const pendingTestDriveRef = useRef(false)
-
-  useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId }) => {
-    if (!pendingTestDriveRef.current) {
-      return
-    }
-
-    pendingTestDriveRef.current = false
-    setIsTestDriving(false)
-    navigate({ to: "/party/manager/$gameId", params: { gameId } })
-    socket?.emit(EVENTS.MANAGER.START_DEMO, { gameId })
-  })
-
-  const handleTestDrive = () => {
-    if (!socket || !quizzId || questions.length === 0 || isTestDriving) {
-      return
-    }
-
-    setIsTestDriving(true)
-    pendingTestDriveRef.current = true
-    socket.emit(EVENTS.GAME.CREATE, {
-      quizId: quizzId,
-      powerUpsEnabled: false,
-      questionIndex: currentIndex,
-    })
-  }
 
   const handleImportCsv = async (file: File) => {
     try {
@@ -307,7 +276,7 @@ const QuizzEditorHeader = () => {
             size="sm"
             className="text-ink-muted h-8 gap-2"
             disabled={!quizzId || questions.length === 0 || isTestDriving}
-            onClick={handleTestDrive}
+            onClick={() => startTestDrive(currentIndex)}
             title={
               !quizzId
                 ? t(
