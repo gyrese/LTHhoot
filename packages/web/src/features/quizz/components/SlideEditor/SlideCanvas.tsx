@@ -47,6 +47,11 @@ const CANVAS_H = 1080
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
 const MARQUEE_CLICK_THRESHOLD = 4
+// Sur-échelle de l'iframe YouTube en lecture (jeu/aperçu) : l'iframe est
+// agrandie et centrée dans un conteneur `overflow-hidden` pour rejeter la barre
+// de titre (haut) et les contrôles (bas) hors du cadre. YouTube ne propose plus
+// de paramètre pour masquer le titre, qui spoile souvent la réponse en quiz.
+const YT_OVERSCAN = 1.3
 
 const SlideCanvas = ({
   elements,
@@ -1305,12 +1310,9 @@ const SlideCanvas = ({
                 }
 
                 return (
-                  <iframe
+                  <div
                     key={el.id}
-                    src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="absolute rounded-md"
+                    className="absolute overflow-hidden rounded-md"
                     style={{
                       left: el.x * scale + stagePos.x,
                       top: el.y * scale + stagePos.y,
@@ -1321,7 +1323,20 @@ const SlideCanvas = ({
                       opacity: el.opacity,
                       pointerEvents: "auto",
                     }}
-                  />
+                  >
+                    <iframe
+                      src={`https://www.youtube.com/embed/${el.videoId}?${params.toString()}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title=""
+                      className="absolute top-1/2 left-1/2 border-0"
+                      style={{
+                        width: el.width * scale * YT_OVERSCAN,
+                        height: el.height * scale * YT_OVERSCAN,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                    />
+                  </div>
                 )
               })}
 
