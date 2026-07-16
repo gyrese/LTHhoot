@@ -357,7 +357,7 @@ const Answers = ({
             onSelect={noopSelect}
             readOnly
             noBackground
-            hideYoutube
+            hideYoutube={isPlayer}
           />
         </div>
       )}
