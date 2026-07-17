@@ -6,6 +6,7 @@ import type {
   Quizz,
   QuizzWithId,
   Question,
+  QuestionDifficulty,
 } from "@rahoot/common/types/game"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
 import type {
@@ -139,7 +140,11 @@ export interface ServerToClientEvents {
   }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
-  [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: { questions: Question[] }) => void
+  [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: {
+    questions: Question[]
+    // Description du quiz proposée par l'IA (vide si le modèle l'a omise).
+    description: string
+  }) => void
   [EVENTS.QUIZZ.AI_REPHRASE_SUCCESS]: (_data: { rephrased: string }) => void
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS]: (_data: {
     wrongAnswers: string[]
@@ -242,7 +247,16 @@ export interface ClientToServerEvents {
     prompt: string
     count: number
     questionTypes: string[]
-    level: string
+    // Plusieurs niveaux = lot mélangé, réparti équitablement par le serveur.
+    difficulties: QuestionDifficulty[]
+    tone: string
+    // Valeur "auto" : langue déduite du sujet saisi.
+    language: string
+    // Valeur nulle : l'IA module la durée selon la difficulté.
+    time: number | null
+    // Remplit la carte réponse (answerReveal) de chaque question.
+    withExplanations: boolean
+    instructions?: string
   }) => void
   [EVENTS.QUIZZ.AI_REPHRASE]: (_data: { currentText: string }) => void
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (_data: {

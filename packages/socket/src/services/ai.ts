@@ -1,22 +1,55 @@
 import { GoogleGenAI } from "@google/genai"
 import { questionValidator } from "@rahoot/common/validators/quizz"
-import type { Question } from "@rahoot/common/types/game"
+import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
+import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
 
 export class AIService {
   private static genAI: GoogleGenAI | null = null
 
   private static getClient(): GoogleGenAI {
     if (!this.genAI) {
-      const apiKey = process.env.GEMINI_API_KEY
+      const apiKey = process.env.GEMINI_TEXT_API_KEY || process.env.GEMINI_API_KEY
 
       if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is not configured on the server")
+        throw new Error(
+          "Neither GEMINI_TEXT_API_KEY nor GEMINI_API_KEY is configured on the server",
+        )
       }
 
       this.genAI = new GoogleGenAI({ apiKey })
     }
 
     return this.genAI
+  }
+
+  private static clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(Math.round(value), min), max)
+  }
+
+  /**
+   * Aligne `time`/`cooldown` sur les bornes du validateur commun avant le
+   * safeParse : sans ça, une durée mal calibrée par le modèle fait rejeter une
+   * question par ailleurs parfaitement valide.
+   * `requestedTime` non nul = durée imposée par l'auteur, elle écrase l'IA.
+   */
+  private static normalizeTimings(
+    rawQuestion: unknown,
+    requestedTime: number | null,
+  ): unknown {
+    if (typeof rawQuestion !== "object" || rawQuestion === null) {
+      return rawQuestion
+    }
+
+    const question = rawQuestion as Record<string, unknown>
+    const aiTime = typeof question.time === "number" ? question.time : 20
+    const aiCooldown =
+      typeof question.cooldown === "number" ? question.cooldown : 5
+
+    return {
+      ...question,
+      time: this.clamp(requestedTime ?? aiTime, 5, 120),
+      cooldown: this.clamp(aiCooldown, 3, 15),
+    }
   }
 
   /**
@@ -26,86 +59,16 @@ export class AIService {
     prompt: string
     count: number
     questionTypes: string[]
-    level: string
-  }): Promise<Question[]> {
+    difficulties: QuestionDifficulty[]
+    tone: string
+    language: string
+    time: number | null
+    withExplanations: boolean
+    instructions?: string
+  }): Promise<{ questions: Question[]; description: string }> {
     const client = this.getClient()
 
-    // Constructing a detailed prompt for Gemini
-    const systemInstruction = `You are a fun, cool, and engaging quiz generator. Your task is to output a JSON array containing exactly ${params.count} quiz questions about the topic: "${params.prompt}".
-The target audience or difficulty level is: "${params.level}".
-Only generate questions of the following types: ${params.questionTypes.join(", ")}.
-
-Ensure that the questions, options, and explanations are written in the same language as the prompt (French if the prompt is in French).
-
-Tone and Style Guidelines:
-- Adopt a cool, fun, and dynamic tone. The questions should be modern, entertaining, and lighthearted, avoiding dry, pedantic, or overly academic phrasing.
-- Keep the questions serious on the facts and content (accurate facts, plausible incorrect options, valid scientific/historical/cultural background).
-- Add interesting context, subtle humor, or a witty spin where appropriate.
-- (En français si applicable) : Adopte un ton cool, sympa et dynamique. Évite les formulations trop scolaires, austères ou poussiéreuses. Le contenu doit rester exact et intéressant (pas de fausses réponses absurdes), mais avec une tournure de phrase moderne, engageante et parfois amusante.
-
-The output MUST be a valid JSON array of question objects. Every object must strictly conform to one of the following schemas:
-
-1. MCQ ("mcq"):
-   {
-     "type": "mcq",
-     "question": "The question text",
-     "answers": ["Option A", "Option B", "Option C", "Option D"], // Between 2 and 4 strings. Must not be empty.
-     "solutions": [0], // Array of correct answer index/indices (0-indexed)
-     "cooldown": 5,
-     "time": 20
-   }
-
-2. True/False ("true_false"):
-   {
-     "type": "true_false",
-     "question": "The statement text",
-     "solution": 0, // 0 for False, 1 for True
-     "cooldown": 5,
-     "time": 20
-   }
-
-3. Open Answer ("open"):
-   {
-     "type": "open",
-     "question": "The question text",
-     "correctAnswers": ["answer1", "answer2"], // Array of acceptable short string answers (lowercase preferred)
-     "cooldown": 5,
-     "time": 20
-   }
-
-4. Slider ("slider"):
-   {
-     "type": "slider",
-     "question": "The question requesting a numerical value",
-     "correctValue": 42, // The correct number
-     "min": 0, // Minimum boundary
-     "max": 100, // Maximum boundary
-     "tolerance": 2, // Allowed margin of error
-     "cooldown": 5,
-     "time": 20
-   }
-
-5. Date ("date"):
-   {
-     "type": "date",
-     "question": "The question asking for a year",
-     "correctYear": 1789, // The correct year (negative for BCE)
-     "tolerance": 5, // Allowed margin of error in years
-     "minYear": 1700, // Optional
-     "maxYear": 1800, // Optional
-     "cooldown": 5,
-     "time": 20
-   }
-
-6. Puzzle ("puzzle"):
-   {
-     "type": "puzzle",
-     "question": "The question text instructing to order elements",
-     "items": ["Item 1 (First)", "Item 2 (Second)", "Item 3 (Third)", "Item 4 (Fourth)"], // Elements in their CORRECT final order
-     "cooldown": 5,
-     "time": 20
-   }
-`
+    const systemInstruction = buildGenerationPrompt(params)
 
     try {
       const response = await client.models.generateContent({
@@ -125,15 +88,24 @@ The output MUST be a valid JSON array of question objects. Every object must str
 
       const parsed = JSON.parse(text)
 
-      if (!Array.isArray(parsed)) {
-        throw new Error("Gemini response is not a JSON array")
+      // Le prompt demande { description, questions }, mais le modèle retombe
+      // parfois sur un tableau nu : les deux formes sont acceptées.
+      const rawQuestions = Array.isArray(parsed) ? parsed : parsed?.questions
+      const description = Array.isArray(parsed)
+        ? ""
+        : (parsed?.description ?? "")
+
+      if (!Array.isArray(rawQuestions)) {
+        throw new Error("Gemini response has no questions array")
       }
 
       // Validate each question using the common Zod validator
       const validatedQuestions: Question[] = []
-      for (const rawQuestion of parsed) {
+      for (const rawQuestion of rawQuestions) {
         // Run Zod validator
-        const parseResult = questionValidator.safeParse(rawQuestion)
+        const parseResult = questionValidator.safeParse(
+          this.normalizeTimings(rawQuestion, params.time),
+        )
 
         if (parseResult.success) {
           validatedQuestions.push(parseResult.data as Question)
@@ -153,7 +125,10 @@ The output MUST be a valid JSON array of question objects. Every object must str
         )
       }
 
-      return validatedQuestions
+      return {
+        questions: validatedQuestions,
+        description: typeof description === "string" ? description.trim() : "",
+      }
     } catch (error) {
       console.error("Error in AIService.generateQuestions:", error)
       throw error

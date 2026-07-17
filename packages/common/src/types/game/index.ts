@@ -130,9 +130,14 @@ export type QuestionType =
   | "drop_pin"
   | "title"
 
+// Niveau d'exigence d'une question. Renseigné par la génération IA (qui peut
+// mélanger plusieurs niveaux dans un même lot) ; optionnel ailleurs.
+export type QuestionDifficulty = "easy" | "medium" | "hard" | "expert"
+
 type BaseQuestion = {
   question: string
   type: QuestionType
+  difficulty?: QuestionDifficulty
   media?: QuestionMedia
   // Canvas slide
   background?: SlideBackground

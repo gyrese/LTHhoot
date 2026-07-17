@@ -150,16 +150,37 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.AI_GENERATE,
     manager.withAnyAuth(
       socket,
-      async (_session, { prompt, count, questionTypes, level }) => {
+      async (
+        _session,
+        {
+          prompt,
+          count,
+          questionTypes,
+          difficulties,
+          tone,
+          language,
+          time,
+          withExplanations,
+          instructions,
+        },
+      ) => {
         try {
-          const questions = await AIService.generateQuestions({
+          const { questions, description } = await AIService.generateQuestions({
             prompt,
             count,
             questionTypes,
-            level,
+            difficulties,
+            tone,
+            language,
+            time,
+            withExplanations,
+            instructions,
           })
 
-          socket.emit(EVENTS.QUIZZ.AI_GENERATE_SUCCESS, { questions })
+          socket.emit(EVENTS.QUIZZ.AI_GENERATE_SUCCESS, {
+            questions,
+            description,
+          })
         } catch (error) {
           console.error("Failed to generate quiz with AI:", error)
           const message =

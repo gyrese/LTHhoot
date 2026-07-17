@@ -3,7 +3,7 @@ import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { PODIUM_THEME_TOKENS } from "@rahoot/web/features/game/components/states/podium/themes"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import { X, Upload, Sparkles, Dices, Trophy } from "lucide-react"
-import { useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
 
@@ -36,6 +36,26 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const [generatingSalon, setGeneratingSalon] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const salonFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Le composant reste monté entre deux ouvertures : les champs locaux gardent
+  // sinon la valeur capturée au premier rendu. Une modification faite ailleurs
+  // (description générée par l'IA, restauration d'un backup) serait invisible
+  // ici — et écrasée par « Terminé ». D'où la resynchronisation à l'ouverture.
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    setLocalSubject(ctx.subject)
+    setLocalDescription(ctx.description)
+    setLocalFolder(ctx.folder)
+    setLocalTags(ctx.tags)
+    setLocalImage(ctx.listingImage)
+    setLocalSalonImage(ctx.salonImage)
+    setLocalPodiumTheme(ctx.podiumTheme ?? "neutre")
+    // Volontairement piloté par la seule ouverture : re-synchroniser à chaque
+    // changement du contexte écraserait la saisie en cours.
+  }, [open])
 
   if (!open) {
     return null

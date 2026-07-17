@@ -82,8 +82,11 @@ export const answerRevealValidator = z.object({
   text: z.string().optional(),
 })
 
+const difficultyValidator = z.enum(["easy", "medium", "hard", "expert"])
+
 const baseQuestionValidator = z.object({
   question: z.string().min(1, "errors:quizz.questionEmpty"),
+  difficulty: difficultyValidator.optional(),
   media: questionMediaValidator.optional(),
   background: slideBackgroundValidator.optional(),
   backgroundOpacity: z.number().min(0).max(1).optional(),
@@ -175,6 +178,7 @@ const dropPinValidator = baseQuestionValidator.extend({
 const titleValidator = z.object({
   type: z.literal("title"),
   question: z.string().optional().default(""),
+  difficulty: difficultyValidator.optional(),
   media: questionMediaValidator.optional(),
   background: slideBackgroundValidator.optional(),
   backgroundOpacity: z.number().min(0).max(1).optional(),
