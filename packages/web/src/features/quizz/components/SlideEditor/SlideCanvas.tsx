@@ -1310,10 +1310,15 @@ const SlideCanvas = ({
                 }
 
                 return (
+                  // Positionnement 100 % inline (pas de classe utilitaire) :
+                  // ce recadrage est dynamique et ne doit dépendre d'aucune
+                  // classe Tailwind qui pourrait ne pas être générée.
                   <div
                     key={el.id}
-                    className="absolute overflow-hidden rounded-md"
                     style={{
+                      position: "absolute",
+                      overflow: "hidden",
+                      borderRadius: "0.375rem",
                       left: el.x * scale + stagePos.x,
                       top: el.y * scale + stagePos.y,
                       width: el.width * scale,
@@ -1329,11 +1334,14 @@ const SlideCanvas = ({
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       title=""
-                      className="absolute top-1/2 left-1/2 border-0"
                       style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
                         width: el.width * scale * YT_OVERSCAN,
                         height: el.height * scale * YT_OVERSCAN,
-                        transform: "translate(-50%, -50%)",
+                        border: 0,
                       }}
                     />
                   </div>
