@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_TEXT_API_KEY=${GEMINI_TEXT_API_KEY}
+      - GEMINI_IMAGE_API_KEY=${GEMINI_IMAGE_API_KEY}
       - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY}
       - GIPHY_API_KEY=${GIPHY_API_KEY}
     networks:

@@ -219,14 +219,14 @@ app.post(
       return
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
     if (!apiKey) {
       console.error(
-        "GEMINI_API_KEY manquante dans les variables d'environnement",
+        "GEMINI_IMAGE_API_KEY ou GEMINI_API_KEY manquante dans les variables d'environnement",
       )
       res
         .status(500)
-        .json({ error: "Clé API Gemini non configurée sur le serveur" })
+        .json({ error: "Clé API Gemini Image/Globale non configurée sur le serveur" })
       return
     }
 
