@@ -47,11 +47,21 @@ const CANVAS_H = 1080
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
 const MARQUEE_CLICK_THRESHOLD = 4
-// Sur-échelle de l'iframe YouTube en lecture (jeu/aperçu) : l'iframe est
-// agrandie et centrée dans un conteneur `overflow-hidden` pour rejeter la barre
-// de titre (haut) et les contrôles (bas) hors du cadre. YouTube ne propose plus
-// de paramètre pour masquer le titre, qui spoile souvent la réponse en quiz.
-const YT_OVERSCAN = 1.3
+// Masquage du titre YouTube en lecture (jeu/aperçu) : YouTube ne propose plus de
+// paramètre pour le cacher, et il spoile souvent la réponse en quiz.
+//
+// À largeur constante, une iframe plus haute que le ratio de la vidéo fait
+// letterboxer le lecteur : la vidéo garde sa largeur pleine et se centre, tandis
+// que le titre (haut) et les contrôles (bas), ancrés aux bords de l'iframe,
+// tombent dans les bandes noires — que le conteneur `overflow:hidden` découpe.
+// La zone visible correspond alors exactement à l'image : ni rognage latéral, ni
+// déformation.
+//
+// La marge est en PIXELS FIXES, pas en pourcentage : le bandeau YouTube a une
+// hauteur à peu près constante (~48px), qu'une marge proportionnelle laissait
+// dépasser sur les petites vidéos. L'élargir ne coûte aucune image (la vidéo
+// reste centrée et pleine largeur), d'où une valeur volontairement généreuse.
+const YT_CHROME_CLIP_PX = 80
 
 const SlideCanvas = ({
   elements,
@@ -1339,8 +1349,8 @@ const SlideCanvas = ({
                         top: "50%",
                         left: "50%",
                         transform: "translate(-50%, -50%)",
-                        width: el.width * scale * YT_OVERSCAN,
-                        height: el.height * scale * YT_OVERSCAN,
+                        width: el.width * scale,
+                        height: el.height * scale + 2 * YT_CHROME_CLIP_PX,
                         border: 0,
                       }}
                     />
