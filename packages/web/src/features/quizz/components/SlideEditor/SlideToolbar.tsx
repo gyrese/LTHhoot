@@ -64,8 +64,8 @@ const SlideToolbar = () => {
     redo,
     canUndo,
     canRedo,
-    showLayersPanel,
-    setShowLayersPanel,
+    activeInspectorPanel,
+    setActiveInspectorPanel,
   } = useQuizzEditor()
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
@@ -464,16 +464,16 @@ const SlideToolbar = () => {
 
         <div className="bg-border mx-1 h-5 w-px" />
 
-        {/* Bouton pour afficher/masquer le panneau de calques */}
+        {/* Ouvre l'onglet Calques de l'inspecteur */}
         <button
-          onClick={() => setShowLayersPanel(!showLayersPanel)}
+          onClick={() => setActiveInspectorPanel("layers")}
           className={clsx(
             "focus-ring cursor-pointer rounded-lg p-1.5 transition-colors duration-150",
-            showLayersPanel
+            activeInspectorPanel === "layers"
               ? "bg-primary-soft text-primary-ink"
               : "text-ink-muted hover:bg-panel hover:text-ink",
           )}
-          title="Afficher/Masquer le panneau de calques"
+          title="Afficher les calques"
         >
           <Layers className="size-4" />
         </button>
