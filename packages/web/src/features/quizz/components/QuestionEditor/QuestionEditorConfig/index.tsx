@@ -479,7 +479,7 @@ const QuestionEditorConfig = () => {
                   <option value="random">
                     {t(
                       "quizz:question.config.revealStyleOpt.random",
-                      "Aléatoire",
+                      "Aléatoire (Style mixé)",
                     )}
                   </option>
                   <option value="blur">
@@ -488,16 +488,22 @@ const QuestionEditorConfig = () => {
                       "Défloutage progressif",
                     )}
                   </option>
+                  <option value="iris">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.iris",
+                      "Diaphragme / Zoom optique",
+                    )}
+                  </option>
                   <option value="random-grid">
                     {t(
                       "quizz:question.config.revealStyleOpt.randomGrid",
-                      "Cases aléatoires",
+                      "Mosaïque aléatoire",
                     )}
                   </option>
                   <option value="center-out">
                     {t(
                       "quizz:question.config.revealStyleOpt.centerOut",
-                      "Centre vers bords",
+                      "Explosion du centre",
                     )}
                   </option>
                   <option value="diagonal-wave">
@@ -509,19 +515,31 @@ const QuestionEditorConfig = () => {
                   <option value="spiral">
                     {t(
                       "quizz:question.config.revealStyleOpt.spiral",
-                      "Spirale",
+                      "Spirale vortex",
+                    )}
+                  </option>
+                  <option value="venetian">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.venetian",
+                      "Persiennes 3D (Volets)",
+                    )}
+                  </option>
+                  <option value="curtain-horizontal">
+                    {t(
+                      "quizz:question.config.revealStyleOpt.curtainHorizontal",
+                      "Rideau double latéral",
                     )}
                   </option>
                   <option value="left-to-right">
                     {t(
                       "quizz:question.config.revealStyleOpt.leftToRight",
-                      "Gauche à droite",
+                      "Balayage gauche à droite",
                     )}
                   </option>
                   <option value="top-to-bottom">
                     {t(
                       "quizz:question.config.revealStyleOpt.topToBottom",
-                      "Haut en bas",
+                      "Chute haut en bas",
                     )}
                   </option>
                 </select>

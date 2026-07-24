@@ -48,6 +48,9 @@ export const BackgroundRevealer = ({
       "left-to-right",
       "top-to-bottom",
       "spiral",
+      "venetian",
+      "curtain-horizontal",
+      "iris",
       "blur",
     ]
 
@@ -67,19 +70,28 @@ export const BackgroundRevealer = ({
       switch (selectedStyle) {
         case "center-out": {
           const dist = Math.sqrt((cell.c - cx) ** 2 + (cell.r - cy) ** 2)
-          score = dist + randVal * 0.4
+          score = dist + randVal * 0.3
           break
         }
         case "diagonal-wave": {
-          score = cell.c + cell.r + randVal * 0.5
+          score = cell.c + cell.r + randVal * 0.4
           break
         }
         case "left-to-right": {
-          score = cell.c + randVal * 0.3
+          score = cell.c + randVal * 0.2
           break
         }
         case "top-to-bottom": {
-          score = cell.r + randVal * 0.3
+          score = cell.r + randVal * 0.2
+          break
+        }
+        case "curtain-horizontal": {
+          const distFromCenterCol = Math.abs(cell.c - cx)
+          score = distFromCenterCol + randVal * 0.2
+          break
+        }
+        case "venetian": {
+          score = cell.c * 2 + randVal * 0.8
           break
         }
         case "spiral": {
@@ -102,7 +114,7 @@ export const BackgroundRevealer = ({
     return { sequence: seq, selectedStyle }
   }, [totalCells, gridCols, gridRows, seedString, configuredStyle])
 
-  // Timer à haute fréquence unifié pour animer de manière ultra-fluide (grille ou flou)
+  // Timer à haute fréquence unifié pour animer de manière ultra-fluide (60 FPS)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
@@ -129,31 +141,146 @@ export const BackgroundRevealer = ({
       if (currentProgress >= 1) {
         clearInterval(timer)
       }
-    }, 16) // ~60 FPS, fluidité maximale sur GPU
+    }, 16)
 
     return () => clearInterval(timer)
   }, [duration, startTimeOffset])
 
-  // Pour le style de type défloutage (blur)
+  // 1. Style Défloutage (blur) - Masque 100% opaque au départ qui se défloute et s'efface
   if (selectedStyle === "blur") {
     const currentBlur = 40 * (1 - progress)
-    const overlayOpacity = 0.4 * (1 - progress)
+    const overlayOpacity = 1 - progress
 
     return (
       <div
-        className="pointer-events-none absolute inset-0 z-[5] transition-all duration-75 select-none"
+        className="pointer-events-none absolute inset-0 z-[5] select-none"
         style={{
           backdropFilter: `blur(${currentBlur}px)`,
           WebkitBackdropFilter: `blur(${currentBlur}px)`,
-          backgroundColor: `rgba(15, 23, 42, ${overlayOpacity})`,
+          backgroundColor: `rgba(9, 13, 22, ${overlayOpacity})`,
+          transition: "backdrop-filter 50ms linear, background-color 50ms linear",
         }}
       />
     )
   }
 
-  // Pour les styles de type grille de tuiles (grid cells)
+  // 2. Style Iris / Diaphragme Optique (circle expand) - Masque 100% opaque avec ouverture circulaire
+  if (selectedStyle === "iris") {
+    const radiusPercent = progress * 140
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] select-none transition-all duration-75"
+        style={{
+          maskImage: `radial-gradient(circle at 50% 50%, transparent ${radiusPercent}%, black ${radiusPercent + 4}%)`,
+          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${radiusPercent}%, black ${radiusPercent + 4}%)`,
+        }}
+      />
+    )
+  }
+
+  // 3. Styles Grille de Tuiles (grid cells)
   const revealedCount = Math.floor(progress * totalCells)
   const revealedSet = new Set(sequence.slice(0, revealedCount))
+
+  const getTileStyle = (isRevealed: boolean) => {
+    // ÉTAT NON RÉVÉLÉ : 100% OPAQUE (#0f172a) -> AUCUNE FUITE D'IMAGE !
+    if (!isRevealed) {
+      return {
+        opacity: 1,
+        transform: "scale(1) rotate(0deg) translate(0px, 0px)",
+        backgroundColor: "#090d16",
+        boxShadow: "0 0 1px 0.5px #090d16",
+        transitionDuration: "500ms",
+        transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 2,
+      }
+    }
+
+    // ÉTAT RÉVÉLÉ : Animation d'effacement spécifique selon le style choisi
+    switch (selectedStyle) {
+      case "center-out":
+        return {
+          opacity: 0,
+          transform: "scale(1.12) rotate(4deg)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "550ms",
+          transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          zIndex: 1,
+        }
+      case "diagonal-wave":
+        return {
+          opacity: 0,
+          transform: "translate(12px, 12px) scale(0.95)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "500ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+      case "spiral":
+        return {
+          opacity: 0,
+          transform: "rotate(-25deg) scale(0.7)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "600ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+      case "venetian":
+        return {
+          opacity: 0,
+          transform: "perspective(400px) rotateY(90deg)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "500ms",
+          transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+          zIndex: 1,
+        }
+      case "curtain-horizontal":
+        return {
+          opacity: 0,
+          transform: "scaleX(0)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "450ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+      case "top-to-bottom":
+        return {
+          opacity: 0,
+          transform: "translateY(16px) scale(0.92)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "450ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+      case "left-to-right":
+        return {
+          opacity: 0,
+          transform: "translateX(16px) scale(0.92)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "450ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+      case "random-grid":
+      default:
+        return {
+          opacity: 0,
+          transform: "scale(1.08)",
+          backgroundColor: "#0f172a",
+          boxShadow: "none",
+          transitionDuration: "500ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
+    }
+  }
 
   return (
     <div
@@ -168,21 +295,8 @@ export const BackgroundRevealer = ({
         return (
           <div
             key={index}
-            className="relative transition-all select-none"
-            style={{
-              opacity: isRevealed ? 0 : 1,
-              transform: isRevealed ? "scale(1.08)" : "scale(1)",
-              filter: isRevealed
-                ? "blur(10px) brightness(1.4)"
-                : "blur(0px) brightness(1)",
-              backgroundColor: "rgba(15, 23, 42, 0.96)",
-              boxShadow: isRevealed
-                ? "none"
-                : "inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 1px 0.5px rgba(15, 23, 42, 0.96)",
-              transitionDuration: "550ms",
-              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-              zIndex: isRevealed ? 1 : 2,
-            }}
+            className="relative select-none transition-all"
+            style={getTileStyle(isRevealed)}
           />
         )
       })}
