@@ -398,15 +398,20 @@ const QuestionEditorConfig = () => {
 
           {currentQuestion?.revelationEnabled && (() => {
             const currentStyle = currentQuestion.revelationStyle ?? "random-grid"
-            const mainType =
-              currentStyle === "blur" ||
-              currentStyle === "pixelate" ||
-              currentStyle === "iris"
-                ? currentStyle
-                : "grid"
-
-            const gridPattern =
-              mainType === "grid" ? currentStyle : "random-grid"
+            const nonGridStyles = [
+              "blur",
+              "iris",
+              "spotlight",
+              "thermal",
+              "pixelate",
+              "glitch",
+              "printer",
+              "burn",
+              "ink",
+            ]
+            const isNonGrid = nonGridStyles.includes(currentStyle)
+            const mainType = isNonGrid ? currentStyle : "grid"
+            const gridPattern = isNonGrid ? "random-grid" : currentStyle
 
             return (
               <>
@@ -446,7 +451,7 @@ const QuestionEditorConfig = () => {
                     icon={<Settings className="size-4" />}
                     label={t(
                       "quizz:question.config.revealStyle",
-                      "Mode d'apparition",
+                      "Catégorie & Mode d'effet",
                     )}
                   />
                   <select
@@ -461,30 +466,74 @@ const QuestionEditorConfig = () => {
                     }}
                     className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
                   >
-                    <option value="grid">
-                      {t(
-                        "quizz:question.config.revealStyleOpt.grid",
-                        "🟩 Révélation par cases",
-                      )}
-                    </option>
-                    <option value="pixelate">
-                      {t(
-                        "quizz:question.config.revealStyleOpt.pixelate",
-                        "👾 Dépixélisation progressive",
-                      )}
-                    </option>
-                    <option value="blur">
-                      {t(
-                        "quizz:question.config.revealStyleOpt.blur",
-                        "🌫️ Défloutage progressif",
-                      )}
-                    </option>
-                    <option value="iris">
-                      {t(
-                        "quizz:question.config.revealStyleOpt.iris",
-                        "👁️ Diaphragme / Zoom optique",
-                      )}
-                    </option>
+                    <optgroup label="🟩 Grilles & Tuiles">
+                      <option value="grid">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.grid",
+                          "🟩 Révélation par cases",
+                        )}
+                      </option>
+                    </optgroup>
+                    <optgroup label="🔬 Optique & Spéciaux">
+                      <option value="blur">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.blur",
+                          "🌫️ Défloutage progressif",
+                        )}
+                      </option>
+                      <option value="iris">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.iris",
+                          "👁️ Diaphragme / Zoom optique",
+                        )}
+                      </option>
+                      <option value="spotlight">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.spotlight",
+                          "🔦 Projecteur / Torche Scanner",
+                        )}
+                      </option>
+                      <option value="thermal">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.thermal",
+                          "🕶️ Infrarouge → Couleurs",
+                        )}
+                      </option>
+                    </optgroup>
+                    <optgroup label="📺 Médias & Rétro Tech">
+                      <option value="pixelate">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.pixelate",
+                          "👾 Dépixélisation progressive",
+                        )}
+                      </option>
+                      <option value="glitch">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.glitch",
+                          "📺 Neige TV & Scanlines CRT",
+                        )}
+                      </option>
+                      <option value="printer">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.printer",
+                          "🖨️ Impression Ligne par Ligne",
+                        )}
+                      </option>
+                    </optgroup>
+                    <optgroup label="🔥 Éléments & Matières">
+                      <option value="burn">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.burn",
+                          "🔥 Combustion / Papier brûlé",
+                        )}
+                      </option>
+                      <option value="ink">
+                        {t(
+                          "quizz:question.config.revealStyleOpt.ink",
+                          "🎨 Diffusion d'Encre",
+                        )}
+                      </option>
+                    </optgroup>
                   </select>
                 </ConfigField>
 
@@ -551,6 +600,18 @@ const QuestionEditorConfig = () => {
                           {t(
                             "quizz:question.config.revealStyleOpt.topToBottom",
                             "Chute haut en bas",
+                          )}
+                        </option>
+                        <option value="honeycomb">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.honeycomb",
+                            "Nid d'abeille Hexagonal",
+                          )}
+                        </option>
+                        <option value="puzzle">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.puzzle",
+                            "Pièces de Puzzle",
                           )}
                         </option>
                       </select>

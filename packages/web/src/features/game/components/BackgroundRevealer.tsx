@@ -55,8 +55,16 @@ export const BackgroundRevealer = ({
       "venetian",
       "curtain-horizontal",
       "pixelate",
-      "iris",
+      "glitch",
+      "printer",
       "blur",
+      "iris",
+      "spotlight",
+      "thermal",
+      "honeycomb",
+      "puzzle",
+      "burn",
+      "ink",
     ]
 
     let selectedStyle = configuredStyle
@@ -105,6 +113,8 @@ export const BackgroundRevealer = ({
           score = dist * 3 + angle + randVal * 0.2
           break
         }
+        case "puzzle":
+        case "honeycomb":
         case "random-grid":
         default: {
           score = randVal
@@ -163,9 +173,9 @@ export const BackgroundRevealer = ({
     }
   }, [selectedStyle, imageUrl])
 
-  // Rendu Canvas pour le mode Dépixélisation (pixelate)
+  // Rendu Canvas pour Dépixélisation & Neige TV (Glitch)
   useEffect(() => {
-    if (selectedStyle !== "pixelate") return
+    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -181,54 +191,74 @@ export const BackgroundRevealer = ({
       return
     }
 
-    const img = loadedImageRef.current
-    const blockSize = Math.max(
-      1,
-      Math.round(Math.pow(1 - progress, 2.2) * 80),
-    )
+    if (selectedStyle === "pixelate") {
+      const img = loadedImageRef.current
+      const blockSize = Math.max(
+        1,
+        Math.round(Math.pow(1 - progress, 2.2) * 80),
+      )
 
-    ctx.imageSmoothingEnabled = false
+      ctx.imageSmoothingEnabled = false
 
-    if (img && img.complete) {
-      const scaledW = Math.max(1, Math.floor(width / blockSize))
-      const scaledH = Math.max(1, Math.floor(height / blockSize))
+      if (img && img.complete) {
+        const scaledW = Math.max(1, Math.floor(width / blockSize))
+        const scaledH = Math.max(1, Math.floor(height / blockSize))
 
-      const offscreen = document.createElement("canvas")
-      offscreen.width = scaledW
-      offscreen.height = scaledH
-      const offCtx = offscreen.getContext("2d")
+        const offscreen = document.createElement("canvas")
+        offscreen.width = scaledW
+        offscreen.height = scaledH
+        const offCtx = offscreen.getContext("2d")
 
-      if (offCtx) {
-        offCtx.imageSmoothingEnabled = false
-        const imgRatio = img.width / img.height
-        const canvasRatio = width / height
-        let sx = 0
-        let sy = 0
-        let sw = img.width
-        let sh = img.height
+        if (offCtx) {
+          offCtx.imageSmoothingEnabled = false
+          const imgRatio = img.width / img.height
+          const canvasRatio = width / height
+          let sx = 0, sy = 0, sw = img.width, sh = img.height
 
-        if (imgRatio > canvasRatio) {
-          sw = img.height * canvasRatio
-          sx = (img.width - sw) / 2
-        } else {
-          sh = img.width / canvasRatio
-          sy = (img.height - sh) / 2
+          if (imgRatio > canvasRatio) {
+            sw = img.height * canvasRatio
+            sx = (img.width - sw) / 2
+          } else {
+            sh = img.width / canvasRatio
+            sy = (img.height - sh) / 2
+          }
+
+          offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
+
+          ctx.clearRect(0, 0, width, height)
+          ctx.drawImage(offscreen, 0, 0, scaledW, scaledH, 0, 0, width, height)
         }
-
-        offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
-
-        ctx.clearRect(0, 0, width, height)
-        ctx.drawImage(offscreen, 0, 0, scaledW, scaledH, 0, 0, width, height)
+      } else {
+        ctx.fillStyle = "#090d16"
+        ctx.fillRect(0, 0, width, height)
       }
-    } else {
-      ctx.fillStyle = "#090d16"
-      ctx.fillRect(0, 0, width, height)
+    } else if (selectedStyle === "glitch") {
+      // Neige TV / Static Noise
+      ctx.clearRect(0, 0, width, height)
+      const opacity = 1 - progress
+      const imageData = ctx.createImageData(width, height)
+      const data = imageData.data
+
+      for (let i = 0; i < data.length; i += 4) {
+        const val = Math.floor(Math.random() * 255)
+        data[i] = val // R
+        data[i + 1] = val // G
+        data[i + 2] = val // B
+        data[i + 3] = Math.floor(opacity * 255 * (Math.random() * 0.8 + 0.2)) // A
+      }
+      ctx.putImageData(imageData, 0, 0)
+
+      // Draw Scanlines
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.3})`
+      for (let y = 0; y < height; y += 4) {
+        ctx.fillRect(0, y, width, 1.5)
+      }
     }
   }, [progress, selectedStyle])
 
   // Redimensionnement du Canvas
   useEffect(() => {
-    if (selectedStyle !== "pixelate") return
+    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -247,11 +277,9 @@ export const BackgroundRevealer = ({
     return () => ro.disconnect()
   }, [selectedStyle])
 
-  // 1. Style Dépixélisation Canvas
-  if (selectedStyle === "pixelate") {
-    if (progress >= 1) {
-      return null
-    }
+  // ─── 1. MODE CANVASES (Pixelate & Glitch) ──────────────────────────────────
+  if (selectedStyle === "pixelate" || selectedStyle === "glitch") {
+    if (progress >= 1) return null
 
     return (
       <canvas
@@ -261,12 +289,9 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // 2. Style Défloutage (blur) - Masque 100% opaque au départ qui se défloute et s'efface
+  // ─── 2. MODE OPTIQUE & SPÉCIAUX (Blur, Iris, Spotlight, Thermal) ────────────
   if (selectedStyle === "blur") {
-    if (progress >= 1) {
-      return null
-    }
-
+    if (progress >= 1) return null
     const currentBlur = 40 * (1 - progress)
     const overlayOpacity = 1 - progress
 
@@ -283,12 +308,8 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // 3. Style Iris / Diaphragme Optique (circle expand) - Masque 100% opaque avec ouverture circulaire
   if (selectedStyle === "iris") {
-    if (progress >= 1) {
-      return null
-    }
-
+    if (progress >= 1) return null
     const radiusPercent = progress * 140
     return (
       <div
@@ -301,10 +322,105 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // 4. Styles Grille de Tuiles (grid cells)
-  if (progress >= 1) {
-    return null
+  if (selectedStyle === "spotlight") {
+    if (progress >= 1) return null
+    const time = progress * 10
+    const sweepPhase = Math.min(1, progress / 0.6)
+
+    let spotX = 50 + Math.sin(time * 3) * 35
+    let spotY = 50 + Math.cos(time * 2) * 25
+    let radius = 120
+
+    if (progress > 0.6) {
+      const expandProgress = (progress - 0.6) / 0.4
+      spotX = spotX * (1 - expandProgress) + 50 * expandProgress
+      spotY = spotY * (1 - expandProgress) + 50 * expandProgress
+      radius = 120 + expandProgress * 1500
+    }
+
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] select-none transition-all duration-75"
+        style={{
+          maskImage: `radial-gradient(circle ${radius}px at ${spotX}% ${spotY}%, transparent 80%, black 100%)`,
+          WebkitMaskImage: `radial-gradient(circle ${radius}px at ${spotX}% ${spotY}%, transparent 80%, black 100%)`,
+        }}
+      />
+    )
   }
+
+  if (selectedStyle === "thermal") {
+    if (progress >= 1) return null
+    const factor = 1 - progress
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] select-none transition-all duration-100"
+        style={{
+          backgroundColor: `rgba(9, 13, 22, ${factor * 0.9})`,
+          backdropFilter: `hue-rotate(${factor * 200}deg) invert(${factor * 0.7}) contrast(${100 + factor * 100}%)`,
+          WebkitBackdropFilter: `hue-rotate(${factor * 200}deg) invert(${factor * 0.7}) contrast(${100 + factor * 100}%)`,
+        }}
+      />
+    )
+  }
+
+  // ─── 3. MODE ÉLÉMENTS & MATIÈRES (Burn, Ink, Printer) ──────────────────────
+  if (selectedStyle === "printer") {
+    if (progress >= 1) return null
+    const topPct = progress * 100
+    return (
+      <div className="pointer-events-none absolute inset-0 z-[5] select-none">
+        <div
+          className="absolute inset-0 bg-[#090d16]"
+          style={{
+            clipPath: `polygon(0 ${topPct}%, 100% ${topPct}%, 100% 100%, 0 100%)`,
+          }}
+        />
+        <div
+          className="absolute right-0 left-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
+          style={{ top: `${topPct}%` }}
+        />
+      </div>
+    )
+  }
+
+  if (selectedStyle === "burn") {
+    if (progress >= 1) return null
+    const r = progress * 140
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] select-none transition-all duration-75"
+        style={{
+          maskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, black ${r + 6}%)`,
+          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, black ${r + 6}%)`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full border-[8px] border-amber-500/80 shadow-[0_0_30px_#f59e0b]"
+          style={{
+            clipPath: `circle(${r + 1}% at 50% 50%)`,
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (selectedStyle === "ink") {
+    if (progress >= 1) return null
+    const r = progress * 130
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] select-none transition-all duration-75"
+        style={{
+          maskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, transparent ${r + 2}%, black ${r + 8}%), radial-gradient(circle at 20% 30%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%), radial-gradient(circle at 80% 70%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%)`,
+          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, transparent ${r + 2}%, black ${r + 8}%), radial-gradient(circle at 20% 30%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%), radial-gradient(circle at 80% 70%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%)`,
+        }}
+      />
+    )
+  }
+
+  // ─── 4. MODE GRILLES & GÉOMÉTRIE (HoneyComb, Puzzle, Cases Standard) ────────
+  if (progress >= 1) return null
 
   const revealedCount = Math.floor(progress * totalCells)
   const revealedSet = new Set(sequence.slice(0, revealedCount))
@@ -316,6 +432,10 @@ export const BackgroundRevealer = ({
         transform: "scale(1) rotate(0deg) translate(0px, 0px)",
         backgroundColor: "#090d16",
         boxShadow: "0 0 1px 0.5px #090d16",
+        clipPath:
+          selectedStyle === "honeycomb"
+            ? "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)"
+            : undefined,
         transitionDuration: "500ms",
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
         zIndex: 2,
@@ -323,6 +443,26 @@ export const BackgroundRevealer = ({
     }
 
     switch (selectedStyle) {
+      case "honeycomb":
+        return {
+          opacity: 0,
+          transform: "scale(0) rotate(90deg)",
+          backgroundColor: "#090d16",
+          clipPath:
+            "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+          transitionDuration: "600ms",
+          transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          zIndex: 1,
+        }
+      case "puzzle":
+        return {
+          opacity: 0,
+          transform: "scale(0.8) rotate(-10deg)",
+          backgroundColor: "#090d16",
+          transitionDuration: "500ms",
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+          zIndex: 1,
+        }
       case "center-out":
         return {
           opacity: 0,
