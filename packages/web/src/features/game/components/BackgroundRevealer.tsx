@@ -157,7 +157,7 @@ export const BackgroundRevealer = ({
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[5] grid gap-0.5 overflow-hidden p-0.5 select-none"
+      className="pointer-events-none absolute inset-0 z-[5] grid gap-0 overflow-hidden p-0 select-none"
       style={{
         gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
         gridTemplateRows: `repeat(${gridRows}, 1fr)`,
@@ -168,11 +168,20 @@ export const BackgroundRevealer = ({
         return (
           <div
             key={index}
-            className="border border-white/5 bg-[#0f172a] transition-all ease-out"
+            className="relative transition-all select-none"
             style={{
               opacity: isRevealed ? 0 : 1,
-              transform: isRevealed ? "scale(0.9)" : "scale(1)",
-              transitionDuration: "400ms",
+              transform: isRevealed ? "scale(1.08)" : "scale(1)",
+              filter: isRevealed
+                ? "blur(10px) brightness(1.4)"
+                : "blur(0px) brightness(1)",
+              backgroundColor: "rgba(15, 23, 42, 0.96)",
+              boxShadow: isRevealed
+                ? "none"
+                : "inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 1px 0.5px rgba(15, 23, 42, 0.96)",
+              transitionDuration: "550ms",
+              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+              zIndex: isRevealed ? 1 : 2,
             }}
           />
         )
