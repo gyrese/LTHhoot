@@ -137,6 +137,9 @@ const PreviewPresenterView = ({ question }: Props) => {
             gridRows={gridRows ?? 6}
             seedString={title || question.background?.value}
             configuredStyle={revelationStyle}
+            imageUrl={
+              background?.type === "image" ? background.value : undefined
+            }
           />
         )}
 

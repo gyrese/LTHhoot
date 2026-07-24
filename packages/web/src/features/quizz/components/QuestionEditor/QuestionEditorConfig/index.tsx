@@ -396,156 +396,202 @@ const QuestionEditorConfig = () => {
             )}
           />
 
-          {currentQuestion?.revelationEnabled && (
-            <>
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Clock className="size-4" />}
-                  label={t(
-                    "quizz:question.config.revealDuration",
-                    "Durée de révélation",
-                  )}
-                />
-                <ConfigNumberInput
-                  value={
-                    currentQuestion.revealDuration ??
-                    (isSlide
-                      ? currentQuestion.cooldown
-                      : currentQuestion.cooldown + currentQuestion.time)
-                  }
-                  min={3}
-                  max={
-                    isSlide
-                      ? currentQuestion.cooldown
-                      : currentQuestion.cooldown + currentQuestion.time
-                  }
-                  onChange={handleUpdateQuestion("revealDuration")}
-                />
-                <ConfigField.Description>
-                  {t(
-                    "quizz:question.config.revealDurationHint",
-                    "Temps (sec) pour dévoiler complètement l'image.",
-                  )}
-                </ConfigField.Description>
-              </ConfigField>
+          {currentQuestion?.revelationEnabled && (() => {
+            const currentStyle = currentQuestion.revelationStyle ?? "random-grid"
+            const mainType =
+              currentStyle === "blur" ||
+              currentStyle === "pixelate" ||
+              currentStyle === "iris"
+                ? currentStyle
+                : "grid"
 
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Columns className="size-4" />}
-                  label={t(
-                    "quizz:question.config.revealCols",
-                    "Colonnes (largeur)",
-                  )}
-                />
-                <ConfigNumberInput
-                  value={currentQuestion.gridCols ?? 8}
-                  min={2}
-                  max={30}
-                  onChange={handleUpdateQuestion("gridCols")}
-                />
-              </ConfigField>
+            const gridPattern =
+              mainType === "grid" ? currentStyle : "random-grid"
 
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Grid className="size-4" />}
-                  label={t(
-                    "quizz:question.config.revealRows",
-                    "Lignes (hauteur)",
-                  )}
-                />
-                <ConfigNumberInput
-                  value={currentQuestion.gridRows ?? 6}
-                  min={2}
-                  max={30}
-                  onChange={handleUpdateQuestion("gridRows")}
-                />
-              </ConfigField>
+            return (
+              <>
+                <ConfigField>
+                  <ConfigField.Label
+                    icon={<Clock className="size-4" />}
+                    label={t(
+                      "quizz:question.config.revealDuration",
+                      "Durée de révélation",
+                    )}
+                  />
+                  <ConfigNumberInput
+                    value={
+                      currentQuestion.revealDuration ??
+                      (isSlide
+                        ? currentQuestion.cooldown
+                        : currentQuestion.cooldown + currentQuestion.time)
+                    }
+                    min={3}
+                    max={
+                      isSlide
+                        ? currentQuestion.cooldown
+                        : currentQuestion.cooldown + currentQuestion.time
+                    }
+                    onChange={handleUpdateQuestion("revealDuration")}
+                  />
+                  <ConfigField.Description>
+                    {t(
+                      "quizz:question.config.revealDurationHint",
+                      "Temps (sec) pour dévoiler complètement l'image.",
+                    )}
+                  </ConfigField.Description>
+                </ConfigField>
 
-              <ConfigField>
-                <ConfigField.Label
-                  icon={<Settings className="size-4" />}
-                  label={t(
-                    "quizz:question.config.revealStyle",
-                    "Type d'apparition",
-                  )}
-                />
-                <select
-                  value={currentQuestion.revelationStyle ?? "random"}
-                  onChange={(e) =>
-                    handleUpdateQuestion("revelationStyle")(e.target.value)
-                  }
-                  className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
-                >
-                  <option value="random">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.random",
-                      "Aléatoire (Style mixé)",
+                <ConfigField>
+                  <ConfigField.Label
+                    icon={<Settings className="size-4" />}
+                    label={t(
+                      "quizz:question.config.revealStyle",
+                      "Mode d'apparition",
                     )}
-                  </option>
-                  <option value="blur">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.blur",
-                      "Défloutage progressif",
-                    )}
-                  </option>
-                  <option value="iris">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.iris",
-                      "Diaphragme / Zoom optique",
-                    )}
-                  </option>
-                  <option value="random-grid">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.randomGrid",
-                      "Mosaïque aléatoire",
-                    )}
-                  </option>
-                  <option value="center-out">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.centerOut",
-                      "Explosion du centre",
-                    )}
-                  </option>
-                  <option value="diagonal-wave">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.diagonalWave",
-                      "Vague diagonale",
-                    )}
-                  </option>
-                  <option value="spiral">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.spiral",
-                      "Spirale vortex",
-                    )}
-                  </option>
-                  <option value="venetian">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.venetian",
-                      "Persiennes 3D (Volets)",
-                    )}
-                  </option>
-                  <option value="curtain-horizontal">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.curtainHorizontal",
-                      "Rideau double latéral",
-                    )}
-                  </option>
-                  <option value="left-to-right">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.leftToRight",
-                      "Balayage gauche à droite",
-                    )}
-                  </option>
-                  <option value="top-to-bottom">
-                    {t(
-                      "quizz:question.config.revealStyleOpt.topToBottom",
-                      "Chute haut en bas",
-                    )}
-                  </option>
-                </select>
-              </ConfigField>
-            </>
-          )}
+                  />
+                  <select
+                    value={mainType}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val === "grid") {
+                        handleUpdateQuestion("revelationStyle")(gridPattern)
+                      } else {
+                        handleUpdateQuestion("revelationStyle")(val)
+                      }
+                    }}
+                    className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
+                  >
+                    <option value="grid">
+                      {t(
+                        "quizz:question.config.revealStyleOpt.grid",
+                        "🟩 Révélation par cases",
+                      )}
+                    </option>
+                    <option value="pixelate">
+                      {t(
+                        "quizz:question.config.revealStyleOpt.pixelate",
+                        "👾 Dépixélisation progressive",
+                      )}
+                    </option>
+                    <option value="blur">
+                      {t(
+                        "quizz:question.config.revealStyleOpt.blur",
+                        "🌫️ Défloutage progressif",
+                      )}
+                    </option>
+                    <option value="iris">
+                      {t(
+                        "quizz:question.config.revealStyleOpt.iris",
+                        "👁️ Diaphragme / Zoom optique",
+                      )}
+                    </option>
+                  </select>
+                </ConfigField>
+
+                {mainType === "grid" && (
+                  <>
+                    <ConfigField>
+                      <ConfigField.Label
+                        icon={<Shapes className="size-4" />}
+                        label={t(
+                          "quizz:question.config.gridPattern",
+                          "Sens d'apparition (Pattern)",
+                        )}
+                      />
+                      <select
+                        value={gridPattern}
+                        onChange={(e) =>
+                          handleUpdateQuestion("revelationStyle")(e.target.value)
+                        }
+                        className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
+                      >
+                        <option value="random-grid">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.randomGrid",
+                            "Mosaïque aléatoire",
+                          )}
+                        </option>
+                        <option value="center-out">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.centerOut",
+                            "Explosion du centre",
+                          )}
+                        </option>
+                        <option value="diagonal-wave">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.diagonalWave",
+                            "Vague diagonale",
+                          )}
+                        </option>
+                        <option value="spiral">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.spiral",
+                            "Spirale vortex",
+                          )}
+                        </option>
+                        <option value="venetian">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.venetian",
+                            "Persiennes 3D (Volets)",
+                          )}
+                        </option>
+                        <option value="curtain-horizontal">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.curtainHorizontal",
+                            "Rideau double latéral",
+                          )}
+                        </option>
+                        <option value="left-to-right">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.leftToRight",
+                            "Balayage gauche à droite",
+                          )}
+                        </option>
+                        <option value="top-to-bottom">
+                          {t(
+                            "quizz:question.config.revealStyleOpt.topToBottom",
+                            "Chute haut en bas",
+                          )}
+                        </option>
+                      </select>
+                    </ConfigField>
+
+                    <ConfigField>
+                      <ConfigField.Label
+                        icon={<Columns className="size-4" />}
+                        label={t(
+                          "quizz:question.config.revealCols",
+                          "Colonnes (largeur)",
+                        )}
+                      />
+                      <ConfigNumberInput
+                        value={currentQuestion.gridCols ?? 8}
+                        min={2}
+                        max={30}
+                        onChange={handleUpdateQuestion("gridCols")}
+                      />
+                    </ConfigField>
+
+                    <ConfigField>
+                      <ConfigField.Label
+                        icon={<Grid className="size-4" />}
+                        label={t(
+                          "quizz:question.config.revealRows",
+                          "Lignes (hauteur)",
+                        )}
+                      />
+                      <ConfigNumberInput
+                        value={currentQuestion.gridRows ?? 6}
+                        min={2}
+                        max={30}
+                        onChange={handleUpdateQuestion("gridRows")}
+                      />
+                    </ConfigField>
+                  </>
+                )}
+              </>
+            )
+          })()}
         </ConfigSection>
 
         <ConfigSection

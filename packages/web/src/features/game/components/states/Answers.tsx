@@ -345,6 +345,9 @@ const Answers = ({
           seedString={question || background?.value}
           startTimeOffset={0}
           configuredStyle={revelationStyle}
+          imageUrl={
+            background?.type === "image" ? background.value : undefined
+          }
         />
       )}
 

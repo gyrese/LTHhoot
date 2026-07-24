@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 
 type Props = {
   duration: number // en secondes
@@ -7,6 +7,7 @@ type Props = {
   seedString?: string
   startTimeOffset?: number
   configuredStyle?: string
+  imageUrl?: string
 }
 
 function createPRNG(seedString: string) {
@@ -28,8 +29,11 @@ export const BackgroundRevealer = ({
   seedString,
   startTimeOffset = 0,
   configuredStyle,
+  imageUrl,
 }: Props) => {
   const totalCells = gridCols * gridRows
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const loadedImageRef = useRef<HTMLImageElement | null>(null)
 
   // Génère un ordre de révélation et sélectionne le style
   const { sequence, selectedStyle } = useMemo(() => {
@@ -50,6 +54,7 @@ export const BackgroundRevealer = ({
       "spiral",
       "venetian",
       "curtain-horizontal",
+      "pixelate",
       "iris",
       "blur",
     ]
@@ -146,8 +151,122 @@ export const BackgroundRevealer = ({
     return () => clearInterval(timer)
   }, [duration, startTimeOffset])
 
-  // 1. Style Défloutage (blur) - Masque 100% opaque au départ qui se défloute et s'efface
+  // Préchargement de l'image pour le mode dépixélisation canvas
+  useEffect(() => {
+    if (selectedStyle !== "pixelate" || !imageUrl) return
+
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.src = imageUrl
+    img.onload = () => {
+      loadedImageRef.current = img
+    }
+  }, [selectedStyle, imageUrl])
+
+  // Rendu Canvas pour le mode Dépixélisation (pixelate)
+  useEffect(() => {
+    if (selectedStyle !== "pixelate") return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const width = canvas.width
+    const height = canvas.height
+    if (width === 0 || height === 0) return
+
+    if (progress >= 1) {
+      ctx.clearRect(0, 0, width, height)
+      return
+    }
+
+    const img = loadedImageRef.current
+    const blockSize = Math.max(
+      1,
+      Math.round(Math.pow(1 - progress, 2.2) * 80),
+    )
+
+    ctx.imageSmoothingEnabled = false
+
+    if (img && img.complete) {
+      const scaledW = Math.max(1, Math.floor(width / blockSize))
+      const scaledH = Math.max(1, Math.floor(height / blockSize))
+
+      const offscreen = document.createElement("canvas")
+      offscreen.width = scaledW
+      offscreen.height = scaledH
+      const offCtx = offscreen.getContext("2d")
+
+      if (offCtx) {
+        offCtx.imageSmoothingEnabled = false
+        const imgRatio = img.width / img.height
+        const canvasRatio = width / height
+        let sx = 0
+        let sy = 0
+        let sw = img.width
+        let sh = img.height
+
+        if (imgRatio > canvasRatio) {
+          sw = img.height * canvasRatio
+          sx = (img.width - sw) / 2
+        } else {
+          sh = img.width / canvasRatio
+          sy = (img.height - sh) / 2
+        }
+
+        offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
+
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(offscreen, 0, 0, scaledW, scaledH, 0, 0, width, height)
+      }
+    } else {
+      ctx.fillStyle = "#090d16"
+      ctx.fillRect(0, 0, width, height)
+    }
+  }, [progress, selectedStyle])
+
+  // Redimensionnement du Canvas
+  useEffect(() => {
+    if (selectedStyle !== "pixelate") return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const updateSize = () => {
+      const rect = canvas.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        canvas.width = rect.width
+        canvas.height = rect.height
+      }
+    }
+
+    updateSize()
+    const ro = new ResizeObserver(updateSize)
+    ro.observe(canvas)
+    return () => ro.disconnect()
+  }, [selectedStyle])
+
+  // 1. Style Dépixélisation Canvas
+  if (selectedStyle === "pixelate") {
+    if (progress >= 1) {
+      return null
+    }
+
+    return (
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 z-[5] h-full w-full select-none"
+      />
+    )
+  }
+
+  // 2. Style Défloutage (blur) - Masque 100% opaque au départ qui se défloute et s'efface
   if (selectedStyle === "blur") {
+    if (progress >= 1) {
+      return null
+    }
+
     const currentBlur = 40 * (1 - progress)
     const overlayOpacity = 1 - progress
 
@@ -164,8 +283,12 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // 2. Style Iris / Diaphragme Optique (circle expand) - Masque 100% opaque avec ouverture circulaire
+  // 3. Style Iris / Diaphragme Optique (circle expand) - Masque 100% opaque avec ouverture circulaire
   if (selectedStyle === "iris") {
+    if (progress >= 1) {
+      return null
+    }
+
     const radiusPercent = progress * 140
     return (
       <div
@@ -178,12 +301,15 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // 3. Styles Grille de Tuiles (grid cells)
+  // 4. Styles Grille de Tuiles (grid cells)
+  if (progress >= 1) {
+    return null
+  }
+
   const revealedCount = Math.floor(progress * totalCells)
   const revealedSet = new Set(sequence.slice(0, revealedCount))
 
   const getTileStyle = (isRevealed: boolean) => {
-    // ÉTAT NON RÉVÉLÉ : 100% OPAQUE (#0f172a) -> AUCUNE FUITE D'IMAGE !
     if (!isRevealed) {
       return {
         opacity: 1,
@@ -196,13 +322,12 @@ export const BackgroundRevealer = ({
       }
     }
 
-    // ÉTAT RÉVÉLÉ : Animation d'effacement spécifique selon le style choisi
     switch (selectedStyle) {
       case "center-out":
         return {
           opacity: 0,
           transform: "scale(1.12) rotate(4deg)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "550ms",
           transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -212,7 +337,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "translate(12px, 12px) scale(0.95)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "500ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -222,7 +347,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "rotate(-25deg) scale(0.7)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "600ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -232,7 +357,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "perspective(400px) rotateY(90deg)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "500ms",
           transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -242,7 +367,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "scaleX(0)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "450ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -252,7 +377,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "translateY(16px) scale(0.92)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "450ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -262,7 +387,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "translateX(16px) scale(0.92)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "450ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -273,7 +398,7 @@ export const BackgroundRevealer = ({
         return {
           opacity: 0,
           transform: "scale(1.08)",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#090d16",
           boxShadow: "none",
           transitionDuration: "500ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
