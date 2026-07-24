@@ -149,6 +149,9 @@ export interface ServerToClientEvents {
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS]: (_data: {
     wrongAnswers: string[]
   }) => void
+  [EVENTS.QUIZZ.AI_GENERATE_EXPLANATION_SUCCESS]: (_data: {
+    explanation: string
+  }) => void
 
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
@@ -262,6 +265,11 @@ export interface ClientToServerEvents {
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (_data: {
     correctAnswer: string
     questionContext: string
+  }) => void
+  [EVENTS.QUIZZ.AI_GENERATE_EXPLANATION]: (_data: {
+    question: string
+    solutionText?: string
+    type?: string
   }) => void
 
   // Player actions

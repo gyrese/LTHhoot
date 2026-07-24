@@ -73,6 +73,8 @@ export const EVENTS = {
     AI_REPHRASE_SUCCESS: "quizz:aiRephraseSuccess",
     AI_SUGGEST_WRONG_ANSWERS: "quizz:aiSuggestWrongAnswers",
     AI_SUGGEST_WRONG_ANSWERS_SUCCESS: "quizz:aiSuggestWrongAnswersSuccess",
+    AI_GENERATE_EXPLANATION: "quizz:aiGenerateExplanation",
+    AI_GENERATE_EXPLANATION_SUCCESS: "quizz:aiGenerateExplanationSuccess",
     // Canal d'erreur DÉDIÉ aux actions IA : QUIZZ.ERROR est partagé avec la
     // sauvegarde (6 listeners côté éditeur) → une erreur IA déclenchait aussi
     // le toast/reset de sauvegarde, et inversement.

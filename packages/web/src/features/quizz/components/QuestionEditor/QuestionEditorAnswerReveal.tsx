@@ -1,10 +1,16 @@
-import type { AnswerReveal } from "@rahoot/common/types/game"
+import { EVENTS } from "@rahoot/common/constants"
+import type { AnswerReveal, Question } from "@rahoot/common/types/game"
+import {
+  useEvent,
+  useSocket,
+} from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import {
   Image as ImageIcon,
   Link,
   Loader2,
   Play,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -44,14 +50,55 @@ const parseVideoId = (input: string): string | null => {
   return null
 }
 
+const getSolutionText = (q: Question): string | undefined => {
+  if (q.type === "mcq") {
+    const solutions = Array.isArray(q.solutions) ? q.solutions : []
+    return solutions
+      .map((i) => q.answers?.[i])
+      .filter((a): a is string => Boolean(a && a.trim()))
+      .join(", ")
+  }
+  if (q.type === "true_false") {
+    return q.solution === 0 ? "Vrai" : "Faux"
+  }
+  if (q.type === "open") {
+    return q.correctAnswers?.filter(Boolean).join(", ")
+  }
+  if (q.type === "date") {
+    return q.correctYear !== undefined ? String(q.correctYear) : undefined
+  }
+  if (q.type === "slider") {
+    return q.correctValue !== undefined ? String(q.correctValue) : undefined
+  }
+  if (q.type === "puzzle") {
+    return q.items?.filter(Boolean).join(" -> ")
+  }
+  if (q.type === "drop_pin") {
+    return q.zones
+      ?.filter((z) => z.isCorrect)
+      .map((z) => z.label)
+      .filter(Boolean)
+      .join(", ")
+  }
+  if (q.type === "image_sequence") {
+    return q.correctAnswers?.filter(Boolean).join(", ")
+  }
+  return undefined
+}
+
 const QuestionEditorAnswerReveal = () => {
-  const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
+  const { currentQuestion, currentIndex, updateQuestion, questions } =
+    useQuizzEditor()
+  const { socket } = useSocket()
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showImageUrl, setShowImageUrl] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [uploading, setUploading] = useState(false)
+  const [isGeneratingAiExplanation, setIsGeneratingAiExplanation] =
+    useState(false)
+  const pendingAiRef = useRef<{ index: number; id: string } | null>(null)
 
   const reveal: AnswerReveal = currentQuestion.answerReveal ?? {
     enabled: false,
@@ -66,6 +113,58 @@ const QuestionEditorAnswerReveal = () => {
   const handleToggle = () => {
     updateReveal({ enabled: !reveal.enabled })
   }
+
+  const handleGenerateAiExplanation = () => {
+    if (
+      !socket ||
+      isGeneratingAiExplanation ||
+      !currentQuestion.question?.trim()
+    ) {
+      return
+    }
+
+    const solutionText = getSolutionText(currentQuestion)
+    pendingAiRef.current = { index: currentIndex, id: currentQuestion.id }
+    setIsGeneratingAiExplanation(true)
+
+    socket.emit(EVENTS.QUIZZ.AI_GENERATE_EXPLANATION, {
+      question: currentQuestion.question,
+      solutionText,
+      type: currentQuestion.type,
+    })
+  }
+
+  useEvent(EVENTS.QUIZZ.AI_GENERATE_EXPLANATION_SUCCESS, ({ explanation }) => {
+    const req = pendingAiRef.current
+
+    if (!req) {
+      return
+    }
+
+    pendingAiRef.current = null
+    setIsGeneratingAiExplanation(false)
+
+    if (questions[req.index]?.id === req.id) {
+      const rev = questions[req.index]?.answerReveal ?? { enabled: true }
+      updateQuestion(req.index, {
+        answerReveal: {
+          ...rev,
+          enabled: true,
+          text: explanation,
+        },
+      })
+    }
+  })
+
+  useEvent(EVENTS.QUIZZ.AI_ERROR, (message) => {
+    if (!pendingAiRef.current) {
+      return
+    }
+
+    pendingAiRef.current = null
+    setIsGeneratingAiExplanation(false)
+    toast.error(t(message))
+  })
 
   const handleUploadImage = async (file: File) => {
     setUploading(true)
@@ -281,7 +380,33 @@ const QuestionEditorAnswerReveal = () => {
 
           {/* Texte */}
           <div className="flex flex-col gap-2">
-            <span className="text-ink text-sm font-semibold">Texte</span>
+            <div className="flex items-center justify-between">
+              <span className="text-ink text-sm font-semibold">Texte</span>
+              <button
+                type="button"
+                onClick={handleGenerateAiExplanation}
+                disabled={
+                  isGeneratingAiExplanation || !currentQuestion.question?.trim()
+                }
+                className="text-primary hover:bg-primary-soft focus-ring flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                title={t(
+                  "quizz:question.aiGenerateExplanationTooltip",
+                  "Générer une explication automatique d'après la question et la réponse",
+                )}
+              >
+                {isGeneratingAiExplanation ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
+                <span>
+                  {t(
+                    "quizz:question.aiGenerateExplanation",
+                    "Générer par IA",
+                  )}
+                </span>
+              </button>
+            </div>
             <textarea
               value={reveal.text ?? ""}
               onChange={(e) => updateReveal({ text: e.target.value })}

@@ -229,4 +229,50 @@ Output MUST be a valid JSON object: { "wrongAnswers": ["wrong 1", "wrong 2", "wr
       throw error
     }
   }
+
+  /**
+   * Génère une explication claire et concise de la réponse.
+   */
+  public static async generateExplanation(
+    question: string,
+    solutionText?: string,
+  ): Promise<string> {
+    const client = this.getClient()
+
+    const systemInstruction = `You are a fun, engaging, and clear quiz explanation writer.
+Given a quiz question and its correct answer/solution, write a concise (1 to 2 sentences) explanation explaining WHY the answer is correct, adding an interesting or memorable detail, in the exact same language as the question.
+
+Question: "${question}"
+${solutionText ? `Correct answer / Solution: "${solutionText}"` : ""}
+
+Output MUST be a valid JSON object: { "explanation": "the explanation text" }`
+
+    try {
+      const response = await client.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: systemInstruction,
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.7,
+        },
+      })
+
+      const { text } = response
+
+      if (!text) {
+        throw new Error("Empty response received from Gemini")
+      }
+
+      const parsed = JSON.parse(text)
+
+      if (typeof parsed.explanation !== "string" || !parsed.explanation.trim()) {
+        throw new Error("Gemini response missing a valid 'explanation' string")
+      }
+
+      return parsed.explanation
+    } catch (error) {
+      console.error("Error in AIService.generateExplanation:", error)
+      throw error
+    }
+  }
 }

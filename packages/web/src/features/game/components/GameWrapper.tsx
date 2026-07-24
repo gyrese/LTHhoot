@@ -383,7 +383,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                     onClick={handleNext}
                     disabled={isDisabled}
                     className={clsx(
-                      "pointer-events-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
+                      // ml-auto : sans le compteur (écran salon), justify-between
+                      // collerait le bouton à gauche, sous « Fermer la session ».
+                      "pointer-events-auto ml-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
                       isDisabled && "pointer-events-none opacity-50",
                     )}
                   >

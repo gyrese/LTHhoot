@@ -238,4 +238,30 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
       },
     ),
   )
+
+  socket.on(
+    EVENTS.QUIZZ.AI_GENERATE_EXPLANATION,
+    manager.withAnyAuth(
+      socket,
+      async (_session, { question, solutionText }) => {
+        try {
+          const explanation = await AIService.generateExplanation(
+            question,
+            solutionText,
+          )
+
+          socket.emit(EVENTS.QUIZZ.AI_GENERATE_EXPLANATION_SUCCESS, {
+            explanation,
+          })
+        } catch (error) {
+          console.error("Failed to generate explanation with AI:", error)
+          const message =
+            error instanceof Error
+              ? error.message
+              : "errors:quizz.aiGenerationFailed"
+          socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+        }
+      },
+    ),
+  )
 }

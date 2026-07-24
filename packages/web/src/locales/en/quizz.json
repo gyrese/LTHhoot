@@ -64,7 +64,9 @@
     "mediaUrlPlaceholder": "Enter URL...",
     "placeholder": "Start typing your question...",
     "aiRephrase": "Rephrase with AI",
-    "aiSuggestWrongAnswers": "Generate wrong answers with AI"
+    "aiSuggestWrongAnswers": "Generate wrong answers with AI",
+    "aiGenerateExplanation": "Generate with AI",
+    "aiGenerateExplanationTooltip": "Generate an automatic explanation based on the question and answer"
   },
   "testDrive": "Test",
   "testDriveNeedsSave": "Save the quiz before testing it",
