@@ -466,71 +466,71 @@ const QuestionEditorConfig = () => {
                     }}
                     className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 hover:border-border-strong w-full cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition-all outline-none focus:ring-2"
                   >
-                    <optgroup label="🟩 Grilles & Tuiles">
+                    <optgroup label="Grilles & Tuiles">
                       <option value="grid">
                         {t(
                           "quizz:question.config.revealStyleOpt.grid",
-                          "🟩 Révélation par cases",
+                          "Révélation par cases",
                         )}
                       </option>
                     </optgroup>
-                    <optgroup label="🔬 Optique & Spéciaux">
+                    <optgroup label="Optique & Spéciaux">
                       <option value="blur">
                         {t(
                           "quizz:question.config.revealStyleOpt.blur",
-                          "🌫️ Défloutage progressif",
+                          "Défloutage progressif",
                         )}
                       </option>
                       <option value="iris">
                         {t(
                           "quizz:question.config.revealStyleOpt.iris",
-                          "👁️ Diaphragme / Zoom optique",
+                          "Diaphragme / Zoom optique",
                         )}
                       </option>
                       <option value="spotlight">
                         {t(
                           "quizz:question.config.revealStyleOpt.spotlight",
-                          "🔦 Projecteur / Torche Scanner",
+                          "Projecteur / Torche Scanner",
                         )}
                       </option>
                       <option value="thermal">
                         {t(
                           "quizz:question.config.revealStyleOpt.thermal",
-                          "🕶️ Infrarouge → Couleurs",
+                          "Infrarouge → Couleurs",
                         )}
                       </option>
                     </optgroup>
-                    <optgroup label="📺 Médias & Rétro Tech">
+                    <optgroup label="Médias & Rétro Tech">
                       <option value="pixelate">
                         {t(
                           "quizz:question.config.revealStyleOpt.pixelate",
-                          "👾 Dépixélisation progressive",
+                          "Dépixélisation progressive",
                         )}
                       </option>
                       <option value="glitch">
                         {t(
                           "quizz:question.config.revealStyleOpt.glitch",
-                          "📺 Neige TV & Scanlines CRT",
+                          "Neige TV & Scanlines CRT",
                         )}
                       </option>
                       <option value="printer">
                         {t(
                           "quizz:question.config.revealStyleOpt.printer",
-                          "🖨️ Impression Ligne par Ligne",
+                          "Impression Ligne par Ligne",
                         )}
                       </option>
                     </optgroup>
-                    <optgroup label="🔥 Éléments & Matières">
+                    <optgroup label="Éléments & Matières">
                       <option value="burn">
                         {t(
                           "quizz:question.config.revealStyleOpt.burn",
-                          "🔥 Combustion / Papier brûlé",
+                          "Combustion / Papier brûlé",
                         )}
                       </option>
                       <option value="ink">
                         {t(
                           "quizz:question.config.revealStyleOpt.ink",
-                          "🎨 Diffusion d'Encre",
+                          "Diffusion d'Encre",
                         )}
                       </option>
                     </optgroup>
