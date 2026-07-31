@@ -580,7 +580,8 @@ export const QuizzEditorProvider = ({
       const draggedIndexInMoving = movingQuestions.findIndex(
         (q) => q.id === draggedId,
       )
-      const targetOffset = draggedIndexInMoving !== -1 ? draggedIndexInMoving : 0
+      const targetOffset =
+        draggedIndexInMoving !== -1 ? draggedIndexInMoving : 0
       const insertIndex = Math.max(
         0,
         Math.min(remaining.length, to - targetOffset),

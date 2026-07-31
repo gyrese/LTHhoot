@@ -1686,7 +1686,6 @@ export function BottomBar({
   )
 }
 
-
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 export function getPrimaryAction(
