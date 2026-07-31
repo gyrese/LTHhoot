@@ -577,12 +577,13 @@ export const QuizzEditorProvider = ({
     setQuestions((prev) => {
       const movingQuestions = prev.filter((q) => idsToMove.includes(q.id))
       const remaining = prev.filter((q) => !idsToMove.includes(q.id))
-      const numMovedBeforeTo = prev
-        .slice(0, to)
-        .filter((q) => idsToMove.includes(q.id)).length
+      const draggedIndexInMoving = movingQuestions.findIndex(
+        (q) => q.id === draggedId,
+      )
+      const targetOffset = draggedIndexInMoving !== -1 ? draggedIndexInMoving : 0
       const insertIndex = Math.max(
         0,
-        Math.min(remaining.length, to - numMovedBeforeTo),
+        Math.min(remaining.length, to - targetOffset),
       )
 
       const next = [...remaining]
