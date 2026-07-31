@@ -69,6 +69,33 @@
     "resume": "Resume the game",
     "waitingHost": "Waiting for the host…"
   },
+  "cutTime": "Cut the time",
+  "confirmAbort": {
+    "message": "Some players have not answered yet. Cut the time now?",
+    "confirm": "Cut"
+  },
+  "confirmKick": {
+    "title": "Kick this player?",
+    "message": "This action is permanent.",
+    "confirm": "Kick"
+  },
+  "confirmEnd": {
+    "title": "Close the session?",
+    "message": "All players will be disconnected and the game will end permanently.",
+    "confirm": "Close"
+  },
+  "roundEvent": {
+    "announce": "Event!",
+    "doublePoints": "Double points",
+    "doublePointsHint": "This question is worth twice as many points.",
+    "suddenDeath": "Sudden death",
+    "suddenDeathHint": "The round ends on the first correct answer.",
+    "armed": "Armed for the next question",
+    "arm": "Event",
+    "cancel": "Cancel event",
+    "drawerTitle": "Next question",
+    "drawerHint": "The event will be announced to everyone when the question starts."
+  },
   "tieBreak": {
     "duelVs": "Tie-break duel against {{names}}",
     "title": "Tie-break duel!",

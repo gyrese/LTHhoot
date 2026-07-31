@@ -61,6 +61,33 @@
     "resume": "Riprendi la partita",
     "waitingHost": "In attesa dell'host…"
   },
+  "cutTime": "Interrompi il tempo",
+  "confirmAbort": {
+    "message": "Alcuni giocatori non hanno ancora risposto. Interrompere il tempo adesso?",
+    "confirm": "Interrompi"
+  },
+  "confirmKick": {
+    "title": "Espellere questo giocatore?",
+    "message": "Questa azione è definitiva.",
+    "confirm": "Espelli"
+  },
+  "confirmEnd": {
+    "title": "Chiudere la sessione?",
+    "message": "Tutti i giocatori saranno disconnessi e la partita terminerà definitivamente.",
+    "confirm": "Chiudi"
+  },
+  "roundEvent": {
+    "announce": "Evento!",
+    "doublePoints": "Punti doppi",
+    "doublePointsHint": "Questa domanda vale il doppio dei punti.",
+    "suddenDeath": "Morte improvvisa",
+    "suddenDeathHint": "Il turno finisce alla prima risposta corretta.",
+    "armed": "Pronto per la prossima domanda",
+    "arm": "Evento",
+    "cancel": "Annulla l'evento",
+    "drawerTitle": "Prossima domanda",
+    "drawerHint": "L'evento sarà annunciato a tutti all'avvio della domanda."
+  },
   "tieBreak": {
     "duelVs": "Duello di spareggio contro {{names}}",
     "title": "Duello di spareggio!",

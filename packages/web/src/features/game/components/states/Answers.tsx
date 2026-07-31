@@ -28,6 +28,7 @@ import {
   vibrate,
 } from "@rahoot/web/features/game/utils/haptics"
 import { fadeUp, MOTION_SPRING } from "@rahoot/web/features/game/utils/motion"
+import { ROUND_EVENT_META } from "@rahoot/web/features/game/utils/roundEventMeta"
 import clsx from "clsx"
 import { Check, Loader2 } from "lucide-react"
 import { motion } from "motion/react"
@@ -65,6 +66,7 @@ const Answers = ({
     pinImage,
     isFrozen,
     isScrambled,
+    roundEvent,
     revelationEnabled,
     revealDuration,
     gridCols,
@@ -105,6 +107,7 @@ const Answers = ({
 
   const { isHost } = useGameConfig()
   const isPlayer = !isHost
+  const eventMeta = roundEvent ? ROUND_EVENT_META[roundEvent] : null
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
@@ -384,6 +387,28 @@ const Answers = ({
       </div>
 
       {audio && isHost && <AudioEmbed ref={slideAudioRef} audio={audio} />}
+
+      {eventMeta && (
+        <div className="relative z-10 flex justify-center px-4 pt-4">
+          <div
+            className={clsx(
+              "flex items-center gap-2 rounded-full border px-4 py-1.5 backdrop-blur-md",
+              eventMeta.accent,
+              eventMeta.border,
+            )}
+          >
+            <span className="text-base">{eventMeta.icon}</span>
+            <span
+              className={clsx(
+                "text-sm font-black tracking-wide uppercase",
+                eventMeta.text,
+              )}
+            >
+              {t(eventMeta.labelKey)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {type !== "title" && (
         <div id="question-container" className="relative z-10 px-4 pt-4">

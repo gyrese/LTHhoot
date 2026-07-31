@@ -14,6 +14,7 @@ import type {
   PowerUpEffect,
   PowerUpType,
 } from "@rahoot/common/types/powerup"
+import type { RoundEventType } from "@rahoot/common/types/round-event"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
@@ -105,6 +106,11 @@ export interface ServerToClientEvents {
     players: Player[]
     currentQuestion: GameUpdateQuestion
     timer?: number
+    armedRoundEvent?: RoundEventType | null
+    isEveningMode?: boolean
+  }) => void
+  [EVENTS.MANAGER.ROUND_EVENT_ARMED]: (_data: {
+    eventType: RoundEventType | null
   }) => void
   [EVENTS.MANAGER.CONFIG]: (_config: ManagerConfig) => void
   [EVENTS.QUIZZ.DATA]: (_quizz: QuizzWithId) => void
@@ -213,6 +219,10 @@ export interface ClientToServerEvents {
   }) => void
   [EVENTS.MANAGER.START_GAME]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.START_DEMO]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.ARM_ROUND_EVENT]: (_message: {
+    gameId?: string
+    eventType: RoundEventType | null
+  }) => void
   [EVENTS.MANAGER.ABORT_QUIZ]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void

@@ -50,6 +50,8 @@ export const EVENTS = {
     INVALIDATE_OPEN_ANSWER: "manager:invalidateOpenAnswer",
     FINALIZE_OPEN_ANSWERS: "manager:finalizeOpenAnswers",
     START_DEMO: "manager:startDemo",
+    ARM_ROUND_EVENT: "manager:armRoundEvent",
+    ROUND_EVENT_ARMED: "manager:roundEventArmed",
     END_GAME: "manager:endGame",
     PAUSE_GAME: "manager:pauseGame",
     RESUME_GAME: "manager:resumeGame",

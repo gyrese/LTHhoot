@@ -19,6 +19,10 @@ import {
   type StatusDataMap,
 } from "@rahoot/common/types/game/status"
 import { SHOP, type PowerUp } from "@rahoot/common/types/powerup"
+import {
+  ROUND_EVENT_TYPE,
+  type RoundEventType,
+} from "@rahoot/common/types/round-event"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
@@ -84,6 +88,13 @@ export class RoundManager {
   private pendingOpenCorrectAnswers: string[] = []
   private demoMode = false
 
+  // Événement armé par l'animateur depuis la télécommande, en attente de la
+  // prochaine manche. `currentRoundEvent` est celui consommé par la manche en
+  // cours — séparés pour que l'animateur puisse déjà armer la manche d'après
+  // pendant qu'une question tourne.
+  private armedRoundEvent: RoundEventType | null = null
+  private currentRoundEvent: RoundEventType | null = null
+
   private readonly tieBreak: TieBreakManager
   // Vrai pendant TOUT le flux de duel (annonce → réponses → résultat → sleep →
   // finalize), pas seulement pendant la fenêtre de réponse : sert de garde à
@@ -116,6 +127,14 @@ export class RoundManager {
 
   setDemoMode(enabled: boolean) {
     this.demoMode = enabled
+  }
+
+  armRoundEvent(eventType: RoundEventType | null) {
+    this.armedRoundEvent = eventType
+  }
+
+  getArmedRoundEvent(): RoundEventType | null {
+    return this.armedRoundEvent
   }
 
   private getNonTitleCount() {
@@ -218,6 +237,7 @@ export class RoundManager {
       const question = this.opts.quizz.questions[this.currentQuestion]
 
       this.opts.onNewQuestion()
+      this.currentRoundEvent = null
 
       // Title slides skip the prepared/answer/results phases
       if (question.type === "title") {
@@ -266,6 +286,18 @@ export class RoundManager {
         return
       }
 
+      // Consommé APRÈS le court-circuit des slides titre : un événement armé
+      // ne doit pas être gaspillé sur un slide sans réponse ni scoring.
+      if (this.armedRoundEvent) {
+        this.currentRoundEvent = this.armedRoundEvent
+        this.armedRoundEvent = null
+        // Sans cet accusé, la télécommande continuerait d'afficher « armé pour
+        // la prochaine question » alors que l'événement vient d'être joué.
+        this.opts.io
+          .to(`manager-${this.opts.gameId}`)
+          .emit(EVENTS.MANAGER.ROUND_EVENT_ARMED, { eventType: null })
+      }
+
       const { current: questionNumber, total: questionTotal } =
         this.getNonTitleCount()
 
@@ -291,6 +323,7 @@ export class RoundManager {
         totalAnswers,
         questionNumber,
         type: question.type,
+        roundEvent: this.currentRoundEvent ?? undefined,
       })
 
       await this.opts.cooldown.start(4)
@@ -371,6 +404,7 @@ export class RoundManager {
         gridCols: question.gridCols,
         gridRows: question.gridRows,
         revelationStyle: question.revelationStyle,
+        roundEvent: this.currentRoundEvent ?? undefined,
       }
 
       const selectAnswerExtra = (() => {
@@ -636,6 +670,15 @@ export class RoundManager {
             isCorrect,
           ) ?? points
 
+        // Après les power-ups : un événement de manche se cumule avec le
+        // multiplicateur individuel d'un joueur (×2 event × ×2 power-up = ×4).
+        if (
+          isCorrect &&
+          this.currentRoundEvent === ROUND_EVENT_TYPE.DOUBLE_POINTS
+        ) {
+          points *= 2
+        }
+
         player.points += points
         player.streak = isCorrect ? player.streak + 1 : 0
 
@@ -844,7 +887,11 @@ export class RoundManager {
     // sans attendre les autres joueurs ni l'expiration du temps. L'abort
     // résout la Promise du cooldown dans newQuestion(), qui enchaîne ensuite
     // normalement vers showResults()/showOpenAnswers().
-    if (question.suddenDeath && checkAnswer(question, answer)) {
+    const isSuddenDeath =
+      question.suddenDeath ||
+      this.currentRoundEvent === ROUND_EVENT_TYPE.SUDDEN_DEATH
+
+    if (isSuddenDeath && checkAnswer(question, answer)) {
       this.opts.cooldown.abort()
 
       return "ok"

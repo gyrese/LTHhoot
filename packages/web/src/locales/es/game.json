@@ -61,6 +61,33 @@
     "resume": "Reanudar la partida",
     "waitingHost": "Esperando al anfitrión…"
   },
+  "cutTime": "Cortar el tiempo",
+  "confirmAbort": {
+    "message": "Algunos jugadores aún no han respondido. ¿Cortar el tiempo ahora?",
+    "confirm": "Cortar"
+  },
+  "confirmKick": {
+    "title": "¿Expulsar a este jugador?",
+    "message": "Esta acción es definitiva.",
+    "confirm": "Expulsar"
+  },
+  "confirmEnd": {
+    "title": "¿Cerrar la sesión?",
+    "message": "Todos los jugadores serán desconectados y la partida terminará definitivamente.",
+    "confirm": "Cerrar"
+  },
+  "roundEvent": {
+    "announce": "¡Evento!",
+    "doublePoints": "Puntos dobles",
+    "doublePointsHint": "Esta pregunta vale el doble de puntos.",
+    "suddenDeath": "Muerte súbita",
+    "suddenDeathHint": "La ronda termina con la primera respuesta correcta.",
+    "armed": "Preparado para la próxima pregunta",
+    "arm": "Evento",
+    "cancel": "Cancelar el evento",
+    "drawerTitle": "Próxima pregunta",
+    "drawerHint": "El evento se anunciará a todos al iniciar la pregunta."
+  },
   "tieBreak": {
     "duelVs": "Duelo de desempate contra {{names}}",
     "title": "¡Duelo de desempate!",

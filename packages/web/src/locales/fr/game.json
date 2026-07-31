@@ -81,6 +81,33 @@
     "resume": "Reprendre la partie",
     "waitingHost": "En attente de l'hôte…"
   },
+  "cutTime": "Couper le temps",
+  "confirmAbort": {
+    "message": "Des joueurs n'ont pas encore répondu. Couper le temps maintenant ?",
+    "confirm": "Couper"
+  },
+  "confirmKick": {
+    "title": "Expulser ce joueur ?",
+    "message": "Cette action est définitive.",
+    "confirm": "Expulser"
+  },
+  "confirmEnd": {
+    "title": "Fermer la session ?",
+    "message": "Tous les joueurs seront déconnectés et la partie sera définitivement terminée.",
+    "confirm": "Fermer"
+  },
+  "roundEvent": {
+    "announce": "Événement !",
+    "doublePoints": "Points doublés",
+    "doublePointsHint": "Cette question rapporte deux fois plus de points.",
+    "suddenDeath": "Mort subite",
+    "suddenDeathHint": "La manche s'arrête dès la première bonne réponse.",
+    "armed": "Armé pour la prochaine question",
+    "arm": "Événement",
+    "cancel": "Annuler l'événement",
+    "drawerTitle": "Prochaine question",
+    "drawerHint": "L'événement sera annoncé à tous au lancement de la question."
+  },
   "tieBreak": {
     "duelVs": "Duel de départage contre {{names}}",
     "title": "Duel de départage !",

@@ -105,9 +105,11 @@ export function isKeyOf<T extends object>(
 export const MANAGER_SKIP_BTN = {
   [STATUS.SHOW_ROOM]: "game:startGame",
   [STATUS.SHOW_START]: null,
-  [STATUS.SHOW_PREPARED]: "common:next",
-  [STATUS.SHOW_QUESTION]: "common:next",
-  [STATUS.SELECT_ANSWER]: "common:skip",
+  // Ces trois états émettent ABORT_QUIZ : le libellé doit dire qu'on coupe le
+  // temps en cours, pas laisser croire à un simple passage à la suite.
+  [STATUS.SHOW_PREPARED]: "game:cutTime",
+  [STATUS.SHOW_QUESTION]: "game:cutTime",
+  [STATUS.SELECT_ANSWER]: "game:cutTime",
   [STATUS.SHOW_RESULT]: null,
   [STATUS.SHOW_OPEN_ANSWERS]: "common:next",
   [STATUS.SHOW_RESPONSES]: "common:next",

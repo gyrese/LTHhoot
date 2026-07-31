@@ -6,6 +6,8 @@ import openImg from "@rahoot/web/assets/game/types/open.png"
 import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
 import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
+import { ROUND_EVENT_META } from "@rahoot/web/features/game/utils/roundEventMeta"
+import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
 import { useTranslation } from "react-i18next"
 
@@ -24,9 +26,10 @@ const TYPE_ASSETS = new Map<string, string>([
   ["drop_pin", dropPinImg],
 ])
 
-const Prepared = ({ data: { questionNumber, type } }: Props) => {
+const Prepared = ({ data: { questionNumber, type, roundEvent } }: Props) => {
   const { t } = useTranslation()
   const image = TYPE_ASSETS.get(type)
+  const eventMeta = roundEvent ? ROUND_EVENT_META[roundEvent] : null
 
   return (
     <section className="relative mx-auto flex h-full w-full flex-col items-center justify-center px-4">
@@ -41,6 +44,34 @@ const Prepared = ({ data: { questionNumber, type } }: Props) => {
           exit={{ opacity: 0, y: -20 }}
           className="flex flex-col items-center gap-8"
         >
+          {eventMeta && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className={clsx(
+                "flex items-center gap-3 rounded-2xl border px-6 py-3 backdrop-blur-sm",
+                eventMeta.accent,
+                eventMeta.border,
+              )}
+            >
+              <span className="text-3xl">{eventMeta.icon}</span>
+              <div className="flex flex-col">
+                <span
+                  className={clsx(
+                    "text-xl font-black tracking-wide uppercase",
+                    eventMeta.text,
+                  )}
+                >
+                  {t(eventMeta.labelKey)}
+                </span>
+                <span className="text-sm text-white/60">
+                  {t(eventMeta.hintKey)}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
           {/* Header */}
           <div className="flex flex-col items-center gap-2">
             <motion.span

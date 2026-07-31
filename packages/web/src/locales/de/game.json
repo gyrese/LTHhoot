@@ -61,6 +61,33 @@
     "resume": "Spiel fortsetzen",
     "waitingHost": "Warten auf den Gastgeber…"
   },
+  "cutTime": "Zeit stoppen",
+  "confirmAbort": {
+    "message": "Einige Spieler haben noch nicht geantwortet. Zeit jetzt stoppen?",
+    "confirm": "Stoppen"
+  },
+  "confirmKick": {
+    "title": "Diesen Spieler entfernen?",
+    "message": "Diese Aktion ist endgültig.",
+    "confirm": "Entfernen"
+  },
+  "confirmEnd": {
+    "title": "Sitzung schließen?",
+    "message": "Alle Spieler werden getrennt und das Spiel wird endgültig beendet.",
+    "confirm": "Schließen"
+  },
+  "roundEvent": {
+    "announce": "Event!",
+    "doublePoints": "Doppelte Punkte",
+    "doublePointsHint": "Diese Frage bringt doppelt so viele Punkte.",
+    "suddenDeath": "Sudden Death",
+    "suddenDeathHint": "Die Runde endet mit der ersten richtigen Antwort.",
+    "armed": "Für die nächste Frage vorbereitet",
+    "arm": "Event",
+    "cancel": "Event abbrechen",
+    "drawerTitle": "Nächste Frage",
+    "drawerHint": "Das Event wird allen beim Start der Frage angekündigt."
+  },
   "tieBreak": {
     "duelVs": "Stichduell gegen {{names}}",
     "title": "Stichduell!",

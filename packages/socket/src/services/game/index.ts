@@ -1,6 +1,10 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
 import { SHOP, type PowerUpType } from "@rahoot/common/types/powerup"
+import {
+  ROUND_EVENT_TYPE,
+  type RoundEventType,
+} from "@rahoot/common/types/round-event"
 import type {
   AnswerAckStatus,
   Server,
@@ -32,6 +36,13 @@ import {
 import { v4 as uuid } from "uuid"
 
 const registry = Registry.getInstance()
+
+// Libellés du journal serveur (onglet « Journal » de la télécommande), aligné
+// sur le reste des messages de log — eux aussi rédigés en français.
+const ROUND_EVENT_LABELS: Record<RoundEventType, string> = {
+  [ROUND_EVENT_TYPE.DOUBLE_POINTS]: "Points doublés",
+  [ROUND_EVENT_TYPE.SUDDEN_DEATH]: "Mort subite",
+}
 
 class Game {
   readonly gameId: string
@@ -759,6 +770,8 @@ class Game {
       status,
       timer: this.cooldown.getTimeRemaining(),
       players: this.playerManager.getAll(),
+      armedRoundEvent: this.round.getArmedRoundEvent(),
+      isEveningMode: Boolean(this.eveningSession),
     })
 
     // Envoyer l'historique des logs à la télécommande qui vient de se connecter
@@ -811,6 +824,8 @@ class Game {
       status,
       timer: this.cooldown.getTimeRemaining(),
       players: this.playerManager.getAll(),
+      armedRoundEvent: this.round.getArmedRoundEvent(),
+      isEveningMode: Boolean(this.eveningSession),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -1139,6 +1154,19 @@ class Game {
   abortRound(socket: Socket) {
     this.logAndEmit("warn", "Question interrompue par le manager")
     this.round.abortQuestion(socket)
+  }
+
+  armRoundEvent(eventType: RoundEventType | null) {
+    this.round.armRoundEvent(eventType)
+    this.logAndEmit(
+      "info",
+      eventType
+        ? `Événement armé pour la prochaine question : ${ROUND_EVENT_LABELS[eventType]}`
+        : "Événement de manche annulé",
+    )
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.ROUND_EVENT_ARMED, { eventType })
   }
 
   showLeaderboard() {

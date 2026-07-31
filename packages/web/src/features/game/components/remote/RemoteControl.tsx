@@ -1,6 +1,8 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Player } from "@rahoot/common/types/game"
 import { STATUS } from "@rahoot/common/types/game/status"
+import type { RoundEventType } from "@rahoot/common/types/round-event"
+import { RoundEventDrawer } from "@rahoot/web/features/game/components/remote/RemoteControl.events"
 import {
   useEvent,
   useSocket,
@@ -13,13 +15,13 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useNavigate } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import { ConfirmModal } from "@rahoot/web/features/game/components/remote/RemoteControl.modals"
 import {
   AuthScreen,
   BottomBar,
   GamePanel,
   getPrimaryAction,
   JournalPanel,
-  KickModal,
   PlayersPanel,
   RemoteHeader,
 } from "@rahoot/web/features/game/components/remote/RemoteControl.panels"
@@ -68,6 +70,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   >([])
   const [kickTargetId, setKickTargetId] = useState<string | null>(null)
   const [actionPending, setActionPending] = useState(false)
+  const [armedEvent, setArmedEvent] = useState<RoundEventType | null>(null)
+  const [isEventDrawerOpen, setIsEventDrawerOpen] = useState(false)
+  const [isEveningMode, setIsEveningMode] = useState(false)
+  const [pendingConfirm, setPendingConfirm] = useState<"abort" | "end" | null>(
+    null,
+  )
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -136,6 +144,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       status: s,
       players: p,
       currentQuestion,
+      armedRoundEvent,
+      isEveningMode: evening,
     }) => {
       if (gId !== gameId) {
         return
@@ -150,6 +160,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       setStatus({ name: s.name, data: s.data as Record<string, unknown> })
       setPlayers(p)
       setQuestionStates(currentQuestion)
+      setArmedEvent(armedRoundEvent ?? null)
+      setIsEveningMode(Boolean(evening))
 
       if (code) {
         setInviteCode(code)
@@ -161,6 +173,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     if (isAuthenticated) {
       setStatus({ name, data: data as Record<string, unknown> })
     }
+  })
+
+  useEvent(EVENTS.MANAGER.ROUND_EVENT_ARMED, ({ eventType }) => {
+    setArmedEvent(eventType)
   })
 
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
@@ -238,7 +254,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     }
   }, [isConnected])
 
-  const handlePrimary = useCallback(() => {
+  const runPrimary = useCallback(() => {
     if (!socket || !status || actionPending) {
       return
     }
@@ -286,6 +302,29 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         }
     }
   }, [socket, status, actionPending, gameId, navigate])
+
+  // Couper le temps pendant SELECT_ANSWER prive de réponse les joueurs qui
+  // n'ont pas encore validé : on confirme tant qu'il en reste.
+  const handlePrimary = useCallback(() => {
+    if (
+      status?.name === STATUS.SELECT_ANSWER &&
+      answerCount < players.filter((p) => p.connected).length
+    ) {
+      setPendingConfirm("abort")
+
+      return
+    }
+
+    runPrimary()
+  }, [status?.name, answerCount, players, runPrimary])
+
+  const handleArmEvent = useCallback(
+    (eventType: RoundEventType | null) => {
+      socket?.emit(EVENTS.MANAGER.ARM_ROUND_EVENT, { gameId, eventType })
+      setIsEventDrawerOpen(false)
+    },
+    [socket, gameId],
+  )
 
   const handleStartDemo = useCallback(() => {
     if (!socket || actionPending) {
@@ -345,19 +384,9 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   )
 
   const handleEndGame = useCallback(() => {
-    if (!socket || !gameId) {
-      return
-    }
-
-    // eslint-disable-next-line no-alert
-    const confirmed = window.confirm(
-      t("game:confirmEndGame", "Voulez-vous vraiment fermer cette session ?"),
-    )
-
-    if (confirmed) {
-      socket.emit(EVENTS.MANAGER.END_GAME, { gameId })
-    }
-  }, [socket, gameId, t])
+    socket?.emit(EVENTS.MANAGER.END_GAME, { gameId })
+    setPendingConfirm(null)
+  }, [socket, gameId])
 
   const primaryAction = getPrimaryAction(status, players.length, t)
 
@@ -386,7 +415,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         questionStates={questionStates}
         statusName={status?.name}
         inviteCode={inviteCode}
-        onEndGame={handleEndGame}
+        onEndGame={() => setPendingConfirm("end")}
       />
 
       <main className="relative z-10 flex-1 overflow-y-auto">
@@ -402,6 +431,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             questionStates={questionStates}
             timer={timer}
             maxTime={maxTime}
+            isEveningMode={isEveningMode}
+            onOpenEventDrawer={() => setIsEventDrawerOpen(true)}
           />
         )}
         {activeTab === "joueurs" && (
@@ -409,9 +440,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             players={players}
             statusName={status?.name}
             answerCount={answerCount}
-            kickTargetId={kickTargetId}
             setKickTargetId={setKickTargetId}
-            onKick={handleKick}
           />
         )}
         {activeTab === "journal" && <JournalPanel logs={logs} />}
@@ -427,16 +456,53 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         isPending={actionPending}
         playerCount={players.length}
         statusName={status?.name}
+        armedEvent={armedEvent}
+        onOpenEventDrawer={() => setIsEventDrawerOpen(true)}
+        onCancelEvent={() => handleArmEvent(null)}
         errorCount={
           logs.filter((l) => l.level === "error" || l.level === "warn").length
         }
       />
 
+      {isEventDrawerOpen && (
+        <RoundEventDrawer
+          armedEvent={armedEvent}
+          onSelect={handleArmEvent}
+          onClose={() => setIsEventDrawerOpen(false)}
+        />
+      )}
+
       {kickTargetId && (
-        <KickModal
-          player={players.find((p) => p.id === kickTargetId)}
+        <ConfirmModal
+          title={t("game:confirmKick.title")}
+          highlight={players.find((p) => p.id === kickTargetId)?.username}
+          message={t("game:confirmKick.message")}
+          confirmLabel={t("game:confirmKick.confirm")}
           onConfirm={() => handleKick(kickTargetId)}
           onCancel={() => setKickTargetId(null)}
+        />
+      )}
+
+      {pendingConfirm === "end" && (
+        <ConfirmModal
+          title={t("game:confirmEnd.title")}
+          message={t("game:confirmEnd.message")}
+          confirmLabel={t("game:confirmEnd.confirm")}
+          onConfirm={handleEndGame}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
+
+      {pendingConfirm === "abort" && (
+        <ConfirmModal
+          title={t("game:cutTime")}
+          message={t("game:confirmAbort.message")}
+          confirmLabel={t("game:confirmAbort.confirm")}
+          onConfirm={() => {
+            setPendingConfirm(null)
+            runPrimary()
+          }}
+          onCancel={() => setPendingConfirm(null)}
         />
       )}
     </div>

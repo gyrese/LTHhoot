@@ -1,4 +1,5 @@
 import { EVENTS } from "@rahoot/common/constants"
+import { isRoundEventType } from "@rahoot/common/types/round-event"
 import { inviteCodeValidator } from "@rahoot/common/validators/auth"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
@@ -239,6 +240,16 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, ({ gameId }) =>
     withManagerGame(gameId, socket, (game) => game.showLeaderboard()),
+  )
+
+  socket.on(EVENTS.MANAGER.ARM_ROUND_EVENT, ({ gameId, eventType }) =>
+    withManagerGame(gameId, socket, (game) => {
+      if (eventType !== null && !isRoundEventType(eventType)) {
+        return
+      }
+
+      game.armRoundEvent(eventType)
+    }),
   )
 
   socket.on(EVENTS.MANAGER.VALIDATE_OPEN_ANSWER, ({ gameId, data }) =>

@@ -9,6 +9,7 @@ import type {
   SlideBackground,
   SlideElement,
 } from "@rahoot/common/types/game"
+import type { RoundEventType } from "@rahoot/common/types/round-event"
 
 export const STATUS = {
   SHOW_ROOM: "SHOW_ROOM",
@@ -36,6 +37,7 @@ export type CommonStatusDataMap = {
     totalAnswers: number
     questionNumber: number
     type: QuestionType
+    roundEvent?: RoundEventType
   }
   SHOW_QUESTION: {
     question: string
@@ -74,6 +76,7 @@ export type CommonStatusDataMap = {
     pinImage?: string
     isFrozen?: boolean
     isScrambled?: boolean
+    roundEvent?: RoundEventType
     revelationEnabled?: boolean
     revealDuration?: number
     gridCols?: number

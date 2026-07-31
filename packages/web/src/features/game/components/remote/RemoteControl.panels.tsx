@@ -1,6 +1,12 @@
 import type { Player } from "@rahoot/common/types/game"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
+import type { RoundEventType } from "@rahoot/common/types/round-event"
 import logo from "@rahoot/web/assets/logo.png"
+import {
+  ArmedEventBanner,
+  ArmEventButton,
+  canArmRoundEvent,
+} from "@rahoot/web/features/game/components/remote/RemoteControl.events"
 import clsx from "clsx"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -206,6 +212,8 @@ export function GamePanel({
   questionStates,
   timer,
   maxTime,
+  isEveningMode,
+  onOpenEventDrawer,
 }: {
   status: GameStatus
   answerCount: number
@@ -217,6 +225,8 @@ export function GamePanel({
   questionStates: QuestionStates | null
   timer: number | null
   maxTime: number
+  isEveningMode: boolean
+  onOpenEventDrawer: () => void
 }) {
   const { t } = useTranslation()
 
@@ -235,6 +245,8 @@ export function GamePanel({
           data={status.data}
           players={players}
           onPauseGame={onPauseGame}
+          onOpenEventDrawer={onOpenEventDrawer}
+          isEveningMode={isEveningMode}
         />
       )
 
@@ -492,13 +504,7 @@ function OpenAnswersManagerPanel({
                   <IconCheck className="h-4 w-4 shrink-0 text-green-400" />
                 )}
                 {rescued && (
-                  <span
-                    className="group relative shrink-0"
-                    title="Annuler la validation"
-                  >
-                    <IconCheck className="h-4 w-4 text-green-400 group-hover:hidden" />
-                    <IconX className="hidden h-4 w-4 text-red-400 group-hover:block" />
-                  </span>
+                  <IconCheck className="h-4 w-4 shrink-0 text-green-400" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p
@@ -523,6 +529,11 @@ function OpenAnswersManagerPanel({
                     ×{count}
                   </span>
                 )}
+                {rescued && (
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-red-400">
+                    <IconX className="h-4 w-4" />
+                  </span>
+                )}
               </button>
             )
           })}
@@ -545,10 +556,14 @@ function RoomPanel({
   data,
   players,
   onPauseGame,
+  onOpenEventDrawer,
+  isEveningMode,
 }: {
   data: Record<string, unknown>
   players: Player[]
   onPauseGame: () => void
+  onOpenEventDrawer: () => void
+  isEveningMode: boolean
 }) {
   const { t } = useTranslation()
   const inviteCode = String(data.inviteCode ?? "------")
@@ -577,15 +592,23 @@ function RoomPanel({
         </p>
       </button>
 
-      {/* Pause soirée : bouton toujours visible ici (l'écran salon ne se
-          revoit qu'entre deux quiz en mode soirée) — le serveur refuse
-          silencieusement l'action hors mode soirée (Game.pauseGame). */}
       <button
-        onClick={onPauseGame}
+        onClick={onOpenEventDrawer}
         className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm font-bold text-white/50 backdrop-blur-sm transition-colors hover:border-orange-500/20 hover:text-orange-300 active:scale-98"
       >
-        ☕ {t("game:pause.action", "Pause soirée")}
+        ⚡ {t("game:roundEvent.arm")}
       </button>
+
+      {/* Masqué hors mode soirée : Game.pauseGame() refuse alors l'action sans
+          rien renvoyer, le bouton n'aurait aucun effet visible. */}
+      {isEveningMode && (
+        <button
+          onClick={onPauseGame}
+          className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm font-bold text-white/50 backdrop-blur-sm transition-colors hover:border-orange-500/20 hover:text-orange-300 active:scale-98"
+        >
+          ☕ {t("game:pause.action", "Pause soirée")}
+        </button>
+      )}
 
       <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-5 py-3.5 backdrop-blur-sm">
         <IconUsers className="h-5 w-5 shrink-0 text-orange-400" />
@@ -1369,16 +1392,12 @@ export function PlayersPanel({
   players,
   statusName,
   answerCount,
-  kickTargetId,
   setKickTargetId,
-  onKick,
 }: {
   players: Player[]
   statusName: Status | undefined
   answerCount: number
-  kickTargetId: string | null
   setKickTargetId: (_id: string | null) => void
-  onKick: (_id: string) => void
 }) {
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -1397,20 +1416,14 @@ export function PlayersPanel({
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm">
           <div className="divide-y divide-white/5">
             {players.map((player, i) => {
-              const isTarget = kickTargetId === player.id
               const hasAnswered =
                 statusName === STATUS.SELECT_ANSWER && i < answerCount
 
               return (
                 <div
                   key={player.id}
-                  onClick={() => setKickTargetId(isTarget ? null : player.id)}
-                  className={clsx(
-                    "flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors",
-                    isTarget
-                      ? "bg-red-500/10"
-                      : "hover:bg-white/3 active:bg-white/5",
-                  )}
+                  onClick={() => setKickTargetId(player.id)}
+                  className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-white/3 active:bg-white/5"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-orange-500/25 to-violet-500/25 text-sm font-bold text-white">
                     {player.username[0]?.toUpperCase()}
@@ -1443,28 +1456,16 @@ export function PlayersPanel({
                     )}
                   />
 
-                  {isTarget ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onKick(player.id)
-                      }}
-                      className="shrink-0 rounded-lg bg-red-500 px-2.5 py-1 text-xs font-bold text-white transition-colors hover:bg-red-400 active:scale-95"
-                    >
-                      Expulser
-                    </button>
-                  ) : (
-                    <svg
-                      className="h-4 w-4 shrink-0 text-white/15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  )}
+                  <svg
+                    className="h-4 w-4 shrink-0 text-white/15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </div>
               )
             })}
@@ -1561,6 +1562,9 @@ export function BottomBar({
   isPending,
   playerCount,
   statusName,
+  armedEvent,
+  onOpenEventDrawer,
+  onCancelEvent,
   errorCount,
 }: {
   activeTab: RemoteTab
@@ -1571,10 +1575,21 @@ export function BottomBar({
   isPending: boolean
   playerCount: number
   statusName?: Status
+  armedEvent: RoundEventType | null
+  onOpenEventDrawer: () => void
+  onCancelEvent: () => void
   errorCount: number
 }) {
+  const showEventButton = canArmRoundEvent(statusName)
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-black/70 px-4 pt-3 pb-6 backdrop-blur-xl">
+      {armedEvent && (
+        <div className="mx-auto max-w-[430px]">
+          <ArmedEventBanner armedEvent={armedEvent} onCancel={onCancelEvent} />
+        </div>
+      )}
+
       <div className="mx-auto flex max-w-[430px] items-center gap-3">
         <button
           onClick={() => setActiveTab("jeu")}
@@ -1626,6 +1641,12 @@ export function BottomBar({
         </button>
 
         <div className="flex flex-1 gap-2">
+          {showEventButton && (
+            <ArmEventButton
+              armedEvent={armedEvent}
+              onOpen={onOpenEventDrawer}
+            />
+          )}
           {statusName === STATUS.SHOW_ROOM && (
             <button
               onClick={onStartDemo}
@@ -1665,58 +1686,6 @@ export function BottomBar({
   )
 }
 
-// ─── Modal de confirmation d'expulsion ────────────────────────────────────────
-
-export function KickModal({
-  player,
-  onConfirm,
-  onCancel,
-}: {
-  player: Player | undefined
-  onConfirm: () => void
-  onCancel: () => void
-}) {
-  if (!player) {
-    return null
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-900 p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 text-center">
-          <div className="mb-2 text-3xl">⚠️</div>
-          <h3 className="text-lg font-bold text-white">Expulser ce joueur ?</h3>
-          <p className="mt-1 font-semibold text-orange-400">
-            {player.username}
-          </p>
-          <p className="mt-1 text-sm text-white/35">
-            Cette action est définitive.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={onCancel}
-            className="rounded-xl bg-white/8 py-3 font-semibold text-white transition-colors hover:bg-white/15"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className="rounded-xl bg-red-500 py-3 font-bold text-white transition-colors hover:bg-red-400 active:scale-95"
-          >
-            Expulser
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
