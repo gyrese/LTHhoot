@@ -7,7 +7,7 @@ import {
 } from "@rahoot/web/features/game/contexts/socket-context"
 import ResultModal from "@rahoot/web/features/manager/components/ResultModal"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
-import { Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Trash2, ChevronLeft, ChevronRight, Dices } from "lucide-react"
 import React, { useCallback, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -98,6 +98,19 @@ const ResultsPanel = () => {
                 {formatDate(r.date)} ·{" "}
                 {t("manager:result.playerCount", { count: r.playerCount })}
               </p>
+            </button>
+            <button
+              onClick={() => {
+                socket?.emit(EVENTS.RESULTS.GET, r.id)
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent("openTop10Draw"))
+                }, 250)
+              }}
+              title="Tirage au Sort Top 10"
+              className="ml-2 flex items-center gap-1 shrink-0 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-2 py-1 text-xs font-bold text-amber-300 transition-colors cursor-pointer"
+            >
+              <Dices className="size-3.5" />
+              <span>Tirage</span>
             </button>
             <AlertDialog
               trigger={

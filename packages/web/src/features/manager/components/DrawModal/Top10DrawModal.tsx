@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react"
 import type { GameResult, GameResultPlayer } from "@rahoot/common/types/game"
-import { Trophy, Dices, X, Sparkles, Send, Check, Crown, Award } from "lucide-react"
+import { Trophy, Dices, X, Sparkles, Send, Check, Crown, Award, Download, Image as ImageIcon } from "lucide-react"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import clsx from "clsx"
@@ -8,6 +8,124 @@ import clsx from "clsx"
 type Props = {
   result: GameResult
   onClose: () => void
+}
+
+export const downloadWinnerVisualPNG = (quizSubject: string, winner: GameResultPlayer) => {
+  try {
+    const canvas = document.createElement("canvas")
+    canvas.width = 1080
+    canvas.height = 1080
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // 1. Background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080)
+    bgGrad.addColorStop(0, "#090d16")
+    bgGrad.addColorStop(0.5, "#171026")
+    bgGrad.addColorStop(1, "#090d16")
+    ctx.fillStyle = bgGrad
+    ctx.fillRect(0, 0, 1080, 1080)
+
+    // 2. Glow orbs
+    const orb1 = ctx.createRadialGradient(250, 250, 10, 250, 250, 500)
+    orb1.addColorStop(0, "rgba(249, 115, 22, 0.35)")
+    orb1.addColorStop(1, "transparent")
+    ctx.fillStyle = orb1
+    ctx.fillRect(0, 0, 1080, 1080)
+
+    const orb2 = ctx.createRadialGradient(850, 850, 10, 850, 850, 500)
+    orb2.addColorStop(0, "rgba(245, 158, 11, 0.3)")
+    orb2.addColorStop(1, "transparent")
+    ctx.fillStyle = orb2
+    ctx.fillRect(0, 0, 1080, 1080)
+
+    // Decorative outer border box
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"
+    ctx.lineWidth = 4
+    ctx.strokeRect(50, 50, 980, 980)
+
+    // Inner card box
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)"
+    ctx.beginPath()
+    ctx.roundRect(80, 80, 920, 920, 32)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(249, 115, 22, 0.5)"
+    ctx.lineWidth = 3
+    ctx.stroke()
+
+    // Header pill: "🎉 GAGNANT DU TIRAGE AU SORT"
+    ctx.fillStyle = "rgba(249, 115, 22, 0.2)"
+    ctx.beginPath()
+    ctx.roundRect(260, 130, 560, 64, 32)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(249, 115, 22, 0.6)"
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    ctx.font = "bold 26px system-ui, sans-serif"
+    ctx.fillStyle = "#fbbf24"
+    ctx.textAlign = "center"
+    ctx.fillText("🎉 GAGNANT DU TIRAGE AU SORT", 540, 172)
+
+    // Quiz Subject
+    ctx.font = "bold 32px system-ui, sans-serif"
+    ctx.fillStyle = "#cbd5e1"
+    ctx.fillText(`Quiz : ${quizSubject}`, 540, 250)
+
+    // Trophy Icon Text
+    ctx.font = "110px system-ui, sans-serif"
+    ctx.fillText("🏆", 540, 380)
+
+    // Winner Name
+    ctx.font = "900 64px system-ui, sans-serif"
+    ctx.fillStyle = "#ffffff"
+    ctx.fillText(winner.username, 540, 480)
+
+    // Social Contact if present
+    if (winner.socialContact) {
+      ctx.font = "bold 30px system-ui, sans-serif"
+      ctx.fillStyle = "#fb923c"
+      ctx.fillText(winner.socialContact, 540, 535)
+    }
+
+    // Score Pill Box
+    const scoreY = winner.socialContact ? 600 : 560
+    ctx.fillStyle = "rgba(30, 41, 59, 0.95)"
+    ctx.beginPath()
+    ctx.roundRect(240, scoreY, 600, 120, 24)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(251, 191, 36, 0.6)"
+    ctx.lineWidth = 3
+    ctx.stroke()
+
+    ctx.font = "bold 22px system-ui, sans-serif"
+    ctx.fillStyle = "#94a3b8"
+    ctx.fillText("SCORE FINAL", 540, scoreY + 42)
+
+    ctx.font = "900 48px system-ui, sans-serif"
+    ctx.fillStyle = "#fbbf24"
+    ctx.fillText(`${winner.points.toLocaleString()} PTS`, 540, scoreY + 95)
+
+    // Footer Branding: LTNHoot!
+    ctx.font = "900 42px system-ui, sans-serif"
+    ctx.fillStyle = "#f97316"
+    ctx.fillText("LTNHoot!", 540, 935)
+
+    ctx.font = "18px system-ui, sans-serif"
+    ctx.fillStyle = "#64748b"
+    ctx.fillText("Bravo à tous les participants !", 540, 970)
+
+    // Download Image
+    const dataUrl = canvas.toDataURL("image/png")
+    const link = document.createElement("a")
+    link.download = `Gagnant_${winner.username}_${quizSubject}.png`
+    link.href = dataUrl
+    link.click()
+    toast.success("Visuel réseaux de victoire téléchargé (PNG 1080x1080) !")
+  } catch (error) {
+    console.error("Export image error:", error)
+    toast.error("Erreur lors de la génération du visuel.")
+  }
 }
 
 export const Top10DrawModal: React.FC<Props> = ({ result, onClose }) => {
@@ -172,13 +290,23 @@ Merci à tous les participants du Top 10 ! 🚀`
                 </p>
               )}
 
-              <button
-                onClick={handleCopyWinnerAnnouncement}
-                className="mt-2 py-2.5 px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer mx-auto"
-              >
-                <Send className="size-4" />
-                <span>Copier le texte d'annonce du gagnant</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+                <button
+                  onClick={handleCopyWinnerAnnouncement}
+                  className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-white/10 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Send className="size-4 text-orange-400" />
+                  <span>Copier le texte d'annonce</span>
+                </button>
+
+                <button
+                  onClick={() => downloadWinnerVisualPNG(result.subject, winner)}
+                  className="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ImageIcon className="size-4" />
+                  <span>Télécharger le Visuel Réseaux (PNG)</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

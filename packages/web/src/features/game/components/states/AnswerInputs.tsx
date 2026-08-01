@@ -24,9 +24,66 @@ const shuffleIndices = (length: number): number[] => {
   return arr
 }
 
-import { Reorder } from "motion/react"
+import { Reorder, useDragControls } from "motion/react"
 
 // ── Puzzle ────────────────────────────────────────────────────────────────────
+
+const PuzzleItem = ({
+  itemIdx,
+  position,
+  label,
+  submitted,
+}: {
+  itemIdx: number
+  position: number
+  label: string
+  submitted: boolean
+}) => {
+  const controls = useDragControls()
+  const { t } = useTranslation()
+
+  return (
+    <Reorder.Item
+      value={itemIdx}
+      // Le glissement part de la poignée seule : si l'item entier captait le
+      // tactile, la liste ne pourrait plus défiler quand elle déborde.
+      dragListener={false}
+      dragControls={controls}
+      className={clsx(
+        "relative flex items-center gap-3 rounded-2xl py-3 pr-1 pl-4 shadow-lg backdrop-blur-md transition-colors",
+        submitted
+          ? "bg-white/5 opacity-60"
+          : "border border-white/10 bg-white/15",
+      )}
+      whileDrag={{
+        scale: 1.03,
+        backgroundColor: "rgba(255, 255, 255, 0.25)",
+        boxShadow:
+          "0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3)",
+        zIndex: 50,
+      }}
+    >
+      <div className="bg-primary/20 text-primary border-primary/30 flex size-7 shrink-0 items-center justify-center rounded-full border text-sm font-black">
+        {position + 1}
+      </div>
+      <span className="flex-1 leading-tight font-bold tracking-tight text-white">
+        {label}
+      </span>
+      {!submitted && (
+        <button
+          type="button"
+          aria-label={t("game:puzzle.dragHandle")}
+          onPointerDown={(event) => controls.start(event)}
+          className="flex size-11 shrink-0 touch-none cursor-grab flex-col items-center justify-center gap-1 rounded-xl active:cursor-grabbing active:bg-white/10"
+        >
+          <span className="h-0.5 w-5 rounded-full bg-white/70" />
+          <span className="h-0.5 w-5 rounded-full bg-white/70" />
+          <span className="h-0.5 w-5 rounded-full bg-white/70" />
+        </button>
+      )}
+    </Reorder.Item>
+  )
+}
 
 export const PuzzleAnswer = ({
   items,
@@ -49,46 +106,24 @@ export const PuzzleAnswer = ({
   }
 
   return (
-    <div className="mx-auto mb-4 w-full max-w-lg px-2">
+    <div className="mx-auto mb-4 flex w-full max-w-lg flex-col px-2">
+      {/* Hauteur bornée : le conteneur de jeu est en overflow-hidden, donc sans
+          plafond ici une liste longue pousse le bouton hors de l'écran sur les
+          petits mobiles — il devenait alors impossible de valider. */}
       <Reorder.Group
         axis="y"
         values={order}
         onReorder={!submitted ? setOrder : () => undefined}
-        className="mb-4 flex flex-col gap-3"
+        className="mb-3 flex max-h-[45vh] flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-1 py-1"
       >
         {order.map((itemIdx, position) => (
-          <Reorder.Item
+          <PuzzleItem
             key={itemIdx}
-            value={itemIdx}
-            dragListener={!submitted}
-            className={clsx(
-              "relative flex touch-none items-center gap-4 rounded-2xl px-5 py-4 shadow-lg backdrop-blur-md transition-colors active:scale-[0.98]",
-              submitted
-                ? "bg-white/5 opacity-60"
-                : "border border-white/10 bg-white/15 hover:bg-white/20",
-            )}
-            whileDrag={{
-              scale: 1.05,
-              backgroundColor: "rgba(255, 255, 255, 0.25)",
-              boxShadow:
-                "0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3)",
-              zIndex: 50,
-            }}
-          >
-            <div className="bg-primary/20 text-primary border-primary/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-black">
-              {position + 1}
-            </div>
-            <span className="flex-1 text-lg font-bold tracking-tight text-white">
-              {items[itemIdx]}
-            </span>
-            {!submitted && (
-              <div className="flex flex-col items-center gap-1 opacity-40">
-                <div className="h-1 w-6 rounded-full bg-white/50" />
-                <div className="h-1 w-6 rounded-full bg-white/50" />
-                <div className="h-1 w-6 rounded-full bg-white/50" />
-              </div>
-            )}
-          </Reorder.Item>
+            itemIdx={itemIdx}
+            position={position}
+            label={items[itemIdx]}
+            submitted={submitted}
+          />
         ))}
       </Reorder.Group>
 
@@ -96,7 +131,7 @@ export const PuzzleAnswer = ({
         type="button"
         disabled={submitted}
         onClick={handleSubmit}
-        className="w-full rounded-2xl bg-yellow-500 py-4 text-xl font-black tracking-wider text-white uppercase shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:scale-[1.02] hover:bg-yellow-600 active:scale-95 disabled:opacity-40"
+        className="w-full shrink-0 rounded-2xl bg-yellow-500 py-4 text-xl font-black tracking-wider text-white uppercase shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:scale-[1.02] hover:bg-yellow-600 active:scale-95 disabled:opacity-40"
       >
         {submitted ? t("game:answerSent") : t("common:submit")}
       </button>
