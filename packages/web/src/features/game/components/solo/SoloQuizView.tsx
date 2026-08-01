@@ -1,6 +1,7 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Question } from "@rahoot/common/types/game"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
+import Logo from "@rahoot/web/components/Logo"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
@@ -15,7 +16,6 @@ import {
   Send,
   Share2,
   Sparkles,
-  Trophy,
   User,
   XCircle,
 } from "lucide-react"
@@ -301,9 +301,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 className="w-full h-48 object-cover rounded-2xl mb-6 shadow-xl border border-white/10"
               />
             ) : (
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center mb-6 shadow-xl shadow-orange-500/30">
-                <Trophy className="size-10 text-white" />
-              </div>
+              <Logo className="h-20 w-auto mb-6" />
             )}
 
             <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">
@@ -482,9 +480,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               </form>
             )}
 
-            {/* HUD Footer (Timer, Score, Next Button) */}
+            {/* HUD Footer (Timer, Score, Next Button, App Logo) */}
             <div className="flex items-center justify-between bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-3">
               <div className="flex items-center gap-4">
+                <Logo className="h-8 w-auto shrink-0" />
                 <span className="text-xs font-bold text-orange-400 uppercase tracking-widest bg-orange-500/20 px-3 py-1 rounded-full border border-orange-500/30">
                   Question {currentQuestionIdx + 1} / {quizz.questions.length}
                 </span>
@@ -526,9 +525,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           <Confetti recycle={false} numberOfPieces={350} />
           <div className="relative z-20 flex flex-1 items-center justify-center p-4">
             <div className="w-full max-w-md bg-black/70 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center mb-6 shadow-2xl shadow-orange-500/50 animate-bounce">
-                <Trophy className="size-10 text-white" />
-              </div>
+              <Logo className="h-20 w-auto mb-6 drop-shadow-2xl animate-bounce" />
 
               <h2 className="text-3xl font-black text-white mb-1">Partie Terminée !</h2>
               <p className="text-gray-300 text-sm mb-6">
@@ -547,7 +544,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 <div className="flex flex-col items-center pl-2">
                   <span className="text-xs text-gray-400 font-semibold">Rang Provisoire</span>
                   <span className="text-2xl font-black text-orange-400">
-                    #{resultSummary.rank} / {resultSummary.totalPlayers}
+                    #{resultSummary.rank}
                   </span>
                 </div>
               </div>
