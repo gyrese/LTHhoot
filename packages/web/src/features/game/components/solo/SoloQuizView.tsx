@@ -79,6 +79,8 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.2 })
+  const [sfxCorrect] = useSound(SFX.RESULTS_SOUND, { volume: 0.4 })
+  const [sfxWrong] = useSound(SFX.BOUMP_SOUND, { volume: 0.4 })
 
   // Événements socket
   useEvent(EVENTS.ASYNC_QUIZ.DATA, (data: PublicQuizz) => {
@@ -127,6 +129,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     if (hasSubmittedAnswer) return
     setHasSubmittedAnswer(true)
     setIsCorrectAnswer(false)
+    sfxWrong()
     const timeSpent = Date.now() - questionStartTime
 
     setAnswersRecords((prev) => [
@@ -179,9 +182,12 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     setIsCorrectAnswer(correct)
     if (correct) {
+      sfxCorrect()
       const timeLimit = (currentQuestion.time || 20) * 1000
       const speedBonus = Math.max(0, Math.round(500 * (1 - timeSpent / timeLimit)))
       setUserPoints((pts) => pts + 1000 + speedBonus)
+    } else {
+      sfxWrong()
     }
 
     setAnswersRecords((prev) => [
@@ -215,7 +221,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     setIsCorrectAnswer(correct)
     if (correct) {
+      sfxCorrect()
       setUserPoints((pts) => pts + 1000)
+    } else {
+      sfxWrong()
     }
 
     setAnswersRecords((prev) => [
@@ -533,6 +542,67 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               </div>
             </div>
           </div>
+
+          {/* Modal d'animation de feedback (Bonne ou Mauvaise Réponse) */}
+          {hasSubmittedAnswer && isCorrectAnswer !== null && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
+              <div
+                className={clsx(
+                  "w-full max-w-md rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl border transition-all animate-in slide-in-from-bottom-4 duration-300",
+                  isCorrectAnswer
+                    ? "bg-slate-950/95 border-emerald-500/50 shadow-emerald-500/30"
+                    : "bg-slate-950/95 border-rose-500/50 shadow-rose-500/30"
+                )}
+              >
+                <div
+                  className={clsx(
+                    "size-20 rounded-3xl flex items-center justify-center mb-4 shadow-2xl animate-bounce",
+                    isCorrectAnswer
+                      ? "bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-500/40"
+                      : "bg-gradient-to-tr from-rose-600 to-red-500 text-white shadow-rose-500/40"
+                  )}
+                >
+                  {isCorrectAnswer ? (
+                    <CheckCircle2 className="size-12 stroke-[2.5]" />
+                  ) : (
+                    <XCircle className="size-12 stroke-[2.5]" />
+                  )}
+                </div>
+
+                <h3
+                  className={clsx(
+                    "text-2xl sm:text-3xl font-black mb-1 tracking-tight",
+                    isCorrectAnswer ? "text-emerald-400" : "text-rose-400"
+                  )}
+                >
+                  {isCorrectAnswer ? "BONNE RÉPONSE !" : "MAUVAISE RÉPONSE !"}
+                </h3>
+
+                <p className="text-sm font-semibold text-gray-300 mb-6">
+                  {isCorrectAnswer
+                    ? "Bravo ! Vous gagnez des points pour le classement !"
+                    : "Dommage ! Concentrez-vous pour la question suivante."}
+                </p>
+
+                <button
+                  onClick={handleNextQuestion}
+                  className={clsx(
+                    "w-full py-4 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer",
+                    isCorrectAnswer
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 shadow-emerald-500/30"
+                      : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/30"
+                  )}
+                >
+                  <span>
+                    {currentQuestionIdx + 1 < quizz.questions.length
+                      ? "Question Suivante"
+                      : "Voir mon Résultat"}
+                  </span>
+                  <ArrowRight className="size-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
