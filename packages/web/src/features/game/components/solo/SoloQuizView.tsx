@@ -150,6 +150,24 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     sfxShow()
   }
 
+  const checkIsAnswerCorrect = (q: any, ansIdx: number): boolean => {
+    if (!q) return false
+    if (q.type === "mcq" || !q.type) {
+      if (Array.isArray(q.solutions)) return q.solutions.includes(ansIdx)
+      if (typeof q.solution === "number") return q.solution === ansIdx
+      if (Array.isArray(q.answers) && q.answers[ansIdx]) {
+        return typeof q.answers[ansIdx] === "object" ? Boolean(q.answers[ansIdx].correct) : false
+      }
+    }
+    if (q.type === "true_false") {
+      if (typeof q.solution === "number") return q.solution === ansIdx
+      if (Array.isArray(q.answers) && q.answers[ansIdx]) {
+        return typeof q.answers[ansIdx] === "object" ? Boolean(q.answers[ansIdx].correct) : false
+      }
+    }
+    return false
+  }
+
   const handleAnswerSelect = (ansIdx: number) => {
     if (hasSubmittedAnswer || !currentQuestion) return
     sfxPop()
@@ -157,18 +175,12 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     setHasSubmittedAnswer(true)
 
     const timeSpent = Date.now() - questionStartTime
-    let correct = false
-
-    if (currentQuestion.type === "mcq" || currentQuestion.type === "true_false") {
-      const correctIdx = currentQuestion.answers?.findIndex((a: any) => a.correct)
-      if (ansIdx === correctIdx) {
-        correct = true
-      }
-    }
+    const correct = checkIsAnswerCorrect(currentQuestion, ansIdx)
 
     setIsCorrectAnswer(correct)
     if (correct) {
-      const speedBonus = Math.max(0, Math.round(500 * (1 - timeSpent / 20000)))
+      const timeLimit = (currentQuestion.time || 20) * 1000
+      const speedBonus = Math.max(0, Math.round(500 * (1 - timeSpent / timeLimit)))
       setUserPoints((pts) => pts + 1000 + speedBonus)
     }
 
@@ -189,10 +201,15 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     const timeSpent = Date.now() - questionStartTime
     let correct = false
+    const text = textInput.trim().toLowerCase()
 
-    if (currentQuestion.type === "open" && currentQuestion.answer) {
-      if (textInput.trim().toLowerCase() === currentQuestion.answer.trim().toLowerCase()) {
-        correct = true
+    if (currentQuestion.type === "open") {
+      if (Array.isArray(currentQuestion.correctAnswers)) {
+        correct = currentQuestion.correctAnswers.some(
+          (ca: string) => ca.trim().toLowerCase() === text,
+        )
+      } else if (typeof (currentQuestion as any).answer === "string") {
+        correct = (currentQuestion as any).answer.trim().toLowerCase() === text
       }
     }
 
@@ -401,7 +418,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   const Icon = ANSWERS_ICONS[idx % 4]
                   const colorClass = ANSWERS_COLORS[idx % 4]
                   const isSelected = selectedAnswer === idx
-                  const isCorrect = ans.correct
+                  const isCorrect = checkIsAnswerCorrect(currentQuestion, idx)
 
                   let btnState: boolean | undefined = undefined
                   if (hasSubmittedAnswer) {
@@ -424,7 +441,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                         hasSubmittedAnswer && isSelected && !isCorrect && "opacity-50 grayscale",
                       )}
                     >
-                      {ans.title || ans.text || ans}
+                      {ans.title || ans.text || (typeof ans === "string" ? ans : "")}
                     </AnswerButton>
                   )
                 })}
@@ -439,7 +456,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   icon={ANSWERS_ICONS[0]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(0)}
-                  correct={hasSubmittedAnswer ? (currentQuestion.answers?.[0]?.correct ? true : selectedAnswer === 0 ? false : undefined) : undefined}
+                  correct={hasSubmittedAnswer ? (checkIsAnswerCorrect(currentQuestion, 0) ? true : selectedAnswer === 0 ? false : undefined) : undefined}
                   className="bg-red-600 min-h-24 text-xl font-black text-white shadow-xl cursor-pointer"
                 >
                   Faux
@@ -450,7 +467,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   icon={ANSWERS_ICONS[1]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(1)}
-                  correct={hasSubmittedAnswer ? (currentQuestion.answers?.[1]?.correct ? true : selectedAnswer === 1 ? false : undefined) : undefined}
+                  correct={hasSubmittedAnswer ? (checkIsAnswerCorrect(currentQuestion, 1) ? true : selectedAnswer === 1 ? false : undefined) : undefined}
                   className="bg-blue-600 min-h-24 text-xl font-black text-white shadow-xl cursor-pointer"
                 >
                   Vrai

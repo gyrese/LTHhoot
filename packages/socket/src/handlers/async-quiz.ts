@@ -51,30 +51,87 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
         let correctAnswersCount = 0
 
         // Calcul du score pour les réponses de ce joueur
-        quizz.questions.forEach((q, index) => {
+        quizz.questions.forEach((q: any, index: number) => {
           const playerAns = answers.find((a) => a.questionIndex === index)
           if (!playerAns) return
 
           let isCorrect = false
 
-          if (q.type === "mcq" || q.type === "true_false") {
-            const correctAnsIndex = q.answers.findIndex((a) => a.correct)
-            if (playerAns.answerId === correctAnsIndex) {
-              isCorrect = true
+          switch (q.type) {
+            case "mcq": {
+              const ansId = playerAns.answerId
+              if (ansId !== undefined && ansId !== null) {
+                if (Array.isArray(q.solutions)) {
+                  isCorrect = q.solutions.includes(ansId)
+                } else if (typeof q.solution === "number") {
+                  isCorrect = q.solution === ansId
+                } else if (Array.isArray(q.answers)) {
+                  const item = q.answers[ansId]
+                  if (typeof item === "object" && item !== null) {
+                    isCorrect = Boolean(item.correct)
+                  }
+                }
+              }
+              break
             }
-          } else if (q.type === "open") {
-            if (
-              playerAns.textAnswer &&
-              q.answer &&
-              playerAns.textAnswer.trim().toLowerCase() === q.answer.trim().toLowerCase()
-            ) {
-              isCorrect = true
+
+            case "true_false": {
+              const ansId = playerAns.answerId
+              if (ansId !== undefined && ansId !== null) {
+                if (typeof q.solution === "number") {
+                  isCorrect = q.solution === ansId
+                } else if (Array.isArray(q.answers)) {
+                  const item = q.answers[ansId]
+                  if (typeof item === "object" && item !== null) {
+                    isCorrect = Boolean(item.correct)
+                  }
+                }
+              }
+              break
             }
+
+            case "open": {
+              const text = playerAns.textAnswer?.trim().toLowerCase()
+              if (text) {
+                if (Array.isArray(q.correctAnswers)) {
+                  isCorrect = q.correctAnswers.some(
+                    (ca: string) => ca.trim().toLowerCase() === text,
+                  )
+                } else if (typeof q.answer === "string") {
+                  isCorrect = q.answer.trim().toLowerCase() === text
+                }
+              }
+              break
+            }
+
+            case "date": {
+              if (typeof playerAns.numberAnswer === "number") {
+                const target = q.correctYear ?? q.solution
+                const tol = q.tolerance ?? 0
+                isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
+              }
+              break
+            }
+
+            case "slider": {
+              if (typeof playerAns.numberAnswer === "number") {
+                const target = q.correctValue ?? q.solution
+                const tol = q.tolerance ?? 0
+                isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
+              }
+              break
+            }
+
+            default:
+              break
           }
 
           if (isCorrect) {
             correctAnswersCount += 1
-            const speedBonus = playerAns.timeMs ? Math.max(0, Math.round(500 * (1 - playerAns.timeMs / 20000))) : 0
+            const timeLimit = (q.time || 20) * 1000
+            const speedBonus = playerAns.timeMs
+              ? Math.max(0, Math.round(500 * (1 - playerAns.timeMs / timeLimit)))
+              : 0
             totalScore += 1000 + speedBonus
           }
         })
