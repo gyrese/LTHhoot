@@ -292,15 +292,38 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     )
   }
 
-  // Calcul du fond d'écran
-  const bg = currentQuestion?.background
-  const bgStyle: React.CSSProperties = bg?.type === "image" && bg.value
-    ? { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : bg?.type === "color" && bg.value
-    ? { backgroundColor: bg.value }
-    : { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
+  // Calcul du fond d'écran selon l'étape du quiz (couverture du quiz sur l'écran d'accueil)
+  const coverImage = quizz.salonImage || quizz.listingImage
 
-  const bgOpacity = currentQuestion?.backgroundOpacity ?? 0.6
+  let bgStyle: React.CSSProperties = {}
+  let bgOpacity = 0.6
+  let bgImageForRevealer: string | undefined = undefined
+
+  if (step === "START" || step === "FINISHED") {
+    if (coverImage) {
+      bgStyle = { backgroundImage: `url(${coverImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgOpacity = 0.7
+    } else {
+      bgStyle = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgOpacity = 0.5
+    }
+  } else {
+    // Étape QUESTION : fond spécifique de la slide/question
+    const bg = currentQuestion?.background
+    bgOpacity = currentQuestion?.backgroundOpacity ?? 0.6
+
+    if (bg?.type === "image" && bg.value) {
+      bgStyle = { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgImageForRevealer = bg.value
+    } else if (bg?.type === "color" && bg.value) {
+      bgStyle = { backgroundColor: bg.value }
+    } else if (coverImage) {
+      bgStyle = { backgroundImage: `url(${coverImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgImageForRevealer = coverImage
+    } else {
+      bgStyle = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
+    }
+  }
 
   return (
     <div className="relative h-screen w-screen flex flex-col justify-between overflow-hidden bg-slate-950 text-white select-none">
@@ -314,10 +337,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           duration={currentQuestion.revealDuration ?? currentQuestion.time ?? 20}
           gridCols={currentQuestion.gridCols ?? 8}
           gridRows={currentQuestion.gridRows ?? 6}
-          seedString={currentQuestion.question || bg?.value}
+          seedString={currentQuestion.question || bgImageForRevealer}
           startTimeOffset={0}
           configuredStyle={currentQuestion.revelationStyle}
-          imageUrl={bg?.type === "image" ? bg.value : undefined}
+          imageUrl={bgImageForRevealer}
         />
       )}
 
