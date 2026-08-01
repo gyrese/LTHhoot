@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react"
 import type { GameResult, GameResultPlayer } from "@rahoot/common/types/game"
-import { Trophy, Dices, X, Sparkles, Send, Check, Crown, Award, Download, Image as ImageIcon } from "lucide-react"
+import { Trophy, Dices, X, Sparkles, Send, Check, Crown, Award, Download, Image as ImageIcon, Trash2 } from "lucide-react"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import clsx from "clsx"
@@ -129,11 +129,13 @@ export const downloadWinnerVisualPNG = (quizSubject: string, winner: GameResultP
 }
 
 export const Top10DrawModal: React.FC<Props> = ({ result, onClose }) => {
-  // Isoler le Top 10 des meilleurs scores
+  const [excludedUsernames, setExcludedUsernames] = useState<string[]>([])
+
+  // Isoler le Top 10 des meilleurs scores en excluant les joueurs supprimés
   const top10Players = useMemo(() => {
     const sorted = [...result.players].sort((a, b) => b.points - a.points)
-    return sorted.slice(0, 10)
-  }, [result])
+    return sorted.filter((p) => !excludedUsernames.includes(p.username)).slice(0, 10)
+  }, [result, excludedUsernames])
 
   const [isSpinning, setIsSpinning] = useState(false)
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null)
@@ -267,9 +269,22 @@ Merci à tous les participants du Top 10 ! 🚀`
                       </div>
                     </div>
 
-                    <span className="text-xs font-extrabold text-amber-400 shrink-0 ml-2">
-                      {player.points.toLocaleString()} pts
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-xs font-extrabold text-amber-400">
+                        {player.points.toLocaleString()} pts
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExcludedUsernames((prev) => [...prev, player.username])
+                          toast.success(`${player.username} retiré du tirage`)
+                        }}
+                        title="Retirer ce joueur du tirage au sort"
+                        className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )
               })}
