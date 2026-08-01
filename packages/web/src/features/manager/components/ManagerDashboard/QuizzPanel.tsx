@@ -16,9 +16,11 @@ import {
   Trash2,
   Upload,
   X,
+  Share2,
 } from "lucide-react"
-import React, { type ChangeEvent, useMemo, useRef } from "react"
+import React, { type ChangeEvent, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { ShareSocialModal } from "@rahoot/web/features/manager/components/ShareSocialModal"
 import {
   downloadJson,
   exportQuizzWithMedia,
@@ -61,6 +63,7 @@ const QuizzPanel = ({
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportTypeRef = useRef<"json" | "pptx">("json")
+  const [shareModalQuizz, setShareModalQuizz] = useState<{ id: string; subject: string } | null>(null)
   const { t } = useTranslation()
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
@@ -335,6 +338,16 @@ const QuizzPanel = ({
                       </button>
                     )}
                     <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShareModalQuizz({ id: q.id, subject: q.subject })
+                      }}
+                      className="rounded-lg bg-black/50 p-1.5 text-orange-400 backdrop-blur-sm hover:bg-black/70"
+                      title="Diffuser sur les réseaux sociaux"
+                    >
+                      <Share2 className="size-3.5" />
+                    </button>
+                    <button
                       onClick={handleExport(q.id)}
                       className="rounded-lg bg-black/50 p-1.5 text-blue-400 backdrop-blur-sm hover:bg-black/70"
                       title={t("common:export")}
@@ -392,6 +405,13 @@ const QuizzPanel = ({
           </div>
         )}
       </div>
+
+      {shareModalQuizz && (
+        <ShareSocialModal
+          quizz={shareModalQuizz}
+          onClose={() => setShareModalQuizz(null)}
+        />
+      )}
     </div>
   )
 }

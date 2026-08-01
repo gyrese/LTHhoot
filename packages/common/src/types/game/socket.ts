@@ -162,6 +162,16 @@ export interface ServerToClientEvents {
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
 
+  // Async quiz events
+  [EVENTS.ASYNC_QUIZ.DATA]: (_quizz: any) => void
+  [EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS]: (_data: {
+    totalPoints: number
+    rank: number
+    totalPlayers: number
+    correctAnswersCount: number
+    totalQuestions: number
+  }) => void
+
   // Evening events
   [EVENTS.EVENING.QUIZ_COMPLETE]: (_data: {
     quizIndex: number
@@ -316,6 +326,21 @@ export interface ClientToServerEvents {
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
   [EVENTS.RESULTS.DELETE]: (_id: string) => void
+
+  // Async quiz actions
+  [EVENTS.ASYNC_QUIZ.GET_PUBLIC]: (_quizzId: string) => void
+  [EVENTS.ASYNC_QUIZ.SUBMIT]: (_payload: {
+    quizzId: string
+    playerName: string
+    socialContact?: string
+    answers: Array<{
+      questionIndex: number
+      answerId?: number | null
+      textAnswer?: string | null
+      numberAnswer?: number | null
+      timeMs?: number
+    }>
+  }) => void
 
   // Evening actions
   [EVENTS.EVENING.START]: (_data: {

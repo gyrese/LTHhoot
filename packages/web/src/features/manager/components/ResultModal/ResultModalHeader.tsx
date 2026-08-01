@@ -1,6 +1,6 @@
 import { useResultModal } from "@rahoot/web/features/manager/contexts/result-modal-context"
 import { downloadGameResultCSV } from "@rahoot/web/features/manager/utils/csv"
-import { ChevronLeft, ChevronRight, Download, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download, X, Dices } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 const ResultModalHeader = () => {
@@ -39,6 +39,17 @@ const ResultModalHeader = () => {
           className="hover:text-primary ml-2 rounded p-1 text-gray-500 transition-colors hover:bg-gray-100"
         >
           <Download className="size-5" />
+        </button>
+        <button
+          onClick={() => {
+            const event = new CustomEvent("openTop10Draw")
+            window.dispatchEvent(event)
+          }}
+          title="Tirage au Sort (Top 10)"
+          className="ml-1 flex items-center gap-1 rounded bg-amber-500 px-2.5 py-1 text-xs font-bold text-slate-950 transition-colors hover:bg-amber-400 shadow-sm cursor-pointer"
+        >
+          <Dices className="size-4" />
+          <span>Tirage Top 10</span>
         </button>
         <button
           onClick={onClose}

@@ -283,6 +283,7 @@ export type GameResultPlayer = {
   avatar?: string
   points: number
   rank: number
+  socialContact?: string
 }
 
 export type LogEntry = {

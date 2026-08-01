@@ -639,11 +639,14 @@ httpServer.on("error", (err) => {
   process.exit(1)
 })
 
+import { asyncQuizzSocketHandlers } from "@rahoot/socket/handlers/async-quiz"
+
 const socketHandlers: SocketHandler[] = [
   managerSocketHandlers,
   quizzSocketHandlers,
   gameSocketHandlers,
   resultsSocketHandlers,
+  asyncQuizzSocketHandlers,
 ]
 
 io.on("connection", (socket) => {

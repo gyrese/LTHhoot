@@ -4,8 +4,9 @@ import ResultModalHeader from "@rahoot/web/features/manager/components/ResultMod
 import ResultModalLogs from "@rahoot/web/features/manager/components/ResultModal/ResultModalLogs"
 import ResultModalStats from "@rahoot/web/features/manager/components/ResultModal/ResultModalStats"
 import ResultModalTable from "@rahoot/web/features/manager/components/ResultModal/ResultModalTable"
+import { Top10DrawModal } from "@rahoot/web/features/manager/components/DrawModal/Top10DrawModal"
 import { ResultModalProvider } from "@rahoot/web/features/manager/contexts/result-modal-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import clsx from "clsx"
 
 type Props = {
@@ -15,8 +16,15 @@ type Props = {
 
 const ResultModal = ({ result, onClose }: Props) => {
   const [view, setView] = useState<"questions" | "logs">("questions")
+  const [showDrawModal, setShowDrawModal] = useState(false)
   const logCount = result.logs?.length ?? 0
   const errorCount = result.logs?.filter((l) => l.level === "error").length ?? 0
+
+  useEffect(() => {
+    const handleOpenDraw = () => setShowDrawModal(true)
+    window.addEventListener("openTop10Draw", handleOpenDraw)
+    return () => window.removeEventListener("openTop10Draw", handleOpenDraw)
+  }, [])
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
@@ -75,6 +83,13 @@ const ResultModal = ({ result, onClose }: Props) => {
           )}
         </ResultModalProvider>
       </div>
+
+      {showDrawModal && (
+        <Top10DrawModal
+          result={result}
+          onClose={() => setShowDrawModal(false)}
+        />
+      )}
     </div>
   )
 }

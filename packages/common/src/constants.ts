@@ -87,6 +87,16 @@ export const EVENTS = {
     DATA: "results:data",
     DELETE: "results:delete",
   },
+  ASYNC_QUIZ: {
+    GET_PUBLIC: "asyncQuizz:getPublic",
+    DATA: "asyncQuizz:data",
+    SUBMIT: "asyncQuizz:submit",
+    SUBMIT_SUCCESS: "asyncQuizz:submitSuccess",
+  },
+  DRAW: {
+    PICK_WINNER: "draw:pickWinner",
+    SAVE_WINNER: "draw:saveWinner",
+  },
   EVENING: {
     START: "evening:start",
     QUIZ_COMPLETE: "evening:quizComplete",
