@@ -14,6 +14,9 @@
   "roundRanking": "Rundenrangliste",
   "openAnswerPlaceholder": "Tippe deine Antwort...",
   "pinPlaceholder": "PIN-Code",
+  "puzzle": {
+    "dragHandle": "Dieses Element verschieben"
+  },
   "playersJoined": "Verbundene Spieler: ",
   "questionPrefix": "Frage #",
   "rank": {

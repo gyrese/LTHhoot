@@ -14,6 +14,9 @@
   "roundRanking": "Clasificación de la ronda",
   "openAnswerPlaceholder": "Escribe tu respuesta...",
   "pinPlaceholder": "Código PIN",
+  "puzzle": {
+    "dragHandle": "Mover este elemento"
+  },
   "playersJoined": "Jugadores conectados: ",
   "questionPrefix": "Pregunta #",
   "rank": {

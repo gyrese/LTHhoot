@@ -14,6 +14,9 @@
   "roundRanking": "Classement de la manche",
   "openAnswerPlaceholder": "Tape ta réponse...",
   "pinPlaceholder": "Code PIN",
+  "puzzle": {
+    "dragHandle": "Déplacer cet élément"
+  },
   "playersJoined": "Joueurs connectés : ",
   "questionPrefix": "Question n°",
   "rank": {

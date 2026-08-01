@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './pages/__root'
 import { Route as authLayoutRouteImport } from './pages/(auth)/layout'
 import { Route as RemoteIndexRouteImport } from './pages/remote/index'
 import { Route as authIndexRouteImport } from './pages/(auth)/index'
+import { Route as SoloQuizzIdRouteImport } from './pages/solo/$quizzId'
 import { Route as RemoteGameIdRouteImport } from './pages/remote/$gameId'
 import { Route as PartyGameIdRouteImport } from './pages/party/$gameId'
 import { Route as ManagerConfigRouteImport } from './pages/manager/config'
@@ -35,6 +36,11 @@ const authIndexRoute = authIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => authLayoutRoute,
+} as any)
+const SoloQuizzIdRoute = SoloQuizzIdRouteImport.update({
+  id: '/solo/$quizzId',
+  path: '/solo/$quizzId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RemoteGameIdRoute = RemoteGameIdRouteImport.update({
   id: '/remote/$gameId',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
+  '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/': typeof authIndexRoute
   '/remote/': typeof RemoteIndexRoute
   '/manager/guest': typeof authManagerGuestRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
+  '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/': typeof authIndexRoute
   '/remote': typeof RemoteIndexRoute
   '/manager/guest': typeof authManagerGuestRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
+  '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/(auth)/': typeof authIndexRoute
   '/remote/': typeof RemoteIndexRoute
   '/(auth)/manager/guest': typeof authManagerGuestRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/manager/config'
     | '/party/$gameId'
     | '/remote/$gameId'
+    | '/solo/$quizzId'
     | '/'
     | '/remote/'
     | '/manager/guest'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/manager/config'
     | '/party/$gameId'
     | '/remote/$gameId'
+    | '/solo/$quizzId'
     | '/'
     | '/remote'
     | '/manager/guest'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/manager/config'
     | '/party/$gameId'
     | '/remote/$gameId'
+    | '/solo/$quizzId'
     | '/(auth)/'
     | '/remote/'
     | '/(auth)/manager/guest'
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   ManagerConfigRoute: typeof ManagerConfigRoute
   PartyGameIdRoute: typeof PartyGameIdRoute
   RemoteGameIdRoute: typeof RemoteGameIdRoute
+  SoloQuizzIdRoute: typeof SoloQuizzIdRoute
   RemoteIndexRoute: typeof RemoteIndexRoute
   PartyManagerGameIdRoute: typeof PartyManagerGameIdRoute
 }
@@ -196,6 +209,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof authIndexRouteImport
       parentRoute: typeof authLayoutRoute
+    }
+    '/solo/$quizzId': {
+      id: '/solo/$quizzId'
+      path: '/solo/$quizzId'
+      fullPath: '/solo/$quizzId'
+      preLoaderRoute: typeof SoloQuizzIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/remote/$gameId': {
       id: '/remote/$gameId'
@@ -298,6 +318,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManagerConfigRoute: ManagerConfigRoute,
   PartyGameIdRoute: PartyGameIdRoute,
   RemoteGameIdRoute: RemoteGameIdRoute,
+  SoloQuizzIdRoute: SoloQuizzIdRoute,
   RemoteIndexRoute: RemoteIndexRoute,
   PartyManagerGameIdRoute: PartyManagerGameIdRoute,
 }

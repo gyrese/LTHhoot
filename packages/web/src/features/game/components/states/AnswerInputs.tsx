@@ -114,7 +114,7 @@ export const PuzzleAnswer = ({
         axis="y"
         values={order}
         onReorder={!submitted ? setOrder : () => undefined}
-        className="mb-3 flex max-h-[45vh] flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-1 py-1"
+        className="mb-3 flex max-h-[45dvh] flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-1 py-1"
       >
         {order.map((itemIdx, position) => (
           <PuzzleItem
