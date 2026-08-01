@@ -347,20 +347,6 @@ const QuizzPanel = ({
                     >
                       <Share2 className="size-3.5" />
                     </button>
-                    <button
-                      onClick={handleExport(q.id)}
-                      className="rounded-lg bg-black/50 p-1.5 text-blue-400 backdrop-blur-sm hover:bg-black/70"
-                      title={t("common:export")}
-                    >
-                      <Download className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={handleExportPptx(q.id)}
-                      className="rounded-lg bg-black/50 p-1.5 text-purple-400 backdrop-blur-sm hover:bg-black/70"
-                      title="Exporter en PPTX"
-                    >
-                      <FileDown className="size-3.5" />
-                    </button>
                     {!isReadonly && (
                       <AlertDialog
                         trigger={
