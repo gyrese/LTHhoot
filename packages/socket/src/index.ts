@@ -6,6 +6,11 @@ import { resultsSocketHandlers } from "@rahoot/socket/handlers/results"
 import type { SocketHandler } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import Manager from "@rahoot/socket/services/manager"
+import {
+  buildOgImage,
+  injectOgTags,
+  readWebIndex,
+} from "@rahoot/socket/services/og-image"
 import Registry from "@rahoot/socket/services/registry"
 import {
   logHandlerError,
@@ -64,8 +69,8 @@ const giphyResponseSchema = z.object({
               original: z.object({ url: z.string().optional() }).optional(),
               // Clés natives de l'API Giphy (snake_case) — quotées pour rester
               // hors du champ de la règle camelcase.
-              "fixed_width": z.object({ url: z.string().optional() }).optional(),
-              "preview_gif": z.object({ url: z.string().optional() }).optional(),
+              fixed_width: z.object({ url: z.string().optional() }).optional(),
+              preview_gif: z.object({ url: z.string().optional() }).optional(),
             })
             .optional(),
         })
@@ -219,14 +224,15 @@ app.post(
       return
     }
 
-    const apiKey = process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
+    const apiKey =
+      process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
     if (!apiKey) {
       console.error(
         "GEMINI_IMAGE_API_KEY ou GEMINI_API_KEY manquante dans les variables d'environnement",
       )
-      res
-        .status(500)
-        .json({ error: "Clé API Gemini Image/Globale non configurée sur le serveur" })
+      res.status(500).json({
+        error: "Clé API Gemini Image/Globale non configurée sur le serveur",
+      })
       return
     }
 
@@ -244,7 +250,8 @@ app.post(
       "3D model block style, voxel art, cute blocky characters, vibrant colors, isometric view, square format",
       "origami paper art style, layered paper cuts, soft textures, pastel colors, elegant lighting, square format",
     ]
-    const chosenStyle = IMAGE_STYLES[Math.floor(Math.random() * IMAGE_STYLES.length)]
+    const chosenStyle =
+      IMAGE_STYLES[Math.floor(Math.random() * IMAGE_STYLES.length)]
     const prompt = `${subject}, ${chosenStyle}`
     const genAI = new GoogleGenAI({ apiKey })
 
@@ -289,7 +296,16 @@ app.get(
   async (_req: express.Request, res: express.Response) => {
     try {
       const files = await readdir(uploadsDir)
-      const imageExts = new Set([".webp", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".bmp", ".ico"])
+      const imageExts = new Set([
+        ".webp",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".bmp",
+        ".ico",
+      ])
 
       const entries = await Promise.all(
         files
@@ -327,7 +343,12 @@ app.delete(
     const filename = req.params.filename as string
 
     // Sécurité : empêcher le path traversal
-    if (!filename || filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+    if (
+      !filename ||
+      filename.includes("..") ||
+      filename.includes("/") ||
+      filename.includes("\\")
+    ) {
       res.status(400).json({ error: "Nom de fichier invalide" })
 
       return
@@ -562,6 +583,50 @@ const transportBreakdown = () => {
 
   return { websocket, polling }
 }
+
+// Vignette de partage d'un quiz (couverture + logo de la soirée), pointée par
+// les balises og:image ci-dessous. Publique : c'est un lien à diffuser.
+// Express 5 n'accepte pas de suffixe littéral après un paramètre : on capture
+// le nom de fichier entier et on retire l'extension nous-mêmes.
+app.get("/og/:file", async (req: express.Request, res) => {
+  try {
+    const quizzId = String(req.params.file).replace(/\.png$/u, "")
+    const image = await buildOgImage(quizzId, uploadsDir)
+
+    if (!image) {
+      res.status(404).end()
+
+      return
+    }
+
+    res.setHeader("Content-Type", "image/png")
+    res.setHeader("Cache-Control", "public, max-age=600")
+    res.end(image)
+  } catch (error) {
+    console.error("Failed to build OG image:", error)
+    res.status(500).end()
+  }
+})
+
+// Page publique d'un quiz solo servie par le serveur (et non par le statique)
+// pour y injecter les balises Open Graph : les robots des réseaux sociaux
+// n'exécutent pas le JS et ne verraient sinon que le HTML générique.
+app.get("/solo/:quizzId", (req: express.Request, res) => {
+  const html = readWebIndex()
+
+  if (!html) {
+    res.status(404).end()
+
+    return
+  }
+
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol
+  const origin = `${proto}://${req.get("host")}`
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8")
+  res.setHeader("Cache-Control", "no-store")
+  res.end(injectOgTags(html, String(req.params.quizzId), origin))
+})
 
 // Endpoint de santé : un moniteur d'uptime (ou l'hôte) peut vérifier que le
 // serveur répond AVANT un événement et diagnostiquer en direct (parties, joueurs,

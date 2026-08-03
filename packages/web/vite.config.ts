@@ -52,6 +52,10 @@ export default defineConfig({
       "/uploads": {
         target: wsTarget,
       },
+      // Vignette de partage générée par le serveur (og:image).
+      "/og": {
+        target: wsTarget,
+      },
     },
   },
   preview: {
@@ -74,6 +78,10 @@ export default defineConfig({
         target: wsTarget,
       },
       "/uploads": {
+        target: wsTarget,
+      },
+      // Vignette de partage générée par le serveur (og:image).
+      "/og": {
         target: wsTarget,
       },
     },

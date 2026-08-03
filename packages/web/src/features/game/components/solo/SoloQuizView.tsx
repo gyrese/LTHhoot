@@ -1,9 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Question } from "@rahoot/common/types/game"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
-// Page publique : c'est la marque de la soirée qui s'affiche, pas celle de
-// l'application (le logo LTNHoot reste sur les écrans hôte/joueur en partie).
-import logoImg from "@rahoot/web/assets/logo-aperoquiz.png"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
@@ -51,6 +48,12 @@ type Props = {
 
 // Durée de l'écran de règles affiché avant la première question.
 const RULES_SCREEN_SECONDS = 3
+
+// Page publique : c'est la marque de la soirée qui s'affiche, pas celle de
+// l'application (le logo LTNHoot reste sur les écrans hôte/joueur en partie).
+// Servi depuis `public/` et non bundlé : le serveur lit le même fichier pour
+// composer la vignette de partage des réseaux sociaux.
+const logoImg = "/logo-aperoquiz.png"
 
 const noopChange = () => undefined
 const noopSelect = () => undefined
@@ -479,13 +482,16 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             <div className="relative my-4 w-full overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-b from-white/20 via-white/10 to-white/5 px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md">
               {/* Glass sheen highlight line */}
               <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
-              
+
               <h1 className="text-center text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-3xl">
                 {quizz.subject}
               </h1>
             </div>
 
-            <form onSubmit={handleStart} className="mt-1 w-full space-y-4 text-left">
+            <form
+              onSubmit={handleStart}
+              className="mt-1 w-full space-y-4 text-left"
+            >
               <div>
                 <label className="mb-1.5 block text-xs font-extrabold tracking-wider text-gray-200 uppercase">
                   Votre Pseudo *
@@ -498,7 +504,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     placeholder="Ex: QuizMaster99"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 font-semibold text-white placeholder-gray-400 backdrop-blur-md shadow-inner transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
+                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 font-semibold text-white placeholder-gray-400 shadow-inner backdrop-blur-md transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
                   />
                 </div>
               </div>
@@ -514,11 +520,12 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     placeholder="Ex: @votre_insta / email@domaine.com"
                     value={socialContact}
                     onChange={(e) => setSocialContact(e.target.value)}
-                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 text-sm font-semibold text-white placeholder-gray-400 backdrop-blur-md shadow-inner transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
+                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 text-sm font-semibold text-white placeholder-gray-400 shadow-inner backdrop-blur-md transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
                   />
                 </div>
                 <p className="mt-1.5 text-left text-[11px] font-medium text-gray-300">
-                  Requis si vous gagnez le tirage au sort pour réclamer votre lot !
+                  Requis si vous gagnez le tirage au sort pour réclamer votre
+                  lot !
                 </p>
               </div>
 
