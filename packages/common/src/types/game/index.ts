@@ -254,6 +254,7 @@ export type QuizzMeta = {
   id: string
   subject: string
   publicName?: string
+  description?: string
   folder?: string
   tags?: string[]
   salonImage?: string

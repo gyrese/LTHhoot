@@ -20,6 +20,7 @@ type Props = {
     id: string
     subject: string
     publicName?: string
+    description?: string
   }
   onClose: () => void
 }
@@ -28,28 +29,29 @@ export const ShareSocialModal: React.FC<Props> = ({ quizz, onClose }) => {
   const { socket } = useSocket()
   const [copied, setCopied] = useState(false)
   const [publicName, setPublicName] = useState(quizz.publicName ?? "")
+  const [description, setDescription] = useState(quizz.description ?? "")
 
-  // La modale reste montée d'un quiz à l'autre : on resynchronise le champ sur
-  // le quiz affiché, et sur la valeur renvoyée par le serveur après renommage.
+  // La modale reste montée d'un quiz à l'autre : on resynchronise les champs
+  // sur le quiz affiché, et sur les valeurs renvoyées par le serveur.
   useEffect(() => {
     setPublicName(quizz.publicName ?? "")
-  }, [quizz.id, quizz.publicName])
+    setDescription(quizz.description ?? "")
+  }, [quizz.id, quizz.publicName, quizz.description])
 
   // Nom vu par les joueurs : nom public du quiz si renseigné, sinon son titre.
   const displayName = quizzDisplayName({ subject: quizz.subject, publicName })
   const shareUrl = `${window.location.origin}/solo/${quizz.id}`
-  const isNameDirty = publicName.trim() !== (quizz.publicName ?? "").trim()
+  const isInfoDirty =
+    publicName.trim() !== (quizz.publicName ?? "").trim() ||
+    description.trim() !== (quizz.description ?? "").trim()
 
-  const handleSavePublicName = () => {
-    socket?.emit(EVENTS.QUIZZ.SET_PUBLIC_NAME, {
+  const handleSavePublicInfo = () => {
+    socket?.emit(EVENTS.QUIZZ.SET_PUBLIC_INFO, {
       id: quizz.id,
       publicName: publicName.trim() || null,
+      description: description.trim() || null,
     })
-    toast.success(
-      publicName.trim()
-        ? "Nom public enregistré !"
-        : "Nom public retiré — le titre du quiz sera affiché.",
-    )
+    toast.success("Informations publiques enregistrées !")
   }
 
   const socialPostText = `🚀 Quiz de la semaine : "${displayName}" !
@@ -143,26 +145,47 @@ Testez vos connaissances et tentez de remporter le tirage au sort parmi les 10 m
                   maxLength={90}
                   onChange={(e) => setPublicName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && isNameDirty) {
-                      handleSavePublicName()
+                    if (e.key === "Enter" && isInfoDirty) {
+                      handleSavePublicInfo()
                     }
                   }}
                   placeholder={quizz.subject}
                   className="w-full rounded-xl border border-white/15 bg-slate-950 py-2.5 pr-3.5 pl-9 text-sm text-white placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
                 />
               </div>
+            </div>
+            <p className="mt-1.5 text-[11px] text-gray-500">
+              Laissez vide pour afficher le titre du quiz.
+            </p>
+          </div>
+
+          {/* Règles — écran de 3 s affiché avant la 1re question */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-300 uppercase">
+              Règles du quiz
+            </label>
+            <textarea
+              value={description}
+              maxLength={500}
+              rows={3}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex : 10 questions, 20 s par question. Le plus rapide marque le plus de points !"
+              className="w-full resize-none rounded-xl border border-white/15 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
+            />
+            <div className="mt-1.5 flex items-center justify-between gap-3">
+              <p className="text-[11px] text-gray-500">
+                Affichées 3 secondes avant la première question. Vide = écran
+                passé.
+              </p>
               <button
-                onClick={handleSavePublicName}
-                disabled={!isNameDirty}
-                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-600 disabled:cursor-default disabled:bg-slate-800 disabled:text-gray-500"
+                onClick={handleSavePublicInfo}
+                disabled={!isInfoDirty}
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-orange-600 disabled:cursor-default disabled:bg-slate-800 disabled:text-gray-500"
               >
                 <Check className="size-4" />
                 <span>Enregistrer</span>
               </button>
             </div>
-            <p className="mt-1.5 text-[11px] text-gray-500">
-              Laissez vide pour afficher le titre du quiz.
-            </p>
           </div>
 
           {/* Lien Direct */}

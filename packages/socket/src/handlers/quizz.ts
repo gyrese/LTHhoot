@@ -147,8 +147,8 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   )
 
   socket.on(
-    EVENTS.QUIZZ.SET_PUBLIC_NAME,
-    manager.withAnyAuth(socket, (session, { id, publicName }) => {
+    EVENTS.QUIZZ.SET_PUBLIC_INFO,
+    manager.withAnyAuth(socket, (session, { id, publicName, description }) => {
       try {
         if (isReadonlyForSession(session, id)) {
           socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
@@ -156,10 +156,10 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
           return
         }
 
-        Config.setPublicName(id, publicName, ownerFor(session))
+        Config.setPublicInfo(id, { publicName, description }, ownerFor(session))
         emitConfig(socket)
       } catch (error) {
-        console.error("Failed to set quizz public name:", error)
+        console.error("Failed to set quizz public info:", error)
         socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.failedToUpdate")
       }
     }),

@@ -266,9 +266,10 @@ export interface ClientToServerEvents {
     id: string
     folder: string | null
   }) => void
-  [EVENTS.QUIZZ.SET_PUBLIC_NAME]: (_data: {
+  [EVENTS.QUIZZ.SET_PUBLIC_INFO]: (_data: {
     id: string
     publicName: string | null
+    description: string | null
   }) => void
   [EVENTS.QUIZZ.AI_GENERATE]: (_data: {
     prompt: string
@@ -337,6 +338,8 @@ export interface ClientToServerEvents {
     quizzId: string
     playerName: string
     socialContact?: string
+    // Signaux anti-bot du formulaire public : honeypot + début de partie.
+    human?: { hp?: string; startedAt?: number | null }
     answers: Array<{
       questionIndex: number
       answerId?: number | null

@@ -4,6 +4,11 @@ import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 
+// Durée plancher par question : sous ce seuil, personne n'a eu le temps de lire
+// l'énoncé — la soumission vient d'un script. Volontairement bas (un joueur
+// très rapide reste largement au-dessus) : on vise les bots, pas les pressés.
+const MIN_SOLO_DURATION_MS = 1000
+
 export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
   // Récupération publique du quiz pour le jeu solo (pas besoin d'auth manager)
   socket.on(EVENTS.ASYNC_QUIZ.GET_PUBLIC, (quizzId: string) => {
@@ -31,6 +36,8 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
       quizzId: string
       playerName: string
       socialContact?: string
+      // Signaux anti-bot du formulaire public (cf. NotARobotCheck).
+      human?: { hp?: string; startedAt?: number | null }
       answers: Array<{
         questionIndex: number
         answerId?: number | null
@@ -40,10 +47,30 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
       }>
     }) => {
       try {
-        const { quizzId, playerName, socialContact, answers } = payload
+        const { quizzId, playerName, socialContact, answers, human } = payload
         const quizz = Config.quizzById(quizzId)
 
         if (!playerName || !quizz) {
+          socket.emit(
+            EVENTS.GAME.ERROR_MESSAGE,
+            "errors:quizz.invalidSubmission",
+          )
+          return
+        }
+
+        // Contrôle anti-bot : le honeypot n'est rempli que par un remplisseur
+        // automatique, et une partie humaine dure forcément plus que le seuil.
+        // Les scores publics alimentent un tirage au sort — on refuse en
+        // silence côté serveur (le client ne peut pas contourner le calcul).
+        const elapsedMs = human?.startedAt ? Date.now() - human.startedAt : null
+        const tooFast =
+          elapsedMs !== null &&
+          elapsedMs < MIN_SOLO_DURATION_MS * answers.length
+
+        if (human?.hp?.trim() || tooFast) {
+          console.warn(
+            `[ANTI-BOT] Soumission solo rejetée (quiz=${quizzId}, joueur=${playerName}, hp=${Boolean(human?.hp?.trim())}, elapsed=${elapsedMs}ms)`,
+          )
           socket.emit(
             EVENTS.GAME.ERROR_MESSAGE,
             "errors:quizz.invalidSubmission",

@@ -8,11 +8,20 @@ import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundR
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
-import { useEvent, useSocket } from "@rahoot/web/features/game/contexts/socket-context"
-import { ANSWERS_COLORS, ANSWERS_ICONS, SFX } from "@rahoot/web/features/game/utils/constants"
+import NotARobotCheck from "@rahoot/web/features/game/components/solo/NotARobotCheck"
+import {
+  useEvent,
+  useSocket,
+} from "@rahoot/web/features/game/contexts/socket-context"
+import {
+  ANSWERS_COLORS,
+  ANSWERS_ICONS,
+  SFX,
+} from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
 import {
   ArrowRight,
+  AtSign,
   CheckCircle2,
   Clock,
   Crown,
@@ -40,19 +49,32 @@ type Props = {
   quizzId: string
 }
 
+// Durée de l'écran de règles affiché avant la première question.
+const RULES_SCREEN_SECONDS = 3
+
 const noopChange = () => undefined
 const noopSelect = () => undefined
 
 export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const { socket, isConnected } = useSocket()
   const [quizz, setQuizz] = useState<PublicQuizz | null>(null)
-  const [step, setStep] = useState<"START" | "QUESTION" | "FINISHED">("START")
+  const [step, setStep] = useState<"START" | "RULES" | "QUESTION" | "FINISHED">(
+    "START",
+  )
+  // Décompte de l'écran de règles affiché entre le formulaire et la 1re question.
+  const [rulesCountdown, setRulesCountdown] = useState(RULES_SCREEN_SECONDS)
 
   const [playerName, setPlayerName] = useState("")
   const [socialContact, setSocialContact] = useState("")
+  // Anti-bot : case cochée + honeypot vide + délai minimum (vérifiés serveur).
+  const [isHumanChecked, setIsHumanChecked] = useState(false)
+  const [honeypot, setHoneypot] = useState("")
+  const [startedAt, setStartedAt] = useState<number | null>(null)
 
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(null)
+  const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(
+    null,
+  )
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
   const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean | null>(null)
 
@@ -97,6 +119,21 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     return () => clearTimeout(timer)
   }, [hasSubmittedAnswer, step, currentQuestionIdx])
 
+  // Décompte de l'écran de règles → démarrage automatique du quiz
+  useEffect(() => {
+    if (step !== "RULES") return
+
+    if (rulesCountdown <= 0) {
+      launchFirstQuestion()
+
+      return
+    }
+
+    const timer = setTimeout(() => setRulesCountdown((n) => n - 1), 1000)
+
+    return () => clearTimeout(timer)
+  }, [step, rulesCountdown])
+
   // Événements socket
   useEvent(EVENTS.ASYNC_QUIZ.DATA, (data: PublicQuizz) => {
     setQuizz(data)
@@ -126,7 +163,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000))
       setTimeLeft(remainingSec)
 
-      const pct = Math.max(0, Math.min(100, (remainingMs / (initialTime * 1000)) * 100))
+      const pct = Math.max(
+        0,
+        Math.min(100, (remainingMs / (initialTime * 1000)) * 100),
+      )
       setProgress(pct)
 
       if (remainingMs <= 0) {
@@ -159,6 +199,25 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       toast.error("Veuillez entrer un pseudo")
       return
     }
+    if (!isHumanChecked) {
+      toast.error("Merci de confirmer que vous n'êtes pas un robot")
+      return
+    }
+    setStartedAt(Date.now())
+
+    if (quizz?.description?.trim()) {
+      setRulesCountdown(RULES_SCREEN_SECONDS)
+      setStep("RULES")
+
+      return
+    }
+
+    launchFirstQuestion()
+  }
+
+  // Démarrage effectif du quiz : depuis le formulaire (pas de règles) ou à la
+  // fin du décompte de l'écran de règles.
+  const launchFirstQuestion = () => {
     setStep("QUESTION")
     setCurrentQuestionIdx(0)
     setQuestionStartTime(Date.now())
@@ -174,13 +233,17 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       if (Array.isArray(q.solutions)) return q.solutions.includes(ansIdx)
       if (typeof q.solution === "number") return q.solution === ansIdx
       if (Array.isArray(q.answers) && q.answers[ansIdx]) {
-        return typeof q.answers[ansIdx] === "object" ? Boolean(q.answers[ansIdx].correct) : false
+        return typeof q.answers[ansIdx] === "object"
+          ? Boolean(q.answers[ansIdx].correct)
+          : false
       }
     }
     if (q.type === "true_false") {
       if (typeof q.solution === "number") return q.solution === ansIdx
       if (Array.isArray(q.answers) && q.answers[ansIdx]) {
-        return typeof q.answers[ansIdx] === "object" ? Boolean(q.answers[ansIdx].correct) : false
+        return typeof q.answers[ansIdx] === "object"
+          ? Boolean(q.answers[ansIdx].correct)
+          : false
       }
     }
     return false
@@ -199,7 +262,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     if (correct) {
       sfxCorrect()
       const timeLimit = (currentQuestion.time || 20) * 1000
-      const speedBonus = Math.max(0, Math.round(500 * (1 - timeSpent / timeLimit)))
+      const speedBonus = Math.max(
+        0,
+        Math.round(500 * (1 - timeSpent / timeLimit)),
+      )
       const totalGain = 1000 + speedBonus
       setLastPointsAdded(totalGain)
       setUserPoints((pts) => pts + totalGain)
@@ -210,7 +276,11 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     setAnswersRecords((prev) => [
       ...prev,
-      { questionIndex: currentQuestionIdx, answerId: ansIdx, timeMs: timeSpent },
+      {
+        questionIndex: currentQuestionIdx,
+        answerId: ansIdx,
+        timeMs: timeSpent,
+      },
     ])
   }
 
@@ -249,7 +319,11 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     setAnswersRecords((prev) => [
       ...prev,
-      { questionIndex: currentQuestionIdx, textAnswer: textInput, timeMs: timeSpent },
+      {
+        questionIndex: currentQuestionIdx,
+        textAnswer: textInput,
+        timeMs: timeSpent,
+      },
     ])
   }
 
@@ -278,6 +352,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           playerName,
           socialContact,
           answers: answersRecords,
+          human: { hp: honeypot, startedAt },
         })
       }
     }
@@ -287,8 +362,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-white">
         <div className="flex flex-col items-center gap-3">
-          <div className="size-12 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
-          <p className="text-gray-400 font-medium text-lg">Chargement du quiz...</p>
+          <div className="size-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+          <p className="text-lg font-medium text-gray-400">
+            Chargement du quiz...
+          </p>
         </div>
       </div>
     )
@@ -301,12 +378,20 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   let bgOpacity = 0.6
   let bgImageForRevealer: string | undefined = undefined
 
-  if (step === "START" || step === "FINISHED") {
+  if (step === "START" || step === "RULES" || step === "FINISHED") {
     if (coverImage) {
-      bgStyle = { backgroundImage: `url(${coverImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgStyle = {
+        backgroundImage: `url(${coverImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
       bgOpacity = 0.7
     } else {
-      bgStyle = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgStyle = {
+        backgroundImage: `url(/bg-salon.png)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
       bgOpacity = 0.5
     }
   } else {
@@ -315,28 +400,45 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     bgOpacity = currentQuestion?.backgroundOpacity ?? 0.6
 
     if (bg?.type === "image" && bg.value) {
-      bgStyle = { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgStyle = {
+        backgroundImage: `url(${bg.value})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
       bgImageForRevealer = bg.value
     } else if (bg?.type === "color" && bg.value) {
       bgStyle = { backgroundColor: bg.value }
     } else if (coverImage) {
-      bgStyle = { backgroundImage: `url(${coverImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgStyle = {
+        backgroundImage: `url(${coverImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
       bgImageForRevealer = coverImage
     } else {
-      bgStyle = { backgroundImage: `url(/bg-salon.png)`, backgroundSize: "cover", backgroundPosition: "center" }
+      bgStyle = {
+        backgroundImage: `url(/bg-salon.png)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
     }
   }
 
   return (
-    <div className="relative h-screen w-screen flex flex-col justify-between overflow-hidden bg-slate-950 text-white select-none">
+    <div className="relative flex h-screen w-screen flex-col justify-between overflow-hidden bg-slate-950 text-white select-none">
       {/* Dynamic Background Image */}
       <div className="absolute inset-0 bg-black" />
-      <div className="absolute inset-0 transition-all duration-500" style={{ ...bgStyle, opacity: bgOpacity }} />
+      <div
+        className="absolute inset-0 transition-all duration-500"
+        style={{ ...bgStyle, opacity: bgOpacity }}
+      />
 
       {/* Révélation d'image si activée */}
       {step === "QUESTION" && currentQuestion?.revelationEnabled && (
         <BackgroundRevealer
-          duration={currentQuestion.revealDuration ?? currentQuestion.time ?? 20}
+          duration={
+            currentQuestion.revealDuration ?? currentQuestion.time ?? 20
+          }
           gridCols={currentQuestion.gridCols ?? 8}
           gridRows={currentQuestion.gridRows ?? 6}
           seedString={currentQuestion.question || bgImageForRevealer}
@@ -347,79 +449,138 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       )}
 
       {/* Slide Canvas Elements (si le quiz contient des formes/textes personnalisés) */}
-      {step === "QUESTION" && currentQuestion?.elements && currentQuestion.elements.length > 0 && (
-        <div className="pointer-events-none absolute inset-0 z-10">
-          <SlideCanvas
-            elements={currentQuestion.elements}
-            onChange={noopChange}
-            selectedId={undefined}
-            onSelect={noopSelect}
-            readOnly
-            noBackground
-            hideYoutube={false}
-          />
-        </div>
-      )}
+      {step === "QUESTION" &&
+        currentQuestion?.elements &&
+        currentQuestion.elements.length > 0 && (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            <SlideCanvas
+              elements={currentQuestion.elements}
+              onChange={noopChange}
+              selectedId={undefined}
+              onSelect={noopSelect}
+              readOnly
+              noBackground
+              hideYoutube={false}
+            />
+          </div>
+        )}
 
       {/* ── SCREEN 1: START ── */}
       {step === "START" && (
         <div className="relative z-20 flex flex-1 items-center justify-center p-4">
-          <div className="w-full max-w-md bg-black/60 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+          <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-white/20 bg-slate-950/80 p-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_40px_rgba(249,115,22,0.15)] backdrop-blur-2xl sm:p-8">
             <img
               src={logoImg}
               alt="L'Apéro Quiz"
-              className="h-32 sm:h-40 w-auto object-contain mb-4 drop-shadow-[0_10px_20px_rgba(249,115,22,0.4)]"
+              className="h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(249,115,22,0.45)] transition-transform duration-300 hover:scale-105 sm:h-28"
             />
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">
-              {quizz.subject}
-            </h1>
-            {quizz.description && (
-              <p className="text-gray-300 text-sm mb-6 max-w-sm">{quizz.description}</p>
-            )}
+            {/* Title in 3D Encart */}
+            <div className="group relative my-3.5 w-full">
+              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 opacity-40 blur-md transition-opacity duration-300 group-hover:opacity-75" />
+              <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-amber-400/40 bg-gradient-to-b from-slate-800/95 via-slate-900/98 to-slate-950/95 px-5 py-3.5 shadow-[0_8px_0_0_#9a3412,0_12px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.6)] backdrop-blur-md">
+                <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-            <form onSubmit={handleStart} className="w-full space-y-4 mt-2">
+                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-amber-400/90 uppercase">
+                  <Sparkles className="size-3.5 text-amber-400" />
+                  <span>Quiz Public</span>
+                  <Sparkles className="size-3.5 text-amber-400" />
+                </div>
+
+                <h1 className="text-center text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] sm:text-2xl">
+                  {quizz.subject}
+                </h1>
+              </div>
+            </div>
+
+            <form onSubmit={handleStart} className="mt-1 w-full space-y-4 text-left">
               <div>
-                <label className="block text-xs font-bold text-gray-300 text-left mb-1.5 uppercase tracking-wider">
-                  Votre Pseudo *
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-amber-300/90 uppercase">
+                  <User className="size-3.5 text-amber-400" />
+                  <span>Votre Pseudo *</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3.5 size-5 text-gray-400" />
+                  <User className="absolute top-3.5 left-3.5 size-4.5 text-orange-400/80" />
                   <input
                     type="text"
                     required
                     placeholder="Ex: QuizMaster99"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-white/20 rounded-xl py-3.5 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 font-semibold"
+                    className="w-full rounded-xl border border-white/20 bg-slate-900/95 py-3 pr-4 pl-10 text-sm font-semibold text-white placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 text-left mb-1.5 uppercase tracking-wider">
-                  Identifiant Réseau / Email (Optionnel)
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-gray-300 uppercase">
+                  <AtSign className="size-3.5 text-orange-400" />
+                  <span>Identifiant Réseau / Email (Optionnel)</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="Ex: @votre_insta / email@domaine.com"
-                  value={socialContact}
-                  onChange={(e) => setSocialContact(e.target.value)}
-                  className="w-full bg-slate-900/90 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                />
-                <p className="text-[11px] text-gray-400 text-left mt-1">
-                  Requis si vous gagnez le tirage au sort pour réclamer votre lot !
+                <div className="relative">
+                  <AtSign className="absolute top-3.5 left-3.5 size-4.5 text-orange-400/80" />
+                  <input
+                    type="text"
+                    placeholder="Ex: @votre_insta / email@domaine.com"
+                    value={socialContact}
+                    onChange={(e) => setSocialContact(e.target.value)}
+                    className="w-full rounded-xl border border-white/20 bg-slate-900/95 py-3 pr-4 pl-10 text-sm font-semibold text-white placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
+                  />
+                </div>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-200/80">
+                  <Sparkles className="size-3 shrink-0 text-amber-400" />
+                  <span>
+                    Requis si vous gagnez le tirage au sort pour réclamer votre lot !
+                  </span>
                 </p>
               </div>
 
+              <NotARobotCheck
+                checked={isHumanChecked}
+                onChange={setIsHumanChecked}
+                honeypot={honeypot}
+                onHoneypotChange={setHoneypot}
+              />
+
               <button
                 type="submit"
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-orange-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
+                disabled={!isHumanChecked}
+                className="group relative mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-3.5 text-base font-black tracking-wide text-white shadow-[0_6px_0_0_#9a3412,0_10px_20px_rgba(249,115,22,0.4)] transition-all hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_0_#9a3412,0_4px_10px_rgba(249,115,22,0.3)] disabled:cursor-not-allowed disabled:border-white/10 disabled:from-slate-800 disabled:to-slate-800 disabled:text-gray-500 disabled:opacity-60 disabled:shadow-none disabled:active:translate-y-0"
               >
                 <span>Démarrer la partie</span>
-                <ArrowRight className="size-5" />
+                <ArrowRight className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── SCREEN 1bis: RÈGLES (3 s) ── */}
+      {step === "RULES" && (
+        <div className="relative z-20 flex flex-1 items-center justify-center p-4">
+          <div className="animate-in fade-in zoom-in flex w-full max-w-md flex-col items-center rounded-3xl border border-white/15 bg-black/70 p-6 text-center shadow-2xl backdrop-blur-xl duration-300 sm:p-8">
+            <img
+              src={logoImg}
+              alt="L'Apéro Quiz"
+              className="mb-3 h-20 w-auto object-contain drop-shadow-[0_10px_20px_rgba(249,115,22,0.4)] sm:h-24"
+            />
+
+            <span className="mb-3 rounded-full border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs font-bold tracking-widest text-orange-300 uppercase">
+              Règles du jeu
+            </span>
+
+            <p className="text-base leading-relaxed font-medium whitespace-pre-line text-white">
+              {quizz.description}
+            </p>
+
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <span className="flex size-14 items-center justify-center rounded-full border-2 border-orange-500 text-2xl font-black text-orange-400">
+                {rulesCountdown}
+              </span>
+              <span className="text-xs text-gray-400">
+                Le quiz démarre dans un instant…
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -428,20 +589,25 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       {step === "QUESTION" && currentQuestion && (
         <>
           {/* Top Progress Bar */}
-          <div className="absolute top-0 left-0 right-0 z-30 h-2 bg-white/10">
+          <div className="absolute top-0 right-0 left-0 z-30 h-2 bg-white/10">
             <div
               className="h-full rounded-r-full transition-all duration-100 ease-linear"
               style={{
                 width: `${progress}%`,
-                backgroundColor: progress > 50 ? "#22c55e" : progress > 25 ? "#f59e0b" : "#ef4444",
+                backgroundColor:
+                  progress > 50
+                    ? "#22c55e"
+                    : progress > 25
+                      ? "#f59e0b"
+                      : "#ef4444",
               }}
             />
           </div>
 
           {/* Question Header Card */}
           <div className="relative z-20 px-4 pt-6">
-            <div className="mx-auto max-w-7xl rounded-2xl bg-black/60 px-6 py-5 backdrop-blur-md border border-white/10 shadow-2xl text-center">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white drop-shadow-md">
+            <div className="mx-auto max-w-7xl rounded-2xl border border-white/10 bg-black/60 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
+              <h2 className="text-xl font-extrabold text-white drop-shadow-md sm:text-2xl md:text-3xl">
                 {currentQuestion.question || (currentQuestion as any).title}
               </h2>
             </div>
@@ -450,59 +616,78 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           {/* Question Media (Image / Video) */}
           <div className="relative z-20 flex flex-1 items-center justify-center p-4">
             {currentQuestion.media && (
-              <QuestionMedia media={currentQuestion.media} alt={currentQuestion.question} />
+              <QuestionMedia
+                media={currentQuestion.media}
+                alt={currentQuestion.question}
+              />
             )}
           </div>
 
           {/* Answer Area (MCQ / TrueFalse / Open) */}
-          <div className="relative z-20 w-full max-w-7xl mx-auto px-4 pb-4">
+          <div className="relative z-20 mx-auto w-full max-w-7xl px-4 pb-4">
             {/* MCQ / QCM Questions */}
-            {(currentQuestion.type === "mcq" || !currentQuestion.type) && currentQuestion.answers && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                {currentQuestion.answers.map((ans: any, idx: number) => {
-                  const Icon = ANSWERS_ICONS[idx % 4]
-                  const colorClass = ANSWERS_COLORS[idx % 4]
-                  const isSelected = selectedAnswer === idx
-                  const isCorrect = checkIsAnswerCorrect(currentQuestion, idx)
+            {(currentQuestion.type === "mcq" || !currentQuestion.type) &&
+              currentQuestion.answers && (
+                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {currentQuestion.answers.map((ans: any, idx: number) => {
+                    const Icon = ANSWERS_ICONS[idx % 4]
+                    const colorClass = ANSWERS_COLORS[idx % 4]
+                    const isSelected = selectedAnswer === idx
+                    const isCorrect = checkIsAnswerCorrect(currentQuestion, idx)
 
-                  let btnState: boolean | undefined = undefined
-                  if (hasSubmittedAnswer) {
-                    if (isCorrect) btnState = true
-                    else if (isSelected) btnState = false
-                  }
+                    let btnState: boolean | undefined = undefined
+                    if (hasSubmittedAnswer) {
+                      if (isCorrect) btnState = true
+                      else if (isSelected) btnState = false
+                    }
 
-                  return (
-                    <AnswerButton
-                      key={idx}
-                      index={idx}
-                      icon={Icon}
-                      correct={btnState}
-                      disabled={hasSubmittedAnswer}
-                      onClick={() => handleAnswerSelect(idx)}
-                      className={clsx(
-                        colorClass,
-                        "min-h-20 sm:min-h-24 text-lg font-bold text-white shadow-xl cursor-pointer",
-                        hasSubmittedAnswer && isCorrect && "ring-4 ring-green-400 bg-green-600",
-                        hasSubmittedAnswer && isSelected && !isCorrect && "opacity-50 grayscale",
-                      )}
-                    >
-                      {ans.title || ans.text || (typeof ans === "string" ? ans : "")}
-                    </AnswerButton>
-                  )
-                })}
-              </div>
-            )}
+                    return (
+                      <AnswerButton
+                        key={idx}
+                        index={idx}
+                        icon={Icon}
+                        correct={btnState}
+                        disabled={hasSubmittedAnswer}
+                        onClick={() => handleAnswerSelect(idx)}
+                        className={clsx(
+                          colorClass,
+                          "min-h-20 cursor-pointer text-lg font-bold text-white shadow-xl sm:min-h-24",
+                          hasSubmittedAnswer &&
+                            isCorrect &&
+                            "bg-green-600 ring-4 ring-green-400",
+                          hasSubmittedAnswer &&
+                            isSelected &&
+                            !isCorrect &&
+                            "opacity-50 grayscale",
+                        )}
+                      >
+                        {ans.title ||
+                          ans.text ||
+                          (typeof ans === "string" ? ans : "")}
+                      </AnswerButton>
+                    )
+                  })}
+                </div>
+              )}
 
             {/* True / False Questions */}
             {currentQuestion.type === "true_false" && (
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="mb-3 grid grid-cols-2 gap-4">
                 <AnswerButton
                   index={0}
                   icon={ANSWERS_ICONS[0]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(0)}
-                  correct={hasSubmittedAnswer ? (checkIsAnswerCorrect(currentQuestion, 0) ? true : selectedAnswer === 0 ? false : undefined) : undefined}
-                  className="bg-red-600 min-h-24 text-xl font-black text-white shadow-xl cursor-pointer"
+                  correct={
+                    hasSubmittedAnswer
+                      ? checkIsAnswerCorrect(currentQuestion, 0)
+                        ? true
+                        : selectedAnswer === 0
+                          ? false
+                          : undefined
+                      : undefined
+                  }
+                  className="min-h-24 cursor-pointer bg-red-600 text-xl font-black text-white shadow-xl"
                 >
                   Faux
                 </AnswerButton>
@@ -512,8 +697,16 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   icon={ANSWERS_ICONS[1]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(1)}
-                  correct={hasSubmittedAnswer ? (checkIsAnswerCorrect(currentQuestion, 1) ? true : selectedAnswer === 1 ? false : undefined) : undefined}
-                  className="bg-blue-600 min-h-24 text-xl font-black text-white shadow-xl cursor-pointer"
+                  correct={
+                    hasSubmittedAnswer
+                      ? checkIsAnswerCorrect(currentQuestion, 1)
+                        ? true
+                        : selectedAnswer === 1
+                          ? false
+                          : undefined
+                      : undefined
+                  }
+                  className="min-h-24 cursor-pointer bg-blue-600 text-xl font-black text-white shadow-xl"
                 >
                   Vrai
                 </AnswerButton>
@@ -522,19 +715,22 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
             {/* Open Question */}
             {currentQuestion.type === "open" && (
-              <form onSubmit={handleOpenTextSubmit} className="flex gap-2 max-w-2xl mx-auto mb-3">
+              <form
+                onSubmit={handleOpenTextSubmit}
+                className="mx-auto mb-3 flex max-w-2xl gap-2"
+              >
                 <input
                   type="text"
                   disabled={hasSubmittedAnswer}
                   placeholder="Tapez votre réponse ici..."
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  className="flex-1 bg-black/70 border border-white/20 rounded-2xl px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-bold"
+                  className="flex-1 rounded-2xl border border-white/20 bg-black/70 px-5 py-4 text-lg font-bold text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={hasSubmittedAnswer || !textInput.trim()}
-                  className="px-6 py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-lg flex items-center gap-2 cursor-pointer text-lg"
+                  className="flex cursor-pointer items-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg hover:bg-orange-600 disabled:opacity-50"
                 >
                   <span>Valider</span>
                   <Send className="size-5" />
@@ -543,25 +739,36 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             )}
 
             {/* HUD Footer (Timer, Score, Next Button, App Logo) */}
-            <div className="flex items-center justify-between bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-3">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/60 px-6 py-3 backdrop-blur-md">
               <div className="flex items-center gap-4">
                 <img
                   src={logoImg}
                   alt="L'Apéro Quiz"
-                  className="h-10 sm:h-12 w-auto object-contain shrink-0 drop-shadow"
+                  className="h-10 w-auto shrink-0 object-contain drop-shadow sm:h-12"
                 />
-                <span className="text-xs font-bold text-orange-400 uppercase tracking-widest bg-orange-500/20 px-3 py-1 rounded-full border border-orange-500/30">
+                <span className="rounded-full border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs font-bold tracking-widest text-orange-400 uppercase">
                   Question {currentQuestionIdx + 1} / {quizz.questions.length}
                 </span>
                 <span className="text-sm font-black text-amber-400">
-                  <AnimatedPoints from={userPoints - lastPointsAdded} to={userPoints} /> pts
+                  <AnimatedPoints
+                    from={userPoints - lastPointsAdded}
+                    to={userPoints}
+                  />{" "}
+                  pts
                 </span>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-white/10">
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/80 px-3.5 py-1.5">
                   <Clock className="size-4 text-amber-400" />
-                  <span className={clsx("font-extrabold text-sm tabular-nums", timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-white")}>
+                  <span
+                    className={clsx(
+                      "text-sm font-extrabold tabular-nums",
+                      timeLeft <= 5
+                        ? "animate-pulse text-red-400"
+                        : "text-white",
+                    )}
+                  >
                     {timeLeft}s
                   </span>
                 </div>
@@ -569,7 +776,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 {hasSubmittedAnswer && (
                   <button
                     onClick={handleNextQuestion}
-                    className="py-2.5 px-5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-orange-500/30 transition-all flex items-center gap-2 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-amber-600"
                   >
                     <span>
                       {currentQuestionIdx + 1 < quizz.questions.length
@@ -587,23 +794,23 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           {hasSubmittedAnswer && isCorrectAnswer !== null && (
             <div
               onClick={handleNextQuestion}
-              className="absolute top-6 left-1/2 -translate-x-1/2 z-40 cursor-pointer animate-in slide-in-from-top-6 fade-in duration-300 px-4 w-full max-w-lg"
+              className="animate-in slide-in-from-top-6 fade-in absolute top-6 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 cursor-pointer px-4 duration-300"
             >
               <div
                 className={clsx(
-                  "flex items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl shadow-2xl border backdrop-blur-xl transition-all scale-100 hover:scale-[1.02]",
+                  "flex scale-100 items-center justify-between gap-4 rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.02] sm:p-5",
                   isCorrectAnswer
-                    ? "bg-slate-950/90 border-emerald-500/60 shadow-emerald-500/30"
-                    : "bg-slate-950/90 border-rose-500/60 shadow-rose-500/30"
+                    ? "border-emerald-500/60 bg-slate-950/90 shadow-emerald-500/30"
+                    : "border-rose-500/60 bg-slate-950/90 shadow-rose-500/30",
                 )}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={clsx(
-                      "size-11 sm:size-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg animate-bounce",
+                      "flex size-11 shrink-0 animate-bounce items-center justify-center rounded-xl shadow-lg sm:size-12",
                       isCorrectAnswer
                         ? "bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-500/40"
-                        : "bg-gradient-to-tr from-rose-600 to-red-500 text-white shadow-rose-500/40"
+                        : "bg-gradient-to-tr from-rose-600 to-red-500 text-white shadow-rose-500/40",
                     )}
                   >
                     {isCorrectAnswer ? (
@@ -616,13 +823,15 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   <div className="text-left">
                     <h4
                       className={clsx(
-                        "font-extrabold text-base sm:text-lg leading-tight",
-                        isCorrectAnswer ? "text-emerald-400" : "text-rose-400"
+                        "text-base leading-tight font-extrabold sm:text-lg",
+                        isCorrectAnswer ? "text-emerald-400" : "text-rose-400",
                       )}
                     >
-                      {isCorrectAnswer ? "BONNE RÉPONSE !" : "MAUVAISE RÉPONSE !"}
+                      {isCorrectAnswer
+                        ? "BONNE RÉPONSE !"
+                        : "MAUVAISE RÉPONSE !"}
                     </h4>
-                    <p className="text-xs text-gray-300 font-medium">
+                    <p className="text-xs font-medium text-gray-300">
                       {isCorrectAnswer
                         ? "Passage automatique à la suite..."
                         : "Suivante dans 2s..."}
@@ -631,9 +840,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 </div>
 
                 {isCorrectAnswer && lastPointsAdded > 0 && (
-                  <div className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl animate-pulse shrink-0">
+                  <div className="flex shrink-0 animate-pulse items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-3.5 py-1.5">
                     <Sparkles className="size-4 text-amber-300" />
-                    <span className="text-sm sm:text-base font-black text-amber-300">
+                    <span className="text-sm font-black text-amber-300 sm:text-base">
                       +{lastPointsAdded.toLocaleString()} PTS
                     </span>
                   </div>
@@ -649,37 +858,46 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
         <>
           <Confetti recycle={false} numberOfPieces={350} />
           <div className="relative z-20 flex flex-1 items-center justify-center p-4">
-            <div className="w-full max-w-md bg-black/70 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+            <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-white/15 bg-black/70 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8">
               <img
                 src={logoImg}
                 alt="L'Apéro Quiz"
-                className="h-32 sm:h-40 w-auto object-contain mb-4 drop-shadow-[0_10px_25px_rgba(249,115,22,0.5)] animate-bounce"
+                className="mb-4 h-32 w-auto animate-bounce object-contain drop-shadow-[0_10px_25px_rgba(249,115,22,0.5)] sm:h-40"
               />
 
-              <h2 className="text-3xl font-black text-white mb-1">Partie Terminée !</h2>
-              <p className="text-gray-300 text-sm mb-6">
-                Bravo <span className="text-orange-400 font-bold">{playerName}</span> !
+              <h2 className="mb-1 text-3xl font-black text-white">
+                Partie Terminée !
+              </h2>
+              <p className="mb-6 text-sm text-gray-300">
+                Bravo{" "}
+                <span className="font-bold text-orange-400">{playerName}</span>{" "}
+                !
               </p>
 
               {/* Box résultats */}
-              <div className="w-full bg-slate-900/90 border border-white/10 rounded-2xl p-5 mb-6 grid grid-cols-2 gap-4">
+              <div className="mb-6 grid w-full grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-slate-900/90 p-5">
                 <div className="flex flex-col items-center border-r border-white/10 pr-2">
-                  <span className="text-xs text-gray-400 font-semibold">Votre Score</span>
+                  <span className="text-xs font-semibold text-gray-400">
+                    Votre Score
+                  </span>
                   <span className="text-2xl font-black text-amber-400">
                     {resultSummary.totalPoints.toLocaleString()} pts
                   </span>
                 </div>
 
                 <div className="flex flex-col items-center pl-2">
-                  <span className="text-xs text-gray-400 font-semibold">Rang Provisoire</span>
+                  <span className="text-xs font-semibold text-gray-400">
+                    Rang Provisoire
+                  </span>
                   <span className="text-2xl font-black text-orange-400">
                     #{resultSummary.rank}
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-300 mb-6 bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl">
-                Le tirage au sort du gagnant aura lieu en fin de semaine parmi le <strong>Top 10 des meilleurs scores</strong>.
+              <p className="mb-6 rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-xs text-gray-300">
+                Le tirage au sort du gagnant aura lieu en fin de semaine parmi
+                le <strong>Top 10 des meilleurs scores</strong>.
               </p>
 
               <button
@@ -695,7 +913,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     toast.success("Lien copié dans le presse-papier !")
                   }
                 }}
-                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800 py-3.5 font-bold text-white transition-all hover:bg-slate-700"
               >
                 <Share2 className="size-5 text-orange-400" />
                 <span>Partager ce Quiz</span>

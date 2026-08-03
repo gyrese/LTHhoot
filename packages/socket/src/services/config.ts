@@ -154,6 +154,7 @@ class Config {
         id,
         subject,
         publicName,
+        description,
         folder,
         tags,
         salonImage,
@@ -162,6 +163,7 @@ class Config {
         id,
         subject,
         publicName,
+        description,
         folder,
         tags,
         salonImage,
@@ -306,11 +308,12 @@ class Config {
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
   }
 
-  // Renommage public seul, sans passer par l'éditeur : même précaution que
-  // `moveToFolder` sur `updatedAt` (préservé, cf. concurrence optimiste).
-  static setPublicName(
+  // Champs vus par les joueurs (nom public + description/règles), modifiables
+  // sans passer par l'éditeur : même précaution que `moveToFolder` sur
+  // `updatedAt` (préservé, cf. concurrence optimiste).
+  static setPublicInfo(
     id: string,
-    publicName: string | null,
+    info: { publicName: string | null; description: string | null },
     owner?: string,
   ): void {
     const filePath = getPath(`${quizzDir(owner)}/${safeId(id)}.json`)
@@ -320,12 +323,15 @@ class Config {
     }
 
     const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"))
-    const trimmed = publicName?.trim()
 
-    if (trimmed) {
-      raw.publicName = trimmed
-    } else {
-      delete raw.publicName
+    for (const [key, value] of Object.entries(info)) {
+      const trimmed = value?.trim()
+
+      if (trimmed) {
+        raw[key] = trimmed
+      } else {
+        delete raw[key]
+      }
     }
 
     writeFileAtomic(filePath, JSON.stringify(raw, null, 2))
