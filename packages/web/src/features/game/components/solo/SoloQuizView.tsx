@@ -468,70 +468,57 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       {/* ── SCREEN 1: START ── */}
       {step === "START" && (
         <div className="relative z-20 flex flex-1 items-center justify-center p-4">
-          <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-white/20 bg-slate-950/80 p-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_40px_rgba(249,115,22,0.15)] backdrop-blur-2xl sm:p-8">
+          <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-white/20 bg-black/40 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-8">
             <img
               src={logoImg}
               alt="L'Apéro Quiz"
-              className="h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(249,115,22,0.45)] transition-transform duration-300 hover:scale-105 sm:h-28"
+              className="mb-2 h-28 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-transform duration-300 hover:scale-105 sm:h-32"
             />
 
-            {/* Title in 3D Encart */}
-            <div className="group relative my-3.5 w-full">
-              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 opacity-40 blur-md transition-opacity duration-300 group-hover:opacity-75" />
-              <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-amber-400/40 bg-gradient-to-b from-slate-800/95 via-slate-900/98 to-slate-950/95 px-5 py-3.5 shadow-[0_8px_0_0_#9a3412,0_12px_24px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.6)] backdrop-blur-md">
-                <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-
-                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-amber-400/90 uppercase">
-                  <Sparkles className="size-3.5 text-amber-400" />
-                  <span>Quiz Public</span>
-                  <Sparkles className="size-3.5 text-amber-400" />
-                </div>
-
-                <h1 className="text-center text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] sm:text-2xl">
-                  {quizz.subject}
-                </h1>
-              </div>
+            {/* Title in Crystal Glass 3D Encart */}
+            <div className="relative my-4 w-full overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-b from-white/20 via-white/10 to-white/5 px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md">
+              {/* Glass sheen highlight line */}
+              <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+              
+              <h1 className="text-center text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-3xl">
+                {quizz.subject}
+              </h1>
             </div>
 
             <form onSubmit={handleStart} className="mt-1 w-full space-y-4 text-left">
               <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-amber-300/90 uppercase">
-                  <User className="size-3.5 text-amber-400" />
-                  <span>Votre Pseudo *</span>
+                <label className="mb-1.5 block text-xs font-extrabold tracking-wider text-gray-200 uppercase">
+                  Votre Pseudo *
                 </label>
                 <div className="relative">
-                  <User className="absolute top-3.5 left-3.5 size-4.5 text-orange-400/80" />
+                  <User className="absolute top-3.5 left-3.5 size-5 text-gray-400" />
                   <input
                     type="text"
                     required
                     placeholder="Ex: QuizMaster99"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full rounded-xl border border-white/20 bg-slate-900/95 py-3 pr-4 pl-10 text-sm font-semibold text-white placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
+                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 font-semibold text-white placeholder-gray-400 backdrop-blur-md shadow-inner transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-gray-300 uppercase">
-                  <AtSign className="size-3.5 text-orange-400" />
-                  <span>Identifiant Réseau / Email (Optionnel)</span>
+                <label className="mb-1.5 block text-xs font-extrabold tracking-wider text-gray-200 uppercase">
+                  Identifiant Réseau / Email (Optionnel)
                 </label>
                 <div className="relative">
-                  <AtSign className="absolute top-3.5 left-3.5 size-4.5 text-orange-400/80" />
+                  <AtSign className="absolute top-3.5 left-3.5 size-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Ex: @votre_insta / email@domaine.com"
                     value={socialContact}
                     onChange={(e) => setSocialContact(e.target.value)}
-                    className="w-full rounded-xl border border-white/20 bg-slate-900/95 py-3 pr-4 pl-10 text-sm font-semibold text-white placeholder-gray-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
+                    className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 text-sm font-semibold text-white placeholder-gray-400 backdrop-blur-md shadow-inner transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
                   />
                 </div>
-                <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-200/80">
-                  <Sparkles className="size-3 shrink-0 text-amber-400" />
-                  <span>
-                    Requis si vous gagnez le tirage au sort pour réclamer votre lot !
-                  </span>
+                <p className="mt-1.5 text-left text-[11px] font-medium text-gray-300">
+                  Requis si vous gagnez le tirage au sort pour réclamer votre lot !
                 </p>
               </div>
 
@@ -545,7 +532,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               <button
                 type="submit"
                 disabled={!isHumanChecked}
-                className="group relative mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-3.5 text-base font-black tracking-wide text-white shadow-[0_6px_0_0_#9a3412,0_10px_20px_rgba(249,115,22,0.4)] transition-all hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_0_#9a3412,0_4px_10px_rgba(249,115,22,0.3)] disabled:cursor-not-allowed disabled:border-white/10 disabled:from-slate-800 disabled:to-slate-800 disabled:text-gray-500 disabled:opacity-60 disabled:shadow-none disabled:active:translate-y-0"
+                className="group relative mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99] disabled:cursor-not-allowed disabled:border-white/10 disabled:from-slate-700 disabled:to-slate-700 disabled:text-gray-400 disabled:shadow-none disabled:active:scale-100"
               >
                 <span>Démarrer la partie</span>
                 <ArrowRight className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
