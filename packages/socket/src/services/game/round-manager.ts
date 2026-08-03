@@ -23,6 +23,7 @@ import {
   ROUND_EVENT_TYPE,
   type RoundEventType,
 } from "@rahoot/common/types/round-event"
+import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
@@ -211,7 +212,7 @@ export class RoundManager {
 
     this.opts.broadcast(STATUS.SHOW_START, {
       time: 3,
-      subject: this.opts.quizz.subject,
+      subject: quizzDisplayName(this.opts.quizz),
     })
 
     await sleep(3)
@@ -1060,7 +1061,7 @@ export class RoundManager {
     this.opts.onGameFinished(gameResult)
 
     const base = {
-      subject: this.opts.quizz.subject,
+      subject: quizzDisplayName(this.opts.quizz),
       top,
       totalPlayers: leaderboard.length,
       // Thème résolu une seule fois : hôte et joueurs voient le même.

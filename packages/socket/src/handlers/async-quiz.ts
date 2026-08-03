@@ -1,5 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { GameResult, GameResultPlayer } from "@rahoot/common/types/game"
+import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 
@@ -11,7 +12,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
 
       socket.emit(EVENTS.ASYNC_QUIZ.DATA, {
         id: quizz.id,
-        subject: quizz.subject,
+        subject: quizzDisplayName(quizz),
         description: quizz.description,
         salonImage: quizz.salonImage,
         listingImage: quizz.listingImage,
@@ -43,7 +44,10 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
         const quizz = Config.quizzById(quizzId)
 
         if (!playerName || !quizz) {
-          socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.invalidSubmission")
+          socket.emit(
+            EVENTS.GAME.ERROR_MESSAGE,
+            "errors:quizz.invalidSubmission",
+          )
           return
         }
 
@@ -130,7 +134,10 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
             correctAnswersCount += 1
             const timeLimit = (q.time || 20) * 1000
             const speedBonus = playerAns.timeMs
-              ? Math.max(0, Math.round(500 * (1 - playerAns.timeMs / timeLimit)))
+              ? Math.max(
+                  0,
+                  Math.round(500 * (1 - playerAns.timeMs / timeLimit)),
+                )
               : 0
             totalScore += 1000 + speedBonus
           }
@@ -156,7 +163,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
         }
 
         const existingPlayerIdx = gameResult.players.findIndex(
-          (p) => p.username.toLowerCase() === playerName.trim().toLowerCase()
+          (p) => p.username.toLowerCase() === playerName.trim().toLowerCase(),
         )
 
         const newPlayerData: GameResultPlayer = {
@@ -183,7 +190,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
 
         const playerRank =
           gameResult.players.find(
-            (p) => p.username.toLowerCase() === playerName.trim().toLowerCase()
+            (p) => p.username.toLowerCase() === playerName.trim().toLowerCase(),
           )?.rank || gameResult.players.length
 
         socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS, {
@@ -197,6 +204,6 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
         console.error("Async quizz submission error:", error)
         socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.submissionFailed")
       }
-    }
+    },
   )
 }

@@ -63,7 +63,11 @@ const QuizzPanel = ({
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportTypeRef = useRef<"json" | "pptx">("json")
-  const [shareModalQuizz, setShareModalQuizz] = useState<{ id: string; subject: string } | null>(null)
+  const [shareModalQuizz, setShareModalQuizz] = useState<{
+    id: string
+    subject: string
+    publicName?: string
+  } | null>(null)
   const { t } = useTranslation()
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
@@ -340,7 +344,11 @@ const QuizzPanel = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShareModalQuizz({ id: q.id, subject: q.subject })
+                        setShareModalQuizz({
+                          id: q.id,
+                          subject: q.subject,
+                          publicName: q.publicName,
+                        })
                       }}
                       className="rounded-lg bg-black/50 p-1.5 text-orange-400 backdrop-blur-sm hover:bg-black/70"
                       title="Diffuser sur les réseaux sociaux"

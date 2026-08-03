@@ -144,6 +144,8 @@
     "generalInfo": "General info",
     "titleLabel": "Title",
     "titleHint": "Give your kahoot a title.",
+    "publicNameLabel": "Name shown to players",
+    "publicNameHint": "The friendly name players see (join page, lobby, podium). Leave empty to use the title above.",
     "descriptionLabel": "Description",
     "descriptionHint": "Add a short description to increase your kahoot's visibility.",
     "descriptionPlaceholder": "Description...",

@@ -142,6 +142,8 @@
     "generalInfo": "Info generali",
     "titleLabel": "Titolo",
     "titleHint": "Dai un titolo al tuo kahoot.",
+    "publicNameLabel": "Nome mostrato ai giocatori",
+    "publicNameHint": "Il nome simpatico visto dai giocatori (pagina di accesso, sala, podio). Lascia vuoto per usare il titolo sopra.",
     "descriptionLabel": "Descrizione",
     "descriptionHint": "Aggiungi una breve descrizione per aumentare la visibilità.",
     "descriptionPlaceholder": "Descrizione...",

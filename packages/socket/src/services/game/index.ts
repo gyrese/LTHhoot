@@ -1,6 +1,7 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
 import { SHOP, type PowerUpType } from "@rahoot/common/types/powerup"
+import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import {
   ROUND_EVENT_TYPE,
   type RoundEventType,
@@ -329,18 +330,23 @@ class Game {
 
     const { quizIds, currentIndex } = this.eveningSession
     const isLastQuiz = currentIndex + 1 >= quizIds.length
+    // Le quiz qui vient de se terminer : `result.subject` est le titre interne
+    // (archivage), les écrans joueurs affichent son nom public.
+    const finishedQuizz = Config.findQuizzByAnyId(quizIds[currentIndex])
+    const finishedName = finishedQuizz
+      ? quizzDisplayName(finishedQuizz)
+      : result.subject
 
     if (isLastQuiz) {
       // Thème du podium final de soirée : réglage du dernier quiz joué.
-      const lastQuizz = Config.findQuizzByAnyId(quizIds[currentIndex])
       const data = {
-        subject: result.subject,
+        subject: finishedName,
         top: leaderboard.slice(0, 3),
         totalPlayers: leaderboard.length,
         awards: calculateAwards(this.eveningGameResults, leaderboard),
-        podiumTheme: resolvePodiumTheme(lastQuizz?.podiumTheme),
+        podiumTheme: resolvePodiumTheme(finishedQuizz?.podiumTheme),
         // Fond du podium "neutre" : couverture du quiz, sinon image du salon.
-        coverImage: lastQuizz?.listingImage || lastQuizz?.salonImage,
+        coverImage: finishedQuizz?.listingImage || finishedQuizz?.salonImage,
       }
 
       this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
@@ -370,7 +376,7 @@ class Game {
     this.io.to(this.gameId).emit(EVENTS.EVENING.QUIZ_COMPLETE, {
       quizIndex: currentIndex,
       totalQuizzes: quizIds.length,
-      subject: result.subject,
+      subject: finishedName,
       leaderboard: leaderboard.map((p, i) => ({
         id: p.id,
         username: p.username,

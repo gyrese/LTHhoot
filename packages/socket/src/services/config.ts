@@ -150,9 +150,18 @@ class Config {
 
   static quizzMeta(owner?: string) {
     return Config.quizz(owner).map(
-      ({ id, subject, folder, tags, salonImage, listingImage }) => ({
+      ({
         id,
         subject,
+        publicName,
+        folder,
+        tags,
+        salonImage,
+        listingImage,
+      }) => ({
+        id,
+        subject,
+        publicName,
         folder,
         tags,
         salonImage,

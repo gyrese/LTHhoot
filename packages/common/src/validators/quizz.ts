@@ -229,6 +229,7 @@ export const questionValidator = z.preprocess(
 
 export const quizzValidator = z.object({
   subject: z.string().min(1, "errors:quizz.subjectEmpty"),
+  publicName: z.string().optional(),
   description: z.string().optional(),
   folder: z.string().optional(),
   tags: z.array(z.string()).optional(),

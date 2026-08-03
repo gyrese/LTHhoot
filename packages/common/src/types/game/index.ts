@@ -235,6 +235,9 @@ export type Question =
 
 export type Quizz = {
   subject: string
+  // Nom affiché aux joueurs (écran solo, salon, podium). Optionnel : quand il
+  // est vide, `subject` — le titre interne, souvent technique — fait foi.
+  publicName?: string
   description?: string
   folder?: string
   tags?: string[]
@@ -250,6 +253,7 @@ export type QuizzWithId = Quizz & { id: string }
 export type QuizzMeta = {
   id: string
   subject: string
+  publicName?: string
   folder?: string
   tags?: string[]
   salonImage?: string

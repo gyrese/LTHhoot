@@ -1,7 +1,9 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Question } from "@rahoot/common/types/game"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
-import logoImg from "@rahoot/web/assets/logo.png"
+// Page publique : c'est la marque de la soirée qui s'affiche, pas celle de
+// l'application (le logo LTNHoot reste sur les écrans hôte/joueur en partie).
+import logoImg from "@rahoot/web/assets/logo-aperoquiz.png"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
@@ -365,7 +367,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           <div className="w-full max-w-md bg-black/60 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
             <img
               src={logoImg}
-              alt="LTNHoot!"
+              alt="L'Apéro Quiz"
               className="h-32 sm:h-40 w-auto object-contain mb-4 drop-shadow-[0_10px_20px_rgba(249,115,22,0.4)]"
             />
 
@@ -376,12 +378,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               <p className="text-gray-300 text-sm mb-6 max-w-sm">{quizz.description}</p>
             )}
 
-            <div className="w-full bg-orange-500/20 border border-orange-500/30 rounded-2xl p-3.5 mb-6 text-xs text-orange-200 flex items-center justify-center gap-2">
-              <Sparkles className="size-4 shrink-0 text-amber-300" />
-              <span>Jouez en solo pour participer au tirage au sort parmi les 10 meilleurs scores !</span>
-            </div>
-
-            <form onSubmit={handleStart} className="w-full space-y-4">
+            <form onSubmit={handleStart} className="w-full space-y-4 mt-2">
               <div>
                 <label className="block text-xs font-bold text-gray-300 text-left mb-1.5 uppercase tracking-wider">
                   Votre Pseudo *
@@ -550,7 +547,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               <div className="flex items-center gap-4">
                 <img
                   src={logoImg}
-                  alt="LTNHoot!"
+                  alt="L'Apéro Quiz"
                   className="h-10 sm:h-12 w-auto object-contain shrink-0 drop-shadow"
                 />
                 <span className="text-xs font-bold text-orange-400 uppercase tracking-widest bg-orange-500/20 px-3 py-1 rounded-full border border-orange-500/30">
@@ -655,7 +652,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             <div className="w-full max-w-md bg-black/70 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
               <img
                 src={logoImg}
-                alt="LTNHoot!"
+                alt="L'Apéro Quiz"
                 className="h-32 sm:h-40 w-auto object-contain mb-4 drop-shadow-[0_10px_25px_rgba(249,115,22,0.5)] animate-bounce"
               />
 

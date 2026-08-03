@@ -76,6 +76,7 @@ export type QuestionUpdate = {
 type QuizzEditorContextType = {
   quizzId: string | null
   subject: string
+  publicName: string
   description: string
   folder: string
   tags: string[]
@@ -83,6 +84,7 @@ type QuizzEditorContextType = {
   listingImage?: string
   podiumTheme?: PodiumThemeSetting
   setSubject: (_subject: string) => void
+  setPublicName: (_publicName: string) => void
   setDescription: (_description: string) => void
   setFolder: (_folder: string) => void
   setTags: (_tags: string[]) => void
@@ -223,6 +225,7 @@ export const QuizzEditorProvider = ({
   const [subject, setSubject] = useState(
     initialData?.subject ?? "Untitled Quizz",
   )
+  const [publicName, setPublicName] = useState(initialData?.publicName ?? "")
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [folder, setFolder] = useState(initialData?.folder ?? "")
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? [])
@@ -294,6 +297,10 @@ export const QuizzEditorProvider = ({
     setSubject(val)
     markDirty()
   }
+  const wrappedSetPublicName = (val: string) => {
+    setPublicName(val)
+    markDirty()
+  }
   const wrappedSetDescription = (val: string) => {
     setDescription(val)
     markDirty()
@@ -360,6 +367,7 @@ export const QuizzEditorProvider = ({
   type Snapshot = {
     questions: QuestionWithId[]
     subject: string
+    publicName: string
     description: string
     folder: string
     tags: string[]
@@ -392,6 +400,7 @@ export const QuizzEditorProvider = ({
     (): Snapshot => ({
       questions,
       subject,
+      publicName,
       description,
       folder,
       tags,
@@ -404,6 +413,7 @@ export const QuizzEditorProvider = ({
     [
       questions,
       subject,
+      publicName,
       description,
       folder,
       tags,
@@ -464,6 +474,7 @@ export const QuizzEditorProvider = ({
   }, [
     questions,
     subject,
+    publicName,
     description,
     folder,
     tags,
@@ -479,6 +490,7 @@ export const QuizzEditorProvider = ({
     isApplyingHistoryRef.current = true
     setQuestions(s.questions)
     setSubject(s.subject)
+    setPublicName(s.publicName)
     setDescription(s.description)
     setFolder(s.folder)
     setTags(s.tags)
@@ -756,6 +768,7 @@ export const QuizzEditorProvider = ({
 
       const payload = {
         subject,
+        publicName: publicName.trim() || undefined,
         description: description || undefined,
         folder: folder || undefined,
         tags: tags.length ? tags : undefined,
@@ -802,6 +815,7 @@ export const QuizzEditorProvider = ({
       socket,
       isConnected,
       subject,
+      publicName,
       description,
       folder,
       tags,
@@ -885,6 +899,8 @@ export const QuizzEditorProvider = ({
     if (pendingRestore) {
       if (pendingRestore.subject !== undefined)
         setSubject(pendingRestore.subject)
+      if (pendingRestore.publicName !== undefined)
+        setPublicName(pendingRestore.publicName)
       if (pendingRestore.description !== undefined)
         setDescription(pendingRestore.description)
       if (pendingRestore.folder !== undefined) setFolder(pendingRestore.folder)
@@ -918,6 +934,7 @@ export const QuizzEditorProvider = ({
     const timer = setTimeout(() => {
       const backupData = {
         subject,
+        publicName,
         description,
         folder,
         tags,
@@ -943,6 +960,7 @@ export const QuizzEditorProvider = ({
   }, [
     isDirty,
     subject,
+    publicName,
     description,
     folder,
     tags,
@@ -1078,6 +1096,7 @@ export const QuizzEditorProvider = ({
       value={{
         quizzId,
         subject,
+        publicName,
         description,
         folder,
         tags,
@@ -1085,6 +1104,7 @@ export const QuizzEditorProvider = ({
         listingImage,
         podiumTheme,
         setSubject: wrappedSetSubject,
+        setPublicName: wrappedSetPublicName,
         setDescription: wrappedSetDescription,
         setFolder: wrappedSetFolder,
         setTags: wrappedSetTags,

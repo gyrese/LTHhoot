@@ -17,6 +17,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const { t } = useTranslation()
 
   const [localSubject, setLocalSubject] = useState(ctx.subject)
+  const [localPublicName, setLocalPublicName] = useState(ctx.publicName)
   const [localDescription, setLocalDescription] = useState(ctx.description)
   const [localFolder, setLocalFolder] = useState(ctx.folder)
   const [localTags, setLocalTags] = useState<string[]>(ctx.tags)
@@ -47,6 +48,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     }
 
     setLocalSubject(ctx.subject)
+    setLocalPublicName(ctx.publicName)
     setLocalDescription(ctx.description)
     setLocalFolder(ctx.folder)
     setLocalTags(ctx.tags)
@@ -69,6 +71,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     }
 
     ctx.setSubject(localSubject.trim())
+    ctx.setPublicName(localPublicName.trim())
     ctx.setDescription(localDescription)
     ctx.setFolder(localFolder)
     ctx.setTags(localTags)
@@ -83,6 +86,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
   const handleCancel = () => {
     setLocalSubject(ctx.subject)
+    setLocalPublicName(ctx.publicName)
     setLocalDescription(ctx.description)
     setLocalFolder(ctx.folder)
     setLocalTags(ctx.tags)
@@ -253,6 +257,31 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 />
                 <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                   {localSubject.length}/90
+                </span>
+              </div>
+            </div>
+
+            {/* Nom public — affiché aux joueurs à la place du titre interne */}
+            <div>
+              <label className="text-ink mb-1 block text-sm font-bold">
+                {t("quizz:settings.publicNameLabel")}{" "}
+                <span className="text-ink-subtle font-normal">
+                  ({t("common:optional")})
+                </span>
+              </label>
+              <p className="text-ink-subtle mb-2 text-xs">
+                {t("quizz:settings.publicNameHint")}
+              </p>
+              <div className="relative">
+                <input
+                  value={localPublicName}
+                  onChange={(e) => setLocalPublicName(e.target.value)}
+                  maxLength={90}
+                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
+                  placeholder={localSubject || t("quizz:titleQuizzPlaceholder")}
+                />
+                <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                  {localPublicName.length}/90
                 </span>
               </div>
             </div>
