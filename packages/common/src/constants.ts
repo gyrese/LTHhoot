@@ -68,6 +68,7 @@ export const EVENTS = {
     UPDATE_SUCCESS: "quizz:updateSuccess",
     DELETE: "quizz:delete",
     MOVE_FOLDER: "quizz:moveFolder",
+    SET_PUBLIC_NAME: "quizz:setPublicName",
     ERROR: "quizz:error",
     AI_GENERATE: "quizz:aiGenerate",
     AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",

@@ -306,6 +306,32 @@ class Config {
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
   }
 
+  // Renommage public seul, sans passer par l'éditeur : même précaution que
+  // `moveToFolder` sur `updatedAt` (préservé, cf. concurrence optimiste).
+  static setPublicName(
+    id: string,
+    publicName: string | null,
+    owner?: string,
+  ): void {
+    const filePath = getPath(`${quizzDir(owner)}/${safeId(id)}.json`)
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Quizz "${id}" not found`)
+    }
+
+    const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+    const trimmed = publicName?.trim()
+
+    if (trimmed) {
+      raw.publicName = trimmed
+    } else {
+      delete raw.publicName
+    }
+
+    writeFileAtomic(filePath, JSON.stringify(raw, null, 2))
+    Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
+  }
+
   static deleteQuizz(id: string, owner?: string): void {
     const filePath = getPath(`${quizzDir(owner)}/${safeId(id)}.json`)
 

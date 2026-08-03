@@ -1,7 +1,18 @@
+import { EVENTS } from "@rahoot/common/constants"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
-import React, { useState } from "react"
+import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
+import React, { useEffect, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
-import { Copy, Check, X, Share2, Download, Sparkles, Send } from "lucide-react"
+import {
+  Copy,
+  Check,
+  X,
+  Share2,
+  Download,
+  Sparkles,
+  Send,
+  Pencil,
+} from "lucide-react"
 import toast from "react-hot-toast"
 
 type Props = {
@@ -14,10 +25,32 @@ type Props = {
 }
 
 export const ShareSocialModal: React.FC<Props> = ({ quizz, onClose }) => {
+  const { socket } = useSocket()
   const [copied, setCopied] = useState(false)
+  const [publicName, setPublicName] = useState(quizz.publicName ?? "")
+
+  // La modale reste montée d'un quiz à l'autre : on resynchronise le champ sur
+  // le quiz affiché, et sur la valeur renvoyée par le serveur après renommage.
+  useEffect(() => {
+    setPublicName(quizz.publicName ?? "")
+  }, [quizz.id, quizz.publicName])
+
   // Nom vu par les joueurs : nom public du quiz si renseigné, sinon son titre.
-  const displayName = quizzDisplayName(quizz)
+  const displayName = quizzDisplayName({ subject: quizz.subject, publicName })
   const shareUrl = `${window.location.origin}/solo/${quizz.id}`
+  const isNameDirty = publicName.trim() !== (quizz.publicName ?? "").trim()
+
+  const handleSavePublicName = () => {
+    socket?.emit(EVENTS.QUIZZ.SET_PUBLIC_NAME, {
+      id: quizz.id,
+      publicName: publicName.trim() || null,
+    })
+    toast.success(
+      publicName.trim()
+        ? "Nom public enregistré !"
+        : "Nom public retiré — le titre du quiz sera affiché.",
+    )
+  }
 
   const socialPostText = `🚀 Quiz de la semaine : "${displayName}" !
 Testez vos connaissances et tentez de remporter le tirage au sort parmi les 10 meilleurs scores en fin de semaine ! 🏆
@@ -89,11 +122,47 @@ Testez vos connaissances et tentez de remporter le tirage au sort parmi les 10 m
               Quiz sélectionné
             </span>
             <p className="text-lg font-bold text-white">{displayName}</p>
-            {quizz.publicName?.trim() && (
+            {publicName.trim() && (
               <p className="mt-1 text-xs text-gray-400">
                 Titre interne : {quizz.subject}
               </p>
             )}
+          </div>
+
+          {/* Nom public — celui que les joueurs verront sur la page solo */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-300 uppercase">
+              Nom affiché aux joueurs
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Pencil className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  value={publicName}
+                  maxLength={90}
+                  onChange={(e) => setPublicName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && isNameDirty) {
+                      handleSavePublicName()
+                    }
+                  }}
+                  placeholder={quizz.subject}
+                  className="w-full rounded-xl border border-white/15 bg-slate-950 py-2.5 pr-3.5 pl-9 text-sm text-white placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
+                />
+              </div>
+              <button
+                onClick={handleSavePublicName}
+                disabled={!isNameDirty}
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-600 disabled:cursor-default disabled:bg-slate-800 disabled:text-gray-500"
+              >
+                <Check className="size-4" />
+                <span>Enregistrer</span>
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-gray-500">
+              Laissez vide pour afficher le titre du quiz.
+            </p>
           </div>
 
           {/* Lien Direct */}

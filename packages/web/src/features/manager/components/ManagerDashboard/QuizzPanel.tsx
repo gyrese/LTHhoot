@@ -63,11 +63,12 @@ const QuizzPanel = ({
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportTypeRef = useRef<"json" | "pptx">("json")
-  const [shareModalQuizz, setShareModalQuizz] = useState<{
-    id: string
-    subject: string
-    publicName?: string
-  } | null>(null)
+  // Seul l'id est mémorisé : le quiz est relu dans la config à chaque rendu,
+  // pour que la modale reflète un renommage public sans être rouverte.
+  const [shareModalQuizzId, setShareModalQuizzId] = useState<string | null>(
+    null,
+  )
+  const shareModalQuizz = quizz.find((q) => q.id === shareModalQuizzId)
   const { t } = useTranslation()
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
@@ -344,11 +345,7 @@ const QuizzPanel = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShareModalQuizz({
-                          id: q.id,
-                          subject: q.subject,
-                          publicName: q.publicName,
-                        })
+                        setShareModalQuizzId(q.id)
                       }}
                       className="rounded-lg bg-black/50 p-1.5 text-orange-400 backdrop-blur-sm hover:bg-black/70"
                       title="Diffuser sur les réseaux sociaux"
@@ -403,7 +400,7 @@ const QuizzPanel = ({
       {shareModalQuizz && (
         <ShareSocialModal
           quizz={shareModalQuizz}
-          onClose={() => setShareModalQuizz(null)}
+          onClose={() => setShareModalQuizzId(null)}
         />
       )}
     </div>

@@ -266,6 +266,10 @@ export interface ClientToServerEvents {
     id: string
     folder: string | null
   }) => void
+  [EVENTS.QUIZZ.SET_PUBLIC_NAME]: (_data: {
+    id: string
+    publicName: string | null
+  }) => void
   [EVENTS.QUIZZ.AI_GENERATE]: (_data: {
     prompt: string
     count: number
