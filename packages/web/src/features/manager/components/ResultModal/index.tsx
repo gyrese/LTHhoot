@@ -8,6 +8,7 @@ import ResultModalRanking from "@rahoot/web/features/manager/components/ResultMo
 import { ResultModalProvider } from "@rahoot/web/features/manager/contexts/result-modal-context"
 import clsx from "clsx"
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 
 type Props = {
   result: GameResult
@@ -48,11 +49,16 @@ const ResultModal = ({ result, openDraw = false, onClose }: Props) => {
         ]),
   ]
 
-  return (
+  // Portal obligatoire : le panneau qui monte cette modale porte un
+  // `backdrop-blur`, ce qui en fait le bloc conteneur de ses descendants
+  // `position: fixed`. Sans portal la modale est positionnée — et rognée par
+  // l'`overflow-hidden` — dans le panneau au lieu de la fenêtre.
+  return createPortal(
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
-      {/* Hauteur fixe : sans elle la modale s'ajuste au contenu et la zone
-          scrollable se réduit à quelques pixels sur un rapport dense. */}
-      <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+      {/* Plancher + plafond plutôt qu'une hauteur libre : sans plancher la zone
+          scrollable se réduit à quelques pixels, sans plafond la modale déborde
+          de la fenêtre sur un rapport de 165 participants. */}
+      <div className="flex max-h-[88vh] min-h-[min(26rem,88vh)] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
         <ResultModalProvider result={result} onClose={onClose}>
           <ResultModalHeader />
 
@@ -101,7 +107,8 @@ const ResultModal = ({ result, openDraw = false, onClose }: Props) => {
           onClose={() => setShowDrawModal(false)}
         />
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
