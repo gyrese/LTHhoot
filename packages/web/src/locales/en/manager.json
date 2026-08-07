@@ -38,7 +38,10 @@
     },
     "playerCount": "{{count}} player(s)",
     "timeLimitSuffix": "s time limit",
-    "exportCSV": "Export as CSV"
+    "exportCSV": "Export as CSV",
+    "tabParty": "Live games",
+    "tabSolo": "Solo (social)",
+    "noneSolo": "No solo quiz played yet, share a solo link to collect scores"
   },
   "tabs": {
     "play": "Play",

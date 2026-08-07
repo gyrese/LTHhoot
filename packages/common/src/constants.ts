@@ -87,6 +87,9 @@ export const EVENTS = {
     GET: "results:get",
     DATA: "results:data",
     DELETE: "results:delete",
+    // Retire définitivement la participation d'un joueur d'un résultat
+    // (soumission d'un bot ou d'un doublon avant un tirage au sort).
+    DELETE_PLAYER: "results:deletePlayer",
   },
   ASYNC_QUIZ: {
     GET_PUBLIC: "asyncQuizz:getPublic",

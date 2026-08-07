@@ -331,6 +331,10 @@ export interface ClientToServerEvents {
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
   [EVENTS.RESULTS.DELETE]: (_id: string) => void
+  [EVENTS.RESULTS.DELETE_PLAYER]: (_payload: {
+    resultId: string
+    username: string
+  }) => void
 
   // Async quiz actions
   [EVENTS.ASYNC_QUIZ.GET_PUBLIC]: (_quizzId: string) => void

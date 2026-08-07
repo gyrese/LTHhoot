@@ -36,7 +36,10 @@
     },
     "playerCount": "{{count}} giocatore/i",
     "timeLimitSuffix": "s limite di tempo",
-    "exportCSV": "Esporta come CSV"
+    "exportCSV": "Esporta come CSV",
+    "tabParty": "Partite",
+    "tabSolo": "Solo (social)",
+    "noneSolo": "Nessun quiz solo giocato per ora, condividi un link solo per raccogliere punteggi"
   },
   "tabs": {
     "play": "Gioca",

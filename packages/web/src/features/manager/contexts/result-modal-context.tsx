@@ -6,6 +6,7 @@ import type {
 import {
   createContext,
   useContext,
+  useMemo,
   useState,
   type PropsWithChildren,
 } from "react"
@@ -27,6 +28,9 @@ type ResultModalContextType = {
   correctCount: number
   correctPct: number
   maxAnswerCount: number
+  // Nombre de bonnes réponses d'un joueur, ou null si le résultat ne contient
+  // aucun détail par question (rapports solo enregistrés avant sa persistance).
+  getPlayerCorrectCount: (_name: string) => number | null
   getPlayerPoints: (_name: string) => number
   goNext: () => void
   goPrev: () => void
@@ -77,6 +81,26 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
       )
     : Math.max(1, answeredCount)
 
+  const correctByPlayer = useMemo(() => {
+    const counts = new Map<string, number>()
+    let hasAnyAnswer = false
+
+    result.questions.forEach((q) => {
+      ;(q.playerAnswers ?? []).forEach((pa) => {
+        hasAnyAnswer = true
+
+        if (pa.points > 0) {
+          counts.set(pa.playerName, (counts.get(pa.playerName) ?? 0) + 1)
+        }
+      })
+    })
+
+    return hasAnyAnswer ? counts : null
+  }, [result])
+
+  const getPlayerCorrectCount = (name: string) =>
+    correctByPlayer ? (correctByPlayer.get(name) ?? 0) : null
+
   const getPlayerPoints = (name: string) =>
     result.players.find((p) => p.username === name)?.points ?? 0
 
@@ -96,6 +120,7 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
         correctCount,
         correctPct,
         maxAnswerCount,
+        getPlayerCorrectCount,
         getPlayerPoints,
         goNext,
         goPrev,

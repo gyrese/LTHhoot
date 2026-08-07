@@ -13,7 +13,8 @@ const ResultModalTable = () => {
 
   return (
     <table className="w-full text-sm">
-      <thead className="sticky top-0 shadow-sm">
+      {/* Se cale sous la barre de navigation des questions (h-11) */}
+      <thead className="sticky top-11 z-10 shadow-sm">
         <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase">
           <th className="px-5 py-2.5">{t("manager:result.table.player")}</th>
           <th className="px-4 py-2.5">{t("manager:result.table.answered")}</th>

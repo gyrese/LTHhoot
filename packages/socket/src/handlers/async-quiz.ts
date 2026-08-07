@@ -1,6 +1,14 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { GameResult, GameResultPlayer } from "@rahoot/common/types/game"
+import type {
+  GameResult,
+  GameResultPlayer,
+  PlayerAnswerRecord,
+} from "@rahoot/common/types/game"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
+import {
+  SOLO_RESULT_ID_PREFIX,
+  SOLO_RESULT_SUBJECT_PREFIX,
+} from "@rahoot/common/utils/result-kind"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 
@@ -55,6 +63,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
             EVENTS.GAME.ERROR_MESSAGE,
             "errors:quizz.invalidSubmission",
           )
+
           return
         }
 
@@ -75,22 +84,30 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
             EVENTS.GAME.ERROR_MESSAGE,
             "errors:quizz.invalidSubmission",
           )
+
           return
         }
 
         let totalScore = 0
         let correctAnswersCount = 0
+        // Trace par question, indexée comme le quiz : sans elle le rapport de
+        // résultat du manager n'a rien à afficher pour un joueur solo.
+        const answerRecords: (PlayerAnswerRecord | undefined)[] = []
 
         // Calcul du score pour les réponses de ce joueur
         quizz.questions.forEach((q: any, index: number) => {
           const playerAns = answers.find((a) => a.questionIndex === index)
-          if (!playerAns) return
+
+          if (!playerAns) {
+            return
+          }
 
           let isCorrect = false
 
           switch (q.type) {
             case "mcq": {
               const ansId = playerAns.answerId
+
               if (ansId !== undefined && ansId !== null) {
                 if (Array.isArray(q.solutions)) {
                   isCorrect = q.solutions.includes(ansId)
@@ -98,31 +115,38 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
                   isCorrect = q.solution === ansId
                 } else if (Array.isArray(q.answers)) {
                   const item = q.answers[ansId]
+
+                  // eslint-disable-next-line max-depth
                   if (typeof item === "object" && item !== null) {
                     isCorrect = Boolean(item.correct)
                   }
                 }
               }
+
               break
             }
 
             case "true_false": {
               const ansId = playerAns.answerId
+
               if (ansId !== undefined && ansId !== null) {
                 if (typeof q.solution === "number") {
                   isCorrect = q.solution === ansId
                 } else if (Array.isArray(q.answers)) {
                   const item = q.answers[ansId]
+
                   if (typeof item === "object" && item !== null) {
                     isCorrect = Boolean(item.correct)
                   }
                 }
               }
+
               break
             }
 
             case "open": {
               const text = playerAns.textAnswer?.trim().toLowerCase()
+
               if (text) {
                 if (Array.isArray(q.correctAnswers)) {
                   isCorrect = q.correctAnswers.some(
@@ -132,6 +156,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
                   isCorrect = q.answer.trim().toLowerCase() === text
                 }
               }
+
               break
             }
 
@@ -141,6 +166,7 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
                 const tol = q.tolerance ?? 0
                 isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
               }
+
               break
             }
 
@@ -150,12 +176,15 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
                 const tol = q.tolerance ?? 0
                 isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
               }
+
               break
             }
 
             default:
               break
           }
+
+          let points = 0
 
           if (isCorrect) {
             correctAnswersCount += 1
@@ -166,19 +195,29 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
                   Math.round(500 * (1 - playerAns.timeMs / timeLimit)),
                 )
               : 0
-            totalScore += 1000 + speedBonus
+            points = 1000 + speedBonus
+            totalScore += points
+          }
+
+          answerRecords[index] = {
+            playerName: playerName.trim(),
+            answerId: playerAns.answerId ?? null,
+            textAnswer: playerAns.textAnswer ?? null,
+            numberAnswer: playerAns.numberAnswer ?? null,
+            points,
+            timeMs: playerAns.timeMs ?? null,
           }
         })
 
-        const resultId = `async_${quizzId}`
-        let gameResult: GameResult
+        const resultId = `${SOLO_RESULT_ID_PREFIX}${quizzId}`
+        let gameResult: GameResult | null = null
 
         try {
           gameResult = Config.resultById(resultId)
         } catch {
           gameResult = {
             id: resultId,
-            subject: `[Réseaux] ${quizz.subject}`,
+            subject: `${SOLO_RESULT_SUBJECT_PREFIX}${quizzDisplayName(quizz)}`,
             date: new Date().toISOString(),
             players: [],
             questions: quizz.questions.map((q) => ({
@@ -200,12 +239,33 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
           socialContact: socialContact ? socialContact.trim() : undefined,
         }
 
+        // Seule la meilleure tentative d'un joueur est conservée : le détail par
+        // question doit donc suivre le score retenu, pas la dernière soumission.
+        const isBestRun =
+          existingPlayerIdx < 0 ||
+          totalScore > gameResult.players[existingPlayerIdx].points
+
         if (existingPlayerIdx >= 0) {
-          if (totalScore > gameResult.players[existingPlayerIdx].points) {
+          if (isBestRun) {
             gameResult.players[existingPlayerIdx] = newPlayerData
           }
         } else {
           gameResult.players.push(newPlayerData)
+        }
+
+        if (isBestRun) {
+          const playerKey = playerName.trim().toLowerCase()
+          gameResult.questions = gameResult.questions.map((q, index) => {
+            const others = (q.playerAnswers ?? []).filter(
+              (a) => a.playerName.trim().toLowerCase() !== playerKey,
+            )
+            const record = answerRecords[index]
+
+            return {
+              ...q,
+              playerAnswers: record ? [...others, record] : others,
+            }
+          })
         }
 
         gameResult.players.sort((a, b) => b.points - a.points)
