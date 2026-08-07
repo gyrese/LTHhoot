@@ -201,14 +201,14 @@ describe("checkAnswer", () => {
     }
 
     it("valide un point à l'intérieur du seuil de proximité (20)", () => {
-      // distance = sqrt(10^2 + 10^2) ≈ 14.14 <= 20
+      // Distance = sqrt(10^2 + 10^2) ≈ 14.14 <= 20
       expect(
         checkAnswer(question, buildAnswer({ textAnswer: "110:110" })),
       ).toBe(true)
     })
 
     it("rejette un point hors du seuil de proximité", () => {
-      // distance = sqrt(50^2 + 50^2) ≈ 70.7 > 20
+      // Distance = sqrt(50^2 + 50^2) ≈ 70.7 > 20
       expect(
         checkAnswer(question, buildAnswer({ textAnswer: "150:150" })),
       ).toBe(false)

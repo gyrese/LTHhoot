@@ -19,7 +19,7 @@ const quizFiles = fs.readdirSync(quizzDir).filter((f) => f.endsWith(".json"))
 
 for (const file of quizFiles) {
   const filePath = path.join(quizzDir, file)
-  const size = fs.statSync(filePath).size
+  const {size} = fs.statSync(filePath)
   const sizeKb = (size / 1024).toFixed(1)
 
   if (size > 1024 * 100) {
@@ -30,7 +30,7 @@ for (const file of quizFiles) {
       const json = JSON.parse(fs.readFileSync(filePath, "utf-8"))
 
       const inspect = (obj: any, path = "") => {
-        if (!obj || typeof obj !== "object") return
+        if (!obj || typeof obj !== "object") {return}
 
         for (const key of Object.keys(obj)) {
           const val = obj[key]

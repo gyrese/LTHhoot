@@ -16,8 +16,13 @@ import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
 const ElementPanel = () => {
-  const { currentQuestion, currentIndex, updateQuestion, selectedId, setSelectedId } =
-    useQuizzEditor()
+  const {
+    currentQuestion,
+    currentIndex,
+    updateQuestion,
+    selectedId,
+    setSelectedId,
+  } = useQuizzEditor()
   const { t } = useTranslation()
 
   const selectedElement = currentQuestion?.elements?.find(
@@ -38,7 +43,10 @@ const ElementPanel = () => {
     )
   }
 
-  const handleUpdateElement = (id: string, updates: Record<string, unknown>) => {
+  const handleUpdateElement = (
+    id: string,
+    updates: Record<string, unknown>,
+  ) => {
     const elements = (currentQuestion.elements || []).map((el) =>
       el.id === id ? { ...el, ...updates } : el,
     )
@@ -163,7 +171,9 @@ const ElementPanel = () => {
                 label="Début (sec)"
               />
               <ConfigNumberInput
-                value={(selectedElement as { startTime?: number }).startTime || 0}
+                value={
+                  (selectedElement as { startTime?: number }).startTime || 0
+                }
                 min={0}
                 onChange={(val) =>
                   handleUpdateElement(selectedElement.id, { startTime: val })

@@ -1008,7 +1008,9 @@ const SlideToolbar = () => {
         </AnimatePresence>
       </div>
 
-      {showPreview && <SlidePreviewModal onClose={() => setShowPreview(false)} />}
+      {showPreview && (
+        <SlidePreviewModal onClose={() => setShowPreview(false)} />
+      )}
       <MediaSearchModal
         open={showMediaModal}
         onClose={() => {

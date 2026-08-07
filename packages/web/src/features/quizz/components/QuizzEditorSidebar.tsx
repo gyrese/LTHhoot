@@ -36,7 +36,7 @@ const QuizzEditorSidebar = () => {
 
   const isDragging = useRef(false)
 
-  const handleSlideClick = (index: number) => (e: React.MouseEvent) => {
+  const handleSlideClick = (index: number) => (e: MouseEvent) => {
     if (!isDragging.current) {
       selectSlide(index, e.ctrlKey || e.metaKey, e.shiftKey)
     }

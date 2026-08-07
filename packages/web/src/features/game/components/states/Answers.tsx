@@ -90,7 +90,9 @@ const Answers = ({
   const [endTime, setEndTime] = useState(() => {
     const initialCooldown =
       storeCooldown && storeCooldown > 0 ? storeCooldown : time
-    return Date.now() + initialCooldown * 1000
+
+    
+return Date.now() + initialCooldown * 1000
   })
   const [cooldown, setCooldown] = useState(() =>
     storeCooldown && storeCooldown > 0 ? storeCooldown : time,
@@ -280,6 +282,7 @@ const Answers = ({
     // Si dérive significative (> 1.2 seconde), on resynchronise la date de fin
     const currentRemainingMs = endTime - Date.now()
     const targetRemainingMs = sec * 1000
+
     if (Math.abs(currentRemainingMs - targetRemainingMs) > 1200) {
       setEndTime(Date.now() + targetRemainingMs)
     }
@@ -348,9 +351,7 @@ const Answers = ({
           seedString={question || background?.value}
           startTimeOffset={0}
           configuredStyle={revelationStyle}
-          imageUrl={
-            background?.type === "image" ? background.value : undefined
-          }
+          imageUrl={background?.type === "image" ? background.value : undefined}
         />
       )}
 

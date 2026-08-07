@@ -6,7 +6,14 @@ import Card from "@rahoot/web/components/Card"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import MediaSearchModal from "@rahoot/web/features/quizz/components/MediaSearchModal"
-import { Image, ImageOff, Music, Video, FolderOpen, RefreshCw } from "lucide-react"
+import {
+  Image,
+  ImageOff,
+  Music,
+  Video,
+  FolderOpen,
+  RefreshCw,
+} from "lucide-react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 

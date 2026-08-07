@@ -53,26 +53,34 @@ const parseVideoId = (input: string): string | null => {
 const getSolutionText = (q: Question): string | undefined => {
   if (q.type === "mcq") {
     const solutions = Array.isArray(q.solutions) ? q.solutions : []
-    return solutions
+
+    
+return solutions
       .map((i) => q.answers?.[i])
       .filter((a): a is string => Boolean(a && a.trim()))
       .join(", ")
   }
+
   if (q.type === "true_false") {
     return q.solution === 0 ? "Vrai" : "Faux"
   }
+
   if (q.type === "open") {
     return q.correctAnswers?.filter(Boolean).join(", ")
   }
+
   if (q.type === "date") {
     return q.correctYear !== undefined ? String(q.correctYear) : undefined
   }
+
   if (q.type === "slider") {
     return q.correctValue !== undefined ? String(q.correctValue) : undefined
   }
+
   if (q.type === "puzzle") {
     return q.items?.filter(Boolean).join(" -> ")
   }
+
   if (q.type === "drop_pin") {
     return q.zones
       ?.filter((z) => z.isCorrect)
@@ -80,10 +88,13 @@ const getSolutionText = (q: Question): string | undefined => {
       .filter(Boolean)
       .join(", ")
   }
+
   if (q.type === "image_sequence") {
     return q.correctAnswers?.filter(Boolean).join(", ")
   }
-  return undefined
+
+  
+return undefined
 }
 
 const QuestionEditorAnswerReveal = () => {
@@ -204,7 +215,7 @@ const QuestionEditorAnswerReveal = () => {
   }
 
   const handleChangeYoutube = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const {value} = e.target
     setYoutubeUrl(value)
     const videoId = parseVideoId(value)
     updateReveal({ videoId: videoId ?? undefined })
@@ -400,10 +411,7 @@ const QuestionEditorAnswerReveal = () => {
                   <Sparkles className="size-3.5" />
                 )}
                 <span>
-                  {t(
-                    "quizz:question.aiGenerateExplanation",
-                    "Générer par IA",
-                  )}
+                  {t("quizz:question.aiGenerateExplanation", "Générer par IA")}
                 </span>
               </button>
             </div>

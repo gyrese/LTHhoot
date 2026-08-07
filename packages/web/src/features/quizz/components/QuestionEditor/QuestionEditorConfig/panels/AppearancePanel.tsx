@@ -126,6 +126,7 @@ const AppearancePanel = () => {
                   value={mainType}
                   onChange={(e) => {
                     const val = e.target.value
+
                     if (val === "grid") {
                       handleUpdateQuestion("revelationStyle")(gridPattern)
                     } else {

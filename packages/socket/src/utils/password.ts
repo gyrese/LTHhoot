@@ -23,7 +23,7 @@ export const verifyPassword = (plain: string, stored: string): boolean => {
   const hashBuffer = Buffer.from(hash, "hex")
   const candidateBuffer = crypto.scryptSync(plain, salt, KEY_LENGTH)
 
-  // timingSafeEqual exige deux buffers de même longueur, sinon il lève une
+  // TimingSafeEqual exige deux buffers de même longueur, sinon il lève une
   // exception : un hash stocké corrompu/tronqué ne doit pas planter l'auth.
   if (hashBuffer.length !== candidateBuffer.length) {
     return false

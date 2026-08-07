@@ -92,13 +92,11 @@ const ManagerGamePage = () => {
 
   // UseSocket déplacé en haut
 
-  useEffect(() => {
-    return () => {
+  useEffect(() => () => {
       console.log("[DEBUG] ManagerGamePage unmounted, cleaning up store")
       reset()
       setQuestionStates(null)
-    }
-  }, [reset, setQuestionStates])
+    }, [reset, setQuestionStates])
 
   // GAME.RESET est toujours traité (cf. commentaire équivalent côté joueur) :
   // chaque RESET restant est autoritaire, l'ignorer pendant une reconnexion

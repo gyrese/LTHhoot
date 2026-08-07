@@ -353,7 +353,9 @@ const DashboardSidebar = ({
           ) : (
             <button
               onClick={() => setActiveFolder(isActive ? null : node.path)}
-              onDragOver={isGuest ? undefined : (e) => handleDragOver(e, node.path)}
+              onDragOver={
+                isGuest ? undefined : (e) => handleDragOver(e, node.path)
+              }
               onDragLeave={isGuest ? undefined : () => setDragOverFolder(null)}
               onDrop={isGuest ? undefined : (e) => handleDrop(e, node.path)}
               className={clsx(

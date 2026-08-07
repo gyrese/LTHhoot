@@ -9,8 +9,9 @@ export const uploadImageToServer = async (
   filename?: string,
 ): Promise<string> => {
   const loadingToast = toast.loading("Upload de l'image...")
+
   try {
-    let blob: Blob
+    let blob: Blob | null = null
     let finalFilename = filename || `upload-${Date.now()}.png`
 
     if (fileOrBase64 instanceof File) {
@@ -44,7 +45,9 @@ export const uploadImageToServer = async (
 
     const data = (await res.json()) as { url: string }
     toast.success("Image importée !", { id: loadingToast })
-    return data.url
+
+    
+return data.url
   } catch (err) {
     console.error("Upload error:", err)
     toast.error("Échec de l'upload de l'image.", { id: loadingToast })

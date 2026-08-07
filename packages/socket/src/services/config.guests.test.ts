@@ -83,7 +83,10 @@ describe("comptes invités", () => {
     const { default: Config } = await import("@rahoot/socket/services/config")
 
     Config.createGuest("Marie", "pass1234")
-    const saved = Config.saveQuizz(validQuizz("Quiz de Pierre"), "pierre-dupont")
+    const saved = Config.saveQuizz(
+      validQuizz("Quiz de Pierre"),
+      "pierre-dupont",
+    )
 
     expect(Config.quizz("pierre-dupont").map((q) => q.id)).toEqual([saved.id])
     expect(Config.quizz("marie")).toHaveLength(0)

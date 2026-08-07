@@ -80,7 +80,7 @@ export const buildGenerationPrompt = (params: {
   prompt: string
   count: number
   questionTypes: string[]
-  difficulties: QuestionDifficulty[]
+  difficulties: readonly QuestionDifficulty[]
   tone: string
   language: string
   time: number | null

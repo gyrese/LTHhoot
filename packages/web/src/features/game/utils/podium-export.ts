@@ -240,6 +240,7 @@ export const renderScorecardToCanvas = async (
   canvas.height = size
 
   const ctx = canvas.getContext("2d")
+
   if (!ctx) {
     throw new Error("Canvas 2D context unavailable")
   }
@@ -271,6 +272,7 @@ export const renderScorecardToCanvas = async (
   // 3. Set color scheme based on rank
   let themeColor = "#ffffff"
   let rankLabel = rank ? `#${rank}` : "—"
+
   if (rank === 1) {
     themeColor = "#FAFF00" // Gold
     rankLabel = "1er"
@@ -399,9 +401,11 @@ export const renderScorecardToCanvas = async (
   ctx.fillStyle = themeColor
   ctx.font = "bold 54px sans-serif"
   let rankText = rankLabel
+
   if (totalPlayers) {
     rankText += ` / ${totalPlayers}`
   }
+
   ctx.fillText(rankText, boxX + boxWidth / 4, boxY + 120)
 
   // Right: Score

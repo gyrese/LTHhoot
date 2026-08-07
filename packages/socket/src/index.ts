@@ -67,10 +67,11 @@ const giphyResponseSchema = z.object({
           images: z
             .object({
               original: z.object({ url: z.string().optional() }).optional(),
-              // Clés natives de l'API Giphy (snake_case) — quotées pour rester
-              // hors du champ de la règle camelcase.
+              // Clés natives de l'API Giphy (snake_case)
+              /* eslint-disable camelcase */
               fixed_width: z.object({ url: z.string().optional() }).optional(),
               preview_gif: z.object({ url: z.string().optional() }).optional(),
+              /* eslint-enable camelcase */
             })
             .optional(),
         })
@@ -83,12 +84,13 @@ const giphyResponseSchema = z.object({
 try {
   const rootEnv = resolve(process.cwd(), ".env")
   const parentEnv = resolve(process.cwd(), "../../.env")
+
   if (existsSync(rootEnv)) {
     process.loadEnvFile(rootEnv)
   } else if (existsSync(parentEnv)) {
     process.loadEnvFile(parentEnv)
   }
-} catch (e) {
+} catch {
   // Ignore if loadEnvFile is not supported (e.g. older node versions)
 }
 
@@ -221,11 +223,14 @@ app.post(
 
     if (!subject || typeof subject !== "string" || !subject.trim()) {
       res.status(400).json({ error: "Sujet requis pour la génération d'image" })
-      return
+
+      
+return
     }
 
     const apiKey =
       process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
+
     if (!apiKey) {
       console.error(
         "GEMINI_IMAGE_API_KEY ou GEMINI_API_KEY manquante dans les variables d'environnement",
@@ -233,7 +238,9 @@ app.post(
       res.status(500).json({
         error: "Clé API Gemini Image/Globale non configurée sur le serveur",
       })
-      return
+
+      
+return
     }
 
     const IMAGE_STYLES = [
@@ -265,6 +272,7 @@ app.post(
         (p) => p.inlineData,
       )
       const imageData = part?.inlineData?.data
+
       if (!imageData) {
         throw new Error(
           "Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.",
@@ -401,15 +409,20 @@ app.get(
 
     if (!query || !query.trim()) {
       res.status(400).json({ error: "Query parameter is required" })
-      return
+
+      
+return
     }
 
     const accessKey = process.env.UNSPLASH_ACCESS_KEY
+
     if (!accessKey) {
       res
         .status(400)
         .json({ error: "UNSPLASH_ACCESS_KEY non configurée sur le serveur" })
-      return
+
+      
+return
     }
 
     try {
@@ -463,15 +476,20 @@ app.get(
 
     if (!query || !query.trim()) {
       res.status(400).json({ error: "Query parameter is required" })
-      return
+
+      
+return
     }
 
     const apiKey = process.env.GIPHY_API_KEY
+
     if (!apiKey) {
       res
         .status(400)
         .json({ error: "GIPHY_API_KEY non configurée sur le serveur" })
-      return
+
+      
+return
     }
 
     try {

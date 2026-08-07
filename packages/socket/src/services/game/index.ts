@@ -1,4 +1,5 @@
 import { EVENTS } from "@rahoot/common/constants"
+/* eslint-disable max-lines */
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
 import { SHOP, type PowerUpType } from "@rahoot/common/types/powerup"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"

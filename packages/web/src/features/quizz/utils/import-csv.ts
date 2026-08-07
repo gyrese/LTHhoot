@@ -61,13 +61,15 @@ function parseRow(line: string, sep: string): string[] {
   while (i <= len) {
     if (i === len) {
       fields.push("")
+
       break
     }
 
     if (line[i] === '"') {
       // Champ entre guillemets
       let field = ""
-      i++ // saute le guillemet ouvrant
+      i++ // Saute le guillemet ouvrant
+
       while (i < len) {
         if (line[i] === '"') {
           if (i + 1 < len && line[i + 1] === '"') {
@@ -77,6 +79,7 @@ function parseRow(line: string, sep: string): string[] {
           } else {
             // Fin du champ entre guillemets
             i++
+
             break
           }
         } else {
@@ -84,7 +87,9 @@ function parseRow(line: string, sep: string): string[] {
           i++
         }
       }
+
       fields.push(field)
+
       // Saute le séparateur suivant si présent
       if (i < len && line[i] === sep) {
         i++
@@ -92,12 +97,15 @@ function parseRow(line: string, sep: string): string[] {
     } else {
       // Champ sans guillemets
       const start = i
+
       while (i < len && line[i] !== sep) {
         i++
       }
+
       fields.push(line.slice(start, i))
+
       if (i < len) {
-        i++ // saute le séparateur
+        i++ // Saute le séparateur
       } else {
         break
       }
@@ -118,7 +126,8 @@ function parseCsvToRows(
 
   // Cherche la première ligne non vide
   const headerLineIndex = lines.findIndex((l) => l.trim().length > 0)
-  if (headerLineIndex === -1) return null
+
+  if (headerLineIndex === -1) {return null}
 
   const headerLine = lines[headerLineIndex]
   const sep = detectSeparator(headerLine)
@@ -127,7 +136,9 @@ function parseCsvToRows(
   const rows: string[][] = []
   for (let i = headerLineIndex + 1; i < lines.length; i++) {
     const line = lines[i].trim()
-    if (line.length === 0) continue
+
+    if (line.length === 0) {continue}
+
     rows.push(parseRow(line, sep).map((v) => v.trim()))
   }
 
@@ -138,18 +149,24 @@ function parseCsvToRows(
 
 function getField(row: string[], headers: string[], name: string): string {
   const idx = headers.indexOf(name)
-  if (idx === -1) return ""
-  return (row[idx] ?? "").trim()
+
+  if (idx === -1) {return ""}
+  
+return (row[idx] ?? "").trim()
 }
 
 function parseInt10(value: string): number | null {
   const n = parseInt(value, 10)
-  return isNaN(n) ? null : n
+
+  
+return isNaN(n) ? null : n
 }
 
 function parseFloatSafe(value: string): number | null {
   const n = parseFloat(value)
-  return isNaN(n) ? null : n
+
+  
+return isNaN(n) ? null : n
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -171,30 +188,41 @@ function buildMcq(
     errors.push(
       `Ligne ${rowNum} : colonne "answers" manquante pour le type mcq.`,
     )
-    return null
+
+    
+return null
   }
+
   if (!correctRaw && correctRaw !== "0") {
     errors.push(
       `Ligne ${rowNum} : colonne "correct" manquante pour le type mcq.`,
     )
-    return null
+
+    
+return null
   }
 
   const answers = answersRaw
     .split("|")
     .map((a) => a.trim())
     .filter((a) => a.length > 0)
+
   if (answers.length < 2) {
     errors.push(
       `Ligne ${rowNum} : au moins 2 réponses requises pour le type mcq (trouvé : ${answers.length}).`,
     )
-    return null
+
+    
+return null
   }
+
   if (answers.length > 4) {
     errors.push(
       `Ligne ${rowNum} : maximum 4 réponses pour le type mcq (trouvé : ${answers.length}).`,
     )
-    return null
+
+    
+return null
   }
 
   const solutions = correctRaw
@@ -206,7 +234,9 @@ function buildMcq(
     errors.push(
       `Ligne ${rowNum} : au moins 1 solution requise pour le type mcq.`,
     )
-    return null
+
+    
+return null
   }
 
   for (const sol of solutions) {
@@ -214,7 +244,9 @@ function buildMcq(
       errors.push(
         `Ligne ${rowNum} : indice de solution ${sol} hors limites (0–${answers.length - 1}).`,
       )
-      return null
+
+      
+return null
     }
   }
 
@@ -237,7 +269,9 @@ function buildOpen(
     errors.push(
       `Ligne ${rowNum} : colonne "correctAnswers" manquante pour le type open.`,
     )
-    return null
+
+    
+return null
   }
 
   const correctAnswers = correctAnswersRaw
@@ -249,7 +283,9 @@ function buildOpen(
     errors.push(
       `Ligne ${rowNum} : au moins 1 réponse correcte requise pour le type open.`,
     )
-    return null
+
+    
+return null
   }
 
   return { type: "open", correctAnswers } as Omit<
@@ -279,31 +315,45 @@ function buildSlider(
     errors.push(
       `Ligne ${rowNum} : colonne "min" manquante ou invalide pour le type slider.`,
     )
-    return null
+
+    
+return null
   }
+
   if (max === null) {
     errors.push(
       `Ligne ${rowNum} : colonne "max" manquante ou invalide pour le type slider.`,
     )
-    return null
+
+    
+return null
   }
+
   if (correctValue === null) {
     errors.push(
       `Ligne ${rowNum} : colonne "correctValue" manquante ou invalide pour le type slider.`,
     )
-    return null
+
+    
+return null
   }
+
   if (tolerance === null) {
     errors.push(
       `Ligne ${rowNum} : colonne "tolerance" manquante ou invalide pour le type slider.`,
     )
-    return null
+
+    
+return null
   }
+
   if (min >= max) {
     errors.push(
       `Ligne ${rowNum} : "min" (${min}) doit être inférieur à "max" (${max}).`,
     )
-    return null
+
+    
+return null
   }
 
   return { type: "slider", min, max, correctValue, tolerance } as Omit<
@@ -313,7 +363,7 @@ function buildSlider(
     SliderQuestion
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 function buildBase(_placeholder: unknown) {
   // Utilisé uniquement pour l'inférence de type ci-dessus
   return { type: "" as const, question: "", cooldown: 0, time: 0 }
@@ -335,9 +385,12 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
   const errors: string[] = []
 
   const parsed = parseCsvToRows(text)
+
   if (!parsed) {
     errors.push("Le fichier CSV est vide ou illisible.")
-    return { questions, errors }
+
+    
+return { questions, errors }
   }
 
   const { headers, rows } = parsed
@@ -346,11 +399,13 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
     errors.push(
       'En-tête invalide : les colonnes "type" et "question" sont obligatoires.',
     )
-    return { questions, errors }
+
+    
+return { questions, errors }
   }
 
   rows.forEach((row, i) => {
-    const rowNum = i + 2 // ligne 1 = en-tête, donc data commence à 2
+    const rowNum = i + 2 // Ligne 1 = en-tête, donc data commence à 2
 
     const typeRaw = getField(
       row,
@@ -363,14 +418,18 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
       errors.push(
         `Ligne ${rowNum} : la colonne "question" est vide — ligne ignorée.`,
       )
-      return
+
+      
+return
     }
 
     if (!(SUPPORTED_TYPES as readonly string[]).includes(typeRaw)) {
       errors.push(
         `Ligne ${rowNum} : type "${typeRaw}" non supporté (valeurs acceptées : mcq, open, slider) — ligne ignorée.`,
       )
-      return
+
+      
+return
     }
 
     const timeRaw = getField(row, headers, "time")
@@ -390,7 +449,7 @@ export function parseQuestionsCsv(text: string): CsvImportResult {
       specific = buildSlider(row, headers, rowNum, errors)
     }
 
-    if (specific === null) return
+    if (specific === null) {return}
 
     questions.push({ ...base, ...specific } as Question)
   })
@@ -413,7 +472,7 @@ export function downloadCsvTemplate(): void {
   ]
 
   const csvContent = lines.join("\n")
-  const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" })
+  const blob = new Blob([`﻿${  csvContent}`], { type: "text/csv;charset=utf-8;" })
   const url = URL.createObjectURL(blob)
 
   const link = document.createElement("a")

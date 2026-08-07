@@ -121,10 +121,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     let finalQuizz = quizz
 
-    if (
-      questionIndex >= 0 &&
-      questionIndex < quizz.questions.length
-    ) {
+    if (questionIndex >= 0 && questionIndex < quizz.questions.length) {
       finalQuizz = {
         ...quizz,
         questions: [quizz.questions[questionIndex]],

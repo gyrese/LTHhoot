@@ -5,14 +5,7 @@ import ConfigToggle from "@rahoot/web/features/quizz/components/QuestionEditor/Q
 import QuestionEditorAnswerReveal from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorAnswerReveal"
 import QuestionEditorTypeSelector from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTypeSelector"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import {
-  CheckCircle2,
-  Clock,
-  Shapes,
-  Timer,
-  Trophy,
-  Zap,
-} from "lucide-react"
+import { CheckCircle2, Clock, Shapes, Timer, Trophy, Zap } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
 

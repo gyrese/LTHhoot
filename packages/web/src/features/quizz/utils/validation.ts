@@ -9,9 +9,11 @@ export const validateQuestion = (q: Question): string[] => {
 
   if (q.type === "mcq") {
     const validAnswers = q.answers?.filter((a) => a.trim().length > 0) || []
+
     if (validAnswers.length < 2) {
       errors.push("Un QCM requiert au moins 2 propositions de réponse.")
     }
+
     if (!q.solutions || q.solutions.length === 0) {
       errors.push("Veuillez sélectionner au moins une bonne réponse.")
     }
@@ -22,6 +24,7 @@ export const validateQuestion = (q: Question): string[] => {
   } else if (q.type === "open") {
     const validCorrect =
       q.correctAnswers?.filter((a) => a.trim().length > 0) || []
+
     if (validCorrect.length === 0) {
       errors.push("Veuillez indiquer au moins une réponse textuelle acceptée.")
     }
@@ -29,6 +32,7 @@ export const validateQuestion = (q: Question): string[] => {
     if (q.correctValue === undefined || q.correctValue === null) {
       errors.push("Veuillez indiquer la valeur correcte.")
     }
+
     if (q.min === undefined || q.max === undefined || q.min >= q.max) {
       errors.push("Intervalle de valeurs du curseur invalide (Min >= Max).")
     }
@@ -36,6 +40,7 @@ export const validateQuestion = (q: Question): string[] => {
     if (q.correctYear === undefined || q.correctYear === null) {
       errors.push("Veuillez indiquer l'année correcte.")
     }
+
     if (
       q.minYear !== undefined &&
       q.maxYear !== undefined &&
@@ -47,6 +52,7 @@ export const validateQuestion = (q: Question): string[] => {
     }
   } else if (q.type === "puzzle") {
     const validItems = q.items?.filter((a) => a.trim().length > 0) || []
+
     if (validItems.length < 4) {
       errors.push("Un puzzle requiert exactement 4 éléments ordonnés.")
     }
@@ -54,6 +60,7 @@ export const validateQuestion = (q: Question): string[] => {
     if (!q.pinImage) {
       errors.push("Veuillez choisir une image d'arrière-plan.")
     }
+
     if (!q.zones || q.zones.length === 0) {
       errors.push("Veuillez dessiner au moins une zone sur l'image.")
     }

@@ -12,8 +12,13 @@ import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 
 const LayersPanel = () => {
-  const { currentQuestion, currentIndex, updateQuestion, selectedId, setSelectedId } =
-    useQuizzEditor()
+  const {
+    currentQuestion,
+    currentIndex,
+    updateQuestion,
+    selectedId,
+    setSelectedId,
+  } = useQuizzEditor()
   const { t } = useTranslation()
 
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null)
@@ -185,8 +190,7 @@ const LayersPanel = () => {
           </div>
         )
       })}
-      {(!currentQuestion.elements ||
-        currentQuestion.elements.length === 0) && (
+      {(!currentQuestion.elements || currentQuestion.elements.length === 0) && (
         <div className="text-ink-subtle flex flex-col items-center gap-2 py-6 text-center">
           <MessageSquareReply className="size-5 opacity-50" />
           <p className="text-xs">{t("quizz:question.config.noLayers")}</p>

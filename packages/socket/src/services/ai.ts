@@ -8,7 +8,8 @@ export class AIService {
 
   private static getClient(): GoogleGenAI {
     if (!this.genAI) {
-      const apiKey = process.env.GEMINI_TEXT_API_KEY || process.env.GEMINI_API_KEY
+      const apiKey =
+        process.env.GEMINI_TEXT_API_KEY || process.env.GEMINI_API_KEY
 
       if (!apiKey) {
         throw new Error(
@@ -265,7 +266,10 @@ Output MUST be a valid JSON object: { "explanation": "the explanation text" }`
 
       const parsed = JSON.parse(text)
 
-      if (typeof parsed.explanation !== "string" || !parsed.explanation.trim()) {
+      if (
+        typeof parsed.explanation !== "string" ||
+        !parsed.explanation.trim()
+      ) {
         throw new Error("Gemini response missing a valid 'explanation' string")
       }
 

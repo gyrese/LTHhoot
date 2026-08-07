@@ -36,7 +36,6 @@ const QuestionEditorConfig = () => {
     if (isYoutube) {
       setActiveInspectorPanel("element")
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, isYoutube])
 
   if (!currentQuestion) {

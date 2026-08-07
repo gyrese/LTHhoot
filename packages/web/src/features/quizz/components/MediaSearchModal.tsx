@@ -1,4 +1,12 @@
-import { useState, useEffect, useRef, useCallback, type KeyboardEvent, type ChangeEvent, type MouseEvent } from "react"
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type KeyboardEvent,
+  type ChangeEvent,
+  type MouseEvent,
+} from "react"
 import {
   X,
   Search,
@@ -65,12 +73,12 @@ const getMediaTypeFromUrl = (url: string): "image" | "video" => {
 }
 
 /** Charge un script tiers de façon asynchrone. */
-const loadScript = (src: string): Promise<void> => new Promise((resolve, reject) => {
+const loadScript = (src: string): Promise<void> =>
+  new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) {
       resolve()
 
-      
-return
+      return
     }
 
     const script = document.createElement("script")
@@ -224,7 +232,10 @@ const MediaSearchModal = ({
     const file = e.target.files?.[0]
 
     if (file) {
-      if (file.type.startsWith("video/") || file.name.toLowerCase().endsWith(".gif")) {
+      if (
+        file.type.startsWith("video/") ||
+        file.name.toLowerCase().endsWith(".gif")
+      ) {
         void handleDirectFileUpload(file)
       } else {
         const reader = new FileReader()
@@ -284,10 +295,7 @@ const MediaSearchModal = ({
     onClose()
   }
 
-  const handleDeleteLibraryItem = async (
-    item: MediaItem,
-    e: MouseEvent,
-  ) => {
+  const handleDeleteLibraryItem = async (item: MediaItem, e: MouseEvent) => {
     e.stopPropagation()
 
     if (
@@ -322,8 +330,7 @@ const MediaSearchModal = ({
     if (!clientIdInput.trim() || !developerKeyInput.trim()) {
       toast.error("Veuillez renseigner toutes les clés d'API.")
 
-      
-return
+      return
     }
 
     localStorage.setItem("gdrive_client_id", clientIdInput.trim())
@@ -362,7 +369,8 @@ return
       await new Promise<void>((resolve, reject) => {
         gapi.load("picker", {
           callback: () => resolve(),
-          onerror: () => reject(new Error("Erreur de chargement du Picker Google")),
+          onerror: () =>
+            reject(new Error("Erreur de chargement du Picker Google")),
         })
       })
 
@@ -403,7 +411,10 @@ return
             .setOAuthToken(accessToken)
             .setDeveloperKey(developerKey)
             .setCallback(async (data: any) => {
-              if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
+              if (
+                data[google.picker.Response.ACTION] ===
+                google.picker.Action.PICKED
+              ) {
                 // eslint-disable-next-line prefer-destructuring
                 const doc = data[google.picker.Response.DOCUMENTS][0]
                 const fileId = doc[google.picker.Document.ID]
@@ -434,7 +445,9 @@ return
     fileName: string,
     mimeType: string,
   ) => {
-    const importToast = toast.loading("Importation du fichier depuis Google Drive vers le serveur...")
+    const importToast = toast.loading(
+      "Importation du fichier depuis Google Drive vers le serveur...",
+    )
 
     try {
       const res = await fetch("/api/media/gdrive-import", {
@@ -456,7 +469,10 @@ return
 
       const detectedType = mimeType.startsWith("video/") ? "video" : "image"
 
-      if (detectedType === "image" && !fileName.toLowerCase().endsWith(".gif")) {
+      if (
+        detectedType === "image" &&
+        !fileName.toLowerCase().endsWith(".gif")
+      ) {
         setSelectedImageSrc(data.url)
       } else {
         onSelect(data.url, detectedType)
@@ -536,7 +552,8 @@ return
     }
   }
 
-  const executeCanvasCrop = (): Promise<string | null> => new Promise((resolve, reject) => {
+  const executeCanvasCrop = (): Promise<string | null> =>
+    new Promise((resolve, reject) => {
       const img = new Image()
       img.crossOrigin = "Anonymous"
       img.onload = () => {
@@ -843,20 +860,19 @@ return
           /* SEARCH / BROWSE WORKSPACE */
           <>
             {/* Tabs */}
-            <div className="border-border bg-border/5 flex border-b px-6 overflow-x-auto">
+            <div className="border-border bg-border/5 flex overflow-x-auto border-b px-6">
               {tabs.map((tItem) => {
                 const Icon = tItem.icon
                 const isActive = tab === tItem.id
 
-                
-return (
+                return (
                   <button
                     key={tItem.id}
                     onClick={() => {
                       setTab(tItem.id)
                       setResults([])
                     }}
-                    className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors ${
                       isActive
                         ? "border-primary text-primary"
                         : "text-ink-subtle hover:text-ink border-transparent"
@@ -898,9 +914,7 @@ return (
             <div className="scrollbar-light flex-1 overflow-y-auto p-6">
               {/* ─── BIBLIOTHÈQUE ─── */}
               {tab === "library" && (
-                <div className="space-y-4">
-                  {renderLibraryContent()}
-                </div>
+                <div className="space-y-4">{renderLibraryContent()}</div>
               )}
 
               {/* ─── UPLOAD ─── */}
@@ -918,14 +932,15 @@ return (
                         Sélectionner un fichier local
                       </p>
                       <p className="text-ink-subtle mt-1 text-xs">
-                        Glissez-déposez ou cliquez pour parcourir (Images et Vidéos)
+                        Glissez-déposez ou cliquez pour parcourir (Images et
+                        Vidéos)
                       </p>
                     </div>
                   </div>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept={allowedTypes.map(t => `${t}/*`).join(",")}
+                    accept={allowedTypes.map((t) => `${t}/*`).join(",")}
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -938,11 +953,15 @@ return (
                   {showDriveConfigForm ? (
                     <div className="border-border w-full max-w-md rounded-xl border bg-white p-6 shadow-md">
                       <div className="mb-4 flex items-center gap-2 text-zinc-800">
-                        <Settings className="size-5 text-primary" />
-                        <h3 className="font-bold">Configuration Google Drive</h3>
+                        <Settings className="text-primary size-5" />
+                        <h3 className="font-bold">
+                          Configuration Google Drive
+                        </h3>
                       </div>
                       <p className="text-ink-subtle mb-4 text-xs leading-relaxed">
-                        Pour des raisons de sécurité, vos clés API Google restent stockées localement dans votre propre navigateur et ne sont jamais transmises à des tiers.
+                        Pour des raisons de sécurité, vos clés API Google
+                        restent stockées localement dans votre propre navigateur
+                        et ne sont jamais transmises à des tiers.
                       </p>
 
                       <div className="space-y-3">
@@ -955,7 +974,7 @@ return (
                             value={clientIdInput}
                             onChange={(e) => setClientIdInput(e.target.value)}
                             placeholder="Ex: 12345-abc.apps.googleusercontent.com"
-                            className="border-border text-ink focus:border-primary w-full rounded-lg border bg-transparent p-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+                            className="border-border text-ink focus:border-primary focus:ring-primary w-full rounded-lg border bg-transparent p-2 text-xs outline-none focus:ring-1"
                           />
                         </div>
 
@@ -966,9 +985,11 @@ return (
                           <input
                             type="text"
                             value={developerKeyInput}
-                            onChange={(e) => setDeveloperKeyInput(e.target.value)}
+                            onChange={(e) =>
+                              setDeveloperKeyInput(e.target.value)
+                            }
                             placeholder="Ex: AIzaSyD..."
-                            className="border-border text-ink focus:border-primary w-full rounded-lg border bg-transparent p-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+                            className="border-border text-ink focus:border-primary focus:ring-primary w-full rounded-lg border bg-transparent p-2 text-xs outline-none focus:ring-1"
                           />
                         </div>
 
@@ -1002,7 +1023,8 @@ return (
                           Parcourir Google Drive
                         </p>
                         <p className="text-ink-subtle mt-1 max-w-xs text-xs">
-                          Connectez-vous et sélectionnez un fichier image ou vidéo directement depuis votre Drive.
+                          Connectez-vous et sélectionnez un fichier image ou
+                          vidéo directement depuis votre Drive.
                         </p>
                       </div>
 

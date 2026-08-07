@@ -74,7 +74,7 @@ const PuzzleItem = ({
           type="button"
           aria-label={t("game:puzzle.dragHandle")}
           onPointerDown={(event) => controls.start(event)}
-          className="flex size-11 shrink-0 touch-none cursor-grab flex-col items-center justify-center gap-1 rounded-xl active:cursor-grabbing active:bg-white/10"
+          className="flex size-11 shrink-0 cursor-grab touch-none flex-col items-center justify-center gap-1 rounded-xl active:cursor-grabbing active:bg-white/10"
         >
           <span className="h-0.5 w-5 rounded-full bg-white/70" />
           <span className="h-0.5 w-5 rounded-full bg-white/70" />

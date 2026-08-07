@@ -147,10 +147,11 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
   const handleAiGenerate = async (
     subject: string,
-    setImage: (url: string) => void,
-    setBusy: (v: boolean) => void,
+    _setImage: (_url: string) => void,
+    setBusy: (_v: boolean) => void,
   ) => {
     setBusy(true)
+
     try {
       const res = await fetch("/ai-image", {
         method: "POST",
@@ -169,6 +170,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
       }
 
       const data = (await res.json()) as { url: string }
+
       if (data.url) {
         setImage(data.url)
       }

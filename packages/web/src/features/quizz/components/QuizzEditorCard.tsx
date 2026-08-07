@@ -207,7 +207,7 @@ type Props = {
   isActive: boolean
   isSelected?: boolean
   canDelete: boolean
-  onClick: (_e: React.MouseEvent) => void
+  onClick: (_e: MouseEvent) => void
   onDelete: () => void
   onDuplicate: () => void
   onContextMenu?: (_e: MouseEvent) => void

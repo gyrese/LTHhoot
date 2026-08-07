@@ -72,7 +72,7 @@ export const buildOgImage = async (
     return cached.buffer
   }
 
-  let quizz
+  let quizz = null
 
   try {
     quizz = Config.quizzById(quizzId)
@@ -152,7 +152,7 @@ export const injectOgTags = (
   quizzId: string,
   origin: string,
 ): string => {
-  let quizz
+  let quizz = null
 
   try {
     quizz = Config.quizzById(quizzId)

@@ -268,8 +268,10 @@ export const QuizzEditorProvider = ({
       const keysToRemove: string[] = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
+
         if (key && key.startsWith("rahoot-backup-")) {
           const val = localStorage.getItem(key)
+
           if (val && val.includes("data:image/")) {
             keysToRemove.push(key)
           }
@@ -334,27 +336,35 @@ export const QuizzEditorProvider = ({
   const selectSlide = useCallback(
     (index: number, ctrlKey: boolean, shiftKey: boolean) => {
       const clickedId = questions[index]?.id
-      if (!clickedId) return
+
+      if (!clickedId) {return}
 
       setSelectedQuestionIds((prevSelected) => {
         if (ctrlKey) {
           if (prevSelected.includes(clickedId)) {
             const nextSelected = prevSelected.filter((id) => id !== clickedId)
+
             if (nextSelected.length === 0) {
               return [clickedId]
             }
-            return nextSelected
-          } else {
-            return [...prevSelected, clickedId]
+
+            
+return nextSelected
           }
+ 
+            
+return [...prevSelected, clickedId]
         } else if (shiftKey) {
           const start = Math.min(currentIndex, index)
           const end = Math.max(currentIndex, index)
           const rangeIds = questions.slice(start, end + 1).map((q) => q.id)
-          return rangeIds
-        } else {
-          return [clickedId]
+
+          
+return rangeIds
         }
+ 
+          
+return [clickedId]
       })
 
       handleSetCurrentIndex(index)
@@ -563,6 +573,7 @@ export const QuizzEditorProvider = ({
     const remainingActive = questions.find(
       (q, i) => !idsToDelete.includes(q.id) && i >= index,
     )
+
     if (remainingActive) {
       newActiveIndex = nextQuestions.findIndex(
         (q) => q.id === remainingActive.id,
@@ -578,7 +589,8 @@ export const QuizzEditorProvider = ({
 
   const reorderQuestions = (from: number, to: number) => {
     const draggedId = questions[from]?.id
-    if (!draggedId) return
+
+    if (!draggedId) {return}
 
     const idsToMove = selectedQuestionIds.includes(draggedId)
       ? questions
@@ -603,6 +615,7 @@ export const QuizzEditorProvider = ({
       next.splice(insertIndex, 0, ...movingQuestions)
 
       const newDraggedIndex = next.findIndex((q) => q.id === draggedId)
+
       if (newDraggedIndex !== -1) {
         setTimeout(() => {
           handleSetCurrentIndex(newDraggedIndex)
@@ -751,6 +764,7 @@ export const QuizzEditorProvider = ({
         const allErrors: { index: number; errors: string[] }[] = []
         questions.forEach((q, i) => {
           const errs = validateQuestion(q)
+
           if (errs.length > 0) {
             allErrors.push({ index: i + 1, errors: errs })
           }
@@ -762,7 +776,9 @@ export const QuizzEditorProvider = ({
             `Veuillez corriger les erreurs sur la diapositive ${first.index} : ${first.errors[0]}`,
             { id: "quizz-save" },
           )
-          return
+
+          
+return
         }
       }
 
@@ -848,9 +864,11 @@ export const QuizzEditorProvider = ({
     setIsDirty(false)
     setIsSaving(false)
     setLastSaved(new Date())
+
     if (quizzId) {
       localStorage.removeItem(`rahoot-backup-${quizzId}`)
     }
+
     toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
 
     if (pendingNavigation) {
@@ -883,8 +901,10 @@ export const QuizzEditorProvider = ({
 
   // Recovery check on load
   useEffect(() => {
-    if (!quizzId) return
+    if (!quizzId) {return}
+
     const backupStr = localStorage.getItem(`rahoot-backup-${quizzId}`)
+
     if (backupStr) {
       try {
         const backup = JSON.parse(backupStr)
@@ -898,25 +918,35 @@ export const QuizzEditorProvider = ({
   const handleApplyRestore = () => {
     if (pendingRestore) {
       if (pendingRestore.subject !== undefined)
-        setSubject(pendingRestore.subject)
+        {setSubject(pendingRestore.subject)}
+
       if (pendingRestore.publicName !== undefined)
-        setPublicName(pendingRestore.publicName)
+        {setPublicName(pendingRestore.publicName)}
+
       if (pendingRestore.description !== undefined)
-        setDescription(pendingRestore.description)
-      if (pendingRestore.folder !== undefined) setFolder(pendingRestore.folder)
-      if (pendingRestore.tags !== undefined) setTags(pendingRestore.tags)
+        {setDescription(pendingRestore.description)}
+
+      if (pendingRestore.folder !== undefined) {setFolder(pendingRestore.folder)}
+
+      if (pendingRestore.tags !== undefined) {setTags(pendingRestore.tags)}
+
       if (pendingRestore.salonImage !== undefined)
-        setSalonImage(pendingRestore.salonImage)
+        {setSalonImage(pendingRestore.salonImage)}
+
       if (pendingRestore.listingImage !== undefined)
-        setListingImage(pendingRestore.listingImage)
+        {setListingImage(pendingRestore.listingImage)}
+
       if (pendingRestore.podiumTheme !== undefined)
-        setPodiumTheme(pendingRestore.podiumTheme)
+        {setPodiumTheme(pendingRestore.podiumTheme)}
+
       if (pendingRestore.questions !== undefined) {
         setQuestions(pendingRestore.questions.map(toQuestionWithId))
       }
+
       setIsDirty(true)
       toast.success("Modifications restaurées depuis le cache local.")
     }
+
     setPendingRestore(null)
   }
 
@@ -924,12 +954,13 @@ export const QuizzEditorProvider = ({
     if (quizzId) {
       localStorage.removeItem(`rahoot-backup-${quizzId}`)
     }
+
     setPendingRestore(null)
   }
 
   // Autosave to localStorage backup
   useEffect(() => {
-    if (!quizzId || !isDirty) return
+    if (!quizzId || !isDirty) {return}
 
     const timer = setTimeout(() => {
       const backupData = {
@@ -943,6 +974,7 @@ export const QuizzEditorProvider = ({
         podiumTheme,
         questions: questions.map(({ id, ...q }) => q),
       }
+
       try {
         localStorage.setItem(
           `rahoot-backup-${quizzId}`,
@@ -1014,12 +1046,17 @@ export const QuizzEditorProvider = ({
       if (ctrl && key === "z" && !e.shiftKey) {
         e.preventDefault()
         undo()
-        return
+
+        
+return
       }
+
       if ((ctrl && key === "y") || (ctrl && key === "z" && e.shiftKey)) {
         e.preventDefault()
         redo()
-        return
+
+        
+return
       }
 
       // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
@@ -1031,8 +1068,11 @@ export const QuizzEditorProvider = ({
           e.preventDefault()
           reorderQuestions(currentIndex, currentIndex - 1)
         }
-        return
+
+        
+return
       }
+
       if (
         (e.key === "ArrowDown" || e.key === "ArrowRight") &&
         (ctrl || e.altKey)
@@ -1041,7 +1081,9 @@ export const QuizzEditorProvider = ({
           e.preventDefault()
           reorderQuestions(currentIndex, currentIndex + 1)
         }
-        return
+
+        
+return
       }
 
       // ─── Navigation entre slides (Flèches simples) ───
@@ -1062,8 +1104,11 @@ export const QuizzEditorProvider = ({
           e.preventDefault()
           handleSetCurrentIndex(currentIndex - 1)
         }
-        return
+
+        
+return
       }
+
       if (
         (e.key === "ArrowDown" || e.key === "ArrowRight") &&
         !ctrl &&
@@ -1074,7 +1119,6 @@ export const QuizzEditorProvider = ({
           e.preventDefault()
           handleSetCurrentIndex(currentIndex + 1)
         }
-        return
       }
     }
 

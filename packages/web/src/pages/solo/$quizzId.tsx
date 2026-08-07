@@ -1,6 +1,5 @@
 import { SoloQuizView } from "@rahoot/web/features/game/components/solo/SoloQuizView"
 import { createFileRoute, useParams } from "@tanstack/react-router"
-import React from "react"
 
 const SoloPage = () => {
   const { quizzId } = useParams({ from: "/solo/$quizzId" })

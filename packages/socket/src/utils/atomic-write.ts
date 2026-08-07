@@ -9,10 +9,7 @@ import { dirname } from "path"
 //
 // Généralise le motif qui n'existait que dans services/persistence.ts, désormais
 // partagé par la persistance d'état ET les écritures de quiz/résultats (config).
-export const writeFileAtomic = (
-  filePath: string,
-  data: string,
-): void => {
+export const writeFileAtomic = (filePath: string, data: string): void => {
   const tmpPath = `${filePath}.tmp`
 
   // Le dossier cible peut ne pas exister encore (premier quiz, dossier results…).

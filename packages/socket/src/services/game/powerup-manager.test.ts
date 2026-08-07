@@ -67,7 +67,10 @@ describe("PowerUpManager", () => {
 
       const res = mgr.buyPowerUp(player, POWER_UP_TYPE.SHIELD)
 
-      expect(res).toEqual({ success: false, error: "errors:shop.inventoryFull" })
+      expect(res).toEqual({
+        success: false,
+        error: "errors:shop.inventoryFull",
+      })
       expect(mgr.getPlayerPowerUps("a")).toHaveLength(3)
     })
   })

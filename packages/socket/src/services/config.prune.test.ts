@@ -58,9 +58,7 @@ describe("pruneOrphanUploads", () => {
   })
 
   it("garde les fichiers référencés (même anciens) et récents, ne retire que les orphelins anciens", async () => {
-    const { default: Config } = await import(
-      "@rahoot/socket/services/config"
-    )
+    const { default: Config } = await import("@rahoot/socket/services/config")
 
     // Dry-run : liste l'orphelin sans rien supprimer.
     const dry = Config.pruneOrphanUploads({ dryRun: true })

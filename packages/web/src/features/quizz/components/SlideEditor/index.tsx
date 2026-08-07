@@ -100,6 +100,7 @@ const SlideEditor = ({
 
   const duplicateSelection = () => {
     let idsToDuplicate: string[] = []
+
     if (hasMultiSelection) {
       idsToDuplicate = selectedIds
     } else if (selectedId) {
@@ -342,6 +343,7 @@ const SlideEditor = ({
         }
 
         let idsToMove: string[] = []
+
         if (hasMultiSelection) {
           idsToMove = selectedIds
         } else if (selectedId) {

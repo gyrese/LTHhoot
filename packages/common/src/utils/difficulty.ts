@@ -23,7 +23,7 @@ export type DifficultySlice = {
  */
 export const distributeDifficulties = (
   count: number,
-  difficulties: QuestionDifficulty[],
+  difficulties: readonly QuestionDifficulty[],
 ): DifficultySlice[] => {
   const selected = DIFFICULTY_ORDER.filter((d) => difficulties.includes(d))
 

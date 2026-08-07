@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { EVENTS } from "@rahoot/common/constants"
 import type {
   Answer,

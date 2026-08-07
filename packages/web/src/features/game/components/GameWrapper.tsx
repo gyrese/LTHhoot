@@ -137,6 +137,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     EVENTS.POWER_UP.COINS,
     ({ coins: balance, disabledPowerUps: list }) => {
       setCoins(balance)
+
       if (list) {
         setDisabledPowerUps(list)
       }
@@ -230,6 +231,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     if (isDisabled) {
       return
     }
+
     setIsDisabled(true)
     onNext?.()
   }
@@ -264,6 +266,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       }
 
       const target = e.target as HTMLElement | null
+
       if (!target) {
         return
       }
@@ -383,7 +386,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                     onClick={handleNext}
                     disabled={isDisabled}
                     className={clsx(
-                      // ml-auto : sans le compteur (écran salon), justify-between
+                      // Ml-auto : sans le compteur (écran salon), justify-between
                       // collerait le bouton à gauche, sous « Fermer la session ».
                       "pointer-events-auto ml-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
                       isDisabled && "pointer-events-none opacity-50",

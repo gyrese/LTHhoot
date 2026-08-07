@@ -8,8 +8,6 @@ import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { useNavigate } from "@tanstack/react-router"
 import {
   Check,
-  Download,
-  FileDown,
   Plus,
   Search,
   SquarePen,
@@ -18,7 +16,7 @@ import {
   X,
   Share2,
 } from "lucide-react"
-import React, { type ChangeEvent, useMemo, useRef, useState } from "react"
+import { type ChangeEvent, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ShareSocialModal } from "@rahoot/web/features/manager/components/ShareSocialModal"
 import {
@@ -167,18 +165,6 @@ const QuizzPanel = ({
 
     reader.readAsText(file)
     e.target.value = ""
-  }
-
-  const handleExport = (id: string) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    exportTypeRef.current = "json"
-    socket?.emit(EVENTS.QUIZZ.GET, id)
-  }
-
-  const handleExportPptx = (id: string) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    exportTypeRef.current = "pptx"
-    socket?.emit(EVENTS.QUIZZ.GET, id)
   }
 
   const filtered = useMemo(

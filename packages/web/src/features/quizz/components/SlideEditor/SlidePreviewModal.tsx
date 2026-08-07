@@ -118,7 +118,11 @@ const SlidePreviewModal = ({ onClose }: Props) => {
       {/* Barre basse : quitter / navigation / démonstration */}
       <div className="relative z-10 grid grid-cols-3 items-center gap-4 px-4 pb-4">
         <div className="justify-self-start">
-          <Button variant="ghost" className="gap-2 text-white" onClick={onClose}>
+          <Button
+            variant="ghost"
+            className="gap-2 text-white"
+            onClick={onClose}
+          >
             <ArrowLeft className="size-4" />
             {t("common:exit", "Quitter")}
           </Button>

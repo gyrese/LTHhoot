@@ -19,7 +19,7 @@ type NavigatorWithWakeLock = Navigator & {
 // non supporté) = non bloquant, on retombe sur le watchdog de reconnexion.
 const useWakeLock = () => {
   useEffect(() => {
-    const wakeLock = (navigator as NavigatorWithWakeLock).wakeLock
+    const {wakeLock} = (navigator as NavigatorWithWakeLock)
 
     if (!wakeLock) {
       return
