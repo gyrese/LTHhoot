@@ -224,8 +224,7 @@ app.post(
     if (!subject || typeof subject !== "string" || !subject.trim()) {
       res.status(400).json({ error: "Sujet requis pour la génération d'image" })
 
-      
-return
+      return
     }
 
     const apiKey =
@@ -239,8 +238,7 @@ return
         error: "Clé API Gemini Image/Globale non configurée sur le serveur",
       })
 
-      
-return
+      return
     }
 
     const IMAGE_STYLES = [
@@ -410,8 +408,7 @@ app.get(
     if (!query || !query.trim()) {
       res.status(400).json({ error: "Query parameter is required" })
 
-      
-return
+      return
     }
 
     const accessKey = process.env.UNSPLASH_ACCESS_KEY
@@ -421,8 +418,7 @@ return
         .status(400)
         .json({ error: "UNSPLASH_ACCESS_KEY non configurée sur le serveur" })
 
-      
-return
+      return
     }
 
     try {
@@ -477,8 +473,7 @@ app.get(
     if (!query || !query.trim()) {
       res.status(400).json({ error: "Query parameter is required" })
 
-      
-return
+      return
     }
 
     const apiKey = process.env.GIPHY_API_KEY
@@ -488,8 +483,7 @@ return
         .status(400)
         .json({ error: "GIPHY_API_KEY non configurée sur le serveur" })
 
-      
-return
+      return
     }
 
     try {
