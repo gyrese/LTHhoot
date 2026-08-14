@@ -1,5 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
+import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
 import {
   useEvent,
   useSocket,
@@ -46,7 +47,7 @@ const OpenAnswersManager = ({
   }
 
   const unique = Array.from(
-    new Map(answers.map((a) => [a.text.trim().toLowerCase(), a])).values(),
+    new Map(answers.map((a) => [normalizeAnswer(a.text), a])).values(),
   )
 
   return (
@@ -75,17 +76,12 @@ const OpenAnswersManager = ({
 
       <div className="flex w-full max-w-5xl flex-wrap justify-center gap-3">
         {unique.map((answer) => {
-          const count = answers.filter(
-            (a) =>
-              a.text.trim().toLowerCase() === answer.text.trim().toLowerCase(),
-          ).length
-          const players = answers
-            .filter(
-              (a) =>
-                a.text.trim().toLowerCase() ===
-                answer.text.trim().toLowerCase(),
-            )
-            .map((a) => a.playerName)
+          const key = normalizeAnswer(answer.text)
+          const sameAnswers = answers.filter(
+            (a) => normalizeAnswer(a.text) === key,
+          )
+          const count = sameAnswers.length
+          const players = sameAnswers.map((a) => a.playerName)
 
           return (
             <button

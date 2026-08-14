@@ -1,5 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Question } from "@rahoot/common/types/game"
+import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
 import { SOLO_DRAW_POOL_SIZE } from "@rahoot/common/utils/result-kind"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
@@ -317,15 +318,15 @@ return false
 
     const timeSpent = Date.now() - questionStartTime
     let correct = false
-    const text = textInput.trim().toLowerCase()
+    const text = normalizeAnswer(textInput)
 
     if (currentQuestion.type === "open") {
       if (Array.isArray(currentQuestion.correctAnswers)) {
         correct = currentQuestion.correctAnswers.some(
-          (ca: string) => ca.trim().toLowerCase() === text,
+          (ca: string) => normalizeAnswer(ca) === text,
         )
       } else if (typeof (currentQuestion as any).answer === "string") {
-        correct = (currentQuestion as any).answer.trim().toLowerCase() === text
+        correct = normalizeAnswer((currentQuestion as any).answer) === text
       }
     }
 

@@ -4,6 +4,7 @@ import type {
   GameResultPlayer,
   PlayerAnswerRecord,
 } from "@rahoot/common/types/game"
+import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import {
   SOLO_RESULT_ID_PREFIX,
@@ -145,15 +146,17 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
             }
 
             case "open": {
-              const text = playerAns.textAnswer?.trim().toLowerCase()
+              const text = playerAns.textAnswer
+                ? normalizeAnswer(playerAns.textAnswer)
+                : ""
 
               if (text) {
                 if (Array.isArray(q.correctAnswers)) {
                   isCorrect = q.correctAnswers.some(
-                    (ca: string) => ca.trim().toLowerCase() === text,
+                    (ca: string) => normalizeAnswer(ca) === text,
                   )
                 } else if (typeof q.answer === "string") {
-                  isCorrect = q.answer.trim().toLowerCase() === text
+                  isCorrect = normalizeAnswer(q.answer) === text
                 }
               }
 

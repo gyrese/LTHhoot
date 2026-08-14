@@ -147,7 +147,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
 
   const handleAiGenerate = async (
     subject: string,
-    _setImage: (_url: string) => void,
+    setImage: (_url: string) => void,
     setBusy: (_v: boolean) => void,
   ) => {
     setBusy(true)

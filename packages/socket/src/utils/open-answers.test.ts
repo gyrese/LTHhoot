@@ -50,6 +50,18 @@ describe("buildOpenAnswersList", () => {
     ])
   })
 
+  it("ignore les accents pour juger la validité", () => {
+    const answers: Answer[] = [
+      buildAnswer({ playerId: "p1", textAnswer: "Éléphant" }),
+    ]
+
+    const result = buildOpenAnswersList(answers, players, ["elephant"])
+
+    expect(result).toEqual([
+      { text: "Éléphant", playerName: "Alice", isCorrect: true },
+    ])
+  })
+
   it("filtre les réponses sans texte (undefined ou chaîne vide)", () => {
     const answers: Answer[] = [
       buildAnswer({ playerId: "p1", textAnswer: undefined }),
