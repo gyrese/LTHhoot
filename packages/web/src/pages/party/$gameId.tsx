@@ -64,11 +64,14 @@ const PlayerGamePage = () => {
 
   // UseSocket déplacé en haut
 
-  useEffect(() => () => {
+  useEffect(
+    () => () => {
       console.log("[DEBUG] PlayerGamePage unmounted, cleaning up store")
       reset()
       setQuestionStates(null)
-    }, [reset, setQuestionStates])
+    },
+    [reset, setQuestionStates],
+  )
 
   // GAME.RESET est toujours traité : le serveur ne l'émet plus lors d'un
   // takeover du même clientId (retiré côté serveur), donc chaque RESET restant

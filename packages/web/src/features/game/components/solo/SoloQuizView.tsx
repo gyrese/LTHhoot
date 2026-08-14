@@ -114,7 +114,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   // Enchaînement automatique vers la question suivante après 2.2 secondes (animation fluide sans clic)
   useEffect(() => {
-    if (!hasSubmittedAnswer || step !== "QUESTION") {return}
+    if (!hasSubmittedAnswer || step !== "QUESTION") {
+      return
+    }
 
     const timer = setTimeout(() => {
       handleNextQuestion()
@@ -125,7 +127,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   // Décompte de l'écran de règles → démarrage automatique du quiz
   useEffect(() => {
-    if (step !== "RULES") {return}
+    if (step !== "RULES") {
+      return
+    }
 
     if (rulesCountdown <= 0) {
       launchFirstQuestion()
@@ -156,7 +160,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   // Timer question
   useEffect(() => {
-    if (step !== "QUESTION" || hasSubmittedAnswer) {return}
+    if (step !== "QUESTION" || hasSubmittedAnswer) {
+      return
+    }
 
     const initialTime = currentQuestion?.time || 20
     const endTime = questionStartTime + initialTime * 1000
@@ -185,7 +191,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const currentQuestion = quizz?.questions[currentQuestionIdx]
 
   const handleTimeOut = () => {
-    if (hasSubmittedAnswer) {return}
+    if (hasSubmittedAnswer) {
+      return
+    }
 
     setHasSubmittedAnswer(true)
     setIsCorrectAnswer(false)
@@ -204,15 +212,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     if (!playerName.trim()) {
       toast.error("Veuillez entrer un pseudo")
 
-      
-return
+      return
     }
 
     if (!isHumanChecked) {
       toast.error("Merci de confirmer que vous n'êtes pas un robot")
 
-      
-return
+      return
     }
 
     setStartedAt(Date.now())
@@ -240,12 +246,18 @@ return
   }
 
   const checkIsAnswerCorrect = (q: any, ansIdx: number): boolean => {
-    if (!q) {return false}
+    if (!q) {
+      return false
+    }
 
     if (q.type === "mcq" || !q.type) {
-      if (Array.isArray(q.solutions)) {return q.solutions.includes(ansIdx)}
+      if (Array.isArray(q.solutions)) {
+        return q.solutions.includes(ansIdx)
+      }
 
-      if (typeof q.solution === "number") {return q.solution === ansIdx}
+      if (typeof q.solution === "number") {
+        return q.solution === ansIdx
+      }
 
       if (Array.isArray(q.answers) && q.answers[ansIdx]) {
         return typeof q.answers[ansIdx] === "object"
@@ -255,7 +267,9 @@ return
     }
 
     if (q.type === "true_false") {
-      if (typeof q.solution === "number") {return q.solution === ansIdx}
+      if (typeof q.solution === "number") {
+        return q.solution === ansIdx
+      }
 
       if (Array.isArray(q.answers) && q.answers[ansIdx]) {
         return typeof q.answers[ansIdx] === "object"
@@ -264,12 +278,13 @@ return
       }
     }
 
-    
-return false
+    return false
   }
 
   const handleAnswerSelect = (ansIdx: number) => {
-    if (hasSubmittedAnswer || !currentQuestion) {return}
+    if (hasSubmittedAnswer || !currentQuestion) {
+      return
+    }
 
     sfxPop()
     setSelectedAnswer(ansIdx)
@@ -308,9 +323,13 @@ return false
   const handleOpenTextSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (hasSubmittedAnswer || !currentQuestion) {return}
+    if (hasSubmittedAnswer || !currentQuestion) {
+      return
+    }
 
-    if (!textInput.trim()) {return}
+    if (!textInput.trim()) {
+      return
+    }
 
     sfxPop()
     setSelectedAnswer(textInput)
@@ -352,7 +371,9 @@ return false
   }
 
   const handleNextQuestion = () => {
-    if (!quizz) {return}
+    if (!quizz) {
+      return
+    }
 
     setLastPointsAdded(0)
 
@@ -370,14 +391,14 @@ return false
       setProgress(100)
       sfxShow()
     } else if (socket) {
-        socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT, {
-          quizzId: quizz.id,
-          playerName,
-          socialContact,
-          answers: answersRecords,
-          human: { hp: honeypot, startedAt },
-        })
-      }
+      socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT, {
+        quizzId: quizz.id,
+        playerName,
+        socialContact,
+        answers: answersRecords,
+        human: { hp: honeypot, startedAt },
+      })
+    }
   }
 
   if (!quizz) {
@@ -651,8 +672,11 @@ return false
                     let btnState: boolean | undefined = undefined
 
                     if (hasSubmittedAnswer) {
-                      if (isCorrect) {btnState = true}
-                      else if (isSelected) {btnState = false}
+                      if (isCorrect) {
+                        btnState = true
+                      } else if (isSelected) {
+                        btnState = false
+                      }
                     }
 
                     return (
@@ -912,10 +936,7 @@ return false
               <p className="mb-6 rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-xs text-gray-300">
                 Le tirage au sort du gagnant aura lieu en fin de semaine parmi
                 le{" "}
-                <strong>
-                  Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores
-                </strong>
-                .
+                <strong>Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores</strong>.
               </p>
 
               <button

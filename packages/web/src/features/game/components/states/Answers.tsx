@@ -95,8 +95,7 @@ const Answers = ({
     const initialCooldown =
       storeCooldown && storeCooldown > 0 ? storeCooldown : time
 
-    
-return Date.now() + initialCooldown * 1000
+    return Date.now() + initialCooldown * 1000
   })
   const [cooldown, setCooldown] = useState(() =>
     storeCooldown && storeCooldown > 0 ? storeCooldown : time,

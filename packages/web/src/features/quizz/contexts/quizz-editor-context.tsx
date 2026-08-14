@@ -220,7 +220,9 @@ const buildDefaultForType = (
         ...base,
         type: "grid",
         cellsPerRow: balancedColumns(DEFAULT_GRID_CELLS),
-        cells: Array.from({ length: DEFAULT_GRID_CELLS }, () => ({ image: "" })),
+        cells: Array.from({ length: DEFAULT_GRID_CELLS }, () => ({
+          image: "",
+        })),
         correctIndexes: [0],
       }
 
@@ -356,7 +358,9 @@ export const QuizzEditorProvider = ({
     (index: number, ctrlKey: boolean, shiftKey: boolean) => {
       const clickedId = questions[index]?.id
 
-      if (!clickedId) {return}
+      if (!clickedId) {
+        return
+      }
 
       setSelectedQuestionIds((prevSelected) => {
         if (ctrlKey) {
@@ -367,23 +371,19 @@ export const QuizzEditorProvider = ({
               return [clickedId]
             }
 
-            
-return nextSelected
+            return nextSelected
           }
- 
-            
-return [...prevSelected, clickedId]
+
+          return [...prevSelected, clickedId]
         } else if (shiftKey) {
           const start = Math.min(currentIndex, index)
           const end = Math.max(currentIndex, index)
           const rangeIds = questions.slice(start, end + 1).map((q) => q.id)
 
-          
-return rangeIds
+          return rangeIds
         }
- 
-          
-return [clickedId]
+
+        return [clickedId]
       })
 
       handleSetCurrentIndex(index)
@@ -609,7 +609,9 @@ return [clickedId]
   const reorderQuestions = (from: number, to: number) => {
     const draggedId = questions[from]?.id
 
-    if (!draggedId) {return}
+    if (!draggedId) {
+      return
+    }
 
     const idsToMove = selectedQuestionIds.includes(draggedId)
       ? questions
@@ -796,8 +798,7 @@ return [clickedId]
             { id: "quizz-save" },
           )
 
-          
-return
+          return
         }
       }
 
@@ -920,7 +921,9 @@ return
 
   // Recovery check on load
   useEffect(() => {
-    if (!quizzId) {return}
+    if (!quizzId) {
+      return
+    }
 
     const backupStr = localStorage.getItem(`rahoot-backup-${quizzId}`)
 
@@ -936,27 +939,37 @@ return
 
   const handleApplyRestore = () => {
     if (pendingRestore) {
-      if (pendingRestore.subject !== undefined)
-        {setSubject(pendingRestore.subject)}
+      if (pendingRestore.subject !== undefined) {
+        setSubject(pendingRestore.subject)
+      }
 
-      if (pendingRestore.publicName !== undefined)
-        {setPublicName(pendingRestore.publicName)}
+      if (pendingRestore.publicName !== undefined) {
+        setPublicName(pendingRestore.publicName)
+      }
 
-      if (pendingRestore.description !== undefined)
-        {setDescription(pendingRestore.description)}
+      if (pendingRestore.description !== undefined) {
+        setDescription(pendingRestore.description)
+      }
 
-      if (pendingRestore.folder !== undefined) {setFolder(pendingRestore.folder)}
+      if (pendingRestore.folder !== undefined) {
+        setFolder(pendingRestore.folder)
+      }
 
-      if (pendingRestore.tags !== undefined) {setTags(pendingRestore.tags)}
+      if (pendingRestore.tags !== undefined) {
+        setTags(pendingRestore.tags)
+      }
 
-      if (pendingRestore.salonImage !== undefined)
-        {setSalonImage(pendingRestore.salonImage)}
+      if (pendingRestore.salonImage !== undefined) {
+        setSalonImage(pendingRestore.salonImage)
+      }
 
-      if (pendingRestore.listingImage !== undefined)
-        {setListingImage(pendingRestore.listingImage)}
+      if (pendingRestore.listingImage !== undefined) {
+        setListingImage(pendingRestore.listingImage)
+      }
 
-      if (pendingRestore.podiumTheme !== undefined)
-        {setPodiumTheme(pendingRestore.podiumTheme)}
+      if (pendingRestore.podiumTheme !== undefined) {
+        setPodiumTheme(pendingRestore.podiumTheme)
+      }
 
       if (pendingRestore.questions !== undefined) {
         setQuestions(pendingRestore.questions.map(toQuestionWithId))
@@ -979,7 +992,9 @@ return
 
   // Autosave to localStorage backup
   useEffect(() => {
-    if (!quizzId || !isDirty) {return}
+    if (!quizzId || !isDirty) {
+      return
+    }
 
     const timer = setTimeout(() => {
       const backupData = {
@@ -1066,16 +1081,14 @@ return
         e.preventDefault()
         undo()
 
-        
-return
+        return
       }
 
       if ((ctrl && key === "y") || (ctrl && key === "z" && e.shiftKey)) {
         e.preventDefault()
         redo()
 
-        
-return
+        return
       }
 
       // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
@@ -1088,8 +1101,7 @@ return
           reorderQuestions(currentIndex, currentIndex - 1)
         }
 
-        
-return
+        return
       }
 
       if (
@@ -1101,8 +1113,7 @@ return
           reorderQuestions(currentIndex, currentIndex + 1)
         }
 
-        
-return
+        return
       }
 
       // ─── Navigation entre slides (Flèches simples) ───
@@ -1124,8 +1135,7 @@ return
           handleSetCurrentIndex(currentIndex - 1)
         }
 
-        
-return
+        return
       }
 
       if (

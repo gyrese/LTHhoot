@@ -74,7 +74,9 @@ Testez vos connaissances et tentez de remporter le tirage au sort parmi les 10 m
   const handleDownloadQR = () => {
     const svg = document.getElementById("quiz-share-qr")
 
-    if (!svg) {return}
+    if (!svg) {
+      return
+    }
 
     const svgData = new XMLSerializer().serializeToString(svg)
     const canvas = document.createElement("canvas")
@@ -97,8 +99,7 @@ Testez vos connaissances et tentez de remporter le tirage au sort parmi les 10 m
       }
     }
 
-    img.src =
-      `data:image/svg+xml;base64,${  btoa(unescape(encodeURIComponent(svgData)))}`
+    img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`
   }
 
   return (

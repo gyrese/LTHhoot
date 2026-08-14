@@ -770,7 +770,10 @@ const addGridAnswers = async (
       w: cellW,
       h: cellH,
       fill: { color: "000000", transparency: 60 },
-      line: { color: isCorrect ? "26890c" : "FFFFFF", width: isCorrect ? 3 : 1 },
+      line: {
+        color: isCorrect ? "26890c" : "FFFFFF",
+        width: isCorrect ? 3 : 1,
+      },
       rectRadius: 0.08,
     })
 

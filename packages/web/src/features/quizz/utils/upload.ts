@@ -46,8 +46,7 @@ export const uploadImageToServer = async (
     const data = (await res.json()) as { url: string }
     toast.success("Image importée !", { id: loadingToast })
 
-    
-return data.url
+    return data.url
   } catch (err) {
     console.error("Upload error:", err)
     toast.error("Échec de l'upload de l'image.", { id: loadingToast })

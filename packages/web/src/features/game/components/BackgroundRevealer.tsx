@@ -17,12 +17,10 @@ function createPRNG(seedString: string) {
   }
   let state = h >>> 0
 
-  
-return () => {
+  return () => {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0
 
-    
-return state / 4294967296
+    return state / 4294967296
   }
 }
 
@@ -45,8 +43,7 @@ export const BackgroundRevealer = ({
       const c = i % gridCols
       const r = Math.floor(i / gridCols)
 
-      
-return { index: i, c, r }
+      return { index: i, c, r }
     })
 
     const rand = seedString ? createPRNG(seedString) : Math.random
@@ -147,15 +144,13 @@ return { index: i, c, r }
         }
       }
 
-      
-return { index: cell.index, score }
+      return { index: cell.index, score }
     })
 
     cellsWithScore.sort((a, b) => a.score - b.score)
     const seq = cellsWithScore.map((c) => c.index)
 
-    
-return { sequence: seq, selectedStyle }
+    return { sequence: seq, selectedStyle }
   }, [totalCells, gridCols, gridRows, seedString, configuredStyle])
 
   // Timer à haute fréquence unifié pour animer de manière ultra-fluide (60 FPS)
@@ -165,8 +160,7 @@ return { sequence: seq, selectedStyle }
     if (duration <= 0) {
       setProgress(1)
 
-      
-return
+      return
     }
 
     const initialProgress = Math.min(1, startTimeOffset / duration)
@@ -194,7 +188,9 @@ return
 
   // Préchargement de l'image pour le mode dépixélisation canvas
   useEffect(() => {
-    if (selectedStyle !== "pixelate" || !imageUrl) {return}
+    if (selectedStyle !== "pixelate" || !imageUrl) {
+      return
+    }
 
     const img = new Image()
     img.crossOrigin = "anonymous"
@@ -206,34 +202,38 @@ return
 
   // Rendu Canvas pour Dépixélisation & Neige TV (Glitch)
   useEffect(() => {
-    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {return}
+    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
+      return
+    }
 
     const canvas = canvasRef.current
 
-    if (!canvas) {return}
+    if (!canvas) {
+      return
+    }
 
     const ctx = canvas.getContext("2d")
 
-    if (!ctx) {return}
+    if (!ctx) {
+      return
+    }
 
-    const {width} = canvas
-    const {height} = canvas
+    const { width } = canvas
+    const { height } = canvas
 
-    if (width === 0 || height === 0) {return}
+    if (width === 0 || height === 0) {
+      return
+    }
 
     if (progress >= 1) {
       ctx.clearRect(0, 0, width, height)
 
-      
-return
+      return
     }
 
     if (selectedStyle === "pixelate") {
       const img = loadedImageRef.current
-      const blockSize = Math.max(
-        1,
-        Math.round((1 - progress)**2.2 * 80),
-      )
+      const blockSize = Math.max(1, Math.round((1 - progress) ** 2.2 * 80))
 
       ctx.imageSmoothingEnabled = false
 
@@ -251,9 +251,9 @@ return
           const imgRatio = img.width / img.height
           const canvasRatio = width / height
           let sx = 0
-            let sy = 0
-            let sw = img.width
-            let sh = img.height
+          let sy = 0
+          let sw = img.width
+          let sh = img.height
 
           if (imgRatio > canvasRatio) {
             sw = img.height * canvasRatio
@@ -277,7 +277,7 @@ return
       ctx.clearRect(0, 0, width, height)
       const opacity = 1 - progress
       const imageData = ctx.createImageData(width, height)
-      const {data} = imageData
+      const { data } = imageData
 
       for (let i = 0; i < data.length; i += 4) {
         const val = Math.floor(Math.random() * 255)
@@ -298,11 +298,15 @@ return
 
   // Redimensionnement du Canvas
   useEffect(() => {
-    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {return}
+    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
+      return
+    }
 
     const canvas = canvasRef.current
 
-    if (!canvas) {return}
+    if (!canvas) {
+      return
+    }
 
     const updateSize = () => {
       const rect = canvas.getBoundingClientRect()
@@ -317,13 +321,14 @@ return
     const ro = new ResizeObserver(updateSize)
     ro.observe(canvas)
 
-    
-return () => ro.disconnect()
+    return () => ro.disconnect()
   }, [selectedStyle])
 
   // ─── 1. MODE CANVASES (Pixelate & Glitch) ──────────────────────────────────
   if (selectedStyle === "pixelate" || selectedStyle === "glitch") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     return (
       <canvas
@@ -335,7 +340,9 @@ return () => ro.disconnect()
 
   // ─── 2. MODE OPTIQUE & SPÉCIAUX (Blur, Iris, Spotlight, Thermal) ────────────
   if (selectedStyle === "blur") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const currentBlur = 40 * (1 - progress)
     const overlayOpacity = 1 - progress
@@ -355,12 +362,13 @@ return () => ro.disconnect()
   }
 
   if (selectedStyle === "iris") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const radiusPercent = progress * 140
 
-    
-return (
+    return (
       <div
         className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
         style={{
@@ -372,7 +380,9 @@ return (
   }
 
   if (selectedStyle === "spotlight") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const time = progress * 10
 
@@ -399,12 +409,13 @@ return (
   }
 
   if (selectedStyle === "thermal") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const factor = 1 - progress
 
-    
-return (
+    return (
       <div
         className="pointer-events-none absolute inset-0 z-[5] transition-all duration-100 select-none"
         style={{
@@ -418,12 +429,13 @@ return (
 
   // ─── 3. MODE ÉLÉMENTS & MATIÈRES (Burn, Ink, Printer) ──────────────────────
   if (selectedStyle === "printer") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const topPct = progress * 100
 
-    
-return (
+    return (
       <div className="pointer-events-none absolute inset-0 z-[5] select-none">
         <div
           className="absolute inset-0 bg-[#090d16]"
@@ -440,12 +452,13 @@ return (
   }
 
   if (selectedStyle === "burn") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const r = progress * 140
 
-    
-return (
+    return (
       <div
         className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
         style={{
@@ -464,12 +477,13 @@ return (
   }
 
   if (selectedStyle === "ink") {
-    if (progress >= 1) {return null}
+    if (progress >= 1) {
+      return null
+    }
 
     const r = progress * 130
 
-    
-return (
+    return (
       <div
         className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
         style={{
@@ -481,7 +495,9 @@ return (
   }
 
   // ─── 4. MODE GRILLES & GÉOMÉTRIE (HoneyComb, Puzzle, Cases Standard) ────────
-  if (progress >= 1) {return null}
+  if (progress >= 1) {
+    return null
+  }
 
   const revealedCount = Math.floor(progress * totalCells)
   const revealedSet = new Set(sequence.slice(0, revealedCount))
@@ -629,8 +645,7 @@ return (
       {Array.from({ length: totalCells }).map((_, index) => {
         const isRevealed = revealedSet.has(index)
 
-        
-return (
+        return (
           <div
             key={index}
             className="relative transition-all select-none"

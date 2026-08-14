@@ -54,8 +54,7 @@ const getSolutionText = (q: Question): string | undefined => {
   if (q.type === "mcq") {
     const solutions = Array.isArray(q.solutions) ? q.solutions : []
 
-    
-return solutions
+    return solutions
       .map((i) => q.answers?.[i])
       .filter((a): a is string => Boolean(a && a.trim()))
       .join(", ")
@@ -99,8 +98,7 @@ return solutions
       .join(", ")
   }
 
-  
-return undefined
+  return undefined
 }
 
 const QuestionEditorAnswerReveal = () => {
@@ -221,7 +219,7 @@ const QuestionEditorAnswerReveal = () => {
   }
 
   const handleChangeYoutube = (e: ChangeEvent<HTMLInputElement>) => {
-    const {value} = e.target
+    const { value } = e.target
     setYoutubeUrl(value)
     const videoId = parseVideoId(value)
     updateReveal({ videoId: videoId ?? undefined })
