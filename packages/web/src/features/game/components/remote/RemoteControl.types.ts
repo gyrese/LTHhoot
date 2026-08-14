@@ -23,6 +23,7 @@ export const QUESTION_TYPE_LABELS = new Map<string, string>([
   ["slider", "Curseur"],
   ["puzzle", "Puzzle"],
   ["drop_pin", "Carte"],
+  ["grid", "Grille"],
   ["title", "Titre"],
 ])
 

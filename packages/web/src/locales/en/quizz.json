@@ -82,6 +82,7 @@
   "questionType": {
     "title": "Question type",
     "date": "Date",
+    "grid": "Grid",
     "drop_pin": "Drop Pin",
     "mcq": "Multiple Choice",
     "open": "Open Answer",
@@ -95,6 +96,17 @@
     "hint": "Order the items correctly. Players will receive a shuffled version.",
     "itemPlaceholder": "Add an item...",
     "itemsLabel": "Items (in correct order)"
+  },
+  "grid": {
+    "countLabel": "Number of tiles",
+    "addCell": "Add a tile",
+    "removeCell": "Remove a tile",
+    "hint": "Drag an image onto a tile, or click to pick one. Then mark the correct tile(s).",
+    "pickImage": "Pick an image",
+    "removeImage": "Remove image",
+    "labelPlaceholder": "Label (optional)",
+    "correct": "Correct",
+    "mark": "Mark"
   },
   "imageSequence": {
     "imagesLabel": "Images (reveal order)",

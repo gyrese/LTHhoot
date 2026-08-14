@@ -8,6 +8,8 @@ import {
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react"
+import type { GridCell } from "@rahoot/common/types/game"
+import GridBoard from "@rahoot/web/features/game/components/GridBoard"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -130,6 +132,54 @@ export const PuzzleAnswer = ({
       <button
         type="button"
         disabled={submitted}
+        onClick={handleSubmit}
+        className="w-full shrink-0 rounded-2xl bg-yellow-500 py-4 text-xl font-black tracking-wider text-white uppercase shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:scale-[1.02] hover:bg-yellow-600 active:scale-95 disabled:opacity-40"
+      >
+        {submitted ? t("game:answerSent") : t("common:submit")}
+      </button>
+    </div>
+  )
+}
+
+// ── Grille ────────────────────────────────────────────────────────────────────
+
+export const GridAnswer = ({
+  cells,
+  cellsPerRow,
+  onAnswer,
+}: {
+  cells: GridCell[]
+  cellsPerRow: number
+  onAnswer: (_index: number) => void
+}) => {
+  const [selected, setSelected] = useState<number | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+  const { t } = useTranslation()
+
+  const handleSubmit = () => {
+    if (!submitted && selected !== null) {
+      setSubmitted(true)
+      onAnswer(selected)
+    }
+  }
+
+  return (
+    <div className="mx-auto mb-4 flex w-full max-w-lg flex-col px-2">
+      {/* Même garde que le puzzle : la grille est bornée en hauteur pour que le
+          bouton de validation reste atteignable sur les petits mobiles. */}
+      <div className="mb-3 max-h-[50dvh] overflow-y-auto overscroll-contain px-1 py-1">
+        <GridBoard
+          cells={cells}
+          cellsPerRow={cellsPerRow}
+          selectedIndex={selected}
+          onSelect={setSelected}
+          disabled={submitted}
+        />
+      </div>
+
+      <button
+        type="button"
+        disabled={submitted || selected === null}
         onClick={handleSubmit}
         className="w-full shrink-0 rounded-2xl bg-yellow-500 py-4 text-xl font-black tracking-wider text-white uppercase shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:scale-[1.02] hover:bg-yellow-600 active:scale-95 disabled:opacity-40"
       >

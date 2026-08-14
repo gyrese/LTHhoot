@@ -175,6 +175,18 @@ const dropPinValidator = baseQuestionValidator.extend({
   zones: z.array(dropPinZoneValidator).min(1),
 })
 
+const gridCellValidator = z.object({
+  image: z.string(),
+  label: z.string().optional(),
+})
+
+const gridValidator = baseQuestionValidator.extend({
+  type: z.literal("grid"),
+  cellsPerRow: z.number().int().min(2).max(6),
+  cells: z.array(gridCellValidator).min(2).max(36),
+  correctIndexes: z.array(z.number().int().min(0)).min(1),
+})
+
 const titleValidator = z.object({
   type: z.literal("title"),
   question: z.string().optional().default(""),
@@ -223,6 +235,7 @@ export const questionValidator = z.preprocess(
     sliderValidator,
     puzzleValidator,
     dropPinValidator,
+    gridValidator,
     titleValidator,
   ]),
 )
@@ -256,5 +269,6 @@ export {
   sliderValidator,
   puzzleValidator,
   dropPinValidator,
+  gridValidator,
   legacyMcqValidator,
 }

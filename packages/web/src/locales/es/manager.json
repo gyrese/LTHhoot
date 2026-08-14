@@ -2,6 +2,10 @@
   "configurationsTitle": "Configuraciones",
   "logout": "Cerrar sesión",
   "passwordPlaceholder": "Contraseña",
+  "noSpeed": {
+    "label": "Sin rapidez",
+    "hint": "Cada respuesta correcta vale 1000 puntos, sin importar el tiempo de respuesta. Los empates se deciden por muerte súbita."
+  },
   "quizz": {
     "create": "Crear cuestionario",
     "delete": "Eliminar cuestionario",

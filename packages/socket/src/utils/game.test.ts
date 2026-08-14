@@ -3,6 +3,7 @@ import type {
   DateQuestion,
   DropPinQuestion,
   GameResult,
+  GridQuestion,
   McqQuestion,
   Player,
   PuzzleQuestion,
@@ -14,10 +15,12 @@ import type {
 } from "@rahoot/common/types/game"
 import { describe, expect, it, vi } from "vitest"
 import {
+  answerPoints,
   calculateAwards,
   checkAnswer,
   detectTopTie,
   timeToPoint,
+  MAX_ANSWER_POINTS,
 } from "@rahoot/socket/utils/game"
 
 // Champs communs à toutes les questions (BaseQuestion), sans intérêt pour les
@@ -96,6 +99,24 @@ describe("checkAnswer", () => {
     it("ignore la casse et les espaces superflus", () => {
       expect(
         checkAnswer(question, buildAnswer({ textAnswer: "  pARIS  " })),
+      ).toBe(true)
+    })
+
+    it("ignore les accents", () => {
+      expect(
+        checkAnswer(question, buildAnswer({ textAnswer: "la ville lumiere" })),
+      ).toBe(true)
+    })
+
+    it("valide une réponse accentuée face à une solution non accentuée", () => {
+      const sansAccent: OpenQuestion = {
+        ...base,
+        type: "open",
+        correctAnswers: ["elephant"],
+      }
+
+      expect(
+        checkAnswer(sansAccent, buildAnswer({ textAnswer: "Éléphant" })),
       ).toBe(true)
     })
 
@@ -226,6 +247,43 @@ describe("checkAnswer", () => {
       expect(
         checkAnswer(questionSansZones, buildAnswer({ textAnswer: "0:0" })),
       ).toBe(true)
+    })
+  })
+
+  describe("grid", () => {
+    const question: GridQuestion = {
+      ...base,
+      type: "grid",
+      cellsPerRow: 3,
+      cells: [
+        { image: "/uploads/a.webp" },
+        { image: "/uploads/b.webp", label: "B" },
+        { image: "/uploads/c.webp" },
+        { image: "/uploads/d.webp" },
+        { image: "/uploads/e.webp" },
+        { image: "/uploads/f.webp" },
+      ],
+      correctIndexes: [1, 4],
+    }
+
+    it("valide la case correcte", () => {
+      expect(checkAnswer(question, buildAnswer({ answerId: 1 }))).toBe(true)
+    })
+
+    it("valide n'importe laquelle des cases correctes", () => {
+      expect(checkAnswer(question, buildAnswer({ answerId: 4 }))).toBe(true)
+    })
+
+    it("rejette une case incorrecte", () => {
+      expect(checkAnswer(question, buildAnswer({ answerId: 0 }))).toBe(false)
+    })
+
+    it("rejette un index hors grille", () => {
+      expect(checkAnswer(question, buildAnswer({ answerId: 99 }))).toBe(false)
+    })
+
+    it("rejette une absence de réponse", () => {
+      expect(checkAnswer(question, buildAnswer({}))).toBe(false)
     })
   })
 
@@ -403,6 +461,32 @@ describe("timeToPoint", () => {
     vi.setSystemTime(START + 25_000)
 
     expect(timeToPoint(START, 20)).toBe(0)
+
+    vi.useRealTimers()
+  })
+})
+
+describe("answerPoints", () => {
+  const START = 1_700_000_000_000
+
+  it("suit le barème temporel quand le mode sans rapidité est désactivé", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(START + 10_000)
+
+    expect(answerPoints(START, 20, false)).toBe(500)
+
+    vi.useRealTimers()
+  })
+
+  it("attribue le barème plein quel que soit le temps de réponse en mode sans rapidité", () => {
+    vi.useFakeTimers()
+
+    vi.setSystemTime(START)
+    expect(answerPoints(START, 20, true)).toBe(MAX_ANSWER_POINTS)
+
+    // Réponse au tout dernier moment : même score qu'une réponse instantanée.
+    vi.setSystemTime(START + 19_900)
+    expect(answerPoints(START, 20, true)).toBe(MAX_ANSWER_POINTS)
 
     vi.useRealTimers()
   })

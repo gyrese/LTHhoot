@@ -2,6 +2,10 @@
   "configurationsTitle": "Configurazioni",
   "logout": "Disconnetti",
   "passwordPlaceholder": "Password",
+  "noSpeed": {
+    "label": "Senza rapidità",
+    "hint": "Ogni risposta corretta vale 1000 punti, indipendentemente dal tempo impiegato. I pari merito si decidono con la morte improvvisa."
+  },
   "quizz": {
     "create": "Crea quiz",
     "delete": "Elimina quiz",

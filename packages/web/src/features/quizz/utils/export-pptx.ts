@@ -9,6 +9,7 @@ import type {
   SliderQuestion,
   PuzzleQuestion,
   DropPinQuestion,
+  GridQuestion,
   TitleQuestion,
   Quizz,
   SlideBackground,
@@ -38,6 +39,7 @@ const TYPE_LABELS: Record<string, string> = {
   slider: "Curseur",
   puzzle: "Puzzle",
   drop_pin: "Carte interactive",
+  grid: "Grille",
   title: "Titre",
 }
 
@@ -369,6 +371,11 @@ const addAnswersSlide = async (
 
     case "drop_pin":
       await addDropPinAnswer(slide, question, contentY, contentH)
+
+      break
+
+    case "grid":
+      await addGridAnswers(slide, question, contentY, contentH)
 
       break
 
@@ -729,6 +736,69 @@ const addDropPinAnswer = async (
       fontSize: 14,
       color: "FFFFFF",
       bold: true,
+      valign: "middle",
+    })
+  }
+}
+
+const addGridAnswers = async (
+  slide: pptxgen.Slide,
+  q: GridQuestion,
+  y: number,
+  h: number,
+) => {
+  const cells = q.cells ?? []
+  const cols = Math.max(1, q.cellsPerRow || 1)
+  const rows = Math.max(1, Math.ceil(cells.length / cols))
+
+  const gap = 0.15
+  const zoneW = SLIDE_W - 0.8
+  const zoneH = h - 0.2
+  const cellW = (zoneW - gap * (cols - 1)) / cols
+  const cellH = (zoneH - gap * (rows - 1)) / rows
+
+  for (const [index, cell] of cells.entries()) {
+    const col = index % cols
+    const row = Math.floor(index / cols)
+    const cellX = 0.4 + col * (cellW + gap)
+    const cellY = y + row * (cellH + gap)
+    const isCorrect = q.correctIndexes?.includes(index)
+
+    slide.addShape("roundRect", {
+      x: cellX,
+      y: cellY,
+      w: cellW,
+      h: cellH,
+      fill: { color: "000000", transparency: 60 },
+      line: { color: isCorrect ? "26890c" : "FFFFFF", width: isCorrect ? 3 : 1 },
+      rectRadius: 0.08,
+    })
+
+    if (cell.image) {
+      const data = await toDataUrl(cell.image)
+
+      if (data) {
+        slide.addImage({
+          data,
+          x: cellX + 0.05,
+          y: cellY + 0.05,
+          w: cellW - 0.1,
+          h: cellH - 0.1,
+          sizing: { type: "contain", w: cellW - 0.1, h: cellH - 0.1 },
+        })
+      }
+    }
+
+    const caption = cell.label || `${index + 1}`
+    slide.addText(isCorrect ? `✓ ${caption}` : caption, {
+      x: cellX,
+      y: cellY + cellH - 0.35,
+      w: cellW,
+      h: 0.3,
+      fontSize: 11,
+      bold: true,
+      color: isCorrect ? "8ce99a" : "FFFFFF",
+      align: "center",
       valign: "middle",
     })
   }

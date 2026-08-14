@@ -1,4 +1,23 @@
-import type { Question } from "@rahoot/common/types/game"
+import type { GridQuestion, Question } from "@rahoot/common/types/game"
+
+const validateGrid = (q: GridQuestion): string[] => {
+  const errors: string[] = []
+  const cells = q.cells ?? []
+
+  if (cells.length < 2) {
+    errors.push("Une grille requiert au moins 2 cases.")
+  }
+
+  if (cells.some((cell) => !cell.image)) {
+    errors.push("Chaque case de la grille doit contenir une image.")
+  }
+
+  if (!q.correctIndexes || q.correctIndexes.length === 0) {
+    errors.push("Veuillez désigner au moins une case correcte.")
+  }
+
+  return errors
+}
 
 export const validateQuestion = (q: Question): string[] => {
   const errors: string[] = []
@@ -64,6 +83,8 @@ export const validateQuestion = (q: Question): string[] => {
     if (!q.zones || q.zones.length === 0) {
       errors.push("Veuillez dessiner au moins une zone sur l'image.")
     }
+  } else if (q.type === "grid") {
+    errors.push(...validateGrid(q))
   }
 
   return errors

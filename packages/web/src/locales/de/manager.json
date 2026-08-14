@@ -2,6 +2,10 @@
   "configurationsTitle": "Konfigurationen",
   "logout": "Abmelden",
   "passwordPlaceholder": "Passwort",
+  "noSpeed": {
+    "label": "Ohne Tempo",
+    "hint": "Jede richtige Antwort zählt 1000 Punkte, unabhängig von der Antwortzeit. Gleichstände werden per Sudden Death entschieden."
+  },
   "quizz": {
     "create": "Quiz erstellen",
     "delete": "Quiz löschen",

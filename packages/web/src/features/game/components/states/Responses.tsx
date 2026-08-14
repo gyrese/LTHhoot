@@ -1,8 +1,10 @@
 import type {
   AnswerReveal,
   DropPinZone,
+  GridCell,
   SlideElement,
 } from "@rahoot/common/types/game"
+import GridBoard from "@rahoot/web/features/game/components/GridBoard"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
@@ -420,6 +422,49 @@ const DropPinResult = ({
   )
 }
 
+// ── Grille ────────────────────────────────────────────────────────────────────
+
+// Types qui affichent leur propre décompte par réponse (barres du QCM, compteur
+// par case de la grille) : le split correct/incorrect générique y ferait doublon.
+const TYPES_WITH_PER_ANSWER_STATS = new Set([
+  "mcq",
+  "true_false",
+  "grid",
+  "title",
+])
+
+const GridResult = ({
+  cells,
+  cellsPerRow,
+  solutions,
+  responses,
+}: {
+  cells: GridCell[]
+  cellsPerRow: number
+  solutions: number[]
+  responses: Record<number, number>
+}) => {
+  const { t } = useTranslation()
+
+  if (cells.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="anim-show mx-auto flex w-full max-w-3xl flex-col items-center gap-3 px-4">
+      <p className="text-sm font-bold tracking-widest text-white/50 uppercase">
+        {t("game:correctAnswer")}
+      </p>
+      <GridBoard
+        cells={cells}
+        cellsPerRow={cellsPerRow}
+        correctIndexes={solutions}
+        counts={responses}
+      />
+    </div>
+  )
+}
+
 // ── Split correct/incorrect (types sans dénombrement par valeur exacte) ───────
 
 const CorrectSplitBar = ({
@@ -519,6 +564,8 @@ const Responses = ({
     items,
     pinImage,
     zones,
+    cells,
+    cellsPerRow,
     background,
     backgroundOpacity,
     elements,
@@ -639,8 +686,8 @@ const Responses = ({
           )}
 
           {/* Types sans dénombrement par valeur exacte (slider/date/puzzle/
-              drop_pin/open/image_sequence) : split correct/incorrect générique */}
-          {type !== "mcq" && type !== "true_false" && type !== "title" && (
+              drop_pin/open/image_sequence) : split correct/incorrect générique. */}
+          {!TYPES_WITH_PER_ANSWER_STATS.has(type) && (
             <CorrectSplitBar
               correctCount={correctCount}
               totalAnswered={totalAnswered}
@@ -667,6 +714,15 @@ const Responses = ({
 
           {type === "drop_pin" && pinImage && zones && (
             <DropPinResult pinImage={pinImage} zones={zones} />
+          )}
+
+          {type === "grid" && (
+            <GridResult
+              cells={cells ?? []}
+              cellsPerRow={cellsPerRow ?? 3}
+              solutions={solutions}
+              responses={responses}
+            />
           )}
         </div>
 

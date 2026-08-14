@@ -11,7 +11,9 @@ import {
 import {
   PuzzleAnswer,
   DropPinAnswer,
+  GridAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
+import type { GridCell } from "@rahoot/common/types/game"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -54,16 +56,28 @@ const AnswerTiles = ({ count }: { count: number }) => (
 )
 
 const ParticipantBody = ({ question }: Props) => {
-  const { type, answers, min, max, minYear, maxYear, items, pinImage } =
-    question as QuestionWithId & {
-      answers?: string[]
-      min?: number
-      max?: number
-      minYear?: number
-      maxYear?: number
-      items?: string[]
-      pinImage?: string
-    }
+  const {
+    type,
+    answers,
+    min,
+    max,
+    minYear,
+    maxYear,
+    items,
+    pinImage,
+    cells,
+    cellsPerRow,
+  } = question as QuestionWithId & {
+    answers?: string[]
+    min?: number
+    max?: number
+    minYear?: number
+    maxYear?: number
+    items?: string[]
+    pinImage?: string
+    cells?: GridCell[]
+    cellsPerRow?: number
+  }
 
   if (type === "mcq" && answers) {
     return <AnswerTiles count={Math.min(answers.length, 4)} />
@@ -117,6 +131,18 @@ const ParticipantBody = ({ question }: Props) => {
     return (
       <div className="flex flex-1 items-center justify-center">
         <DropPinAnswer pinImage={pinImage} onTextAnswer={() => undefined} />
+      </div>
+    )
+  }
+
+  if (type === "grid" && cells && cells.length > 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <GridAnswer
+          cells={cells}
+          cellsPerRow={cellsPerRow ?? 3}
+          onAnswer={() => undefined}
+        />
       </div>
     )
   }

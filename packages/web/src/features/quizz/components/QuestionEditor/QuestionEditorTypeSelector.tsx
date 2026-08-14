@@ -8,7 +8,7 @@ import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
-import { Film, Presentation } from "lucide-react"
+import { Film, LayoutGrid, Presentation } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 const TYPES: { type: QuestionType; icon?: any; img?: string; key: string }[] = [
@@ -29,6 +29,7 @@ const TYPES: { type: QuestionType; icon?: any; img?: string; key: string }[] = [
   { type: "slider", img: sliderImg, key: "quizz:questionType.slider" },
   { type: "puzzle", img: puzzleImg, key: "quizz:questionType.puzzle" },
   { type: "drop_pin", img: dropPinImg, key: "quizz:questionType.drop_pin" },
+  { type: "grid", icon: LayoutGrid, key: "quizz:questionType.grid" },
 ]
 
 const QuestionEditorTypeSelector = () => {

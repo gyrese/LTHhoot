@@ -2,6 +2,7 @@ import QuestionEditorAnswers from "@rahoot/web/features/quizz/components/Questio
 import QuestionEditorConfig from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig"
 import QuestionEditorDate from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorDate"
 import QuestionEditorDropPin from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorDropPin"
+import QuestionEditorGrid from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorGrid"
 import QuestionEditorImageSequence from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorImageSequence"
 import QuestionEditorOpen from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorOpen"
 import QuestionEditorPuzzle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorPuzzle"
@@ -43,6 +44,9 @@ const QuestionAnswerEditor = () => {
 
     case "drop_pin":
       return <QuestionEditorDropPin />
+
+    case "grid":
+      return <QuestionEditorGrid />
 
     default:
       return null

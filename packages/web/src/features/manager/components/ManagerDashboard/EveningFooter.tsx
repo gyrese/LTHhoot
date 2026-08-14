@@ -1,5 +1,5 @@
 import type { QuizzMeta } from "@rahoot/common/types/game"
-import { Play, X, PartyPopper, Sparkles } from "lucide-react"
+import { Play, X, PartyPopper, Sparkles, TimerOff } from "lucide-react"
 import clsx from "clsx"
 import { useTranslation } from "react-i18next"
 
@@ -7,20 +7,24 @@ type Props = {
   eveningQuizIds: string[]
   quizzList: QuizzMeta[]
   powerUpsEnabled: boolean
+  noSpeedMode: boolean
   onRemove: (_id: string) => void
   onStart: () => void
   onToggleOff: () => void
   onOpenPowerUpsConfig: () => void
+  onToggleNoSpeed: () => void
 }
 
 const EveningFooter = ({
   eveningQuizIds,
   quizzList,
   powerUpsEnabled,
+  noSpeedMode,
   onRemove,
   onStart,
   onToggleOff,
   onOpenPowerUpsConfig,
+  onToggleNoSpeed,
 }: Props) => {
   const { t } = useTranslation()
   const canStart = eveningQuizIds.length >= 2
@@ -88,6 +92,22 @@ const EveningFooter = ({
         {totalQuestions > 0 && (
           <p className="text-xs text-white/40">{eveningQuizIds.length} quiz</p>
         )}
+
+        {/* Mode sans rapidité */}
+        <button
+          type="button"
+          onClick={onToggleNoSpeed}
+          className={clsx(
+            "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+            noSpeedMode
+              ? "bg-sky-500/20 text-sky-200 ring-1 ring-sky-500/40 hover:bg-sky-500/30"
+              : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+          )}
+          title={t("manager:noSpeed.hint")}
+        >
+          <TimerOff className="size-3.5" />
+          <span>{t("manager:noSpeed.label")}</span>
+        </button>
 
         {/* Configure power-ups */}
         <button

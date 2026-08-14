@@ -1,6 +1,10 @@
 import type { Player } from "@rahoot/common/types/game"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
+import {
+  isSameAnswer,
+  normalizeAnswer,
+} from "@rahoot/common/utils/normalize-answer"
 import logo from "@rahoot/web/assets/logo.png"
 import {
   ArmedEventBanner,
@@ -396,7 +400,7 @@ function OpenAnswersManagerPanel({
   const [validating, setValidating] = useState<string | null>(null)
 
   const unique = Array.from(
-    new Map(answers.map((a) => [a.text.trim().toLowerCase(), a])).values(),
+    new Map(answers.map((a) => [normalizeAnswer(a.text), a])).values(),
   )
   const answered = answers.length
   const noAnswer = totalPlayers - answered
@@ -412,9 +416,7 @@ function OpenAnswersManagerPanel({
   }
 
   const isOriginal = (text: string) =>
-    originalCorrectAnswers.some(
-      (ca) => ca.trim().toLowerCase() === text.trim().toLowerCase(),
-    )
+    originalCorrectAnswers.some((ca) => isSameAnswer(ca, text))
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -462,18 +464,12 @@ function OpenAnswersManagerPanel({
         </p>
         <div className="flex flex-col gap-1.5 p-3">
           {unique.map((answer) => {
-            const count = answers.filter(
-              (a) =>
-                a.text.trim().toLowerCase() ===
-                answer.text.trim().toLowerCase(),
-            ).length
-            const playerNames = answers
-              .filter(
-                (a) =>
-                  a.text.trim().toLowerCase() ===
-                  answer.text.trim().toLowerCase(),
-              )
-              .map((a) => a.playerName)
+            const key = normalizeAnswer(answer.text)
+            const sameAnswers = answers.filter(
+              (a) => normalizeAnswer(a.text) === key,
+            )
+            const count = sameAnswers.length
+            const playerNames = sameAnswers.map((a) => a.playerName)
 
             const rescued = answer.isCorrect && !isOriginal(answer.text)
 
@@ -1156,6 +1152,7 @@ function SolutionDisplay({ data }: { data: Record<string, unknown> }) {
   const correctValue = data.correctValue as number | undefined
   const items = (data.items as string[]) ?? []
   const zones = (data.zones as { x: number; y: number; radius: number }[]) ?? []
+  const cells = (data.cells as { image: string; label?: string }[]) ?? []
 
   const hasSolution =
     solutions.length > 0 ||
@@ -1236,6 +1233,25 @@ function SolutionDisplay({ data }: { data: Record<string, unknown> }) {
         {type === "drop_pin" && (
           <div className="text-xs text-green-300/70">
             {zones.length} zone(s) cible(s) définie(s)
+          </div>
+        )}
+        {type === "grid" && (
+          <div className="flex flex-wrap gap-2">
+            {solutions.map((idx) => (
+              <span
+                key={idx}
+                className="flex items-center gap-1.5 rounded-lg bg-green-500/20 px-2 py-1 text-green-300"
+              >
+                {cells[idx]?.image && (
+                  <img
+                    src={cells[idx].image}
+                    alt=""
+                    className="size-6 rounded object-cover"
+                  />
+                )}
+                {cells[idx]?.label || `Case ${idx + 1}`}
+              </span>
+            ))}
           </div>
         )}
       </div>

@@ -2,6 +2,10 @@
   "configurationsTitle": "Configurations",
   "logout": "Logout",
   "passwordPlaceholder": "Password",
+  "noSpeed": {
+    "label": "No speed bonus",
+    "hint": "Every correct answer is worth 1000 points, no matter how fast it was given. Ties are settled by sudden death."
+  },
   "quizz": {
     "create": "Create Quizz",
     "delete": "Delete quizz",

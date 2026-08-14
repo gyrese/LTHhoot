@@ -128,6 +128,7 @@ export type QuestionType =
   | "slider"
   | "puzzle"
   | "drop_pin"
+  | "grid"
   | "title"
 
 // Niveau d'exigence d'une question. Renseigné par la génération IA (qui peut
@@ -222,6 +223,24 @@ export type DropPinQuestion = BaseQuestion & {
   zones: DropPinZone[]
 }
 
+// Une case de la grille : une image et, facultativement, un libellé affiché
+// sous l'image (nommage des propositions, accessibilité).
+export type GridCell = {
+  image: string
+  label?: string
+}
+
+// Grille de propositions visuelles : le joueur tape la case qu'il pense juste.
+// `cells` est stocké à plat, ligne par ligne — le nombre de lignes se déduit de
+// `cells.length / cellsPerRow`. À ne pas confondre avec `gridCols`/`gridRows` de
+// `BaseQuestion`, qui pilotent la révélation progressive du fond.
+export type GridQuestion = BaseQuestion & {
+  type: "grid"
+  cells: GridCell[]
+  cellsPerRow: number
+  correctIndexes: number[]
+}
+
 export type Question =
   | McqQuestion
   | TrueFalseQuestion
@@ -231,6 +250,7 @@ export type Question =
   | SliderQuestion
   | PuzzleQuestion
   | DropPinQuestion
+  | GridQuestion
   | TitleQuestion
 
 export type Quizz = {

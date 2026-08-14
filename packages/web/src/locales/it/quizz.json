@@ -80,6 +80,7 @@
   "questionType": {
     "title": "Tipo di domanda",
     "date": "Data",
+    "grid": "Griglia",
     "drop_pin": "Segna punto",
     "mcq": "Scelta multipla",
     "open": "Risposta aperta",
@@ -93,6 +94,17 @@
     "hint": "Ordina gli elementi nell'ordine corretto. I giocatori riceveranno una versione mescolata.",
     "itemPlaceholder": "Aggiungi elemento...",
     "itemsLabel": "Elementi (nell'ordine corretto)"
+  },
+  "grid": {
+    "countLabel": "Numero di caselle",
+    "addCell": "Aggiungi una casella",
+    "removeCell": "Rimuovi una casella",
+    "hint": "Trascina un'immagine su una casella, o clicca per sceglierla. Poi segna la o le caselle corrette.",
+    "pickImage": "Scegli un'immagine",
+    "removeImage": "Rimuovi l'immagine",
+    "labelPlaceholder": "Etichetta (facoltativa)",
+    "correct": "Corretta",
+    "mark": "Segna"
   },
   "imageSequence": {
     "imagesLabel": "Immagini (ordine di rivelazione)",

@@ -219,6 +219,9 @@ export interface ClientToServerEvents {
           powerUpsEnabled?: boolean
           disabledPowerUps?: string[]
           questionIndex?: number
+          // Mode sans rapidité : barème fixe, le temps de réponse n'entre pas
+          // dans le calcul des points.
+          noSpeedMode?: boolean
         },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
@@ -358,6 +361,7 @@ export interface ClientToServerEvents {
     quizIds: string[]
     powerUpsEnabled?: boolean
     disabledPowerUps?: string[]
+    noSpeedMode?: boolean
   }) => void
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 

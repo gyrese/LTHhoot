@@ -24,6 +24,7 @@ import {
   ROUND_EVENT_TYPE,
   type RoundEventType,
 } from "@rahoot/common/types/round-event"
+import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
@@ -34,7 +35,7 @@ import {
   checkAnswer,
   detectTopTie,
   resolvePodiumTheme,
-  timeToPoint,
+  answerPoints,
 } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
@@ -68,6 +69,9 @@ export interface RoundManagerOptions {
   powerUpManager?: PowerUpManager
   onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
   onCoinsEarned?: (_playerId: string, _coins: number) => void
+  // Mode sans rapidité : toute bonne réponse vaut le barème plein, quel que
+  // soit le temps mis pour répondre.
+  noSpeedMode?: boolean
 }
 
 /** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
@@ -444,6 +448,12 @@ export class RoundManager {
           case "drop_pin":
             return { pinImage: question.pinImage }
 
+          case "grid":
+            return {
+              cells: question.cells,
+              cellsPerRow: question.cellsPerRow,
+            }
+
           default:
             return {}
         }
@@ -534,9 +544,9 @@ export class RoundManager {
       return
     }
 
-    const normalized = text.trim().toLowerCase()
+    const normalized = normalizeAnswer(text)
     const alreadyCorrect = this.pendingOpenCorrectAnswers.some(
-      (ca) => ca.trim().toLowerCase() === normalized,
+      (ca) => normalizeAnswer(ca) === normalized,
     )
 
     if (alreadyCorrect) {
@@ -552,7 +562,7 @@ export class RoundManager {
       return
     }
 
-    const normalized = text.trim().toLowerCase()
+    const normalized = normalizeAnswer(text)
 
     // Les réponses d'origine du quiz sont verrouillées — on ne peut pas les désélectionner
     if (
@@ -560,7 +570,7 @@ export class RoundManager {
       "correctAnswers" in this.pendingOpenQuestion
     ) {
       const isOrigin = this.pendingOpenQuestion.correctAnswers.some(
-        (ca) => ca.trim().toLowerCase() === normalized,
+        (ca) => normalizeAnswer(ca) === normalized,
       )
 
       if (isOrigin) {
@@ -570,7 +580,7 @@ export class RoundManager {
 
     const before = this.pendingOpenCorrectAnswers.length
     this.pendingOpenCorrectAnswers = this.pendingOpenCorrectAnswers.filter(
-      (ca) => ca.trim().toLowerCase() !== normalized,
+      (ca) => normalizeAnswer(ca) !== normalized,
     )
 
     // Re-broadcaster uniquement si un élément a été retiré
@@ -765,6 +775,14 @@ export class RoundManager {
         case "drop_pin":
           return { pinImage: question.pinImage, zones: question.zones }
 
+        case "grid":
+          return {
+            cells: question.cells,
+            cellsPerRow: question.cellsPerRow,
+            // Sans les cases justes, l'écran de résultats grise toute la grille.
+            solutions: question.correctIndexes,
+          }
+
         default:
           return {}
       }
@@ -870,7 +888,11 @@ export class RoundManager {
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,
-      points: timeToPoint(this.startTime, question.time),
+      points: answerPoints(
+        this.startTime,
+        question.time,
+        Boolean(this.opts.noSpeedMode),
+      ),
       timeMs: Date.now() - this.startTime,
     }
 
@@ -1168,6 +1190,11 @@ export class RoundManager {
 
       case "drop_pin":
         return { zones: question.zones }
+
+      // Les cases justes empruntent le canal `solutions` du QCM : la
+      // télécommande et l'écran de résultats les exploitent sans adaptation.
+      case "grid":
+        return { solutions: question.correctIndexes }
 
       default:
         return {}

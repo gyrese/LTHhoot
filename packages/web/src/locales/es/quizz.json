@@ -80,6 +80,7 @@
   "questionType": {
     "title": "Tipo de pregunta",
     "date": "Fecha",
+    "grid": "Cuadrícula",
     "drop_pin": "Fijar pin",
     "mcq": "Opción múltiple",
     "open": "Respuesta abierta",
@@ -93,6 +94,17 @@
     "hint": "Ordena los elementos en el orden correcto. Los jugadores recibirán una versión mezclada.",
     "itemPlaceholder": "Añadir elemento...",
     "itemsLabel": "Elementos (en orden correcto)"
+  },
+  "grid": {
+    "countLabel": "Número de casillas",
+    "addCell": "Añadir una casilla",
+    "removeCell": "Quitar una casilla",
+    "hint": "Arrastra una imagen sobre una casilla, o haz clic para elegirla. Luego marca la(s) casilla(s) correcta(s).",
+    "pickImage": "Elegir una imagen",
+    "removeImage": "Quitar la imagen",
+    "labelPlaceholder": "Etiqueta (opcional)",
+    "correct": "Correcta",
+    "mark": "Marcar"
   },
   "imageSequence": {
     "imagesLabel": "Imágenes (orden de revelación)",

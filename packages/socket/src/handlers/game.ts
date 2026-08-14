@@ -77,6 +77,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     let quizzId = ""
     let powerUpsEnabled = false
     let disabledPowerUps: string[] = []
+    let noSpeedMode = false
     let questionIndex = -1
 
     if (typeof payload === "string") {
@@ -84,6 +85,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     } else if (payload && typeof payload === "object") {
       quizzId = payload.quizId
       powerUpsEnabled = Boolean(payload.powerUpsEnabled)
+      noSpeedMode = Boolean(payload.noSpeedMode)
       disabledPowerUps = Array.isArray(payload.disabledPowerUps)
         ? payload.disabledPowerUps
         : []
@@ -131,6 +133,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     const game = new Game(io, socket, finalQuizz, {
       powerUpsEnabled,
       disabledPowerUps,
+      noSpeedMode,
       // Partie invité = test solo : seul START_DEMO pourra la démarrer.
       demoOnly: session.role === "guest",
     })
@@ -279,7 +282,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(
     EVENTS.EVENING.START,
-    ({ quizIds, powerUpsEnabled, disabledPowerUps }) => {
+    ({ quizIds, powerUpsEnabled, disabledPowerUps, noSpeedMode }) => {
       if (!Manager.isLogged(socket)) {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
@@ -308,6 +311,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
         quizIds,
         powerUpsEnabled ?? true,
         Array.isArray(disabledPowerUps) ? disabledPowerUps : [],
+        Boolean(noSpeedMode),
       )
       registry.addGame(game)
     },

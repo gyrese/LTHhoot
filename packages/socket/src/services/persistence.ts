@@ -45,6 +45,9 @@ export interface GameSnapshot {
   } | null
   singleQuizPowerUpsEnabled: boolean
   disabledPowerUps?: string[]
+  // Absent des instantanés écrits avant l'ajout du mode sans rapidité : une
+  // partie restaurée repart alors sur le barème temporel (comportement d'origine).
+  noSpeedMode?: boolean
   demoOnly?: boolean
   savedAt: number
 }

@@ -17,6 +17,8 @@ import {
   PuzzleAnswer,
   DropPinAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
+import GridBoard from "@rahoot/web/features/game/components/GridBoard"
+import type { GridCell } from "@rahoot/common/types/game"
 import { useTranslation } from "react-i18next"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
 
@@ -28,6 +30,11 @@ const DESIGN_H = 720
 type Props = {
   question: QuestionWithId
 }
+
+const isEmpty = (list?: unknown[]) => !list || list.length === 0
+
+const hasGridCells = (type: string, cells?: GridCell[]) =>
+  type === "grid" && !isEmpty(cells)
 
 const PreviewPresenterView = ({ question }: Props) => {
   const { t } = useTranslation()
@@ -66,6 +73,8 @@ const PreviewPresenterView = ({ question }: Props) => {
     maxYear,
     items,
     pinImage,
+    cells,
+    cellsPerRow,
     revealDuration,
     gridCols,
     gridRows,
@@ -78,6 +87,8 @@ const PreviewPresenterView = ({ question }: Props) => {
     maxYear?: number
     items?: string[]
     pinImage?: string
+    cells?: GridCell[]
+    cellsPerRow?: number
     revealDuration?: number
     gridCols?: number
     gridRows?: number
@@ -166,18 +177,27 @@ const PreviewPresenterView = ({ question }: Props) => {
           </div>
         )}
 
-        {/* Média */}
+        {/* Média — la grille prend la place centrale, comme sur l'écran hôte */}
         {type !== "title" && (
-          <div className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-            {(!elements || elements.length === 0) && (
-              <QuestionMedia
-                media={
-                  type === "drop_pin" && pinImage
-                    ? { type: "image", url: pinImage }
-                    : media
-                }
-                alt={title}
+          <div className="relative z-0 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5 px-10">
+            {hasGridCells(type, cells) ? (
+              <GridBoard
+                cells={cells!}
+                cellsPerRow={cellsPerRow ?? 3}
+                fitHeight="420px"
+                className="max-w-3xl"
               />
+            ) : (
+              isEmpty(elements) && (
+                <QuestionMedia
+                  media={
+                    type === "drop_pin" && pinImage
+                      ? { type: "image", url: pinImage }
+                      : media
+                  }
+                  alt={title}
+                />
+              )
             )}
           </div>
         )}

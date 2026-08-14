@@ -1,6 +1,7 @@
 import type {
   AnswerReveal,
   DropPinZone,
+  GridCell,
   PodiumThemeSetting,
   Question,
   QuestionMedia,
@@ -10,6 +11,10 @@ import type {
   SlideElement,
 } from "@rahoot/common/types/game"
 import { quizzValidator } from "@rahoot/common/validators/quizz"
+import {
+  balancedColumns,
+  DEFAULT_GRID_CELLS,
+} from "@rahoot/web/features/quizz/utils/grid"
 import { generateId } from "@rahoot/web/features/quizz/utils/id"
 import {
   createContext,
@@ -65,6 +70,9 @@ export type QuestionUpdate = {
   items?: string[]
   pinImage?: string
   zones?: DropPinZone[]
+  cells?: GridCell[]
+  cellsPerRow?: number
+  correctIndexes?: number[]
   revelationEnabled?: boolean
   revealDuration?: number
   gridCols?: number
@@ -204,6 +212,17 @@ const buildDefaultForType = (
 
     case "drop_pin":
       return { ...base, type: "drop_pin", pinImage: "", zones: [] }
+
+    // Grille de 6 cases (répartie en 3×2) : l'hôte remplit les cases puis
+    // désigne la ou les bonnes.
+    case "grid":
+      return {
+        ...base,
+        type: "grid",
+        cellsPerRow: balancedColumns(DEFAULT_GRID_CELLS),
+        cells: Array.from({ length: DEFAULT_GRID_CELLS }, () => ({ image: "" })),
+        correctIndexes: [0],
+      }
 
     default:
       return { ...base, type: "mcq", answers: ["", ""], solutions: [0] }

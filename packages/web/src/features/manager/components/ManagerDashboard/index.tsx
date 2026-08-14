@@ -22,6 +22,7 @@ import {
   PlayCircle,
   PartyPopper,
   Sparkles,
+  TimerOff,
   Users,
 } from "lucide-react"
 import { useState } from "react"
@@ -52,6 +53,9 @@ const ManagerDashboard = ({ data }: Props) => {
   const [singlePowerUpsEnabled, setSinglePowerUpsEnabled] = useState(false)
   const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [powerUpsModalOpen, setPowerUpsModalOpen] = useState(false)
+  // Mode sans rapidité : partagé par la partie simple et la soirée — chaque
+  // bonne réponse vaut 1000 points quel que soit le temps de réponse.
+  const [noSpeedMode, setNoSpeedMode] = useState(false)
   const [powerUpsModalMode, setPowerUpsModalMode] = useState<
     "single" | "evening"
   >("single")
@@ -81,6 +85,7 @@ const ManagerDashboard = ({ data }: Props) => {
       quizId: selectedQuizz,
       powerUpsEnabled: isGuest ? false : singlePowerUpsEnabled,
       disabledPowerUps: isGuest ? [] : disabledPowerUps,
+      noSpeedMode,
     })
   }
 
@@ -104,6 +109,7 @@ const ManagerDashboard = ({ data }: Props) => {
       quizIds: eveningQuizIds,
       powerUpsEnabled,
       disabledPowerUps,
+      noSpeedMode,
     })
   }
 
@@ -196,6 +202,8 @@ const ManagerDashboard = ({ data }: Props) => {
             eveningQuizIds={eveningQuizIds}
             quizzList={data.quizz}
             powerUpsEnabled={powerUpsEnabled}
+            noSpeedMode={noSpeedMode}
+            onToggleNoSpeed={() => setNoSpeedMode((v) => !v)}
             onRemove={handleToggleEveningQuizz}
             onStart={handleEveningStart}
             onToggleOff={handleToggleEveningOff}
@@ -237,6 +245,21 @@ const ManagerDashboard = ({ data }: Props) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setNoSpeedMode((v) => !v)}
+                className={clsx(
+                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+                  noSpeedMode
+                    ? "bg-sky-500/20 text-sky-200 ring-1 ring-sky-500/40 hover:bg-sky-500/30"
+                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+                )}
+                title={t("manager:noSpeed.hint")}
+              >
+                <TimerOff className="size-3.5" />
+                <span>{t("manager:noSpeed.label")}</span>
+              </button>
+
               {!isGuest && (
                 <button
                   type="button"

@@ -13,8 +13,10 @@ import {
 } from "@rahoot/web/features/game/components/AnswersDisplay"
 import {
   DropPinAnswer,
+  GridAnswer,
   PuzzleAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
+import GridBoard from "@rahoot/web/features/game/components/GridBoard"
 import {
   useEvent,
   useSocket,
@@ -64,6 +66,8 @@ const Answers = ({
     maxYear,
     items,
     pinImage,
+    cells,
+    cellsPerRow,
     isFrozen,
     isScrambled,
     roundEvent,
@@ -300,6 +304,12 @@ return Date.now() + initialCooldown * 1000
     }
   })
 
+  // Types dont les propositions occupent la zone centrale de l'écran hôte.
+  const hostVisual =
+    !isPlayer &&
+    ((type === "drop_pin" && Boolean(pinImage)) ||
+      (type === "grid" && Boolean(cells?.length)))
+
   function getProgressColor(pct: number) {
     if (pct > 50) {
       return "#22c55e"
@@ -421,14 +431,26 @@ return Date.now() + initialCooldown * 1000
         </div>
       )}
 
-      {!isPlayer && type === "drop_pin" && pinImage ? (
+      {/* Zone centrale de l'écran hôte : l'image cible de l'épingle ou la grille
+          de propositions, qui doivent être lisibles au vidéoprojecteur. Les
+          joueurs retrouvent la même grille, cliquable, dans le bloc du bas. */}
+      {hostVisual ? (
         <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-4 py-4">
-          <img
-            src={pinImage}
-            alt={question}
-            draggable={false}
-            className="max-h-[60vh] w-auto max-w-5xl rounded-2xl object-contain shadow-2xl"
-          />
+          {type === "drop_pin" ? (
+            <img
+              src={pinImage}
+              alt={question}
+              draggable={false}
+              className="max-h-[60vh] w-auto max-w-5xl rounded-2xl object-contain shadow-2xl"
+            />
+          ) : (
+            <GridBoard
+              cells={cells!}
+              cellsPerRow={cellsPerRow ?? 3}
+              fitHeight="58vh"
+              className="max-w-5xl"
+            />
+          )}
         </div>
       ) : (
         <div className="flex-1" />
@@ -531,6 +553,14 @@ return Date.now() + initialCooldown * 1000
             key={question}
             pinImage={pinImage}
             onTextAnswer={(text) => emit({ textAnswer: text })}
+          />
+        )}
+        {isPlayer && !answered && type === "grid" && cells && (
+          <GridAnswer
+            key={question}
+            cells={cells}
+            cellsPerRow={cellsPerRow ?? 3}
+            onAnswer={(index) => emit({ answerId: index })}
           />
         )}
 

@@ -2,6 +2,7 @@ import type {
   AnswerReveal,
   Award,
   DropPinZone,
+  GridCell,
   Player,
   PodiumThemeId,
   QuestionMedia,
@@ -74,6 +75,10 @@ export type CommonStatusDataMap = {
     maxYear?: number
     items?: string[]
     pinImage?: string
+    // Grille de propositions visuelles (type `grid`). Les cases correctes ne
+    // sont PAS diffusées ici : elles partent au seul manager via `solutions`.
+    cells?: GridCell[]
+    cellsPerRow?: number
     isFrozen?: boolean
     isScrambled?: boolean
     roundEvent?: RoundEventType
@@ -154,6 +159,8 @@ type ManagerExtraStatus = {
     items?: string[]
     pinImage?: string
     zones?: DropPinZone[]
+    cells?: GridCell[]
+    cellsPerRow?: number
     background?: SlideBackground
     backgroundOpacity?: number
     elements?: SlideElement[]

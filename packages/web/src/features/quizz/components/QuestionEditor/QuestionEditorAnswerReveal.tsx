@@ -93,6 +93,12 @@ return solutions
     return q.correctAnswers?.filter(Boolean).join(", ")
   }
 
+  if (q.type === "grid") {
+    return q.correctIndexes
+      ?.map((i) => q.cells?.[i]?.label || `Case ${i + 1}`)
+      .join(", ")
+  }
+
   
 return undefined
 }

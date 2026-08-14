@@ -2,6 +2,10 @@
   "configurationsTitle": "Configurations",
   "logout": "Déconnexion",
   "passwordPlaceholder": "Mot de passe",
+  "noSpeed": {
+    "label": "Sans rapidité",
+    "hint": "Chaque bonne réponse vaut 1000 points, quel que soit le temps mis pour répondre. Les égalités sont départagées par la mort subite."
+  },
   "quizz": {
     "create": "Créer un quizz",
     "delete": "Supprimer le quizz",

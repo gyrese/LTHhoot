@@ -13,6 +13,7 @@ import type {
   Question,
 } from "@rahoot/common/types/game"
 import type { Socket } from "@rahoot/common/types/game/socket"
+import { isSameAnswer } from "@rahoot/common/utils/normalize-answer"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
 import { nanoid } from "nanoid"
@@ -102,17 +103,32 @@ export const normalizeFilename = (subject: string) => {
   return `${slug}-${shortId}`
 }
 
+// Barème d'une bonne réponse : valeur pleine (réponse instantanée) qui décroît
+// linéairement jusqu'à 0 à l'expiration du temps imparti. C'est aussi la valeur
+// fixe attribuée en mode sans rapidité.
+export const MAX_ANSWER_POINTS = 1000
+
 export const timeToPoint = (startTime: number, secondes: number): number => {
-  let points = 1000
+  let points = MAX_ANSWER_POINTS
 
   const actualTime = Date.now()
   const tempsPasseEnSecondes = (actualTime - startTime) / 1000
 
-  points -= (1000 / secondes) * tempsPasseEnSecondes
+  points -= (MAX_ANSWER_POINTS / secondes) * tempsPasseEnSecondes
   points = Math.max(0, points)
 
   return points
 }
+
+// Points attribués à une réponse selon le mode de la partie. En mode sans
+// rapidité, toute bonne réponse vaut le barème plein : les égalités qui en
+// découlent sont tranchées par la mort subite en fin de partie.
+export const answerPoints = (
+  startTime: number,
+  secondes: number,
+  noSpeedMode: boolean,
+): number =>
+  noSpeedMode ? MAX_ANSWER_POINTS : timeToPoint(startTime, secondes)
 
 export const checkAnswer = (question: Question, answer: Answer): boolean => {
   switch (question.type) {
@@ -128,18 +144,16 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
     case "open":
       return (
         answer.textAnswer !== undefined &&
-        question.correctAnswers.some(
-          (ca) =>
-            ca.trim().toLowerCase() === answer.textAnswer!.trim().toLowerCase(),
+        question.correctAnswers.some((ca) =>
+          isSameAnswer(ca, answer.textAnswer!),
         )
       )
 
     case "image_sequence":
       return (
         answer.textAnswer !== undefined &&
-        question.correctAnswers.some(
-          (ca) =>
-            ca.trim().toLowerCase() === answer.textAnswer!.trim().toLowerCase(),
+        question.correctAnswers.some((ca) =>
+          isSameAnswer(ca, answer.textAnswer!),
         )
       )
 
@@ -162,6 +176,14 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
         answer.orderAnswer !== undefined &&
         answer.orderAnswer.length === question.items.length &&
         answer.orderAnswer.every((v, i) => v === i)
+      )
+
+    // Grille : `answerId` est l'index de la case tapée. Plusieurs cases peuvent
+    // être justes — une seule suffit.
+    case "grid":
+      return (
+        answer.answerId !== undefined &&
+        question.correctIndexes.includes(answer.answerId)
       )
 
     case "drop_pin": {

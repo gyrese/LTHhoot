@@ -68,6 +68,10 @@ class Game {
   } | null = null
   private singleQuizPowerUpsEnabled = false
   private disabledPowerUps: string[] = []
+  // Mode sans rapidité : chaque bonne réponse vaut le barème plein, quel que
+  // soit le temps de réponse (les égalités restent tranchées par la mort
+  // subite du classement final).
+  private noSpeedMode = false
   // Partie de test créée par un compte invité : seul le mode démo (solo) peut
   // la démarrer — START_GAME est refusé (cf. handlers/game).
   readonly demoOnly: boolean = false
@@ -115,6 +119,7 @@ class Game {
     options?: {
       powerUpsEnabled?: boolean
       disabledPowerUps?: string[]
+      noSpeedMode?: boolean
       demoOnly?: boolean
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
@@ -138,6 +143,7 @@ class Game {
     }
     this.singleQuizPowerUpsEnabled = powerUpsEnabled
     this.disabledPowerUps = options?.disabledPowerUps ?? []
+    this.noSpeedMode = options?.noSpeedMode ?? false
     this.demoOnly = options?.demoOnly ?? false
 
     this.cooldown = new CooldownTimer(io, this.gameId)
@@ -200,6 +206,7 @@ class Game {
         : null,
       singleQuizPowerUpsEnabled: this.singleQuizPowerUpsEnabled,
       disabledPowerUps: this.disabledPowerUps,
+      noSpeedMode: this.noSpeedMode,
       demoOnly: this.demoOnly,
       savedAt: Date.now(),
     }
@@ -219,6 +226,7 @@ class Game {
     const game = new Game(io, null, snapshot.quizz, {
       powerUpsEnabled: snapshot.singleQuizPowerUpsEnabled,
       disabledPowerUps: snapshot.disabledPowerUps,
+      noSpeedMode: snapshot.noSpeedMode,
       demoOnly: snapshot.demoOnly,
       restore: {
         gameId: snapshot.gameId,
@@ -283,6 +291,7 @@ class Game {
             this.eveningSession.currentIndex + 1 >=
               this.eveningSession.quizIds.length
         : () => true,
+      noSpeedMode: this.noSpeedMode,
       // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
       onCoinsEarned: this.powerUpsActive
@@ -299,9 +308,11 @@ class Game {
     quizIds: string[],
     powerUpsEnabled: boolean = true,
     disabledPowerUps: string[] = [],
+    noSpeedMode: boolean = false,
   ) {
     this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
     this.disabledPowerUps = disabledPowerUps
+    this.noSpeedMode = noSpeedMode
     const firstQuizz = Config.findQuizzByAnyId(quizIds[0])
 
     if (!firstQuizz) {

@@ -82,6 +82,7 @@
   "questionType": {
     "title": "Type de question",
     "date": "Date",
+    "grid": "Grille",
     "drop_pin": "Épingle",
     "mcq": "QCM",
     "open": "Réponse libre",
@@ -95,6 +96,17 @@
     "hint": "Ordonnez les éléments dans le bon ordre. Les joueurs recevront une version mélangée.",
     "itemPlaceholder": "Ajouter un élément...",
     "itemsLabel": "Éléments (dans l'ordre correct)"
+  },
+  "grid": {
+    "countLabel": "Nombre de cases",
+    "addCell": "Ajouter une case",
+    "removeCell": "Retirer une case",
+    "hint": "Glissez une image sur une case, ou cliquez pour la choisir. Marquez ensuite la (ou les) bonne(s) case(s).",
+    "pickImage": "Choisir une image",
+    "removeImage": "Retirer l'image",
+    "labelPlaceholder": "Libellé (facultatif)",
+    "correct": "Correcte",
+    "mark": "Marquer"
   },
   "imageSequence": {
     "imagesLabel": "Images (ordre de révélation)",

@@ -80,6 +80,7 @@
   "questionType": {
     "title": "Fragentyp",
     "date": "Datum",
+    "grid": "Raster",
     "drop_pin": "Nadel setzen",
     "mcq": "Multiple Choice",
     "open": "Offene Antwort",
@@ -93,6 +94,17 @@
     "hint": "Ordne die Elemente in die richtige Reihenfolge. Spieler erhalten eine gemischte Version.",
     "itemPlaceholder": "Element hinzufügen...",
     "itemsLabel": "Elemente (in richtiger Reihenfolge)"
+  },
+  "grid": {
+    "countLabel": "Anzahl der Felder",
+    "addCell": "Feld hinzufügen",
+    "removeCell": "Feld entfernen",
+    "hint": "Ziehe ein Bild auf ein Feld oder klicke, um eines zu wählen. Markiere dann das oder die richtigen Felder.",
+    "pickImage": "Bild auswählen",
+    "removeImage": "Bild entfernen",
+    "labelPlaceholder": "Beschriftung (optional)",
+    "correct": "Richtig",
+    "mark": "Markieren"
   },
   "imageSequence": {
     "imagesLabel": "Bilder (Reihenfolge der Enthüllung)",
