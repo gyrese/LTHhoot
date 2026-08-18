@@ -10,6 +10,31 @@ type Props = {
   imageUrl?: string
 }
 
+// Découpe « cover » d'une image dans un canvas : la portion centrale à garder
+// pour remplir le cadre sans déformer. Extrait de l'effet de dépixélisation,
+// qui atteignait sinon quatre niveaux d'imbrication.
+function computeCoverCrop(
+  img: HTMLImageElement,
+  canvasRatio: number,
+): { sx: number; sy: number; sw: number; sh: number } {
+  const imgRatio = img.width / img.height
+
+  if (imgRatio > canvasRatio) {
+    const sw = img.height * canvasRatio
+
+    return { sx: (img.width - sw) / 2, sy: 0, sw, sh: img.height }
+  }
+
+  const sh = img.width / canvasRatio
+
+  return { sx: 0, sy: (img.height - sh) / 2, sw: img.width, sh }
+}
+
+// Générateur pseudo-aléatoire déterministe (FNV-1a puis congruence linéaire) :
+// hôte et joueurs dérivent la même séquence de la même graine, donc la même
+// animation. Les opérateurs binaires et l'incrément sont inhérents à ces deux
+// algorithmes — les réécrire les rendrait faux ou illisibles.
+/* eslint-disable no-bitwise, no-plusplus */
 function createPRNG(seedString: string) {
   let h = 2166136261 >>> 0
   for (let i = 0; i < seedString.length; i++) {
@@ -23,6 +48,7 @@ function createPRNG(seedString: string) {
     return state / 4294967296
   }
 }
+/* eslint-enable no-bitwise, no-plusplus */
 
 export const BackgroundRevealer = ({
   duration,
@@ -132,11 +158,8 @@ export const BackgroundRevealer = ({
         }
 
         case "puzzle":
-
         case "honeycomb":
-
         case "random-grid":
-
         default: {
           score = randVal
 
@@ -160,14 +183,14 @@ export const BackgroundRevealer = ({
     if (duration <= 0) {
       setProgress(1)
 
-      return
+      return undefined
     }
 
     const initialProgress = Math.min(1, startTimeOffset / duration)
     setProgress(initialProgress)
 
     if (initialProgress >= 1) {
-      return
+      return undefined
     }
 
     const startTime = Date.now() - initialProgress * duration * 1000
@@ -189,7 +212,7 @@ export const BackgroundRevealer = ({
   // Préchargement de l'image pour le mode dépixélisation canvas
   useEffect(() => {
     if (selectedStyle !== "pixelate" || !imageUrl) {
-      return
+      return undefined
     }
 
     const img = new Image()
@@ -198,37 +221,43 @@ export const BackgroundRevealer = ({
     img.onload = () => {
       loadedImageRef.current = img
     }
+
+    return () => {
+      // L'image peut arriver après le démontage : sans ça, `onload` réécrirait
+      // la ref d'un composant disparu.
+      img.onload = null
+    }
   }, [selectedStyle, imageUrl])
 
   // Rendu Canvas pour Dépixélisation & Neige TV (Glitch)
   useEffect(() => {
     if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
-      return
+      return undefined
     }
 
     const canvas = canvasRef.current
 
     if (!canvas) {
-      return
+      return undefined
     }
 
     const ctx = canvas.getContext("2d")
 
     if (!ctx) {
-      return
+      return undefined
     }
 
     const { width } = canvas
     const { height } = canvas
 
     if (width === 0 || height === 0) {
-      return
+      return undefined
     }
 
     if (progress >= 1) {
       ctx.clearRect(0, 0, width, height)
 
-      return
+      return undefined
     }
 
     if (selectedStyle === "pixelate") {
@@ -248,20 +277,8 @@ export const BackgroundRevealer = ({
 
         if (offCtx) {
           offCtx.imageSmoothingEnabled = false
-          const imgRatio = img.width / img.height
-          const canvasRatio = width / height
-          let sx = 0
-          let sy = 0
-          let sw = img.width
-          let sh = img.height
 
-          if (imgRatio > canvasRatio) {
-            sw = img.height * canvasRatio
-            sx = (img.width - sw) / 2
-          } else {
-            sh = img.width / canvasRatio
-            sy = (img.height - sh) / 2
-          }
+          const { sx, sy, sw, sh } = computeCoverCrop(img, width / height)
 
           offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
 
@@ -294,18 +311,22 @@ export const BackgroundRevealer = ({
         ctx.fillRect(0, y, width, 1.5)
       }
     }
+
+    // Rendu ponctuel : rien à nettoyer, mais toutes les branches doivent
+    // rendre la même chose (l'effet sort tôt dans plusieurs cas).
+    return undefined
   }, [progress, selectedStyle])
 
   // Redimensionnement du Canvas
   useEffect(() => {
     if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
-      return
+      return undefined
     }
 
     const canvas = canvasRef.current
 
     if (!canvas) {
-      return
+      return undefined
     }
 
     const updateSize = () => {
@@ -620,7 +641,6 @@ export const BackgroundRevealer = ({
         }
 
       case "random-grid":
-
       default:
         return {
           opacity: 0,

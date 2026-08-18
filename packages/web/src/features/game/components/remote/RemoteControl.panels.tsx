@@ -488,11 +488,16 @@ function OpenAnswersManagerPanel({
                 }}
                 className={clsx(
                   "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all active:scale-98",
-                  answer.isCorrect && !rescued
-                    ? "cursor-default border-green-500/30 bg-green-500/15"
-                    : answer.isCorrect && rescued
-                      ? "border-green-500/40 bg-green-500/15 hover:border-red-500/30 hover:bg-red-500/10"
-                      : "border-white/8 bg-white/5 hover:border-orange-500/20 hover:bg-white/10",
+                  // Bonne réponse d'origine : rien à faire, la ligne est figée.
+                  // Bonne réponse repêchée : le survol propose de l'annuler.
+                  answer.isCorrect &&
+                    !rescued &&
+                    "cursor-default border-green-500/30 bg-green-500/15",
+                  answer.isCorrect &&
+                    rescued &&
+                    "border-green-500/40 bg-green-500/15 hover:border-red-500/30 hover:bg-red-500/10",
+                  !answer.isCorrect &&
+                    "border-white/8 bg-white/5 hover:border-orange-500/20 hover:bg-white/10",
                   validating === answer.text && "opacity-50",
                 )}
               >

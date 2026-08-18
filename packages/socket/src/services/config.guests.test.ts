@@ -83,7 +83,7 @@ describe("comptes invités", () => {
     const { default: Config } = await import("@rahoot/socket/services/config")
 
     Config.createGuest("Marie", "pass1234")
-    const saved = Config.saveQuizz(
+    const saved = await Config.saveQuizz(
       validQuizz("Quiz de Pierre"),
       "pierre-dupont",
     )
@@ -104,7 +104,7 @@ describe("comptes invités", () => {
 
     // Marie n'a que des quiz archivés : elle ne doit produire AUCUNE entrée
     // (donc aucun sous-dossier « Invités/Marie » côté admin).
-    Config.saveQuizz(
+    await Config.saveQuizz(
       { ...validQuizz("Quiz archivé de Marie"), folder: "Archive" },
       "marie",
     )

@@ -259,7 +259,7 @@ const SlideEditor = ({
   // du preventDefault/stopPropagation ci-dessous.
   useEffect(() => {
     if (!selectedId && !hasMultiSelection) {
-      return
+      return undefined
     }
 
     const handler = (e: KeyboardEvent) => {

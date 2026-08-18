@@ -331,7 +331,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   // joueur qui rallume son téléphone dans la partie en ~1s au lieu de 8–45s.
   useEffect(() => {
     if (!socket) {
-      return
+      return undefined
     }
 
     let lastProbe = 0

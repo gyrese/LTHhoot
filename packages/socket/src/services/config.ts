@@ -13,6 +13,10 @@ import {
 } from "@rahoot/common/utils/guest"
 import { quizzValidator } from "@rahoot/common/validators/quizz"
 import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
+import {
+  migrateAllQuizzesInConfig,
+  migrateBase64InObject,
+} from "@rahoot/socket/utils/base64-cleaner"
 import { collectUploadRefs } from "@rahoot/socket/utils/collect-media-refs"
 import { normalizeFilename } from "@rahoot/socket/utils/game"
 import { hashPassword } from "@rahoot/socket/utils/password"
@@ -111,6 +115,12 @@ class Config {
         JSON.stringify(EXAMPLE_QUIZZ, null, 2),
       )
     }
+
+    // Migration automatique au démarrage : si des quiz contiennent des images
+    // base64, elles sont extraites en WebP dans uploads/ et le JSON est mis à jour.
+    void migrateAllQuizzesInConfig(getPath()).catch((err) =>
+      console.error("Failed to migrate base64 quizzes on boot:", err),
+    )
   }
 
   static game() {
@@ -242,16 +252,19 @@ class Config {
     }
   }
 
-  static updateQuizz(
+  static async updateQuizz(
     id: string,
     data: unknown,
     owner?: string,
-  ): { id: string; updatedAt: number } {
+  ): Promise<{ id: string; updatedAt: number }> {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {
       throw new Error(result.error.issues[0].message)
     }
+
+    const uploadsDir = getPath("uploads")
+    const cleanedData = await migrateBase64InObject(result.data, uploadsDir)
 
     const oldPath = getPath(`${quizzDir(owner)}/${safeId(id)}.json`)
 
@@ -265,7 +278,7 @@ class Config {
     // Un client qui envoie explicitement `updatedAt: undefined` (force overwrite)
     // contourne volontairement ce contrôle.
     const existingRaw = JSON.parse(fs.readFileSync(oldPath, "utf-8"))
-    const clientUpdatedAt = result.data.updatedAt
+    const clientUpdatedAt = cleanedData.updatedAt
 
     if (
       existingRaw.updatedAt !== undefined &&
@@ -279,7 +292,7 @@ class Config {
 
     writeFileAtomic(
       oldPath,
-      JSON.stringify({ ...result.data, updatedAt }, null, 2),
+      JSON.stringify({ ...cleanedData, updatedAt }, null, 2),
     )
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
 
@@ -430,23 +443,26 @@ class Config {
     fs.unlinkSync(filePath)
   }
 
-  static saveQuizz(
+  static async saveQuizz(
     data: unknown,
     owner?: string,
-  ): { id: string; updatedAt: number } {
+  ): Promise<{ id: string; updatedAt: number }> {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {
       throw new Error(result.error.issues[0].message)
     }
 
-    const id = normalizeFilename(result.data.subject)
+    const uploadsDir = getPath("uploads")
+    const cleanedData = await migrateBase64InObject(result.data, uploadsDir)
+
+    const id = normalizeFilename(cleanedData.subject)
     const filePath = getPath(`${quizzDir(owner)}/${id}.json`)
     const updatedAt = Date.now()
 
     writeFileAtomic(
       filePath,
-      JSON.stringify({ ...result.data, updatedAt }, null, 2),
+      JSON.stringify({ ...cleanedData, updatedAt }, null, 2),
     )
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
 

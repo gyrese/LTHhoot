@@ -54,9 +54,12 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.SAVE,
-    manager.withAnyAuth(socket, (session, data) => {
+    manager.withAnyAuth(socket, async (session, data) => {
       try {
-        const { id, updatedAt } = Config.saveQuizz(data, ownerFor(session))
+        const { id, updatedAt } = await Config.saveQuizz(
+          data,
+          ownerFor(session),
+        )
 
         socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id, updatedAt })
         emitConfig(socket)
@@ -91,7 +94,7 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.UPDATE,
-    manager.withAnyAuth(socket, (session, { id, ...data }) => {
+    manager.withAnyAuth(socket, async (session, { id, ...data }) => {
       try {
         if (isReadonlyForSession(session, id)) {
           socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
@@ -99,7 +102,7 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
           return
         }
 
-        const { id: newId, updatedAt } = Config.updateQuizz(
+        const { id: newId, updatedAt } = await Config.updateQuizz(
           id,
           data,
           ownerFor(session),

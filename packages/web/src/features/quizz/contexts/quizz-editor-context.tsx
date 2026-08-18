@@ -286,18 +286,14 @@ export const QuizzEditorProvider = ({
   // Nettoyage automatique des anciens backups volumineux de localStorage contenant du base64
   useEffect(() => {
     try {
-      const keysToRemove: string[] = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
+      const backupKeys = Array.from(
+        { length: localStorage.length },
+        (_, i) => localStorage.key(i),
+      ).filter((key): key is string => Boolean(key?.startsWith("rahoot-backup-")))
 
-        if (key && key.startsWith("rahoot-backup-")) {
-          const val = localStorage.getItem(key)
-
-          if (val && val.includes("data:image/")) {
-            keysToRemove.push(key)
-          }
-        }
-      }
+      const keysToRemove = backupKeys.filter((key) =>
+        localStorage.getItem(key)?.includes("data:image/"),
+      )
       keysToRemove.forEach((key) => {
         console.warn(
           `[LocalStorage Cleanup] Suppression d'un ancien backup lourd contenant du base64 : ${key}`,
@@ -792,7 +788,7 @@ export const QuizzEditorProvider = ({
         })
 
         if (allErrors.length > 0) {
-          const first = allErrors[0]
+          const [first] = allErrors
           toast.error(
             `Veuillez corriger les erreurs sur la diapositive ${first.index} : ${first.errors[0]}`,
             { id: "quizz-save" },
@@ -993,7 +989,7 @@ export const QuizzEditorProvider = ({
   // Autosave to localStorage backup
   useEffect(() => {
     if (!quizzId || !isDirty) {
-      return
+      return undefined
     }
 
     const timer = setTimeout(() => {
@@ -1006,7 +1002,7 @@ export const QuizzEditorProvider = ({
         salonImage,
         listingImage,
         podiumTheme,
-        questions: questions.map(({ id, ...q }) => q),
+        questions: questions.map(({ id: _id, ...q }) => q),
       }
 
       try {

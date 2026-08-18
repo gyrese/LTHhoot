@@ -1,18 +1,33 @@
 name: Docker Latest
 
+# Publie l'image `latest` UNIQUEMENT quand la CI du commit est verte. Auparavant
+# ce workflow partait sur `push: main` en parallele de la CI : une image issue
+# d'un build rouge pouvait donc etre publiee, et c'est arrive. Le declenchement
+# manuel (workflow_dispatch) reste possible, sans condition.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # `workflow_dispatch` n'a pas de `workflow_run` : la condition ne doit
+    # bloquer que le declenchement automatique.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          # `workflow_run` s'execute sur le HEAD du depot par defaut : on cible
+          # explicitement le commit dont la CI vient de passer.
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

@@ -53,6 +53,41 @@ function detectSeparator(firstLine: string): string {
   return firstLine.includes(",") ? "," : ";"
 }
 
+// Lit un champ entre guillemets à partir du guillemet ouvrant (`start`), en
+// dépliant les `""` échappés. Extrait de `parseRow`, qui empilait sinon cinq
+// niveaux de boucles et de conditions.
+function readQuotedField(
+  line: string,
+  start: number,
+  len: number,
+): { field: string; next: number } {
+  let field = ""
+  // Saute le guillemet ouvrant.
+  let i = start + 1
+
+  while (i < len) {
+    if (line[i] !== '"') {
+      field += line[i]
+      i += 1
+      continue
+    }
+
+    // Guillemet échappé (`""`) : on en garde un seul et on poursuit.
+    if (i + 1 < len && line[i + 1] === '"') {
+      field += '"'
+      i += 2
+      continue
+    }
+
+    // Guillemet fermant : fin du champ.
+    i += 1
+
+    break
+  }
+
+  return { field, next: i }
+}
+
 function parseRow(line: string, sep: string): string[] {
   const fields: string[] = []
   let i = 0
@@ -66,46 +101,27 @@ function parseRow(line: string, sep: string): string[] {
     }
 
     if (line[i] === '"') {
-      // Champ entre guillemets
-      let field = ""
-      i++ // Saute le guillemet ouvrant
-
-      while (i < len) {
-        if (line[i] === '"') {
-          if (i + 1 < len && line[i + 1] === '"') {
-            // Guillemet échappé
-            field += '"'
-            i += 2
-          } else {
-            // Fin du champ entre guillemets
-            i++
-
-            break
-          }
-        } else {
-          field += line[i]
-          i++
-        }
-      }
-
+      const { field, next } = readQuotedField(line, i, len)
       fields.push(field)
+      i = next
 
       // Saute le séparateur suivant si présent
       if (i < len && line[i] === sep) {
-        i++
+        i += 1
       }
     } else {
       // Champ sans guillemets
       const start = i
 
       while (i < len && line[i] !== sep) {
-        i++
+        i += 1
       }
 
       fields.push(line.slice(start, i))
 
       if (i < len) {
-        i++ // Saute le séparateur
+        // Saute le séparateur
+        i += 1
       } else {
         break
       }
@@ -122,7 +138,7 @@ function parseCsvToRows(
   const clean = text.startsWith("﻿") ? text.slice(1) : text
 
   // Découpe en lignes (gère \r\n et \n)
-  const lines = clean.split(/\r?\n/)
+  const lines = clean.split(/\r?\n/u)
 
   // Cherche la première ligne non vide
   const headerLineIndex = lines.findIndex((l) => l.trim().length > 0)
@@ -136,7 +152,7 @@ function parseCsvToRows(
   const headers = parseRow(headerLine, sep).map((h) => h.trim().toLowerCase())
 
   const rows: string[][] = []
-  for (let i = headerLineIndex + 1; i < lines.length; i++) {
+  for (let i = headerLineIndex + 1; i < lines.length; i += 1) {
     const line = lines[i].trim()
 
     if (line.length === 0) {
@@ -460,7 +476,10 @@ export function downloadCsvTemplate(): void {
   ]
 
   const csvContent = lines.join("\n")
-  const blob = new Blob([`﻿${csvContent}`], { type: "text/csv;charset=utf-8;" })
+  // BOM UTF-8 (U+FEFF) en tête : sans lui Excel lit le fichier en ANSI et
+  // massacre les accents. Écrit en séquence d'échappement, le caractère brut
+  // étant un espace « irrégulier » invisible à la relecture.
+  const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" })
   const url = URL.createObjectURL(blob)
 
   const link = document.createElement("a")
