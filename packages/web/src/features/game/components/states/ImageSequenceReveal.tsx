@@ -18,7 +18,7 @@ const ImageSequenceReveal = ({ images, imageInterval }: Props) => {
 
   useEffect(() => {
     if (images.length <= 1) {
-      return
+      return undefined
     }
 
     const timer = setInterval(() => {

@@ -241,7 +241,7 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     // l'avancement : on désactive le clic/flèche global de GameWrapper pour ne
     // pas déclencher deux avancements concurrents.
     if (!manager || !next || eveningData) {
-      return
+      return undefined
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -441,3 +441,82 @@ export const renderScorecardToCanvas = async (
 
   return canvas
 }
+
+export const renderSoloVictoryToCanvas = async (
+  username: string,
+  points: number,
+  subject: string,
+): Promise<HTMLCanvasElement> => {
+  const canvas = document.createElement("canvas")
+  const size = 1024
+  canvas.width = size
+  canvas.height = size
+
+  const ctx = canvas.getContext("2d")
+
+  if (!ctx) {
+    throw new Error("Canvas 2D context unavailable")
+  }
+
+  // 1. Image template vintage
+  const img = await loadImage("/solo-victory-template.jpg")
+  ctx.drawImage(img, 0, 0, size, size)
+
+  // 2. Nom du joueur (centré entre les délimiteurs verticaux)
+  ctx.save()
+  ctx.fillStyle = "#1e1a17"
+  ctx.textAlign = "center"
+  ctx.textBaseline = "middle"
+
+  const maxNameWidth = 400
+  let nameFontSize = 46
+  ctx.font = `900 ${nameFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  while (ctx.measureText(username).width > maxNameWidth && nameFontSize > 20) {
+    nameFontSize -= 2
+    ctx.font = `900 ${nameFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  }
+  ctx.fillText(username, 508, 642)
+  ctx.restore()
+
+  // 3. Nombre de points (positionné à droite avant "pts")
+  ctx.save()
+  ctx.fillStyle = "#1e1a17"
+  ctx.textAlign = "center"
+  ctx.textBaseline = "middle"
+  const pointsStr = points.toLocaleString()
+  let pointsFontSize = 38
+  ctx.font = `900 ${pointsFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  const maxPtsWidth = 95
+  while (ctx.measureText(pointsStr).width > maxPtsWidth && pointsFontSize > 20) {
+    pointsFontSize -= 2
+    ctx.font = `900 ${pointsFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  }
+  ctx.fillText(pointsStr, 758, 642)
+  ctx.restore()
+
+  // 4. Nom du quiz (dans la bannière violette en dessous)
+  ctx.save()
+  ctx.fillStyle = "#ffffff"
+  ctx.textAlign = "center"
+  ctx.textBaseline = "middle"
+  ctx.shadowColor = "rgba(0, 0, 0, 0.6)"
+  ctx.shadowBlur = 6
+  ctx.shadowOffsetY = 2
+
+  const maxSubjectWidth = 630
+  let subjectFontSize = 34
+  const displaySubject = subject.toUpperCase()
+  ctx.font = `900 ${subjectFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  while (
+    ctx.measureText(displaySubject).width > maxSubjectWidth &&
+    subjectFontSize > 16
+  ) {
+    subjectFontSize -= 2
+    ctx.font = `900 ${subjectFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
+  }
+  ctx.fillText(displaySubject, 532, 776)
+  ctx.restore()
+
+  return canvas
+}
+

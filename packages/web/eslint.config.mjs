@@ -109,7 +109,6 @@ export default defineConfig([
       "no-implicit-coercion": "error",
       "no-implicit-globals": "error",
       "no-implied-eval": "error",
-      "no-inline-comments": "error",
       "no-invalid-this": "error",
       "no-iterator": "error",
       "no-labels": "error",
@@ -166,48 +165,19 @@ export default defineConfig([
       "require-unicode-regexp": "error",
       "symbol-description": "error",
       yoda: "error",
-      "line-comment-position": ["error", { position: "above" }],
+      // Mise en forme : prettier fait autorité (script `format`, verifie en CI).
+      // Ces règles-ci portaient sur le même terrain et se battaient avec lui —
+      // un `eslint --fix` inserait des sauts de ligne que le formatage suivant
+      // defaisait, chaque passe recreant les erreurs de l'autre. On les laisse
+      // à prettier ; `indent`, `padded-blocks`, `quotes` et `semi` restent en
+      // place, prettier produit deja exactement ce qu'elles exigent.
+      "line-comment-position": "off",
+      "no-inline-comments": "off",
+      "newline-before-return": "off",
+      "padding-line-between-statements": "off",
       indent: "off",
-      "newline-before-return": "error",
       "no-undef": "error",
       "padded-blocks": ["error", "never"],
-      "padding-line-between-statements": [
-        "error",
-        {
-          blankLine: "always",
-          prev: "*",
-          next: [
-            "break",
-            "case",
-            "cjs-export",
-            "class",
-            "continue",
-            "do",
-            "if",
-            "switch",
-            "try",
-            "while",
-            "return",
-          ],
-        },
-        {
-          blankLine: "always",
-          prev: [
-            "break",
-            "case",
-            "cjs-export",
-            "class",
-            "continue",
-            "do",
-            "if",
-            "switch",
-            "try",
-            "while",
-            "return",
-          ],
-          next: "*",
-        },
-      ],
       quotes: [
         "error",
         "double",

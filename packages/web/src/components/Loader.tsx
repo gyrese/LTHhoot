@@ -28,7 +28,7 @@ const Loader = ({
   // default to compact mode (no mascot) for inline buttons/badges.
   const isCompactClass =
     typeof className === "string" &&
-    /\b(h-[3-9]|w-[3-9]|h-10|w-10|h-11|w-11|size-[3-9]|size-10)\b/.test(
+    /\b(h-[3-9]|w-[3-9]|h-10|w-10|h-11|w-11|size-[3-9]|size-10)\b/u.test(
       className,
     )
 

@@ -1180,7 +1180,7 @@ const SlideCanvas = ({
                   )
                 }
 
-                if (el.type === "youtube" && !readOnly) {
+                if (el.type === "youtube" && (!readOnly || hideYoutube)) {
                   return (
                     <CanvasYoutubeElement
                       key={el.id}

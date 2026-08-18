@@ -23,12 +23,17 @@ import {
   AtSign,
   CheckCircle2,
   Clock,
+  Download,
   Send,
   Share2,
   Sparkles,
   User,
   XCircle,
 } from "lucide-react"
+import {
+  downloadCanvasAsPng,
+  renderSoloVictoryToCanvas,
+} from "@rahoot/web/features/game/utils/podium-export"
 import React, { useEffect, useState } from "react"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
@@ -107,10 +112,122 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     totalQuestions: number
   } | null>(null)
 
+  const [victoryImgUrl, setVictoryImgUrl] = useState<string | null>(null)
+  const [isExportingCard, setIsExportingCard] = useState(false)
+
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.2 })
   const [sfxCorrect] = useSound(SFX.RESULTS_SOUND, { volume: 0.4 })
   const [sfxWrong] = useSound(SFX.BOUMP_SOUND, { volume: 0.4 })
+
+  // Génération automatique du visuel de victoire rétro pour les réseaux sociaux
+  useEffect(() => {
+    if (step !== "FINISHED" || !resultSummary || !quizz) {
+      return
+    }
+
+    let cancelled = false
+    const generateVictoryVisual = async () => {
+      try {
+        const canvas = await renderSoloVictoryToCanvas(
+          playerName.trim() || "Joueur",
+          resultSummary.totalPoints,
+          quizz.subject,
+        )
+        if (!cancelled) {
+          setVictoryImgUrl(canvas.toDataURL("image/png"))
+        }
+      } catch (err) {
+        console.error("Échec de la génération du visuel de victoire:", err)
+      }
+    }
+
+    generateVictoryVisual()
+
+    return () => {
+      cancelled = true
+    }
+  }, [step, resultSummary, quizz, playerName])
+
+  const handleDownloadVictory = async () => {
+    if (!quizz || !resultSummary) {
+      return
+    }
+    setIsExportingCard(true)
+    try {
+      const canvas = await renderSoloVictoryToCanvas(
+        playerName.trim() || "Joueur",
+        resultSummary.totalPoints,
+        quizz.subject,
+      )
+      downloadCanvasAsPng(canvas, `victoire-${quizz.subject}-${playerName}`)
+      toast.success("Visuel de victoire téléchargé !")
+    } catch {
+      toast.error("Erreur lors du téléchargement de l'image")
+    } finally {
+      setIsExportingCard(false)
+    }
+  }
+
+  const handleShareVictory = async () => {
+    if (!quizz || !resultSummary) {
+      return
+    }
+    setIsExportingCard(true)
+    try {
+      const canvas = await renderSoloVictoryToCanvas(
+        playerName.trim() || "Joueur",
+        resultSummary.totalPoints,
+        quizz.subject,
+      )
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          return
+        }
+        const file = new File(
+          [blob],
+          `victoire-${playerName.replace(/[^a-zA-Z0-9]/g, "_")}.png`,
+          { type: "image/png" },
+        )
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Victoire au Quiz - ${quizz.subject}`,
+              text: `J'ai fait ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`,
+              url: window.location.href,
+            })
+            return
+          } catch {
+            // L'utilisateur a annulé ou le partage a échoué
+          }
+        }
+
+        // Fallback : téléchargement image + partage texte ou copie du lien
+        downloadCanvasAsPng(canvas, `victoire-${quizz.subject}-${playerName}`)
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: quizz.subject,
+              text: `J'ai fait ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`,
+              url: window.location.href,
+            })
+          } catch {
+            // Ignoré
+          }
+        } else {
+          navigator.clipboard.writeText(window.location.href)
+          toast.success("Visuel téléchargé & lien copié !")
+        }
+      }, "image/png")
+    } catch {
+      toast.error("Erreur lors du partage")
+    } finally {
+      setIsExportingCard(false)
+    }
+  }
 
   // Enchaînement automatique vers la question suivante après 2.2 secondes (animation fluide sans clic)
   useEffect(() => {
@@ -895,68 +1012,89 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       {step === "FINISHED" && resultSummary && (
         <>
           <Confetti recycle={false} numberOfPieces={350} />
-          <div className="relative z-20 flex flex-1 items-center justify-center p-4">
-            <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-white/15 bg-black/70 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8">
+          <div className="relative z-20 flex max-h-screen flex-1 items-center justify-center overflow-y-auto p-4 py-8">
+            <div className="flex w-full max-w-lg flex-col items-center rounded-3xl border border-white/20 bg-black/75 p-5 text-center shadow-2xl backdrop-blur-2xl sm:p-7">
               <img
                 src={logoImg}
                 alt="L'Apéro Quiz"
-                className="mb-4 h-32 w-auto animate-bounce object-contain drop-shadow-[0_10px_25px_rgba(249,115,22,0.5)] sm:h-40"
+                className="mb-3 h-16 w-auto object-contain drop-shadow-[0_8px_20px_rgba(249,115,22,0.4)] sm:h-20"
               />
 
-              <h2 className="mb-1 text-3xl font-black text-white">
+              <h2 className="text-2xl font-black text-white sm:text-3xl">
                 Partie Terminée !
               </h2>
-              <p className="mb-6 text-sm text-gray-300">
+              <p className="mb-4 text-sm text-gray-300">
                 Bravo{" "}
                 <span className="font-bold text-orange-400">{playerName}</span>{" "}
                 !
               </p>
 
-              {/* Box résultats */}
-              <div className="mb-6 grid w-full grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-slate-900/90 p-5">
+              {/* Visuel de victoire personnalisé (Aperçu direct du canvas) */}
+              <div className="relative mb-5 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-stone-900 shadow-[0_15px_35px_rgba(0,0,0,0.6)] transition-all duration-300 hover:scale-[1.02]">
+                {victoryImgUrl ? (
+                  <img
+                    src={victoryImgUrl}
+                    alt="Visuel de Victoire"
+                    className="h-auto w-full object-contain select-none"
+                  />
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center p-6 text-gray-400">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="size-8 animate-spin rounded-full border-3 border-orange-500 border-t-transparent" />
+                      <span className="text-xs font-semibold">
+                        Génération du visuel de victoire...
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Boutons d'action : Partage réseaux & Téléchargement */}
+              <div className="flex w-full flex-col gap-2.5">
+                <button
+                  onClick={handleShareVictory}
+                  disabled={isExportingCard || !victoryImgUrl}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99] disabled:opacity-50"
+                >
+                  <Share2 className="size-5" />
+                  <span>Partager sur mes Réseaux</span>
+                </button>
+
+                <button
+                  onClick={handleDownloadVictory}
+                  disabled={isExportingCard || !victoryImgUrl}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800/90 py-3 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.99] disabled:opacity-50"
+                >
+                  <Download className="size-4.5 text-orange-400" />
+                  <span>Télécharger l'image de victoire</span>
+                </button>
+              </div>
+
+              {/* Box résultats complémentaires */}
+              <div className="mt-4 grid w-full grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-slate-900/80 p-3.5">
                 <div className="flex flex-col items-center border-r border-white/10 pr-2">
-                  <span className="text-xs font-semibold text-gray-400">
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase">
                     Votre Score
                   </span>
-                  <span className="text-2xl font-black text-amber-400">
+                  <span className="text-xl font-black text-amber-400">
                     {resultSummary.totalPoints.toLocaleString()} pts
                   </span>
                 </div>
 
                 <div className="flex flex-col items-center pl-2">
-                  <span className="text-xs font-semibold text-gray-400">
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase">
                     Rang Provisoire
                   </span>
-                  <span className="text-2xl font-black text-orange-400">
+                  <span className="text-xl font-black text-orange-400">
                     #{resultSummary.rank}
                   </span>
                 </div>
               </div>
 
-              <p className="mb-6 rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-xs text-gray-300">
-                Le tirage au sort du gagnant aura lieu en fin de semaine parmi
-                le{" "}
+              <p className="mt-3.5 rounded-xl border border-orange-500/20 bg-orange-500/10 p-2.5 text-[11px] text-gray-300">
+                Tirage au sort en fin de semaine parmi le{" "}
                 <strong>Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores</strong>.
               </p>
-
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: quizz.subject,
-                      text: `J'ai fait ${resultSummary.totalPoints} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`,
-                      url: window.location.href,
-                    })
-                  } else {
-                    navigator.clipboard.writeText(window.location.href)
-                    toast.success("Lien copié dans le presse-papier !")
-                  }
-                }}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800 py-3.5 font-bold text-white transition-all hover:bg-slate-700"
-              >
-                <Share2 className="size-5 text-orange-400" />
-                <span>Partager ce Quiz</span>
-              </button>
             </div>
           </div>
         </>

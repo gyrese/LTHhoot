@@ -22,7 +22,7 @@ const useWakeLock = () => {
     const { wakeLock } = navigator as NavigatorWithWakeLock
 
     if (!wakeLock) {
-      return
+      return undefined
     }
 
     let sentinel: WakeLockSentinelLike | null = null
@@ -33,7 +33,7 @@ const useWakeLock = () => {
         const lock = await wakeLock.request("screen")
 
         if (unmounted) {
-          void lock.release().catch(() => {})
+          void lock.release().catch(() => undefined)
 
           return
         }
@@ -56,7 +56,7 @@ const useWakeLock = () => {
     return () => {
       unmounted = true
       document.removeEventListener("visibilitychange", onVisibilityChange)
-      void sentinel?.release().catch(() => {})
+      void sentinel?.release().catch(() => undefined)
     }
   }, [])
 }

@@ -18,9 +18,11 @@ import {
   DropPinAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
 import GridBoard from "@rahoot/web/features/game/components/GridBoard"
+import ImageSequenceReveal from "@rahoot/web/features/game/components/states/ImageSequenceReveal"
 import type { GridCell } from "@rahoot/common/types/game"
 import { useTranslation } from "react-i18next"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
+import clsx from "clsx"
 
 // Taille de conception fixe : la slide est rendue comme en présentation réelle
 // puis réduite via transform pour tenir dans la carte (miniature fidèle).
@@ -29,6 +31,8 @@ const DESIGN_H = 720
 
 type Props = {
   question: QuestionWithId
+  className?: string
+  hideYoutube?: boolean
 }
 
 const isEmpty = (list?: unknown[]) => !list || list.length === 0
@@ -36,7 +40,11 @@ const isEmpty = (list?: unknown[]) => !list || list.length === 0
 const hasGridCells = (type: string, cells?: GridCell[]) =>
   type === "grid" && !isEmpty(cells)
 
-const PreviewPresenterView = ({ question }: Props) => {
+const PreviewPresenterView = ({
+  question,
+  className,
+  hideYoutube = true,
+}: Props) => {
   const { t } = useTranslation()
   const { salonImage: quizSalonImage } = useQuizzEditor()
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -49,9 +57,15 @@ const PreviewPresenterView = ({ question }: Props) => {
       return undefined
     }
 
+    if (el.clientWidth > 0) {
+      setScale(el.clientWidth / DESIGN_W)
+    }
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setScale(entry.contentRect.width / DESIGN_W)
+        if (entry.contentRect.width > 0) {
+          setScale(entry.contentRect.width / DESIGN_W)
+        }
       }
     })
     observer.observe(el)
@@ -79,6 +93,8 @@ const PreviewPresenterView = ({ question }: Props) => {
     gridCols,
     gridRows,
     revelationStyle,
+    images,
+    imageInterval,
   } = question as QuestionWithId & {
     answers?: string[]
     min?: number
@@ -93,6 +109,8 @@ const PreviewPresenterView = ({ question }: Props) => {
     gridCols?: number
     gridRows?: number
     revelationStyle?: string
+    images?: string[]
+    imageInterval?: number
   }
 
   let bgStyle: CSSProperties = {
@@ -114,7 +132,10 @@ const PreviewPresenterView = ({ question }: Props) => {
   return (
     <div
       ref={wrapperRef}
-      className="relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl"
+      className={clsx(
+        "relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl",
+        className,
+      )}
     >
       <div
         key={question.id}
@@ -163,8 +184,16 @@ const PreviewPresenterView = ({ question }: Props) => {
             onSelect={() => undefined}
             readOnly={true}
             noBackground={true}
+            hideYoutube={hideYoutube}
           />
         </div>
+
+        {type === "image_sequence" && images && images.length > 0 && (
+          <ImageSequenceReveal
+            images={images}
+            imageInterval={imageInterval ?? 5}
+          />
+        )}
 
         {/* Titre de la question */}
         {type !== "title" && (
