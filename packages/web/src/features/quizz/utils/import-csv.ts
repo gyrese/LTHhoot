@@ -479,7 +479,9 @@ export function downloadCsvTemplate(): void {
   // BOM UTF-8 (U+FEFF) en tête : sans lui Excel lit le fichier en ANSI et
   // massacre les accents. Écrit en séquence d'échappement, le caractère brut
   // étant un espace « irrégulier » invisible à la relecture.
-  const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" })
+  const blob = new Blob([`\uFEFF${csvContent}`], {
+    type: "text/csv;charset=utf-8;",
+  })
   const url = URL.createObjectURL(blob)
 
   const link = document.createElement("a")

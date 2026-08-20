@@ -286,10 +286,11 @@ export const QuizzEditorProvider = ({
   // Nettoyage automatique des anciens backups volumineux de localStorage contenant du base64
   useEffect(() => {
     try {
-      const backupKeys = Array.from(
-        { length: localStorage.length },
-        (_, i) => localStorage.key(i),
-      ).filter((key): key is string => Boolean(key?.startsWith("rahoot-backup-")))
+      const backupKeys = Array.from({ length: localStorage.length }, (_, i) =>
+        localStorage.key(i),
+      ).filter((key): key is string =>
+        Boolean(key?.startsWith("rahoot-backup-")),
+      )
 
       const keysToRemove = backupKeys.filter((key) =>
         localStorage.getItem(key)?.includes("data:image/"),
