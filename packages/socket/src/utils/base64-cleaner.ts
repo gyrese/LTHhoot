@@ -9,6 +9,41 @@ import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
  * to WebP if possible), and replaces the base64 string with the relative file URL
  * (`/uploads/img-migrated-XXXX.webp`).
  */
+const IMAGE_DATA_URL_RE = /^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/u
+
+/**
+ * Écrit une image décodée dans `uploadsDir` : en WebP si sharp y parvient,
+ * sinon le binaire d'origine tel quel. Extrait de la boucle de migration, qui
+ * empilait sinon quatre niveaux d'imbrication.
+ */
+async function writeMigratedImage(
+  buffer: Buffer,
+  baseName: string,
+  ext: string,
+  uploadsDir: string,
+): Promise<string> {
+  try {
+    sharp.concurrency(1)
+    const outName = `${baseName}.webp`
+
+    await sharp(buffer)
+      .webp({ quality: 82 })
+      .toFile(path.join(uploadsDir, outName))
+
+    return `/uploads/${outName}`
+  } catch (err) {
+    console.error(
+      "[Base64 Migration] Sharp WebP conversion failed, falling back to direct write:",
+      err,
+    )
+    const outName = `${baseName}.${ext}`
+
+    fs.writeFileSync(path.join(uploadsDir, outName), buffer)
+
+    return `/uploads/${outName}`
+  }
+}
+
 export async function migrateBase64InObject<T>(
   obj: T,
   uploadsDir: string,
@@ -22,7 +57,10 @@ export async function migrateBase64InObject<T>(
   }
 
   if (Array.isArray(obj)) {
-    for (let i = 0; i < obj.length; i++) {
+    for (let i = 0; i < obj.length; i += 1) {
+      // Migration volontairement séquentielle : sharp tourne en concurrence 1
+      // pour ne pas faire exploser la mémoire sur un quiz plein d'images.
+      // eslint-disable-next-line no-await-in-loop
       obj[i] = await migrateBase64InObject(obj[i], uploadsDir)
     }
 
@@ -35,44 +73,82 @@ export async function migrateBase64InObject<T>(
     const val = record[key]
 
     if (typeof val === "string" && val.startsWith("data:image/")) {
-      const matches = val.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/)
+      const matches = IMAGE_DATA_URL_RE.exec(val)
 
       if (matches) {
-        const ext = matches[1] === "jpeg" ? "jpg" : matches[1]
-        const base64Data = matches[2]
-        const buffer = Buffer.from(base64Data, "base64")
-
+        const [, mime, base64Data] = matches
+        const ext = mime === "jpeg" ? "jpg" : mime
         const baseName = `img-migrated-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
 
-        let relativeUrl = ""
-
-        try {
-          sharp.concurrency(1)
-          const outName = `${baseName}.webp`
-          const outPath = path.join(uploadsDir, outName)
-
-          await sharp(buffer).webp({ quality: 82 }).toFile(outPath)
-          relativeUrl = `/uploads/${outName}`
-        } catch (err) {
-          console.error(
-            "[Base64 Migration] Sharp WebP conversion failed, falling back to direct write:",
-            err,
-          )
-          const outName = `${baseName}.${ext}`
-          const outPath = path.join(uploadsDir, outName)
-
-          fs.writeFileSync(outPath, buffer)
-          relativeUrl = `/uploads/${outName}`
-        }
-
-        record[key] = relativeUrl
+        // eslint-disable-next-line no-await-in-loop
+        record[key] = await writeMigratedImage(
+          Buffer.from(base64Data, "base64"),
+          baseName,
+          ext,
+          uploadsDir,
+        )
       }
     } else if (val && typeof val === "object") {
+      // eslint-disable-next-line no-await-in-loop
       record[key] = await migrateBase64InObject(val, uploadsDir)
     }
   }
 
   return obj
+}
+
+/** Dossiers `quizz/` de chaque invité, ignorés silencieusement s'ils manquent. */
+function collectGuestQuizzDirs(guestsDir: string): string[] {
+  if (!fs.existsSync(guestsDir)) {
+    return []
+  }
+
+  try {
+    return fs
+      .readdirSync(guestsDir)
+      .map((entry) => path.resolve(guestsDir, entry, "quizz"))
+      .filter((dir) => fs.existsSync(dir))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Migre un fichier quiz et retourne le nombre d'images base64 converties (0 si
+ * le fichier n'en contenait pas, ou en cas d'échec de lecture/écriture).
+ */
+async function migrateQuizzFile(
+  filePath: string,
+  uploadsDir: string,
+): Promise<number> {
+  try {
+    const content = fs.readFileSync(filePath, "utf-8")
+
+    if (!content.includes("data:image/")) {
+      return 0
+    }
+
+    const migratedObj = await migrateBase64InObject(
+      JSON.parse(content),
+      uploadsDir,
+    )
+    const count = (content.match(/data:image\//gu) ?? []).length
+
+    if (count === 0) {
+      return 0
+    }
+
+    writeFileAtomic(filePath, JSON.stringify(migratedObj, null, 2))
+
+    return count
+  } catch (err) {
+    console.error(
+      `[Base64 Migration] Échec de la migration pour ${path.basename(filePath)} :`,
+      err,
+    )
+
+    return 0
+  }
 }
 
 /**
@@ -94,21 +170,7 @@ export async function migrateAllQuizzesInConfig(configDir: string): Promise<{
     targetDirs.push(mainQuizzDir)
   }
 
-  if (fs.existsSync(guestsDir)) {
-    try {
-      const guestEntries = fs.readdirSync(guestsDir)
-
-      for (const entry of guestEntries) {
-        const guestQuizzDir = path.resolve(guestsDir, entry, "quizz")
-
-        if (fs.existsSync(guestQuizzDir)) {
-          targetDirs.push(guestQuizzDir)
-        }
-      }
-    } catch {
-      // Ignore errors reading guests dir
-    }
-  }
+  targetDirs.push(...collectGuestQuizzDirs(guestsDir))
 
   let migratedCount = 0
   let filesUpdatedCount = 0
@@ -123,34 +185,16 @@ export async function migrateAllQuizzesInConfig(configDir: string): Promise<{
     }
 
     for (const file of files) {
-      const filePath = path.join(dir, file)
+      // Fichier par fichier : un quiz plein d'images ne doit pas mobiliser la
+      // mémoire de tous les autres en même temps.
+      // eslint-disable-next-line no-await-in-loop
+      const migrated = await migrateQuizzFile(path.join(dir, file), uploadsDir)
 
-      try {
-        const content = fs.readFileSync(filePath, "utf-8")
-
-        if (!content.includes("data:image/")) {
-          continue
-        }
-
-        const json = JSON.parse(content)
-        const initialCount = migratedCount
-        const migratedObj = await migrateBase64InObject(json, uploadsDir)
-
-        // Count how many base64 strings were replaced by checking string difference
-        const matchesInContent = (content.match(/data:image\//g) || []).length
-        migratedCount += matchesInContent
-
-        if (migratedCount > initialCount) {
-          writeFileAtomic(filePath, JSON.stringify(migratedObj, null, 2))
-          filesUpdatedCount++
-          console.log(
-            `[Base64 Migration] ✅ ${file} : ${matchesInContent} image(s) base64 convertie(s) en fichiers /uploads/`,
-          )
-        }
-      } catch (err) {
-        console.error(
-          `[Base64 Migration] Échec de la migration pour ${file} :`,
-          err,
+      if (migrated > 0) {
+        migratedCount += migrated
+        filesUpdatedCount += 1
+        console.log(
+          `[Base64 Migration] ✅ ${file} : ${migrated} image(s) base64 convertie(s) en fichiers /uploads/`,
         )
       }
     }

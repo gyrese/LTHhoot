@@ -64,6 +64,19 @@ const logoImg = "/logo-aperoquiz.png"
 const noopChange = () => undefined
 const noopSelect = () => undefined
 
+// Vert tant qu'il reste du temps, orange dans le dernier quart, rouge à la fin.
+const progressColor = (progress: number): string => {
+  if (progress > 50) {
+    return "#22c55e"
+  }
+
+  if (progress > 25) {
+    return "#f59e0b"
+  }
+
+  return "#ef4444"
+}
+
 export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const { socket, isConnected } = useSocket()
   const [quizz, setQuizz] = useState<PublicQuizz | null>(null)
@@ -123,7 +136,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   // Génération automatique du visuel de victoire rétro pour les réseaux sociaux
   useEffect(() => {
     if (step !== "FINISHED" || !resultSummary || !quizz) {
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -187,7 +200,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
         }
         const file = new File(
           [blob],
-          `victoire-${playerName.replace(/[^a-zA-Z0-9]/g, "_")}.png`,
+          `victoire-${playerName.replace(/[^a-zA-Z0-9]/gu, "_")}.png`,
           { type: "image/png" },
         )
 
@@ -232,7 +245,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   // Enchaînement automatique vers la question suivante après 2.2 secondes (animation fluide sans clic)
   useEffect(() => {
     if (!hasSubmittedAnswer || step !== "QUESTION") {
-      return
+      return undefined
     }
 
     const timer = setTimeout(() => {
@@ -245,13 +258,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   // Décompte de l'écran de règles → démarrage automatique du quiz
   useEffect(() => {
     if (step !== "RULES") {
-      return
+      return undefined
     }
 
     if (rulesCountdown <= 0) {
       launchFirstQuestion()
 
-      return
+      return undefined
     }
 
     const timer = setTimeout(() => setRulesCountdown((n) => n - 1), 1000)
@@ -278,7 +291,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   // Timer question
   useEffect(() => {
     if (step !== "QUESTION" || hasSubmittedAnswer) {
-      return
+      return undefined
     }
 
     const initialTime = currentQuestion?.time || 20
@@ -306,6 +319,21 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   }, [step, currentQuestionIdx, hasSubmittedAnswer, questionStartTime])
 
   const currentQuestion = quizz?.questions[currentQuestionIdx]
+
+  // État d'un bouton vrai/faux après validation : vrai = bonne réponse,
+  // faux = le mauvais choix du joueur, indéfini = neutre (avant réponse, ou
+  // proposition non choisie).
+  const answerState = (index: number): boolean | undefined => {
+    if (!hasSubmittedAnswer || !currentQuestion) {
+      return undefined
+    }
+
+    if (checkIsAnswerCorrect(currentQuestion, index)) {
+      return true
+    }
+
+    return selectedAnswer === index ? false : undefined
+  }
 
   const handleTimeOut = () => {
     if (hasSubmittedAnswer) {
@@ -536,7 +564,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   let bgStyle: React.CSSProperties = {}
   let bgOpacity = 0.6
-  let bgImageForRevealer: string | undefined = undefined
+  let bgImageForRevealer = ""
 
   if (step === "START" || step === "RULES" || step === "FINISHED") {
     if (coverImage) {
@@ -745,12 +773,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               className="h-full rounded-r-full transition-all duration-100 ease-linear"
               style={{
                 width: `${progress}%`,
-                backgroundColor:
-                  progress > 50
-                    ? "#22c55e"
-                    : progress > 25
-                      ? "#f59e0b"
-                      : "#ef4444",
+                backgroundColor: progressColor(progress),
               }}
             />
           </div>
@@ -786,15 +809,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     const isSelected = selectedAnswer === idx
                     const isCorrect = checkIsAnswerCorrect(currentQuestion, idx)
 
-                    let btnState: boolean | undefined = undefined
-
-                    if (hasSubmittedAnswer) {
-                      if (isCorrect) {
-                        btnState = true
-                      } else if (isSelected) {
-                        btnState = false
-                      }
-                    }
+                    const btnState = answerState(idx)
 
                     return (
                       <AnswerButton
@@ -833,15 +848,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   icon={ANSWERS_ICONS[0]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(0)}
-                  correct={
-                    hasSubmittedAnswer
-                      ? checkIsAnswerCorrect(currentQuestion, 0)
-                        ? true
-                        : selectedAnswer === 0
-                          ? false
-                          : undefined
-                      : undefined
-                  }
+                  correct={answerState(0)}
                   className="min-h-24 cursor-pointer bg-red-600 text-xl font-black text-white shadow-xl"
                 >
                   Faux
@@ -852,15 +859,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   icon={ANSWERS_ICONS[1]}
                   disabled={hasSubmittedAnswer}
                   onClick={() => handleAnswerSelect(1)}
-                  correct={
-                    hasSubmittedAnswer
-                      ? checkIsAnswerCorrect(currentQuestion, 1)
-                        ? true
-                        : selectedAnswer === 1
-                          ? false
-                          : undefined
-                      : undefined
-                  }
+                  correct={answerState(1)}
                   className="min-h-24 cursor-pointer bg-blue-600 text-xl font-black text-white shadow-xl"
                 >
                   Vrai

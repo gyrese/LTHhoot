@@ -226,14 +226,25 @@ export const downloadCanvasAsPng = (
   }, "image/png")
 }
 
-export const renderScorecardToCanvas = async (
-  username: string,
-  avatar: string,
-  points: number,
-  rank: number | null,
-  totalPlayers: number | null,
-  subject: string,
-): Promise<HTMLCanvasElement> => {
+// Six informations à peindre : passées en objet plutot qu'en liste d'arguments
+// positionnels, ou l'ordre username/avatar/subject etait facile a intervertir.
+export type ScorecardData = {
+  username: string
+  avatar: string
+  points: number
+  rank: number | null
+  totalPlayers: number | null
+  subject: string
+}
+
+export const renderScorecardToCanvas = async ({
+  username,
+  avatar,
+  points,
+  rank,
+  totalPlayers,
+  subject,
+}: ScorecardData): Promise<HTMLCanvasElement> => {
   const canvas = document.createElement("canvas")
   const size = 1080
   canvas.width = size
@@ -487,7 +498,10 @@ export const renderSoloVictoryToCanvas = async (
   let pointsFontSize = 38
   ctx.font = `900 ${pointsFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
   const maxPtsWidth = 95
-  while (ctx.measureText(pointsStr).width > maxPtsWidth && pointsFontSize > 20) {
+  while (
+    ctx.measureText(pointsStr).width > maxPtsWidth &&
+    pointsFontSize > 20
+  ) {
     pointsFontSize -= 2
     ctx.font = `900 ${pointsFontSize}px "Impact", "Arial Black", "Montserrat", sans-serif`
   }
@@ -519,4 +533,3 @@ export const renderSoloVictoryToCanvas = async (
 
   return canvas
 }
-

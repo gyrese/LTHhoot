@@ -132,14 +132,14 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
     setIsExporting(true)
 
     try {
-      const canvas = await renderScorecardToCanvas(
-        player.username ?? "Joueur",
-        player.avatar ?? player.username ?? "Joueur",
-        player.points ?? 0,
-        rank ?? null,
-        totalPlayers ?? null,
+      const canvas = await renderScorecardToCanvas({
+        username: player.username ?? "Joueur",
+        avatar: player.avatar ?? player.username ?? "Joueur",
+        points: player.points ?? 0,
+        rank: rank ?? null,
+        totalPlayers: totalPlayers ?? null,
         subject,
-      )
+      })
       downloadCanvasAsPng(canvas, `scorecard-${player.username}`)
     } catch (error) {
       console.error("Échec de la génération de la carte de score:", error)

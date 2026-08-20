@@ -47,9 +47,11 @@ describe("base64-cleaner utility", () => {
 
     const cleaned = await migrateBase64InObject(quizData, uploadsDir)
 
-    expect(cleaned.background.value).toMatch(/^\/uploads\/img-migrated-.+\.webp$/)
+    expect(cleaned.background.value).toMatch(
+      /^\/uploads\/img-migrated-.+\.webp$/u,
+    )
     expect(cleaned.questions[0].media.url).toMatch(
-      /^\/uploads\/img-migrated-.+\.webp$/,
+      /^\/uploads\/img-migrated-.+\.webp$/u,
     )
 
     const createdFiles = fs.readdirSync(uploadsDir)
@@ -85,7 +87,7 @@ describe("base64-cleaner utility", () => {
     const updatedContent = JSON.parse(fs.readFileSync(quizFile, "utf-8"))
 
     expect(updatedContent.salonImage).toMatch(
-      /^\/uploads\/img-migrated-.+\.webp$/,
+      /^\/uploads\/img-migrated-.+\.webp$/u,
     )
   })
 })
