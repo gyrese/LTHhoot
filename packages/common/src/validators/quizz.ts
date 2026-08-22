@@ -102,6 +102,7 @@ const baseQuestionValidator = z.object({
   gridCols: z.number().int().min(2).max(30).optional(),
   gridRows: z.number().int().min(2).max(30).optional(),
   revelationStyle: z.string().optional(),
+  pointsMultiplier: z.number().min(0.1).max(10).optional(),
 })
 
 const mcqValidator = baseQuestionValidator.extend({
@@ -204,6 +205,7 @@ const titleValidator = z.object({
   gridCols: z.number().int().min(2).max(30).optional(),
   gridRows: z.number().int().min(2).max(30).optional(),
   revelationStyle: z.string().optional(),
+  pointsMultiplier: z.number().min(0.1).max(10).optional(),
 })
 
 const legacyMcqValidator = baseQuestionValidator

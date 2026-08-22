@@ -31,6 +31,8 @@ export interface ActiveEffects {
   frozen: Set<string>
   // Points divisés par 2 à la prochaine question (cadeau empoisonné)
   poisoned: Set<string>
+  // +500 pts si dernier à répondre correctement à la prochaine question (diesel)
+  diesel: Set<string>
 }
 
 export interface EarnedPowerUp {
@@ -72,6 +74,7 @@ const emptyEffects = (): ActiveEffects => ({
   mirrors: new Set(),
   frozen: new Set(),
   poisoned: new Set(),
+  diesel: new Set(),
 })
 
 export class PowerUpManager {
@@ -310,6 +313,12 @@ export class PowerUpManager {
 
       case POWER_UP_TYPE.TRIPLE_POINTS: {
         this.activeEffects.triplePoints.add(activatorId)
+
+        return { success: true, type: powerUp.type, affectedPlayers: [] }
+      }
+
+      case POWER_UP_TYPE.DIESEL: {
+        this.activeEffects.diesel.add(activatorId)
 
         return { success: true, type: powerUp.type, affectedPlayers: [] }
       }
@@ -612,6 +621,7 @@ export class PowerUpManager {
     playerId: string,
     basePoints: number,
     isCorrect: boolean,
+    isLastResponder = false,
   ): number {
     let points = basePoints
 
@@ -629,6 +639,17 @@ export class PowerUpManager {
 
     if (isCorrect && consumeFromSet(this.activeEffects.sparks, playerId)) {
       points += 25
+    }
+
+    if (
+      isCorrect &&
+      isLastResponder &&
+      consumeFromSet(this.activeEffects.diesel, playerId)
+    ) {
+      points += 500
+    } else {
+      // Consommer diesel même si pas dernier pour ne pas garder l'effet éternellement
+      consumeFromSet(this.activeEffects.diesel, playerId)
     }
 
     if (consumeFromSet(this.activeEffects.safetyNets, playerId)) {
@@ -674,6 +695,7 @@ export class PowerUpManager {
       this.activeEffects.mirrors,
       this.activeEffects.frozen,
       this.activeEffects.poisoned,
+      this.activeEffects.diesel,
     ]
   }
 

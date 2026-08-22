@@ -8,6 +8,7 @@ import {
   Bomb,
   Crown,
   Flame,
+  Gauge,
   Gift,
   LifeBuoy,
   type LucideIcon,
@@ -112,6 +113,14 @@ export const POWER_UP_META_UI: Record<PowerUpType, PowerUpMetaUI> = {
     Icon: Sparkles,
     label: "Étincelle",
     description: "+25 pts si bonne réponse à la prochaine question",
+    color: "#94A3B8",
+  },
+  [POWER_UP_TYPE.DIESEL]: {
+    type: POWER_UP_TYPE.DIESEL,
+    rarity: POWER_UP_RARITY.COMMON,
+    Icon: Gauge,
+    label: "Diesel",
+    description: "+500 pts si tu es le dernier à bien répondre",
     color: "#94A3B8",
   },
 

@@ -78,6 +78,7 @@ export type QuestionUpdate = {
   gridCols?: number
   gridRows?: number
   revelationStyle?: string
+  pointsMultiplier?: number
   id?: string
 }
 

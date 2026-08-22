@@ -628,6 +628,11 @@ export class RoundManager {
       {},
     )
 
+    const lastAnsweredPlayerId =
+      this.playersAnswers.length > 0
+        ? this.playersAnswers[this.playersAnswers.length - 1].playerId
+        : null
+
     const sortedPlayers = currentPlayers
       .map((player) => {
         const playerAnswer = this.playersAnswers.find(
@@ -640,6 +645,15 @@ export class RoundManager {
 
         let points =
           playerAnswer && isCorrect ? Math.round(playerAnswer.points) : 0
+
+        // Multiplicateur de points configuré sur la question (ex. x2)
+        if (
+          isCorrect &&
+          question.pointsMultiplier &&
+          question.pointsMultiplier > 0
+        ) {
+          points = Math.round(points * question.pointsMultiplier)
+        }
 
         if (
           question.type === "drop_pin" &&
@@ -675,11 +689,14 @@ export class RoundManager {
           playerAnswer.points = points
         }
 
+        const isLastResponder = player.id === lastAnsweredPlayerId
+
         points =
           this.opts.powerUpManager?.applyPointModifiers(
             player.id,
             points,
             isCorrect,
+            isLastResponder,
           ) ?? points
 
         // Après les power-ups : un événement de manche se cumule avec le

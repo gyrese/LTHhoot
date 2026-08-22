@@ -116,6 +116,26 @@ describe("PowerUpManager", () => {
       expect(mgr.applyPointModifiers("a", 0, false)).toBe(50)
     })
 
+    it("DIESEL ajoute +500 pts si bonne réponse ET dernier à répondre", () => {
+      const player = buildPlayer({ id: "a" })
+      const id = buy(mgr, player, POWER_UP_TYPE.DIESEL)
+
+      mgr.usePowerUp([player], "a", id)
+
+      // Bonne réponse mais pas le dernier -> pas de bonus
+      expect(mgr.applyPointModifiers("a", 100, true, false)).toBe(100)
+
+      // Mauvaise réponse et dernier -> pas de bonus
+      const id2 = buy(mgr, player, POWER_UP_TYPE.DIESEL)
+      mgr.usePowerUp([player], "a", id2)
+      expect(mgr.applyPointModifiers("a", 0, false, true)).toBe(0)
+
+      // Bonne réponse ET dernier -> +500 pts
+      const id3 = buy(mgr, player, POWER_UP_TYPE.DIESEL)
+      mgr.usePowerUp([player], "a", id3)
+      expect(mgr.applyPointModifiers("a", 100, true, true)).toBe(600)
+    })
+
     it("aucun modificateur actif : les points de base sont inchangés", () => {
       expect(mgr.applyPointModifiers("inconnu", 123, true)).toBe(123)
     })

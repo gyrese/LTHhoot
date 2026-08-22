@@ -5,6 +5,7 @@ export const POWER_UP_TYPE = {
   SAFETY_NET: "SAFETY_NET",
   SCRAMBLE: "SCRAMBLE",
   SPARK: "SPARK",
+  DIESEL: "DIESEL",
 
   // ── Rare ────────────────────────────────────────────────────────────────
   DOUBLE_POINTS: "DOUBLE_POINTS",
@@ -57,6 +58,7 @@ export const POWER_UP_CATALOG: Record<PowerUpType, PowerUpMeta> = {
   SAFETY_NET: { type: "SAFETY_NET", rarity: "COMMON", target: "SELF" },
   SCRAMBLE: { type: "SCRAMBLE", rarity: "COMMON", target: "ONE_OPPONENT" },
   SPARK: { type: "SPARK", rarity: "COMMON", target: "SELF" },
+  DIESEL: { type: "DIESEL", rarity: "COMMON", target: "SELF" },
 
   // Rare
   DOUBLE_POINTS: { type: "DOUBLE_POINTS", rarity: "RARE", target: "SELF" },

@@ -157,6 +157,8 @@ type BaseQuestion = {
   gridCols?: number
   gridRows?: number
   revelationStyle?: string
+  // Multiplicateur de points (par ex. 2 pour doubler les points de la question)
+  pointsMultiplier?: number
 }
 
 export type McqQuestion = BaseQuestion & {

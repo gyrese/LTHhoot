@@ -106,6 +106,26 @@ const SettingsPanel = () => {
 
         {!isSlide && (
           <ConfigToggle
+            icon={<Zap className="size-4 text-amber-500" />}
+            label={t(
+              "quizz:question.config.doublePoints",
+              "Points doublés (×2)",
+            )}
+            checked={currentQuestion.pointsMultiplier === 2}
+            onChange={(value) =>
+              updateQuestion(currentIndex, {
+                pointsMultiplier: value ? 2 : undefined,
+              })
+            }
+            description={t(
+              "quizz:question.config.doublePointsHint",
+              "Multiplie par 2 tous les points gagnés sur cette question.",
+            )}
+          />
+        )}
+
+        {!isSlide && (
+          <ConfigToggle
             icon={<Zap className="size-4" />}
             label={t("quizz:question.config.suddenDeath", "Mort subite")}
             checked={Boolean(currentQuestion.suddenDeath)}

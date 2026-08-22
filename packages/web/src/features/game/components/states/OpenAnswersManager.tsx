@@ -15,8 +15,14 @@ type Props = {
 }
 
 const OpenAnswersManager = ({
-  data: { question, answers, totalPlayers, correctAnswers },
-}: Props) => {
+  data: {
+    question,
+    answers,
+    totalPlayers,
+    correctAnswers,
+    originalCorrectAnswers,
+  },
+}: Props & { data: { originalCorrectAnswers?: string[] } }) => {
   const { socket } = useSocket()
   const { gameId } = useManagerStore()
   const { t } = useTranslation()
@@ -44,6 +50,28 @@ const OpenAnswersManager = ({
       gameId,
       data: { text },
     })
+  }
+
+  const handleInvalidate = (text: string) => {
+    if (!gameId || !socket) {
+      return
+    }
+
+    setValidating(text)
+    socket?.emit(EVENTS.MANAGER.INVALIDATE_OPEN_ANSWER, {
+      gameId,
+      data: { text },
+    })
+  }
+
+  const isOriginal = (text: string): boolean => {
+    if (!originalCorrectAnswers || originalCorrectAnswers.length === 0) {
+      return false
+    }
+
+    const norm = normalizeAnswer(text)
+
+    return originalCorrectAnswers.some((ca) => normalizeAnswer(ca) === norm)
   }
 
   const unique = Array.from(
@@ -82,17 +110,32 @@ const OpenAnswersManager = ({
           )
           const count = sameAnswers.length
           const players = sameAnswers.map((a) => a.playerName)
+          const isOrig = isOriginal(answer.text)
+          const isRescued = answer.isCorrect && !isOrig
 
           return (
             <button
               key={answer.text}
-              disabled={answer.isCorrect || validating === answer.text}
-              onClick={() => handleValidate(answer.text)}
+              disabled={
+                (answer.isCorrect && isOrig) || validating === answer.text
+              }
+              onClick={() => {
+                if (isRescued) {
+                  handleInvalidate(answer.text)
+                } else if (!answer.isCorrect) {
+                  handleValidate(answer.text)
+                }
+              }}
               className={clsx(
                 "flex flex-col items-center gap-1 rounded-2xl px-6 py-4 text-center shadow-xl transition-all",
-                answer.isCorrect
-                  ? "anim-pop-in cursor-default bg-green-500 ring-4 ring-green-300/60 drop-shadow-[0_0_16px_rgba(34,197,94,0.7)]"
-                  : "cursor-pointer bg-white/10 ring-1 ring-white/20 backdrop-blur-md hover:scale-105 hover:bg-white/20 active:scale-95",
+                answer.isCorrect &&
+                  isOrig &&
+                  "anim-pop-in cursor-default bg-green-500 ring-4 ring-green-300/60 drop-shadow-[0_0_16px_rgba(34,197,94,0.7)]",
+                answer.isCorrect &&
+                  isRescued &&
+                  "anim-pop-in cursor-pointer bg-green-600 ring-4 ring-orange-400/80 drop-shadow-[0_0_16px_rgba(34,197,94,0.7)] hover:bg-red-600 hover:ring-red-400",
+                !answer.isCorrect &&
+                  "cursor-pointer bg-white/10 ring-1 ring-white/20 backdrop-blur-md hover:scale-105 hover:bg-white/20 active:scale-95",
                 validating === answer.text && "opacity-60",
               )}
             >
@@ -107,6 +150,11 @@ const OpenAnswersManager = ({
               </span>
               <span className="text-xs text-white/60">
                 {players.join(", ")}
+                {isRescued && (
+                  <span className="ml-1 font-bold text-orange-200">
+                    · repêchée (cliquer pour annuler)
+                  </span>
+                )}
               </span>
             </button>
           )
