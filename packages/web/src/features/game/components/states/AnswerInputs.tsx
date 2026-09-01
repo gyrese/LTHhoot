@@ -523,7 +523,9 @@ export const DropPinAnswer = ({
             src={pinImage}
             alt="Target"
             draggable={false}
-            className="block h-auto max-h-[50vh] w-auto max-w-full rounded-xl object-contain"
+            // L'image cible occupe tout l'espace disponible : les zones à viser
+            // sont parfois petites, et le joueur doit pouvoir pointer au doigt.
+            className="block h-auto max-h-[68vh] w-auto max-w-full rounded-xl object-contain"
           />
 
           {pin !== null && (

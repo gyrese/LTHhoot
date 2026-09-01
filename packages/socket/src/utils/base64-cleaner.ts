@@ -1,3 +1,4 @@
+import crypto from "crypto"
 import fs from "fs"
 import path from "path"
 import sharp from "sharp"
@@ -15,13 +16,29 @@ const IMAGE_DATA_URL_RE = /^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/u
  * Écrit une image décodée dans `uploadsDir` : en WebP si sharp y parvient,
  * sinon le binaire d'origine tel quel. Extrait de la boucle de migration, qui
  * empilait sinon quatre niveaux d'imbrication.
+ *
+ * Le nom de fichier dérive du CONTENU (sha1) : la même image croisée dans dix
+ * résultats archivés ne produit qu'un seul fichier, et relancer une migration
+ * ne duplique rien.
  */
 async function writeMigratedImage(
   buffer: Buffer,
-  baseName: string,
   ext: string,
   uploadsDir: string,
 ): Promise<string> {
+  const hash = crypto
+    .createHash("sha1")
+    .update(buffer)
+    .digest("hex")
+    .slice(0, 16)
+  const baseName = `img-migrated-${hash}`
+
+  for (const name of [`${baseName}.webp`, `${baseName}.${ext}`]) {
+    if (fs.existsSync(path.join(uploadsDir, name))) {
+      return `/uploads/${name}`
+    }
+  }
+
   try {
     sharp.concurrency(1)
     const outName = `${baseName}.webp`
@@ -78,12 +95,10 @@ export async function migrateBase64InObject<T>(
       if (matches) {
         const [, mime, base64Data] = matches
         const ext = mime === "jpeg" ? "jpg" : mime
-        const baseName = `img-migrated-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
 
         // eslint-disable-next-line no-await-in-loop
         record[key] = await writeMigratedImage(
           Buffer.from(base64Data, "base64"),
-          baseName,
           ext,
           uploadsDir,
         )
@@ -114,10 +129,11 @@ function collectGuestQuizzDirs(guestsDir: string): string[] {
 }
 
 /**
- * Migre un fichier quiz et retourne le nombre d'images base64 converties (0 si
- * le fichier n'en contenait pas, ou en cas d'échec de lecture/écriture).
+ * Migre un fichier JSON (quiz ou résultat de partie) et retourne le nombre
+ * d'images base64 converties (0 si le fichier n'en contenait pas, ou en cas
+ * d'échec de lecture/écriture).
  */
-async function migrateQuizzFile(
+export async function migrateBase64InFile(
   filePath: string,
   uploadsDir: string,
 ): Promise<number> {
@@ -152,17 +168,23 @@ async function migrateQuizzFile(
 }
 
 /**
- * Scans quiz directories in `configDir` (`quizz/` and `guests/<id>/quizz/`),
- * identifies any `.json` file containing base64 images, extracts them to `uploads/`,
- * and updates the JSON file on disk.
+ * Parcourt les dossiers JSON de `configDir` porteurs d'images — `quizz/`,
+ * `guests/<id>/quizz/` et `results/` — extrait toute image base64 vers
+ * `uploads/` et réécrit le fichier.
+ *
+ * `results/` est inclus parce qu'un résultat archive une COPIE des questions
+ * jouées : les parties d'avant la migration des quiz portent donc encore leurs
+ * images en base64, et ces fichiers-là sont relus à chaque ouverture de la
+ * liste des résultats.
  */
-export async function migrateAllQuizzesInConfig(configDir: string): Promise<{
+export async function migrateAllBase64InConfig(configDir: string): Promise<{
   migratedCount: number
   filesUpdatedCount: number
 }> {
   const uploadsDir = path.resolve(configDir, "uploads")
   const mainQuizzDir = path.resolve(configDir, "quizz")
   const guestsDir = path.resolve(configDir, "guests")
+  const resultsDir = path.resolve(configDir, "results")
 
   const targetDirs: string[] = []
 
@@ -171,6 +193,10 @@ export async function migrateAllQuizzesInConfig(configDir: string): Promise<{
   }
 
   targetDirs.push(...collectGuestQuizzDirs(guestsDir))
+
+  if (fs.existsSync(resultsDir)) {
+    targetDirs.push(resultsDir)
+  }
 
   let migratedCount = 0
   let filesUpdatedCount = 0
@@ -188,7 +214,10 @@ export async function migrateAllQuizzesInConfig(configDir: string): Promise<{
       // Fichier par fichier : un quiz plein d'images ne doit pas mobiliser la
       // mémoire de tous les autres en même temps.
       // eslint-disable-next-line no-await-in-loop
-      const migrated = await migrateQuizzFile(path.join(dir, file), uploadsDir)
+      const migrated = await migrateBase64InFile(
+        path.join(dir, file),
+        uploadsDir,
+      )
 
       if (migrated > 0) {
         migratedCount += migrated

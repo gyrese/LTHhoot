@@ -160,14 +160,23 @@ const puzzleValidator = baseQuestionValidator.extend({
     .min(2, "errors:quizz.tooFewAnswers"),
 })
 
+const dropPinPointValidator = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+})
+
 const dropPinZoneValidator = z.object({
   id: z.string(),
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  width: z.number().min(0).max(100),
+  height: z.number().min(0).max(100),
   label: z.string(),
   isCorrect: z.boolean(),
+  // Absent sur les quiz créés avant les formes : la zone reste un point avec
+  // rayon de tolérance (cf. common/utils/drop-pin).
+  shape: z.enum(["rect", "ellipse", "polygon"]).optional(),
+  points: z.array(dropPinPointValidator).optional(),
 })
 
 const dropPinValidator = baseQuestionValidator.extend({

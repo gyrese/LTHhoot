@@ -204,6 +204,15 @@ export type TitleQuestion = BaseQuestion & {
   type: "title"
 }
 
+// Forme d'une zone cible. `shape` ABSENT = zone héritée des premières versions
+// (un simple point + rayon de tolérance) : voir `common/utils/drop-pin`.
+export type DropPinShape = "rect" | "ellipse" | "polygon"
+
+export type DropPinPoint = { x: number; y: number }
+
+// Coordonnées en % de l'image affichée. Pour `rect` et `ellipse`, (x, y) est le
+// coin haut-gauche de la boîte ; pour `polygon`, ce sont les coordonnées du
+// premier sommet et la géométrie vit dans `points`.
 export type DropPinZone = {
   id: string
   x: number
@@ -212,6 +221,8 @@ export type DropPinZone = {
   height: number
   label: string
   isCorrect: boolean
+  shape?: DropPinShape
+  points?: DropPinPoint[]
 }
 
 export type PuzzleQuestion = BaseQuestion & {

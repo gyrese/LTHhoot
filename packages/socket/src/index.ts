@@ -24,7 +24,7 @@ import multer from "multer"
 import { extname, resolve } from "path"
 import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
-import { unlink, copyFile, readdir, stat } from "fs/promises"
+import { unlink, copyFile, readdir, stat, writeFile } from "fs/promises"
 import { z } from "zod"
 
 // Schémas TOLÉRANTS des réponses des API média tierces : tous les champs sont
@@ -291,6 +291,135 @@ app.post(
       res.status(500).json({
         error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
       })
+    }
+  },
+)
+
+// ─── Import d'une image par son lien ─────────────────────────────────────────
+// Le fichier est RAPATRIÉ dans uploads/ plutôt que référencé à distance : un
+// lien externe meurt, se fait bloquer par referer, ou disparaît du CDN — et le
+// quiz perd son image en pleine partie. Même traitement que /upload : WebP
+// animé (les GIF gardent leur animation), fallback binaire d'origine.
+const MAX_IMPORT_BYTES = 25 * 1024 * 1024
+
+// Refus des cibles internes : le serveur ferait sinon office de relais pour
+// sonder son propre réseau (SSRF).
+const isPrivateHost = (hostname: string): boolean => {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/gu, "")
+
+  if (
+    host === "localhost" ||
+    host === "::1" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".local")
+  ) {
+    return true
+  }
+
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/u.exec(host)
+
+  if (!ipv4) {
+    // Adresses IPv6 uniques locales / lien-local
+    return (
+      host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80")
+    )
+  }
+
+  const [a, b] = ipv4.slice(1).map(Number)
+
+  return (
+    a === 0 ||
+    a === 127 ||
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254)
+  )
+}
+
+app.post(
+  "/api/media/import-url",
+  requireManager,
+  async (req: express.Request, res: express.Response) => {
+    const { url } = req.body as { url?: string }
+    const parsed = URL.parse((url ?? "").trim())
+
+    if (!parsed) {
+      res.status(400).json({ error: "Lien invalide" })
+
+      return
+    }
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      res.status(400).json({ error: "Seuls les liens http(s) sont acceptés" })
+
+      return
+    }
+
+    if (isPrivateHost(parsed.hostname)) {
+      res.status(400).json({ error: "Ce lien pointe vers une adresse interne" })
+
+      return
+    }
+
+    try {
+      const response = await fetch(parsed.toString(), {
+        redirect: "follow",
+        signal: AbortSignal.timeout(15000),
+        headers: { accept: "image/*,video/*;q=0.8,*/*;q=0.5" },
+      })
+
+      if (!response.ok) {
+        res
+          .status(422)
+          .json({ error: `La source a répondu ${response.status}` })
+
+        return
+      }
+
+      const contentType = response.headers.get("content-type") ?? ""
+
+      if (!contentType.startsWith("image/")) {
+        res.status(422).json({
+          error: `Le lien ne pointe pas vers une image (${contentType || "type inconnu"})`,
+        })
+
+        return
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer())
+
+      if (buffer.byteLength > MAX_IMPORT_BYTES) {
+        res.status(413).json({ error: "Image trop lourde (25 Mo maximum)" })
+
+        return
+      }
+
+      const outName = `img-${Date.now()}.webp`
+
+      try {
+        sharp.concurrency(1)
+        await sharp(buffer, { animated: true })
+          .webp({ quality: 82 })
+          .toFile(resolve(uploadsDir, outName))
+
+        res.json({ url: `/uploads/${outName}` })
+      } catch (err) {
+        // Format que sharp ne sait pas lire (SVG animé, APNG exotique…) : on
+        // garde l'original plutôt que de refuser l'import.
+        console.error("Import par lien — conversion WebP échouée :", err)
+
+        const ext = contentType.split("/")[1]?.split(";")[0] || "bin"
+        const fallbackName = `img-orig-${Date.now()}.${ext}`
+
+        await writeFile(resolve(uploadsDir, fallbackName), buffer)
+
+        res.json({ url: `/uploads/${fallbackName}` })
+      }
+    } catch (err) {
+      console.error("Import par lien échoué :", err)
+      res.status(502).json({ error: "Impossible de récupérer ce lien" })
     }
   },
 )

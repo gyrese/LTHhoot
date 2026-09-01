@@ -20,6 +20,7 @@ import {
   HardDrive,
   Trash2,
   Settings,
+  Link2,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -30,7 +31,7 @@ type Props = {
   allowedTypes?: ("image" | "video")[]
 }
 
-type TabType = "library" | "upload" | "unsplash" | "giphy" | "gdrive"
+type TabType = "library" | "upload" | "link" | "unsplash" | "giphy" | "gdrive"
 
 type MediaItem = {
   id: string
@@ -109,6 +110,11 @@ const MediaSearchModal = ({
   const [clientIdInput, setClientIdInput] = useState("")
   const [developerKeyInput, setDeveloperKeyInput] = useState("")
   const [isDriveConfigured, setIsDriveConfigured] = useState(false)
+
+  // Import par lien
+  const [linkUrl, setLinkUrl] = useState("")
+  const [linkImporting, setLinkImporting] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
   const [showDriveConfigForm, setShowDriveConfigForm] = useState(false)
 
   // Cropping State
@@ -439,6 +445,61 @@ const MediaSearchModal = ({
     }
   }
 
+  /**
+   * Import d'une image par son lien. Le fichier est rapatrié sur le serveur :
+   * un lien externe finit toujours par mourir (CDN, hotlink bloqué), et on ne
+   * veut pas d'une image manquante en pleine partie. En cas d'échec de
+   * l'import, le lien reste utilisable tel quel (bouton de repli).
+   */
+  const handleImportLink = async () => {
+    const url = linkUrl.trim()
+
+    if (!url) {
+      return
+    }
+
+    setLinkImporting(true)
+    setLinkError(null)
+
+    try {
+      const res = await fetch("/api/media/import-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-id": localStorage.getItem("client_id") ?? "",
+        },
+        body: JSON.stringify({ url }),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string
+        error?: string
+      }
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Import impossible")
+      }
+
+      toast.success("Image importée !")
+
+      // Un GIF part directement : le passer au recadrage (canvas) en
+      // aplatirait l'animation. Le reste passe par l'aperçu/recadrage, qui
+      // sert aussi à vérifier qu'on a bien récupéré la bonne image.
+      if (url.toLowerCase().includes(".gif")) {
+        onSelect(data.url, "image")
+        onClose()
+      } else {
+        setSelectedImageSrc(data.url)
+      }
+
+      setLinkUrl("")
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : "Import impossible")
+    } finally {
+      setLinkImporting(false)
+    }
+  }
+
   const importGDriveFile = async (
     fileId: string,
     accessToken: string,
@@ -650,6 +711,7 @@ const MediaSearchModal = ({
   const tabs = [
     { id: "library" as const, label: "Bibliothèque", icon: FolderOpen },
     { id: "upload" as const, label: "Uploader", icon: Upload },
+    { id: "link" as const, label: "Lien", icon: Link2 },
     { id: "unsplash" as const, label: "Unsplash", icon: ImageIcon },
     { id: "giphy" as const, label: "GIFs Giphy", icon: Film },
     { id: "gdrive" as const, label: "Google Drive", icon: HardDrive },
@@ -944,6 +1006,82 @@ const MediaSearchModal = ({
                     className="hidden"
                     onChange={handleFileChange}
                   />
+                </div>
+              )}
+
+              {/* ─── IMPORT PAR LIEN ─── */}
+              {tab === "link" && (
+                <div className="flex h-full flex-col items-center justify-center py-10">
+                  <div className="w-full max-w-lg">
+                    <div className="mb-4 flex items-center gap-2">
+                      <div className="bg-primary-soft text-primary rounded-full p-2">
+                        <Link2 className="size-5" />
+                      </div>
+                      <div>
+                        <p className="text-ink text-sm font-bold">
+                          Coller le lien d&apos;une image
+                        </p>
+                        <p className="text-ink-subtle text-xs">
+                          GIF, PNG, JPEG, WebP — depuis n&apos;importe quel site
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={linkUrl}
+                        autoFocus
+                        onChange={(e) => {
+                          setLinkUrl(e.target.value)
+                          setLinkError(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !linkImporting) {
+                            void handleImportLink()
+                          }
+                        }}
+                        placeholder="https://exemple.com/image.gif"
+                        className="border-border text-ink focus:border-primary focus:ring-primary flex-1 rounded-lg border bg-transparent p-2.5 text-sm outline-none focus:ring-1"
+                      />
+                      <button
+                        type="button"
+                        disabled={!linkUrl.trim() || linkImporting}
+                        onClick={() => void handleImportLink()}
+                        className="bg-primary ease-out-soft flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white transition-opacity disabled:opacity-40"
+                      >
+                        {linkImporting ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Check className="size-4" />
+                        )}
+                        Importer
+                      </button>
+                    </div>
+
+                    <p className="text-ink-subtle mt-2 text-xs">
+                      L&apos;image est copiée sur le serveur : elle restera
+                      disponible même si la source disparaît.
+                    </p>
+
+                    {linkError && (
+                      <div className="mt-4 rounded-lg border border-rose-300 bg-rose-50 p-3">
+                        <p className="text-xs font-semibold text-rose-700">
+                          {linkError}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSelect(linkUrl.trim(), "image")
+                            onClose()
+                          }}
+                          className="mt-2 text-xs font-bold text-rose-700 underline"
+                        >
+                          Utiliser le lien tel quel (sans copie serveur)
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

@@ -14,7 +14,8 @@ import {
 import { quizzValidator } from "@rahoot/common/validators/quizz"
 import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 import {
-  migrateAllQuizzesInConfig,
+  migrateAllBase64InConfig,
+  migrateBase64InFile,
   migrateBase64InObject,
 } from "@rahoot/socket/utils/base64-cleaner"
 import { collectUploadRefs } from "@rahoot/socket/utils/collect-media-refs"
@@ -116,11 +117,19 @@ class Config {
       )
     }
 
-    // Migration automatique au démarrage : si des quiz contiennent des images
-    // base64, elles sont extraites en WebP dans uploads/ et le JSON est mis à jour.
-    void migrateAllQuizzesInConfig(getPath()).catch((err) =>
-      console.error("Failed to migrate base64 quizzes on boot:", err),
-    )
+    // Migration automatique au démarrage : si des quiz ou des résultats de
+    // partie contiennent des images base64, elles sont extraites en WebP dans
+    // uploads/ et les JSON sont mis à jour.
+    void migrateAllBase64InConfig(getPath())
+      .then(({ filesUpdatedCount }) => {
+        if (filesUpdatedCount > 0) {
+          // Les tailles ont changé sous les pieds du cache méta.
+          Config.resultsMetaCache.clear()
+        }
+      })
+      .catch((err) =>
+        console.error("Failed to migrate base64 files on boot:", err),
+      )
   }
 
   static game() {
@@ -370,9 +379,20 @@ class Config {
         fs.mkdirSync(resultsPath)
       }
 
-      writeFileAtomic(
-        getPath(`results/${data.id}.json`),
-        JSON.stringify(data, null, 2),
+      const filePath = getPath(`results/${data.id}.json`)
+
+      writeFileAtomic(filePath, JSON.stringify(data, null, 2))
+
+      // Ceinture : un résultat archive une copie des questions jouées. Si l'une
+      // d'elles portait encore une image base64, on l'extrait plutôt que de la
+      // laisser gonfler le fichier. Hors ligne critique — `saveResult` reste
+      // synchrone pour ses appelants.
+      void migrateBase64InFile(filePath, getPath("uploads")).then(
+        (migrated) => {
+          if (migrated > 0) {
+            Config.resultsMetaCache.delete(path.basename(filePath))
+          }
+        },
       )
 
       console.log(`Saved result for "${data.subject}"`)
@@ -380,6 +400,16 @@ class Config {
       console.error("Failed to save result:", error)
     }
   }
+
+  // Méta des résultats, indexées par nom de fichier et invalidées au `mtime`.
+  // Un résultat archive TOUTES les questions jouées (images comprises) : relire
+  // et parser chaque fichier pour n'en extraire que quatre champs faisait lire
+  // plusieurs centaines de Mo à chaque ouverture de la liste, event loop
+  // bloquée. Le `statSync` par fichier, lui, coûte quelques microsecondes.
+  private static resultsMetaCache = new Map<
+    string,
+    { mtimeMs: number; meta: GameResultMeta | null }
+  >()
 
   static resultsMeta(): GameResultMeta[] {
     const resultsPath = getPath("results")
@@ -389,25 +419,51 @@ class Config {
     }
 
     const readMeta = (file: string): GameResultMeta | null => {
-      try {
-        const data = fs.readFileSync(getPath(`results/${file}`), "utf-8")
-        const result = JSON.parse(data) as GameResult
+      const filePath = getPath(`results/${file}`)
 
-        return {
+      try {
+        const { mtimeMs } = fs.statSync(filePath)
+        const cached = Config.resultsMetaCache.get(file)
+
+        if (cached && cached.mtimeMs === mtimeMs) {
+          return cached.meta
+        }
+
+        const data = fs.readFileSync(filePath, "utf-8")
+        const result = JSON.parse(data) as GameResult
+        const meta = {
           id: result.id,
           subject: result.subject,
           date: result.date,
           playerCount: result.players.length,
         }
+
+        Config.resultsMetaCache.set(file, { mtimeMs, meta })
+
+        return meta
       } catch {
         return null
       }
     }
 
     try {
-      return fs
+      const files = fs
         .readdirSync(resultsPath)
         .filter((file) => file.endsWith(".json"))
+
+      // Purge des entrées dont le fichier a disparu (suppression d'un résultat).
+      if (Config.resultsMetaCache.size > files.length) {
+        const present = new Set(files)
+        const stale = [...Config.resultsMetaCache.keys()].filter(
+          (key) => !present.has(key),
+        )
+
+        for (const key of stale) {
+          Config.resultsMetaCache.delete(key)
+        }
+      }
+
+      return files
         .map(readMeta)
         .filter((meta): meta is GameResultMeta => meta !== null)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

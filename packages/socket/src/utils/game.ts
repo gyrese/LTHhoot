@@ -13,6 +13,7 @@ import type {
   Question,
 } from "@rahoot/common/types/game"
 import type { Socket } from "@rahoot/common/types/game/socket"
+import { isPointInZone } from "@rahoot/common/utils/drop-pin"
 import { isSameAnswer } from "@rahoot/common/utils/normalize-answer"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
@@ -214,13 +215,10 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
         return true
       }
 
-      const PROXIMITY_THRESHOLD = 20
-
-      return correctZones.some((z) => {
-        const distance = Math.sqrt((px - z.x) ** 2 + (py - z.y) ** 2)
-
-        return distance <= PROXIMITY_THRESHOLD
-      })
+      // La forme dessinée dans l'éditeur EST la zone qui compte les points
+      // (rectangle, ellipse ou tracé libre). Les zones héritées, sans forme,
+      // gardent leur rayon de tolérance.
+      return correctZones.some((z) => isPointInZone(z, px, py))
     }
 
     default:

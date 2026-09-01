@@ -78,24 +78,37 @@ const Answers = ({
     revelationStyle,
     images,
     imageInterval,
+    endsAt,
+    startedAt: _startedAt,
   },
   // eslint-disable-next-line complexity
 }: Props) => {
-  const { socket } = useSocket()
-  const { player, gameId } = usePlayerStore()
+  const { socket, getServerTime } = useSocket()
+  const { player, gameId, hasAnswered } = usePlayerStore()
   const { cooldown: storeCooldown } = useQuestionStore()
-  const [answered, setAnswered] = useState(false)
+  const [answered, setAnswered] = useState(() => hasAnswered)
   // Cycle visuel d'envoi piloté par l'ack serveur (cf. sendAnswer) : on
   // n'affiche « Réponse envoyée ! » qu'à la confirmation, pas à l'émission.
   const [sendState, setSendState] = useState<
     "idle" | "sending" | "sent" | "failed"
-  >("idle")
+  >(() => (hasAnswered ? "sent" : "idle"))
+
+  useEffect(() => {
+    if (hasAnswered) {
+      setAnswered(true)
+      setSendState("sent")
+    }
+  }, [hasAnswered])
 
   const [endTime, setEndTime] = useState(() => {
+    if (endsAt && endsAt > 0) {
+      return endsAt
+    }
+
     const initialCooldown =
       storeCooldown && storeCooldown > 0 ? storeCooldown : time
 
-    return Date.now() + initialCooldown * 1000
+    return getServerTime() + initialCooldown * 1000
   })
   const [cooldown, setCooldown] = useState(() =>
     storeCooldown && storeCooldown > 0 ? storeCooldown : time,
@@ -440,7 +453,7 @@ const Answers = ({
               src={pinImage}
               alt={question}
               draggable={false}
-              className="max-h-[60vh] w-auto max-w-5xl rounded-2xl object-contain shadow-2xl"
+              className="max-h-[74vh] w-auto max-w-7xl rounded-2xl object-contain shadow-2xl"
             />
           ) : (
             <GridBoard

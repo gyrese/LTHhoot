@@ -4,6 +4,11 @@ import type {
   GridCell,
   SlideElement,
 } from "@rahoot/common/types/game"
+import {
+  polygonPath,
+  zoneBounds,
+  zoneCenter,
+} from "@rahoot/common/utils/drop-pin"
 import GridBoard from "@rahoot/web/features/game/components/GridBoard"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
@@ -386,37 +391,76 @@ const DropPinResult = ({
       </p>
       <div className="relative w-full overflow-hidden rounded-2xl">
         <img src={pinImage} alt="" className="block w-full object-contain" />
-        {zones.map((zone) => (
-          <div
-            key={zone.id}
-            className="pointer-events-none absolute z-20"
-            style={{
-              left: `${zone.x}%`,
-              top: `${zone.y}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div className="animate-in zoom-in-50 relative flex flex-col items-center justify-center duration-500">
-              {/* Pulsing ring */}
-              <div className="absolute inset-0 scale-150 animate-ping rounded-full bg-green-500/50" />
 
-              {/* Physical Target */}
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-full border-[5px] border-green-500 bg-green-500/20 shadow-[0_0_25px_rgba(34,197,94,0.8)] backdrop-blur-md">
-                <div className="h-4 w-4 rounded-full bg-green-500 shadow-md" />
-                {/* Crosshairs */}
-                <div className="absolute top-0 bottom-0 left-1/2 w-0.5 -translate-x-1/2 bg-green-500/50" />
-                <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 bg-green-500/50" />
-              </div>
+        {/* Les zones sont rendues telles qu'elles ont été dessinées : c'est la
+            surface qui a réellement compté les points. Les zones héritées, qui
+            n'ont pas de forme, gardent leur disque de tolérance. */}
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="animate-in fade-in absolute inset-0 h-full w-full duration-500"
+        >
+          {zones.map((zone) => {
+            const bounds = zoneBounds(zone)
+            const center = zoneCenter(zone)
+            const color = zone.isCorrect ? "#22c55e" : "#ef4444"
+            const shapeProps = {
+              fill: color,
+              fillOpacity: 0.25,
+              stroke: color,
+              strokeWidth: 2.5,
+              strokeDasharray: zone.isCorrect ? undefined : "4 3",
+              vectorEffect: "non-scaling-stroke" as const,
+            }
 
-              {/* Tooltip */}
-              {zone.label && (
-                <div className="absolute top-full mt-3 rounded-xl border border-green-500/30 bg-black/80 px-4 py-2 text-sm font-bold whitespace-nowrap text-green-400 shadow-2xl backdrop-blur-xl">
-                  {zone.label}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+            return (
+              <g key={zone.id}>
+                {zone.shape === "polygon" && zone.points ? (
+                  <path d={polygonPath(zone.points)} {...shapeProps} />
+                ) : null}
+
+                {zone.shape === "rect" ? (
+                  <rect
+                    x={zone.x}
+                    y={zone.y}
+                    width={zone.width}
+                    height={zone.height}
+                    {...shapeProps}
+                  />
+                ) : null}
+
+                {zone.shape === "ellipse" || !zone.shape ? (
+                  <ellipse
+                    cx={center.x}
+                    cy={center.y}
+                    rx={bounds.width / 2}
+                    ry={bounds.height / 2}
+                    {...shapeProps}
+                  />
+                ) : null}
+
+                {zone.label && (
+                  <text
+                    x={center.x}
+                    y={center.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    style={{
+                      fill: "#fff",
+                      fontSize: 3.5,
+                      fontWeight: 800,
+                      paintOrder: "stroke",
+                      stroke: "rgba(0,0,0,0.7)",
+                      strokeWidth: 1,
+                    }}
+                  >
+                    {zone.label}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </svg>
       </div>
     </div>
   )

@@ -46,6 +46,17 @@ const CANVAS_W = 1920
 const CANVAS_H = 1080
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
+// Conversion de `WheelEvent.deltaY` en pixels selon `deltaMode`
+// (0 = pixel, 1 = ligne, 2 = page) : Firefox défile en lignes, Chrome en pixels.
+const WHEEL_DELTA_UNIT: Record<number, number> = { 0: 1, 1: 16, 2: 800 }
+// 100 px de molette (un cran classique) ⇒ facteur e^0.15 ≈ ×1,16.
+const ZOOM_SENSITIVITY = 0.0015
+// Garde-fou : un événement isolé ne peut pas faire varier le zoom de plus de
+// ±22 % (e^0.2), même si le périphérique envoie un delta aberrant.
+const MAX_ZOOM_STEP = 0.2
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value))
 const MARQUEE_CLICK_THRESHOLD = 4
 // Masquage du titre YouTube en lecture (jeu/aperçu) : YouTube ne propose plus de
 // paramètre pour le cacher, et il spoile souvent la réponse en quiz.
@@ -120,9 +131,22 @@ const SlideCanvas = ({
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const scale = fitScale * zoom
 
+  // Un geste de molette émet plusieurs événements dans la même frame : React
+  // n'a pas encore re-rendu quand le suivant arrive, et lire `zoom`/`stagePos`
+  // depuis la closure repartirait à chaque fois de la valeur d'avant le geste.
+  // Ces refs portent la valeur courante ; les states ne servent qu'au rendu.
+  const zoomRef = useRef(1)
+  const stagePosRef = useRef({ x: 0, y: 0 })
+
+  const applyView = (nextZoom: number, nextPos: { x: number; y: number }) => {
+    zoomRef.current = nextZoom
+    stagePosRef.current = nextPos
+    setZoom(nextZoom)
+    setStagePos(nextPos)
+  }
+
   const resetZoom = () => {
-    setZoom(1)
-    setStagePos({ x: 0, y: 0 })
+    applyView(1, { x: 0, y: 0 })
   }
 
   const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -139,17 +163,27 @@ const SlideCanvas = ({
       return
     }
 
-    const oldScale = fitScale * zoom
-    const contentX = (pointer.x - stagePos.x) / oldScale
-    const contentY = (pointer.y - stagePos.y) / oldScale
+    const currentZoom = zoomRef.current
+    const currentPos = stagePosRef.current
+    const oldScale = fitScale * currentZoom
+    const contentX = (pointer.x - currentPos.x) / oldScale
+    const contentY = (pointer.y - currentPos.y) / oldScale
 
-    const scaleBy = 1.05
-    const rawZoom = e.evt.deltaY > 0 ? zoom / scaleBy : zoom * scaleBy
-    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, rawZoom))
+    // Le pas est indexé sur l'AMPLITUDE de la molette, pas sur le nombre
+    // d'événements : une molette crantée envoie un gros delta d'un coup, un
+    // pavé tactile des dizaines de petits. Un facteur fixe par événement
+    // faisait donc filer le zoom jusqu'aux bornes (25 % ou 300 %) au premier
+    // geste sur défilement fin.
+    const pixelDelta = e.evt.deltaY * WHEEL_DELTA_UNIT[e.evt.deltaMode ?? 0]
+    const step = clamp(
+      -pixelDelta * ZOOM_SENSITIVITY,
+      -MAX_ZOOM_STEP,
+      MAX_ZOOM_STEP,
+    )
+    const newZoom = clamp(currentZoom * Math.exp(step), MIN_ZOOM, MAX_ZOOM)
     const newScale = fitScale * newZoom
 
-    setZoom(newZoom)
-    setStagePos({
+    applyView(newZoom, {
       x: pointer.x - contentX * newScale,
       y: pointer.y - contentY * newScale,
     })
@@ -943,7 +977,7 @@ const SlideCanvas = ({
                   return
                 }
 
-                setStagePos({ x: e.target.x(), y: e.target.y() })
+                applyView(zoomRef.current, { x: e.target.x(), y: e.target.y() })
               }}
             >
               {!noBackground && (
