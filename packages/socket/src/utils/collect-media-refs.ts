@@ -45,3 +45,40 @@ export const collectUploadRefs = (
 
   return acc
 }
+
+// Regex détectant une URL média (locale /uploads/ ou distante http(s)://).
+const MEDIA_URL_RE =
+  /^(?:\/uploads\/|https?:\/\/).+\.(?:webp|png|jpe?g|gif|svg|mp3|ogg|wav|m4a|aac|mp4|webm)(?:[?#].*)?$/iu
+
+export const collectAllMediaUrls = (
+  value: unknown,
+  acc: Set<string> = new Set<string>(),
+): string[] => {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+
+    if (trimmed.startsWith("/uploads/") || MEDIA_URL_RE.test(trimmed)) {
+      acc.add(trimmed)
+    }
+
+    return Array.from(acc)
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectAllMediaUrls(item, acc)
+    }
+
+    return Array.from(acc)
+  }
+
+  if (value !== null && typeof value === "object") {
+    for (const nested of Object.values(value)) {
+      collectAllMediaUrls(nested, acc)
+    }
+
+    return Array.from(acc)
+  }
+
+  return Array.from(acc)
+}

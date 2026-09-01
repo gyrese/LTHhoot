@@ -86,6 +86,7 @@ export interface ServerToClientEvents {
     avatar?: string
   }) => void
   [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
+  [EVENTS.GAME.MEDIA_PRELOAD]: (_urls: string[]) => void
 
   // Player events
   [EVENTS.PLAYER.SUCCESS_RECONNECT]: (_data: {
@@ -94,6 +95,10 @@ export interface ServerToClientEvents {
     player: { username: string; points: number; avatar?: string }
     currentQuestion: GameUpdateQuestion
     timer?: number
+    endsAt?: number
+    startedAt?: number
+    hasAnswered?: boolean
+    submittedAnswer?: unknown
     players?: { id: string; username: string; avatar?: string }[]
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
@@ -106,6 +111,9 @@ export interface ServerToClientEvents {
     players: Player[]
     currentQuestion: GameUpdateQuestion
     timer?: number
+    endsAt?: number
+    startedAt?: number
+    totalAnswered?: number
     armedRoundEvent?: RoundEventType | null
     isEveningMode?: boolean
   }) => void
@@ -377,6 +385,12 @@ export interface ClientToServerEvents {
   // acquitte immédiatement, sans réponse dans le timeout le client recycle sa
   // connexion au lieu d'attendre le ping timeout Engine.IO.
   [EVENTS.CONNECTION.PING]: (_ack: () => void) => void
+
+  // Synchronisation d'horloge NTP sub-milliseconde (calcul RTT et dérive d'horloge)
+  [EVENTS.CONNECTION.SYNC_TIME]: (
+    _data: { clientTime: number },
+    _ack: (_res: { clientTime: number; serverTime: number }) => void,
+  ) => void
 
   // Common
   disconnect: () => void

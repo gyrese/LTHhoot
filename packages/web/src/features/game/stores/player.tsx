@@ -16,6 +16,8 @@ type PlayerStore<T> = {
   gameId: string | null
   player: PlayerState | null
   status: Status<T> | null
+  hasAnswered: boolean
+  submittedAnswer: unknown
 
   setGameId: (_gameId: string | null) => void
 
@@ -23,12 +25,15 @@ type PlayerStore<T> = {
   login: (_username: string, _avatar?: string) => void
   join: (_gameId: string) => void
   updatePoints: (_points: number) => void
+  setAnswerSubmitted: (_submitted: boolean, _answer?: unknown) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   hydrate: (_data: {
     gameId: string
     player: PlayerState
     status: { name: keyof T; data: T[keyof T] }
+    hasAnswered?: boolean
+    submittedAnswer?: unknown
   }) => void
   reset: () => void
 }
@@ -37,6 +42,8 @@ const initialState = {
   gameId: null,
   player: null,
   status: null,
+  hasAnswered: false,
+  submittedAnswer: null,
 }
 
 export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
@@ -64,13 +71,25 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
           player: { ...state.player, points },
         })),
 
-      setStatus: (name, data) => set({ status: createStatus(name, data) }),
+      setAnswerSubmitted: (hasAnswered, submittedAnswer = null) =>
+        set({ hasAnswered, submittedAnswer }),
+
+      setStatus: (name, data) =>
+        set({
+          status: createStatus(name, data),
+          hasAnswered: false,
+          submittedAnswer: null,
+        }),
       hydrate: (data) => {
-        console.log(`[STORE] Player hydrate gameId=${data.gameId}`)
+        console.log(
+          `[STORE] Player hydrate gameId=${data.gameId} hasAnswered=${data.hasAnswered}`,
+        )
         set({
           gameId: data.gameId,
           player: data.player,
           status: createStatus(data.status.name, data.status.data),
+          hasAnswered: Boolean(data.hasAnswered),
+          submittedAnswer: data.submittedAnswer ?? null,
         })
       },
 

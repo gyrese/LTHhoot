@@ -28,13 +28,15 @@ const PlayerGamePage = () => {
 
   useEvent(EVENTS.PLAYER.SUCCESS_RECONNECT, (data) => {
     console.log(
-      `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer}`,
+      `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer} hasAnswered=${data.hasAnswered}`,
     )
     // On utilise hydrate pour un remplacement atomique de l'état
     usePlayerStore.getState().hydrate({
       gameId: data.gameId,
       player: data.player,
       status: data.status as any,
+      hasAnswered: data.hasAnswered,
+      submittedAnswer: data.submittedAnswer,
     })
     setQuestionStates(data.currentQuestion)
 

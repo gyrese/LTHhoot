@@ -31,6 +31,7 @@ import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
 import { TieBreakManager } from "@rahoot/socket/services/game/tie-break-manager"
 import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
+import { collectAllMediaUrls } from "@rahoot/socket/utils/collect-media-refs"
 import {
   checkAnswer,
   detectTopTie,
@@ -215,9 +216,12 @@ export class RoundManager {
 
     this.started = true
 
+    const startNow = Date.now()
     this.opts.broadcast(STATUS.SHOW_START, {
       time: 3,
       subject: quizzDisplayName(this.opts.quizz),
+      startedAt: startNow,
+      endsAt: startNow + 3000,
     })
 
     await sleep(3)
@@ -338,6 +342,9 @@ export class RoundManager {
         return
       }
 
+      const questionNow = Date.now()
+      const questionEndsAt = questionNow + question.cooldown * 1000
+
       this.opts.broadcast(STATUS.SHOW_QUESTION, {
         question: question.question,
         type: question.type,
@@ -347,6 +354,8 @@ export class RoundManager {
         elements: question.elements,
         audio: question.audio,
         cooldown: question.cooldown,
+        startedAt: questionNow,
+        endsAt: questionEndsAt,
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
         revelationEnabled: question.revelationEnabled,
         revealDuration: question.revealDuration,
@@ -371,6 +380,8 @@ export class RoundManager {
         elements: question.elements,
         audio: question.audio,
         cooldown: question.cooldown,
+        startedAt: questionNow,
+        endsAt: questionEndsAt,
         pinImage: question.type === "drop_pin" ? question.pinImage : undefined,
         revelationEnabled: question.revelationEnabled,
         revealDuration: question.revealDuration,
@@ -394,6 +405,7 @@ export class RoundManager {
 
       this.startTime = Date.now()
       this.acceptingAnswers = true
+      const answerEndsAt = this.startTime + question.time * 1000
 
       const selectAnswerBase = {
         question: question.question,
@@ -404,6 +416,8 @@ export class RoundManager {
         elements: question.elements,
         audio: question.audio,
         time: question.time,
+        startedAt: this.startTime,
+        endsAt: answerEndsAt,
         totalPlayer: this.opts.players.countConnected(),
         revelationEnabled: question.revelationEnabled,
         revealDuration: question.revealDuration,
@@ -968,6 +982,18 @@ export class RoundManager {
         answer.playerId = newId
       }
     }
+  }
+
+  getPlayerAnswer(playerId: string): Answer | undefined {
+    return this.playersAnswers.find((a) => a.playerId === playerId)
+  }
+
+  getAnswersCount(): number {
+    return this.playersAnswers.length
+  }
+
+  getMediaUrls(): string[] {
+    return collectAllMediaUrls(this.opts.quizz)
   }
 
   nextQuestion(socket: Socket): void {

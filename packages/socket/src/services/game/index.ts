@@ -683,6 +683,13 @@ class Game {
     this.playerManager.join(socket, username, avatar)
     this.logAndEmit("info", `${username} a rejoint la partie`)
 
+    // Préchargement anticipé des médias du quiz dans le cache du client
+    const mediaUrls = this.round.getMediaUrls()
+
+    if (mediaUrls.length > 0) {
+      socket.emit(EVENTS.GAME.MEDIA_PRELOAD, mediaUrls)
+    }
+
     // Boutique activée : on crédite le solde de pièces de départ (le joueur
     // achète ses power-ups au lieu d'en recevoir aléatoirement).
     if (this.powerUpsActive) {
@@ -781,12 +788,18 @@ class Game {
         },
       }
 
+    const endsAt = this.cooldown.getEndsAt()
+    const startedAt = this.cooldown.getStartedAt()
+
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
       inviteCode: this.inviteCode,
       currentQuestion: this.round.getReconnectInfo(),
       status,
       timer: this.cooldown.getTimeRemaining(),
+      endsAt: endsAt > 0 ? endsAt : undefined,
+      startedAt: startedAt > 0 ? startedAt : undefined,
+      totalAnswered: this.round.getAnswersCount(),
       players: this.playerManager.getAll(),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
@@ -835,12 +848,18 @@ class Game {
         },
       }
 
+    const endsAt = this.cooldown.getEndsAt()
+    const startedAt = this.cooldown.getStartedAt()
+
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
       inviteCode: this.inviteCode,
       currentQuestion: this.round.getReconnectInfo(),
       status,
       timer: this.cooldown.getTimeRemaining(),
+      endsAt: endsAt > 0 ? endsAt : undefined,
+      startedAt: startedAt > 0 ? startedAt : undefined,
+      totalAnswered: this.round.getAnswersCount(),
       players: this.playerManager.getAll(),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
@@ -947,14 +966,27 @@ class Game {
       this.playerStatus.set(newSocketId, oldStatus)
     }
 
+    const playerAnswer = this.round.getPlayerAnswer(newSocketId)
+    const endsAt = this.cooldown.getEndsAt()
+    const startedAt = this.cooldown.getStartedAt()
+
     console.log(
-      `[RECONNECT_SUCCESS] Emitting SUCCESS_RECONNECT to ${newSocketId}`,
+      `[RECONNECT_SUCCESS] Emitting SUCCESS_RECONNECT to ${newSocketId} (hasAnswered=${Boolean(playerAnswer)})`,
     )
     socket.emit(EVENTS.PLAYER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
       timer: this.cooldown.getTimeRemaining(),
+      endsAt: endsAt > 0 ? endsAt : undefined,
+      startedAt: startedAt > 0 ? startedAt : undefined,
+      hasAnswered: Boolean(playerAnswer),
+      submittedAnswer: playerAnswer
+        ? (playerAnswer.answerId ??
+          playerAnswer.textAnswer ??
+          playerAnswer.numberAnswer ??
+          playerAnswer.orderAnswer)
+        : undefined,
       player: {
         username: player.username,
         avatar: player.avatar,
@@ -969,6 +1001,13 @@ class Game {
 
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
     this.logAndEmit("info", `${player.username} reconnecté`)
+
+    // Préchargement anticipé des médias pour le joueur reconnecté
+    const mediaUrls = this.round.getMediaUrls()
+
+    if (mediaUrls.length > 0) {
+      socket.emit(EVENTS.GAME.MEDIA_PRELOAD, mediaUrls)
+    }
 
     if (this.powerUpsActive) {
       this.sendPlayerInventory(newSocketId)

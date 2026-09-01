@@ -19,6 +19,17 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }
   })
 
+  // Synchronisation d'horloge NTP sub-milliseconde (calcul RTT et dérive d'horloge)
+  socket.on(EVENTS.CONNECTION.SYNC_TIME, (data, ack) => {
+    if (typeof ack === "function") {
+      ack({
+        clientTime:
+          typeof data?.clientTime === "number" ? data.clientTime : Date.now(),
+        serverTime: Date.now(),
+      })
+    }
+  })
+
   socket.on(EVENTS.PLAYER.RECONNECT, ({ gameId }) => {
     const game = registry.getPlayerGame(gameId, socket.handshake.auth.clientId)
 

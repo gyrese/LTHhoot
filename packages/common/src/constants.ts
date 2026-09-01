@@ -13,6 +13,7 @@ export const EVENTS = {
     CREATE: "game:create",
     NEW_PLAYER: "game:newPlayer",
     REMOVE_PLAYER: "game:removePlayer",
+    MEDIA_PRELOAD: "game:mediaPreload",
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",
@@ -121,6 +122,8 @@ export const EVENTS = {
     // client peut se croire connecté alors que le lien est mort (détection
     // Engine.IO en dizaines de secondes). Un ping/ack prouve que le lien vit.
     PING: "connection:ping",
+    // Synchronisation d'horloge NTP sub-milliseconde (calcul RTT et dérive d'horloge).
+    SYNC_TIME: "connection:syncTime",
   },
 } as const
 

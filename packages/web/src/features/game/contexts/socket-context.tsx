@@ -27,6 +27,8 @@ interface SocketContextValue {
   isConnected: boolean
   isReconnecting: boolean
   clientId: string
+  clockOffset: number
+  getServerTime: () => number
   connect: () => void
   disconnect: () => void
   reconnect: () => void
@@ -37,6 +39,8 @@ const SocketContext = createContext<SocketContextValue>({
   isConnected: false,
   isReconnecting: false,
   clientId: "",
+  clockOffset: 0,
+  getServerTime: () => Date.now(),
   connect: () => {},
   disconnect: () => {},
   reconnect: () => {},
@@ -390,6 +394,77 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [socket])
 
+  // Synchronisation d'horloge NTP (SNTP) : calcule le décalage milliseconde
+  // (clockOffset = serverTime - clientLocalTime) via les pings WebSocket pour
+  // synchroniser parfaitement les comptes à rebours entre tous les appareils.
+  const [clockOffset, setClockOffset] = useState<number>(0)
+  const clockOffsetRef = useRef<number>(0)
+
+  const syncClock = useCallback((client: TypedSocket) => {
+    if (!client || !client.connected) {
+      return
+    }
+
+    const sampleOffsets: { rtt: number; offset: number }[] = []
+    let count = 0
+    const maxSamples = 3
+
+    const ping = () => {
+      if (!client.connected || count >= maxSamples) {
+        if (sampleOffsets.length > 0) {
+          // On retient l'échantillon au RTT minimal (le moins bruité par la gigue réseau)
+          sampleOffsets.sort((a, b) => a.rtt - b.rtt)
+          const [best] = sampleOffsets
+
+          clockOffsetRef.current = best.offset
+          setClockOffset(best.offset)
+          console.log(
+            `[NTP_SYNC] Offset horloge calculé: ${Math.round(best.offset)}ms (RTT: ${best.rtt}ms)`,
+          )
+        }
+
+        return
+      }
+
+      const t0 = Date.now()
+      count += 1
+      client
+        .timeout(3000)
+        .emit(EVENTS.CONNECTION.SYNC_TIME, { clientTime: t0 }, (err, res) => {
+          if (!err && res && typeof res.serverTime === "number") {
+            const t1 = Date.now()
+            const rtt = t1 - t0
+            const offset = res.serverTime - (t0 + rtt / 2)
+            sampleOffsets.push({ rtt, offset })
+          }
+          setTimeout(ping, 100)
+        })
+    }
+
+    ping()
+  }, [])
+
+  useEffect(() => {
+    if (!socket || !isConnected) {
+      return undefined
+    }
+
+    // Sync initiale dès la connexion
+    syncClock(socket)
+
+    // Resynchronisation périodique toutes les 45s
+    const interval = setInterval(() => {
+      syncClock(socket)
+    }, 45000)
+
+    return () => clearInterval(interval)
+  }, [socket, isConnected, syncClock])
+
+  const getServerTime = useCallback(
+    () => Date.now() + clockOffsetRef.current,
+    [],
+  )
+
   const connect = useCallback(() => {
     console.log("[SOCKET] Action: connect")
 
@@ -422,6 +497,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         isConnected,
         isReconnecting,
         clientId,
+        clockOffset,
+        getServerTime,
         connect,
         disconnect,
         reconnect,

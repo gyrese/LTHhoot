@@ -33,7 +33,12 @@ export const STATUS = {
 export type Status = (typeof STATUS)[keyof typeof STATUS]
 
 export type CommonStatusDataMap = {
-  SHOW_START: { time: number; subject: string }
+  SHOW_START: {
+    time: number
+    subject: string
+    startedAt?: number
+    endsAt?: number
+  }
   SHOW_PREPARED: {
     totalAnswers: number
     questionNumber: number
@@ -57,6 +62,8 @@ export type CommonStatusDataMap = {
     revelationStyle?: string
     images?: string[]
     imageInterval?: number
+    startedAt?: number
+    endsAt?: number
   }
   SELECT_ANSWER: {
     question: string
@@ -89,6 +96,8 @@ export type CommonStatusDataMap = {
     revelationStyle?: string
     images?: string[]
     imageInterval?: number
+    startedAt?: number
+    endsAt?: number
   }
   SHOW_RESULT: {
     correct: boolean

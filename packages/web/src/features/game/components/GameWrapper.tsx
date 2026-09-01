@@ -35,6 +35,7 @@ import {
 } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+import { assetPreloader } from "@rahoot/web/features/game/services/asset-preloader"
 import { AnimatePresence, motion } from "motion/react"
 import { stateTransition } from "@rahoot/web/features/game/utils/motion"
 
@@ -152,6 +153,15 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   }, [manager, socket, statusName])
 
   const [globalFlash, setGlobalFlash] = useState<string | null>(null)
+
+  useEvent(EVENTS.GAME.MEDIA_PRELOAD, (urls) => {
+    if (Array.isArray(urls)) {
+      console.log(
+        `[MEDIA_PRELOAD] Début du préchargement de ${urls.length} média(s)`,
+      )
+      void assetPreloader.preload(urls)
+    }
+  })
 
   useEvent(EVENTS.PLAYER.SUCCESS_RECONNECT, (data) => {
     if (data.players) {
