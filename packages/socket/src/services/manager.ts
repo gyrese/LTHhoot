@@ -9,6 +9,11 @@ const getClientId = (socket: SocketContext["socket"]) =>
 const getClientIp = (socket: SocketContext["socket"]) =>
   socket.handshake.address || "unknown"
 
+// Clé de rate-limit : un appareil (clientId) sur un réseau (IP). Deux appareils
+// derrière la même IP publique ont donc des compteurs indépendants.
+const getAuthKey = (socket: SocketContext["socket"]) =>
+  `${getClientIp(socket)}|${getClientId(socket)}`
+
 // Session d'un client authentifié. Le rôle `admin` (mot de passe manager)
 // conserve tous les droits ; le rôle `guest` est confiné à sa propre
 // bibliothèque de quiz (cf. services/config, scoping `owner`).
@@ -16,16 +21,22 @@ export type ManagerSession =
   | { role: "admin" }
   | { role: "guest"; guestId: string }
 
-// Rate-limiting des tentatives d'authentification manager. Le verrouillage se
-// fait par IP (et non par clientId, qui est fourni par le client donc facile à
-// faire varier pour contourner la limite). Au-delà de MAX_ATTEMPTS échecs dans
-// la fenêtre, toute tentative est rejetée jusqu'à expiration.
+// Rate-limiting des tentatives d'authentification manager. La clé combine l'IP
+// ET le clientId : en soirée, l'écran principal, la télécommande et les joueurs
+// sortent très souvent par la MÊME IP publique (partage de connexion 4G, box de
+// la salle). Verrouiller sur l'IP seule punissait donc tout le monde parce qu'un
+// seul appareil avait mal saisi son PIN. L'IP reste dans la clé pour qu'un
+// attaquant ne puisse pas se réinitialiser à volonté en changeant de clientId ;
+// une IP qui accumule les échecs tous clientId confondus est bloquée par
+// MAX_AUTH_ATTEMPTS_PER_IP.
 const MAX_AUTH_ATTEMPTS = 5
+const MAX_AUTH_ATTEMPTS_PER_IP = 20
 const AUTH_WINDOW_MS = 60_000
 
 class Manager {
   private loggedClients = new Map<string, ManagerSession>()
   private failedAuth = new Map<string, { count: number; resetAt: number }>()
+  private failedAuthByIp = new Map<string, { count: number; resetAt: number }>()
 
   // Admin uniquement : tous les gardes existants (lancement de partie,
   // résultats, réglages…) restent donc fermés aux invités par défaut.
@@ -45,44 +56,83 @@ class Manager {
   }
 
   isRateLimited(socket: Socket): boolean {
-    const entry = this.failedAuth.get(getClientIp(socket))
+    const now = Date.now()
 
-    if (!entry) {
-      return false
+    const isBlocked = (
+      store: Map<string, { count: number; resetAt: number }>,
+      key: string,
+      max: number,
+    ) => {
+      const entry = store.get(key)
+
+      if (!entry) {
+        return false
+      }
+
+      // Fenêtre expirée : on repart de zéro. C'est ce qui garantit qu'un
+      // verrou finit toujours par se lever (cf. registerFailedAuth, qui ne
+      // repousse plus resetAt).
+      if (now > entry.resetAt) {
+        store.delete(key)
+
+        return false
+      }
+
+      return entry.count >= max
     }
 
-    if (Date.now() > entry.resetAt) {
-      this.failedAuth.delete(getClientIp(socket))
-
-      return false
-    }
-
-    return entry.count >= MAX_AUTH_ATTEMPTS
+    return (
+      isBlocked(this.failedAuth, getAuthKey(socket), MAX_AUTH_ATTEMPTS) ||
+      isBlocked(
+        this.failedAuthByIp,
+        getClientIp(socket),
+        MAX_AUTH_ATTEMPTS_PER_IP,
+      )
+    )
   }
 
   registerFailedAuth(socket: Socket) {
-    const ip = getClientIp(socket)
     const now = Date.now()
-    const entry = this.failedAuth.get(ip)
 
-    if (!entry || now > entry.resetAt) {
-      this.failedAuth.set(ip, { count: 1, resetAt: now + AUTH_WINDOW_MS })
+    const bump = (
+      store: Map<string, { count: number; resetAt: number }>,
+      key: string,
+    ) => {
+      const entry = store.get(key)
 
-      return
+      if (!entry || now > entry.resetAt) {
+        store.set(key, { count: 1, resetAt: now + AUTH_WINDOW_MS })
+
+        return
+      }
+
+      // On incrémente SANS repousser resetAt : prolonger la fenêtre à chaque
+      // échec rendait le verrou permanent tant que des tentatives arrivaient
+      // (une télécommande qui retente en boucle ne se débloquait jamais).
+      // La fenêtre court désormais depuis le premier échec.
+      entry.count += 1
     }
 
-    entry.count += 1
-    entry.resetAt = now + AUTH_WINDOW_MS
+    bump(this.failedAuth, getAuthKey(socket))
+    bump(this.failedAuthByIp, getClientIp(socket))
   }
 
   login(socket: Socket) {
     this.loggedClients.set(getClientId(socket), { role: "admin" })
-    this.failedAuth.delete(getClientIp(socket))
+    this.clearFailedAuth(socket)
   }
 
   loginGuest(socket: Socket, guestId: string) {
     this.loggedClients.set(getClientId(socket), { role: "guest", guestId })
-    this.failedAuth.delete(getClientIp(socket))
+    this.clearFailedAuth(socket)
+  }
+
+  // Une authentification réussie lève le verrou de l'appareil ET celui de son
+  // IP : sans cela, un PIN mal saisi plusieurs fois continuait de bloquer les
+  // autres appareils de la salle alors que l'hôte était déjà connecté.
+  private clearFailedAuth(socket: Socket) {
+    this.failedAuth.delete(getAuthKey(socket))
+    this.failedAuthByIp.delete(getClientIp(socket))
   }
 
   logout(socket: Socket) {

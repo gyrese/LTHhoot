@@ -23,18 +23,17 @@ import {
   AtSign,
   CheckCircle2,
   Clock,
-  Download,
+  Minus,
+  Plus,
+  RotateCcw,
   Send,
   Share2,
   Sparkles,
+  Trophy,
   User,
   XCircle,
 } from "lucide-react"
-import {
-  downloadCanvasAsPng,
-  renderSoloVictoryToCanvas,
-} from "@rahoot/web/features/game/utils/podium-export"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import useSound from "use-sound"
@@ -101,15 +100,22 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean | null>(null)
 
   const [textInput, setTextInput] = useState("")
+  const [numberInput, setNumberInput] = useState<number>(0)
 
   const [answersRecords, setAnswersRecords] = useState<
     Array<{
       questionIndex: number
       answerId?: number | null
       textAnswer?: string | null
+      numberAnswer?: number | null
       timeMs?: number
     }>
   >([])
+
+  const answersRecordsRef = useRef(answersRecords)
+  useEffect(() => {
+    answersRecordsRef.current = answersRecords
+  }, [answersRecords])
 
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
   const [timeLeft, setTimeLeft] = useState<number>(20)
@@ -125,121 +131,50 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     totalQuestions: number
   } | null>(null)
 
-  const [victoryImgUrl, setVictoryImgUrl] = useState<string | null>(null)
-  const [isExportingCard, setIsExportingCard] = useState(false)
-
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.2 })
   const [sfxCorrect] = useSound(SFX.RESULTS_SOUND, { volume: 0.4 })
   const [sfxWrong] = useSound(SFX.BOUMP_SOUND, { volume: 0.4 })
 
-  // Génération automatique du visuel de victoire rétro pour les réseaux sociaux
-  useEffect(() => {
-    if (step !== "FINISHED" || !resultSummary || !quizz) {
-      return undefined
+  const handleShareQuiz = async () => {
+    if (!quizz || !resultSummary) {
+      return
     }
 
-    let cancelled = false
-    const generateVictoryVisual = async () => {
+    const shareText = `J'ai obtenu ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`
+    const shareUrl = window.location.href
+
+    if (navigator.share) {
       try {
-        const canvas = await renderSoloVictoryToCanvas(
-          playerName.trim() || "Joueur",
-          resultSummary.totalPoints,
-          quizz.subject,
-        )
-        if (!cancelled) {
-          setVictoryImgUrl(canvas.toDataURL("image/png"))
-        }
-      } catch (err) {
-        console.error("Échec de la génération du visuel de victoire:", err)
+        await navigator.share({
+          title: quizz.subject,
+          text: shareText,
+          url: shareUrl,
+        })
+        return
+      } catch {
+        // Annulé par l'utilisateur
       }
     }
 
-    generateVictoryVisual()
-
-    return () => {
-      cancelled = true
-    }
-  }, [step, resultSummary, quizz, playerName])
-
-  const handleDownloadVictory = async () => {
-    if (!quizz || !resultSummary) {
-      return
-    }
-    setIsExportingCard(true)
-    try {
-      const canvas = await renderSoloVictoryToCanvas(
-        playerName.trim() || "Joueur",
-        resultSummary.totalPoints,
-        quizz.subject,
-      )
-      downloadCanvasAsPng(canvas, `victoire-${quizz.subject}-${playerName}`)
-      toast.success("Visuel de victoire téléchargé !")
-    } catch {
-      toast.error("Erreur lors du téléchargement de l'image")
-    } finally {
-      setIsExportingCard(false)
-    }
+    navigator.clipboard.writeText(shareUrl)
+    toast.success("Lien du quiz copié dans le presse-papier !")
   }
 
-  const handleShareVictory = async () => {
-    if (!quizz || !resultSummary) {
-      return
-    }
-    setIsExportingCard(true)
-    try {
-      const canvas = await renderSoloVictoryToCanvas(
-        playerName.trim() || "Joueur",
-        resultSummary.totalPoints,
-        quizz.subject,
-      )
-
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          return
-        }
-        const file = new File(
-          [blob],
-          `victoire-${playerName.replace(/[^a-zA-Z0-9]/gu, "_")}.png`,
-          { type: "image/png" },
-        )
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: `Victoire au Quiz - ${quizz.subject}`,
-              text: `J'ai fait ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`,
-              url: window.location.href,
-            })
-            return
-          } catch {
-            // L'utilisateur a annulé ou le partage a échoué
-          }
-        }
-
-        // Fallback : téléchargement image + partage texte ou copie du lien
-        downloadCanvasAsPng(canvas, `victoire-${quizz.subject}-${playerName}`)
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: quizz.subject,
-              text: `J'ai fait ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`,
-              url: window.location.href,
-            })
-          } catch {
-            // Ignoré
-          }
-        } else {
-          navigator.clipboard.writeText(window.location.href)
-          toast.success("Visuel téléchargé & lien copié !")
-        }
-      }, "image/png")
-    } catch {
-      toast.error("Erreur lors du partage")
-    } finally {
-      setIsExportingCard(false)
-    }
+  const handlePlayAgain = () => {
+    setStep("START")
+    setCurrentQuestionIdx(0)
+    setSelectedAnswer(null)
+    setHasSubmittedAnswer(false)
+    setIsCorrectAnswer(null)
+    setTextInput("")
+    setNumberInput(0)
+    setUserPoints(0)
+    setLastPointsAdded(0)
+    setResultSummary(null)
+    setAnswersRecords([])
+    answersRecordsRef.current = []
+    setStartedAt(null)
   }
 
   // Enchaînement automatique vers la question suivante après 2.2 secondes (animation fluide sans clic)
@@ -335,6 +270,24 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     return selectedAnswer === index ? false : undefined
   }
 
+  // Synchronisation du champ numérique pour les questions curseur / date
+  useEffect(() => {
+    if (!currentQuestion) {
+      return
+    }
+
+    if (currentQuestion.type === "slider") {
+      const qMin = currentQuestion.min ?? 0
+      const qMax = currentQuestion.max ?? 100
+      setNumberInput(Math.round((qMin + qMax) / 2))
+    } else if (currentQuestion.type === "date") {
+      const curYear = new Date().getFullYear()
+      const qMin = currentQuestion.minYear ?? 0
+      const qMax = currentQuestion.maxYear ?? curYear
+      setNumberInput(Math.round((qMin + qMax) / 2))
+    }
+  }, [currentQuestionIdx, quizz])
+
   const handleTimeOut = () => {
     if (hasSubmittedAnswer) {
       return
@@ -345,10 +298,16 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     sfxWrong()
     const timeSpent = Date.now() - questionStartTime
 
-    setAnswersRecords((prev) => [
-      ...prev,
-      { questionIndex: currentQuestionIdx, answerId: null, timeMs: timeSpent },
-    ])
+    const record = {
+      questionIndex: currentQuestionIdx,
+      answerId: null,
+      numberAnswer: null,
+      textAnswer: null,
+      timeMs: timeSpent,
+    }
+
+    setAnswersRecords((prev) => [...prev, record])
+    answersRecordsRef.current = [...answersRecordsRef.current, record]
   }
 
   const handleStart = (e: React.FormEvent) => {
@@ -384,7 +343,18 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     setStep("QUESTION")
     setCurrentQuestionIdx(0)
     setQuestionStartTime(Date.now())
-    const firstQTime = quizz?.questions[0]?.time || 20
+    const firstQ = quizz?.questions[0]
+    if (firstQ?.type === "slider") {
+      const qMin = firstQ.min ?? 0
+      const qMax = firstQ.max ?? 100
+      setNumberInput(Math.round((qMin + qMax) / 2))
+    } else if (firstQ?.type === "date") {
+      const curYear = new Date().getFullYear()
+      const qMin = firstQ.minYear ?? 0
+      const qMax = firstQ.maxYear ?? curYear
+      setNumberInput(Math.round((qMin + qMax) / 2))
+    }
+    const firstQTime = firstQ?.time || 20
     setTimeLeft(firstQTime)
     setProgress(100)
     sfxShow()
@@ -426,6 +396,28 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     return false
   }
 
+  const checkIsNumberAnswerCorrect = (q: any, val: number): boolean => {
+    if (!q) {
+      return false
+    }
+
+    if (q.type === "slider") {
+      const target = q.correctValue ?? q.solution
+      const tol = q.tolerance ?? 0
+
+      return typeof target === "number" ? Math.abs(val - target) <= tol : false
+    }
+
+    if (q.type === "date") {
+      const target = q.correctYear ?? q.solution
+      const tol = q.tolerance ?? 0
+
+      return typeof target === "number" ? Math.abs(val - target) <= tol : false
+    }
+
+    return false
+  }
+
   const handleAnswerSelect = (ansIdx: number) => {
     if (hasSubmittedAnswer || !currentQuestion) {
       return
@@ -455,14 +447,51 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       setLastPointsAdded(0)
     }
 
-    setAnswersRecords((prev) => [
-      ...prev,
-      {
-        questionIndex: currentQuestionIdx,
-        answerId: ansIdx,
-        timeMs: timeSpent,
-      },
-    ])
+    const record = {
+      questionIndex: currentQuestionIdx,
+      answerId: ansIdx,
+      timeMs: timeSpent,
+    }
+    setAnswersRecords((prev) => [...prev, record])
+    answersRecordsRef.current = [...answersRecordsRef.current, record]
+  }
+
+  const handleNumberSubmit = (val: number) => {
+    if (hasSubmittedAnswer || !currentQuestion) {
+      return
+    }
+
+    sfxPop()
+    setSelectedAnswer(val)
+    setHasSubmittedAnswer(true)
+
+    const timeSpent = Date.now() - questionStartTime
+    const correct = checkIsNumberAnswerCorrect(currentQuestion, val)
+
+    setIsCorrectAnswer(correct)
+
+    if (correct) {
+      sfxCorrect()
+      const timeLimit = (currentQuestion.time || 20) * 1000
+      const speedBonus = Math.max(
+        0,
+        Math.round(500 * (1 - timeSpent / timeLimit)),
+      )
+      const totalGain = 1000 + speedBonus
+      setLastPointsAdded(totalGain)
+      setUserPoints((pts) => pts + totalGain)
+    } else {
+      sfxWrong()
+      setLastPointsAdded(0)
+    }
+
+    const record = {
+      questionIndex: currentQuestionIdx,
+      numberAnswer: val,
+      timeMs: timeSpent,
+    }
+    setAnswersRecords((prev) => [...prev, record])
+    answersRecordsRef.current = [...answersRecordsRef.current, record]
   }
 
   const handleOpenTextSubmit = (e: React.FormEvent) => {
@@ -505,14 +534,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       setLastPointsAdded(0)
     }
 
-    setAnswersRecords((prev) => [
-      ...prev,
-      {
-        questionIndex: currentQuestionIdx,
-        textAnswer: textInput,
-        timeMs: timeSpent,
-      },
-    ])
+    const record = {
+      questionIndex: currentQuestionIdx,
+      textAnswer: textInput,
+      timeMs: timeSpent,
+    }
+    setAnswersRecords((prev) => [...prev, record])
+    answersRecordsRef.current = [...answersRecordsRef.current, record]
   }
 
   const handleNextQuestion = () => {
@@ -529,6 +557,17 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       setHasSubmittedAnswer(false)
       setIsCorrectAnswer(null)
       setTextInput("")
+      const nextQ = quizz.questions[nextIdx]
+      if (nextQ?.type === "slider") {
+        const qMin = nextQ.min ?? 0
+        const qMax = nextQ.max ?? 100
+        setNumberInput(Math.round((qMin + qMax) / 2))
+      } else if (nextQ?.type === "date") {
+        const curYear = new Date().getFullYear()
+        const qMin = nextQ.minYear ?? 0
+        const qMax = nextQ.maxYear ?? curYear
+        setNumberInput(Math.round((qMin + qMax) / 2))
+      }
       setQuestionStartTime(Date.now())
 
       const nextQTime = quizz.questions[nextIdx]?.time || 20
@@ -540,7 +579,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
         quizzId: quizz.id,
         playerName,
         socialContact,
-        answers: answersRecords,
+        answers: answersRecordsRef.current,
         human: { hp: honeypot, startedAt },
       })
     }
@@ -891,6 +930,143 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 </button>
               </form>
             )}
+            {currentQuestion.type === "open" &&
+              hasSubmittedAnswer &&
+              !isCorrectAnswer && (
+                <div className="mx-auto mb-3 max-w-2xl rounded-xl border border-white/10 bg-black/60 p-2.5 text-center text-xs font-semibold text-emerald-400 sm:text-sm">
+                  Réponse attendue :{" "}
+                  <strong>
+                    {Array.isArray(currentQuestion.correctAnswers)
+                      ? currentQuestion.correctAnswers.join(" ou ")
+                      : (currentQuestion as any).answer || ""}
+                  </strong>
+                </div>
+              )}
+
+            {/* Slider / Curseur & Date Questions */}
+            {(currentQuestion.type === "slider" ||
+              currentQuestion.type === "date") && (() => {
+              const isSlider = currentQuestion.type === "slider"
+              const min = isSlider
+                ? (currentQuestion.min ?? 0)
+                : (currentQuestion.minYear ?? 0)
+              const max = isSlider
+                ? (currentQuestion.max ?? 100)
+                : (currentQuestion.maxYear ?? new Date().getFullYear())
+              const target = isSlider
+                ? (currentQuestion.correctValue ??
+                  (currentQuestion as any).solution)
+                : (currentQuestion.correctYear ??
+                  (currentQuestion as any).solution)
+              const tol = currentQuestion.tolerance ?? 0
+
+              return (
+                <div className="mx-auto mb-3 w-full max-w-2xl rounded-3xl border border-white/20 bg-black/70 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-black tracking-wider text-orange-400 uppercase">
+                      {isSlider ? "Curseur" : "Année"}
+                    </span>
+                    {tol > 0 && (
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
+                        Tolérance : ±{tol}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Valeur courante affichée en grand */}
+                  <div className="mb-4 flex flex-col items-center justify-center">
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-5xl font-black tracking-tight text-amber-400 tabular-nums drop-shadow-[0_4px_12px_rgba(251,191,36,0.35)] sm:text-6xl">
+                        {numberInput}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contrôles du curseur (- / slider / +) */}
+                  <div className="mb-5 flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={hasSubmittedAnswer || numberInput <= min}
+                      onClick={() =>
+                        setNumberInput((prev) => Math.max(min, prev - 1))
+                      }
+                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+                      aria-label="Diminuer"
+                    >
+                      <Minus className="size-5" />
+                    </button>
+
+                    <div className="relative flex-1">
+                      <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        step={1}
+                        value={numberInput}
+                        disabled={hasSubmittedAnswer}
+                        onChange={(e) =>
+                          setNumberInput(parseInt(e.target.value, 10) || 0)
+                        }
+                        className="h-3 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-orange-500 shadow-inner disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                      <div className="mt-1.5 flex justify-between px-1 text-xs font-bold text-gray-400">
+                        <span>{min}</span>
+                        <span>{max}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={hasSubmittedAnswer || numberInput >= max}
+                      onClick={() =>
+                        setNumberInput((prev) => Math.min(max, prev + 1))
+                      }
+                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+                      aria-label="Augmenter"
+                    >
+                      <Plus className="size-5" />
+                    </button>
+                  </div>
+
+                  {/* Révélation après soumission ou Bouton Valider avant */}
+                  {hasSubmittedAnswer ? (
+                    <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/60 p-3.5 text-center backdrop-blur-md">
+                      {isCorrectAnswer ? (
+                        <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-400 sm:text-base">
+                          <CheckCircle2 className="size-5" />
+                          <span>
+                            {target === numberInput
+                              ? `Valeur exacte (${target}) !`
+                              : `Dans la cible ! Cible : ${target} (±${tol})`}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1 text-xs sm:text-sm">
+                          {selectedAnswer !== null && (
+                            <span className="font-bold text-rose-400">
+                              Votre choix : {selectedAnswer}
+                            </span>
+                          )}
+                          <span className="font-extrabold text-emerald-400">
+                            Réponse attendue : {target}{" "}
+                            {tol > 0 && `(Tolérance : ±${tol})`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleNumberSubmit(numberInput)}
+                      className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
+                    >
+                      <span>Valider ma réponse</span>
+                      <Send className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* HUD Footer (Timer, Score, Next Button, App Logo) */}
             <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/60 px-6 py-3 backdrop-blur-md">
@@ -1012,7 +1188,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
         <>
           <Confetti recycle={false} numberOfPieces={350} />
           <div className="relative z-20 flex max-h-screen flex-1 items-center justify-center overflow-y-auto p-4 py-8">
-            <div className="flex w-full max-w-lg flex-col items-center rounded-3xl border border-white/20 bg-black/75 p-5 text-center shadow-2xl backdrop-blur-2xl sm:p-7">
+            <div className="flex w-full max-w-lg flex-col items-center rounded-3xl border border-white/20 bg-black/75 p-6 text-center shadow-2xl backdrop-blur-2xl sm:p-8">
               <img
                 src={logoImg}
                 alt="L'Apéro Quiz"
@@ -1022,78 +1198,83 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               <h2 className="text-2xl font-black text-white sm:text-3xl">
                 Partie Terminée !
               </h2>
-              <p className="mb-4 text-sm text-gray-300">
+              <p className="mb-5 text-sm text-gray-300">
                 Bravo{" "}
                 <span className="font-bold text-orange-400">{playerName}</span>{" "}
-                !
+                ! Vos réponses ont bien été enregistrées.
               </p>
 
-              {/* Visuel de victoire personnalisé (Aperçu direct du canvas) */}
-              <div className="relative mb-5 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-stone-900 shadow-[0_15px_35px_rgba(0,0,0,0.6)] transition-all duration-300 hover:scale-[1.02]">
-                {victoryImgUrl ? (
-                  <img
-                    src={victoryImgUrl}
-                    alt="Visuel de Victoire"
-                    className="h-auto w-full object-contain select-none"
-                  />
-                ) : (
-                  <div className="flex aspect-square w-full items-center justify-center p-6 text-gray-400">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="size-8 animate-spin rounded-full border-3 border-orange-500 border-t-transparent" />
-                      <span className="text-xs font-semibold">
-                        Génération du visuel de victoire...
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Boutons d'action : Partage réseaux & Téléchargement */}
-              <div className="flex w-full flex-col gap-2.5">
-                <button
-                  onClick={handleShareVictory}
-                  disabled={isExportingCard || !victoryImgUrl}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99] disabled:opacity-50"
-                >
-                  <Share2 className="size-5" />
-                  <span>Partager sur mes Réseaux</span>
-                </button>
-
-                <button
-                  onClick={handleDownloadVictory}
-                  disabled={isExportingCard || !victoryImgUrl}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800/90 py-3 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.99] disabled:opacity-50"
-                >
-                  <Download className="size-4.5 text-orange-400" />
-                  <span>Télécharger l'image de victoire</span>
-                </button>
-              </div>
-
-              {/* Box résultats complémentaires */}
-              <div className="mt-4 grid w-full grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-slate-900/80 p-3.5">
-                <div className="flex flex-col items-center border-r border-white/10 pr-2">
-                  <span className="text-[11px] font-semibold text-gray-400 uppercase">
-                    Votre Score
+              {/* Tableau de bord des résultats */}
+              <div className="mb-5 grid w-full grid-cols-2 gap-3">
+                <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-slate-900/80 p-4 shadow-inner">
+                  <span className="text-[11px] font-extrabold tracking-wider text-gray-400 uppercase">
+                    Score Final
                   </span>
-                  <span className="text-xl font-black text-amber-400">
-                    {resultSummary.totalPoints.toLocaleString()} pts
+                  <span className="mt-1 text-2xl font-black text-amber-400 sm:text-3xl">
+                    {resultSummary.totalPoints.toLocaleString()}{" "}
+                    <span className="text-xs font-bold text-amber-300">pts</span>
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center pl-2">
-                  <span className="text-[11px] font-semibold text-gray-400 uppercase">
+                <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-slate-900/80 p-4 shadow-inner">
+                  <span className="text-[11px] font-extrabold tracking-wider text-gray-400 uppercase">
                     Rang Provisoire
                   </span>
-                  <span className="text-xl font-black text-orange-400">
+                  <span className="mt-1 text-2xl font-black text-orange-400 sm:text-3xl">
                     #{resultSummary.rank}
+                    <span className="text-xs font-semibold text-gray-400">
+                      {" "}/ {resultSummary.totalPlayers}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="col-span-2 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
+                  <span className="text-xs font-semibold text-gray-300">
+                    Bonnes réponses
+                  </span>
+                  <span className="text-sm font-extrabold text-emerald-400">
+                    {resultSummary.correctAnswersCount} / {resultSummary.totalQuestions}{" "}
+                    ({Math.round((resultSummary.correctAnswersCount / Math.max(1, resultSummary.totalQuestions)) * 100)}%)
                   </span>
                 </div>
               </div>
 
-              <p className="mt-3.5 rounded-xl border border-orange-500/20 bg-orange-500/10 p-2.5 text-[11px] text-gray-300">
-                Tirage au sort en fin de semaine parmi le{" "}
-                <strong>Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores</strong>.
-              </p>
+              {/* Encart Tirage au Sort de la Semaine */}
+              <div className="mb-6 w-full rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-transparent p-4 text-left shadow-lg">
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
+                    <Trophy className="size-4" />
+                  </div>
+                  <h4 className="text-xs font-black tracking-wider text-orange-300 uppercase">
+                    Tirage au sort de la semaine
+                  </h4>
+                </div>
+                <p className="text-xs leading-relaxed text-gray-200">
+                  Le tirage au sort aura lieu en fin de semaine parmi le{" "}
+                  <strong className="text-amber-300">Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores</strong>.
+                  Si vous êtes sélectionné(e), l'administrateur vous contactera directement pour vous remettre votre lot
+                  et le visuel officiel du gagnant sera publié sur nos réseaux !
+                </p>
+              </div>
+
+              {/* Actions Joueur */}
+              <div className="flex w-full flex-col gap-2.5">
+                <button
+                  onClick={handleShareQuiz}
+                  className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
+                >
+                  <Share2 className="size-5 transition-transform group-hover:scale-110" />
+                  <span>Défier des amis / Partager le quiz</span>
+                </button>
+
+                <button
+                  onClick={handlePlayAgain}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800/90 py-3 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.99]"
+                >
+                  <RotateCcw className="size-4 text-gray-300" />
+                  <span>Rejouer une partie</span>
+                </button>
+              </div>
             </div>
           </div>
         </>

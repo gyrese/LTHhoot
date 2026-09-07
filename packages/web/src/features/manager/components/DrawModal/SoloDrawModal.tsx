@@ -18,6 +18,10 @@ import {
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import clsx from "clsx"
+import {
+  downloadCanvasAsPng,
+  renderSoloVictoryToCanvas,
+} from "@rahoot/web/features/game/utils/podium-export"
 
 type Props = {
   result: GameResult
@@ -240,6 +244,34 @@ Félicitations à ${winner.username} ${winner.socialContact ? `(${winner.socialC
 Merci à tous les participants du Top ${SOLO_DRAW_POOL_SIZE} ! 🚀`
     : ""
 
+  const [isGeneratingOfficialVisual, setIsGeneratingOfficialVisual] =
+    useState(false)
+
+  const handleDownloadOfficialVictory = async () => {
+    if (!winner) {
+      return
+    }
+
+    setIsGeneratingOfficialVisual(true)
+    try {
+      const canvas = await renderSoloVictoryToCanvas(
+        winner.username,
+        winner.points,
+        quizName,
+      )
+      downloadCanvasAsPng(
+        canvas,
+        `Victoire_Tirage_${winner.username}_${quizName}`,
+      )
+      toast.success("Visuel de victoire officiel téléchargé (PNG) !")
+    } catch (err) {
+      console.error("Erreur génération visuel victoire:", err)
+      toast.error("Erreur lors de la génération du visuel.")
+    } finally {
+      setIsGeneratingOfficialVisual(false)
+    }
+  }
+
   const handleCopyWinnerAnnouncement = () => {
     if (!winnerPostText) {
       return
@@ -420,11 +452,23 @@ Merci à tous les participants du Top ${SOLO_DRAW_POOL_SIZE} ! 🚀`
                 </button>
 
                 <button
-                  onClick={() => downloadWinnerVisualPNG(quizName, winner)}
-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:from-amber-600 hover:to-orange-600"
+                  onClick={handleDownloadOfficialVictory}
+                  disabled={isGeneratingOfficialVisual}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:from-amber-600 hover:to-orange-600 disabled:opacity-50"
                 >
                   <ImageIcon className="size-4" />
-                  <span>Télécharger le Visuel Réseaux (PNG)</span>
+                  <span>
+                    {isGeneratingOfficialVisual
+                      ? "Génération de l'affiche..."
+                      : "Télécharger le Visuel Officiel (Affiche)"}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => downloadWinnerVisualPNG(quizName, winner)}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-slate-800 px-4 py-2.5 text-xs font-bold text-gray-300 shadow-md transition-all hover:bg-slate-700 hover:text-white"
+                >
+                  <span>Format Carte Carrée (1080x1080)</span>
                 </button>
               </div>
             </div>

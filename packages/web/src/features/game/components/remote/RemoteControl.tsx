@@ -221,33 +221,49 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     navigate({ to: "/remote" })
   })
 
-  const handleAuth = useCallback(() => {
-    if (!socket || !password.trim()) {
-      return
-    }
+  const handleAuth = useCallback(
+    (isManualSubmit = false) => {
+      if (!socket || !password.trim()) {
+        return
+      }
 
-    setAuthError("")
-    setIsAuthLoading(true)
-    localStorage.setItem("rc_pwd", password)
-    socket?.emit(EVENTS.MANAGER.AUTH, password)
-    socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
+      setAuthError("")
+      setIsAuthLoading(true)
+      localStorage.setItem("rc_pwd", password)
 
-    if (authTimeoutRef.current) {
-      clearTimeout(authTimeoutRef.current)
-    }
+      // Un seul AUTH par connexion : le socket-context réémet déjà MANAGER.AUTH
+      // à chaque `connect` à partir de `rc_pwd`. Émettre le nôtre en plus doublait
+      // la consommation du rate-limit d'auth (compté par IP, 5 essais/60s) : sur
+      // une IP partagée (4G de salle, partage de connexion), quelques blips
+      // réseau suffisaient à verrouiller la télécommande. On n'émet donc AUTH
+      // que sur saisie manuelle du PIN ; les reconnexions passent par le contexte.
+      if (isManualSubmit) {
+        socket?.emit(EVENTS.MANAGER.AUTH, password)
+      }
 
-    authTimeoutRef.current = setTimeout(() => {
-      setIsAuthLoading(false)
-      setAuthError("Partie introuvable. Vérifiez le code de partie.")
-    }, 5000)
-  }, [socket, password, gameId])
+      socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
 
-  // Ré-authentification automatique à chaque (re)connexion du socket. Après une
-  // coupure réseau, le socket serveur perd ses rooms : sans ce re-join
-  // (AUTH + RECONNECT), la télécommande ne recevait plus aucun événement et
-  // semblait déconnectée en permanence. Couvre aussi l'auto-login au montage
-  // quand un PIN est mémorisé. Dépendance limitée à isConnected : re-tenter à
-  // chaque frappe du PIN déclencherait des AUTH parasites.
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current)
+      }
+
+      // 12s et non 5s : en 4G dégradée le transport reste en polling, et
+      // l'aller-retour AUTH + RECONNECT + SUCCESS_RECONNECT dépasse couramment
+      // 5s. On affichait alors « Partie introuvable » sur une partie bien vivante.
+      authTimeoutRef.current = setTimeout(() => {
+        setIsAuthLoading(false)
+        setAuthError("Partie introuvable. Vérifiez le code de partie.")
+      }, 12000)
+    },
+    [socket, password, gameId],
+  )
+
+  // Re-join automatique à chaque (re)connexion du socket. Après une coupure
+  // réseau, le socket serveur perd ses rooms : sans ce RECONNECT, la
+  // télécommande ne recevait plus aucun événement et semblait déconnectée en
+  // permanence. L'authentification elle-même est rejouée par le socket-context
+  // (à partir de `rc_pwd`), on ne la duplique donc pas ici. Dépendance limitée
+  // à isConnected : re-tenter à chaque frappe du PIN serait parasite.
   useEffect(() => {
     if (isConnected) {
       handleAuth()
@@ -398,7 +414,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         error={authError}
         isLoading={isAuthLoading}
         isConnected={isConnected}
-        onSubmit={handleAuth}
+        onSubmit={() => handleAuth(true)}
       />
     )
   }
