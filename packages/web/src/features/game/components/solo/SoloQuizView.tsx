@@ -945,128 +945,129 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
             {/* Slider / Curseur & Date Questions */}
             {(currentQuestion.type === "slider" ||
-              currentQuestion.type === "date") && (() => {
-              const isSlider = currentQuestion.type === "slider"
-              const min = isSlider
-                ? (currentQuestion.min ?? 0)
-                : (currentQuestion.minYear ?? 0)
-              const max = isSlider
-                ? (currentQuestion.max ?? 100)
-                : (currentQuestion.maxYear ?? new Date().getFullYear())
-              const target = isSlider
-                ? (currentQuestion.correctValue ??
-                  (currentQuestion as any).solution)
-                : (currentQuestion.correctYear ??
-                  (currentQuestion as any).solution)
-              const tol = currentQuestion.tolerance ?? 0
+              currentQuestion.type === "date") &&
+              (() => {
+                const isSlider = currentQuestion.type === "slider"
+                const min = isSlider
+                  ? (currentQuestion.min ?? 0)
+                  : (currentQuestion.minYear ?? 0)
+                const max = isSlider
+                  ? (currentQuestion.max ?? 100)
+                  : (currentQuestion.maxYear ?? new Date().getFullYear())
+                const target = isSlider
+                  ? (currentQuestion.correctValue ??
+                    (currentQuestion as any).solution)
+                  : (currentQuestion.correctYear ??
+                    (currentQuestion as any).solution)
+                const tol = currentQuestion.tolerance ?? 0
 
-              return (
-                <div className="mx-auto mb-3 w-full max-w-2xl rounded-3xl border border-white/20 bg-black/70 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-black tracking-wider text-orange-400 uppercase">
-                      {isSlider ? "Curseur" : "Année"}
-                    </span>
-                    {tol > 0 && (
-                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
-                        Tolérance : ±{tol}
+                return (
+                  <div className="mx-auto mb-3 w-full max-w-2xl rounded-3xl border border-white/20 bg-black/70 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-xs font-black tracking-wider text-orange-400 uppercase">
+                        {isSlider ? "Curseur" : "Année"}
                       </span>
-                    )}
-                  </div>
-
-                  {/* Valeur courante affichée en grand */}
-                  <div className="mb-4 flex flex-col items-center justify-center">
-                    <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-5xl font-black tracking-tight text-amber-400 tabular-nums drop-shadow-[0_4px_12px_rgba(251,191,36,0.35)] sm:text-6xl">
-                        {numberInput}
-                      </span>
+                      {tol > 0 && (
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
+                          Tolérance : ±{tol}
+                        </span>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Contrôles du curseur (- / slider / +) */}
-                  <div className="mb-5 flex items-center gap-3">
-                    <button
-                      type="button"
-                      disabled={hasSubmittedAnswer || numberInput <= min}
-                      onClick={() =>
-                        setNumberInput((prev) => Math.max(min, prev - 1))
-                      }
-                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-                      aria-label="Diminuer"
-                    >
-                      <Minus className="size-5" />
-                    </button>
-
-                    <div className="relative flex-1">
-                      <input
-                        type="range"
-                        min={min}
-                        max={max}
-                        step={1}
-                        value={numberInput}
-                        disabled={hasSubmittedAnswer}
-                        onChange={(e) =>
-                          setNumberInput(parseInt(e.target.value, 10) || 0)
-                        }
-                        className="h-3 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-orange-500 shadow-inner disabled:cursor-not-allowed disabled:opacity-60"
-                      />
-                      <div className="mt-1.5 flex justify-between px-1 text-xs font-bold text-gray-400">
-                        <span>{min}</span>
-                        <span>{max}</span>
+                    {/* Valeur courante affichée en grand */}
+                    <div className="mb-4 flex flex-col items-center justify-center">
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="text-5xl font-black tracking-tight text-amber-400 tabular-nums drop-shadow-[0_4px_12px_rgba(251,191,36,0.35)] sm:text-6xl">
+                          {numberInput}
+                        </span>
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={hasSubmittedAnswer || numberInput >= max}
-                      onClick={() =>
-                        setNumberInput((prev) => Math.min(max, prev + 1))
-                      }
-                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-                      aria-label="Augmenter"
-                    >
-                      <Plus className="size-5" />
-                    </button>
-                  </div>
+                    {/* Contrôles du curseur (- / slider / +) */}
+                    <div className="mb-5 flex items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={hasSubmittedAnswer || numberInput <= min}
+                        onClick={() =>
+                          setNumberInput((prev) => Math.max(min, prev - 1))
+                        }
+                        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+                        aria-label="Diminuer"
+                      >
+                        <Minus className="size-5" />
+                      </button>
 
-                  {/* Révélation après soumission ou Bouton Valider avant */}
-                  {hasSubmittedAnswer ? (
-                    <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/60 p-3.5 text-center backdrop-blur-md">
-                      {isCorrectAnswer ? (
-                        <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-400 sm:text-base">
-                          <CheckCircle2 className="size-5" />
-                          <span>
-                            {target === numberInput
-                              ? `Valeur exacte (${target}) !`
-                              : `Dans la cible ! Cible : ${target} (±${tol})`}
-                          </span>
+                      <div className="relative flex-1">
+                        <input
+                          type="range"
+                          min={min}
+                          max={max}
+                          step={1}
+                          value={numberInput}
+                          disabled={hasSubmittedAnswer}
+                          onChange={(e) =>
+                            setNumberInput(parseInt(e.target.value, 10) || 0)
+                          }
+                          className="h-3 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-orange-500 shadow-inner disabled:cursor-not-allowed disabled:opacity-60"
+                        />
+                        <div className="mt-1.5 flex justify-between px-1 text-xs font-bold text-gray-400">
+                          <span>{min}</span>
+                          <span>{max}</span>
                         </div>
-                      ) : (
-                        <div className="flex flex-col gap-1 text-xs sm:text-sm">
-                          {selectedAnswer !== null && (
-                            <span className="font-bold text-rose-400">
-                              Votre choix : {selectedAnswer}
-                            </span>
-                          )}
-                          <span className="font-extrabold text-emerald-400">
-                            Réponse attendue : {target}{" "}
-                            {tol > 0 && `(Tolérance : ±${tol})`}
-                          </span>
-                        </div>
-                      )}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={hasSubmittedAnswer || numberInput >= max}
+                        onClick={() =>
+                          setNumberInput((prev) => Math.min(max, prev + 1))
+                        }
+                        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+                        aria-label="Augmenter"
+                      >
+                        <Plus className="size-5" />
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleNumberSubmit(numberInput)}
-                      className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
-                    >
-                      <span>Valider ma réponse</span>
-                      <Send className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
-                    </button>
-                  )}
-                </div>
-              )
-            })()}
+
+                    {/* Révélation après soumission ou Bouton Valider avant */}
+                    {hasSubmittedAnswer ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/60 p-3.5 text-center backdrop-blur-md">
+                        {isCorrectAnswer ? (
+                          <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-400 sm:text-base">
+                            <CheckCircle2 className="size-5" />
+                            <span>
+                              {target === numberInput
+                                ? `Valeur exacte (${target}) !`
+                                : `Dans la cible ! Cible : ${target} (±${tol})`}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1 text-xs sm:text-sm">
+                            {selectedAnswer !== null && (
+                              <span className="font-bold text-rose-400">
+                                Votre choix : {selectedAnswer}
+                              </span>
+                            )}
+                            <span className="font-extrabold text-emerald-400">
+                              Réponse attendue : {target}{" "}
+                              {tol > 0 && `(Tolérance : ±${tol})`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleNumberSubmit(numberInput)}
+                        className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
+                      >
+                        <span>Valider ma réponse</span>
+                        <Send className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
+                      </button>
+                    )}
+                  </div>
+                )
+              })()}
 
             {/* HUD Footer (Timer, Score, Next Button, App Logo) */}
             <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/60 px-6 py-3 backdrop-blur-md">
@@ -1212,7 +1213,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   </span>
                   <span className="mt-1 text-2xl font-black text-amber-400 sm:text-3xl">
                     {resultSummary.totalPoints.toLocaleString()}{" "}
-                    <span className="text-xs font-bold text-amber-300">pts</span>
+                    <span className="text-xs font-bold text-amber-300">
+                      pts
+                    </span>
                   </span>
                 </div>
 
@@ -1223,7 +1226,8 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   <span className="mt-1 text-2xl font-black text-orange-400 sm:text-3xl">
                     #{resultSummary.rank}
                     <span className="text-xs font-semibold text-gray-400">
-                      {" "}/ {resultSummary.totalPlayers}
+                      {" "}
+                      / {resultSummary.totalPlayers}
                     </span>
                   </span>
                 </div>
@@ -1233,8 +1237,14 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     Bonnes réponses
                   </span>
                   <span className="text-sm font-extrabold text-emerald-400">
-                    {resultSummary.correctAnswersCount} / {resultSummary.totalQuestions}{" "}
-                    ({Math.round((resultSummary.correctAnswersCount / Math.max(1, resultSummary.totalQuestions)) * 100)}%)
+                    {resultSummary.correctAnswersCount} /{" "}
+                    {resultSummary.totalQuestions} (
+                    {Math.round(
+                      (resultSummary.correctAnswersCount /
+                        Math.max(1, resultSummary.totalQuestions)) *
+                        100,
+                    )}
+                    %)
                   </span>
                 </div>
               </div>
@@ -1251,9 +1261,12 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 </div>
                 <p className="text-xs leading-relaxed text-gray-200">
                   Le tirage au sort aura lieu en fin de semaine parmi le{" "}
-                  <strong className="text-amber-300">Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores</strong>.
-                  Si vous êtes sélectionné(e), l'administrateur vous contactera directement pour vous remettre votre lot
-                  et le visuel officiel du gagnant sera publié sur nos réseaux !
+                  <strong className="text-amber-300">
+                    Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores
+                  </strong>
+                  . Si vous êtes sélectionné(e), l'administrateur vous
+                  contactera directement pour vous remettre votre lot et le
+                  visuel officiel du gagnant sera publié sur nos réseaux !
                 </p>
               </div>
 
