@@ -25,6 +25,10 @@ import {
   type RoundEventType,
 } from "@rahoot/common/types/round-event"
 import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
+import {
+  getQuestionRoundDuration,
+  resolveRoundDuration,
+} from "@rahoot/common/utils/round-duration"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
@@ -88,6 +92,10 @@ export class RoundManager {
   private playersAnswers: Answer[] = []
   private startTime = 0
   private acceptingAnswers = false
+  // Durée réelle de la manche en cours (temps configuré, éventuellement étendu
+  // pour couvrir un média plus long). Sert de référence au barème de points et
+  // aux extensions dynamiques.
+  private roundDuration = 0
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
   private questionsHistory: QuestionResult[] = []
@@ -142,6 +150,42 @@ export class RoundManager {
 
   getArmedRoundEvent(): RoundEventType | null {
     return this.armedRoundEvent
+  }
+
+  // Étend la manche en cours pour couvrir une vidéo dont la durée réelle n'est
+  // connue que du lecteur (aucune borne de fin saisie dans l'éditeur).
+  // Sans effet si la fenêtre de réponse est fermée, si la durée est aberrante,
+  // ou si la manche est déjà assez longue — la manche ne raccourcit jamais.
+  extendForMedia(duration: number): boolean {
+    if (!this.acceptingAnswers || !Number.isFinite(duration) || duration <= 0) {
+      return false
+    }
+
+    const nextDuration = resolveRoundDuration(this.roundDuration, duration)
+
+    if (nextDuration <= this.roundDuration) {
+      return false
+    }
+
+    if (!this.opts.cooldown.extendTo(nextDuration)) {
+      return false
+    }
+
+    this.roundDuration = nextDuration
+    const endsAt = this.startTime + nextDuration * 1000
+
+    // Tous les appareils (écran, joueurs, télécommande) recalent leur décompte
+    // sur cette nouvelle échéance absolue.
+    this.opts.io.to(this.opts.gameId).emit(EVENTS.GAME.ROUND_EXTENDED, {
+      time: nextDuration,
+      endsAt,
+    })
+
+    console.log(
+      `[MEDIA] Manche étendue à ${nextDuration}s pour couvrir une vidéo de ${Math.ceil(duration)}s`,
+    )
+
+    return true
   }
 
   private getNonTitleCount() {
@@ -405,7 +449,14 @@ export class RoundManager {
 
       this.startTime = Date.now()
       this.acceptingAnswers = true
-      const answerEndsAt = this.startTime + question.time * 1000
+
+      // La manche doit couvrir le média : un extrait vidéo/audio plus long que
+      // le temps configuré repousse la fin de manche pour qu'il soit lu en
+      // entier. Les bornes connues (startTime/endTime) sont appliquées ici ;
+      // une vidéo sans borne de fin verra sa durée remontée par le lecteur du
+      // navigateur (EVENTS.GAME.VIDEO_DURATION → extendForMedia).
+      this.roundDuration = getQuestionRoundDuration(question)
+      const answerEndsAt = this.startTime + this.roundDuration * 1000
 
       const selectAnswerBase = {
         question: question.question,
@@ -415,7 +466,7 @@ export class RoundManager {
         backgroundOpacity: question.backgroundOpacity,
         elements: question.elements,
         audio: question.audio,
-        time: question.time,
+        time: this.roundDuration,
         startedAt: this.startTime,
         endsAt: answerEndsAt,
         totalPlayer: this.opts.players.countConnected(),
@@ -498,7 +549,7 @@ export class RoundManager {
         ...RoundManager.getQuestionSolutionData(question),
       })
 
-      await this.opts.cooldown.start(question.time)
+      await this.opts.cooldown.start(this.roundDuration)
       this.acceptingAnswers = false
 
       if (!this.started) {
@@ -919,9 +970,13 @@ export class RoundManager {
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,
+      // Durée réelle et non question.time : quand la manche est étendue pour
+      // couvrir une vidéo, le barème de vitesse doit s'étaler sur la durée
+      // réellement jouée, sinon toute réponse au-delà du temps configuré
+      // rapporterait zéro point.
       points: answerPoints(
         this.startTime,
-        question.time,
+        this.roundDuration || question.time,
         Boolean(this.opts.noSpeedMode),
       ),
       timeMs: Date.now() - this.startTime,
@@ -1073,7 +1128,6 @@ export class RoundManager {
       return
     }
 
-    // Si showLeaderboard n'est pas activé sur cette question, on passe directement
     if (!question?.showLeaderboard) {
       this.tempOldLeaderboard = null
       this.currentQuestion += 1

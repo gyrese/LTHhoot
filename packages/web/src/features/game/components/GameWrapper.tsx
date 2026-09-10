@@ -15,6 +15,7 @@ import {
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
+import { useYoutubeDuration } from "@rahoot/web/features/game/hooks/useYoutubeDuration"
 import { MANAGER_SKIP_BTN } from "@rahoot/web/features/game/utils/constants"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
 import EveningInterstitiel from "@rahoot/web/features/game/components/states/EveningInterstitiel"
@@ -28,6 +29,7 @@ import clsx from "clsx"
 import { Coins } from "lucide-react"
 import {
   createContext,
+  useCallback,
   useContext,
   type PropsWithChildren,
   useEffect,
@@ -93,6 +95,28 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   >([])
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const activeGameId = managerGameId ?? playerGameId
+
+  // Seul l'écran principal héberge les lecteurs vidéo/audio : c'est donc lui
+  // qui remonte la durée réelle d'une vidéo sans borne de fin, pour que le
+  // serveur étende la manche si le média dépasse le temps imparti.
+  const reportVideoDuration = useCallback(
+    (duration: number) => {
+      if (!managerGameId) {
+        return
+      }
+
+      socket?.emit(EVENTS.GAME.VIDEO_DURATION, {
+        gameId: managerGameId,
+        duration,
+      })
+    },
+    [socket, managerGameId],
+  )
+
+  useYoutubeDuration(
+    Boolean(manager && managerGameId && statusName === STATUS.SELECT_ANSWER),
+    reportVideoDuration,
+  )
 
   // Écran maintenu allumé pendant toute la partie (joueur ET écran principal) :
   // un téléphone qui se verrouille dans le salon = socket mort = question ratée.

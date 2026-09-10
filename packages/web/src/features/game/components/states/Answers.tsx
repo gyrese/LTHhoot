@@ -278,6 +278,21 @@ const Answers = ({
     }
   }
 
+  // Durée de référence de la barre de progression. Elle suit `time` sauf si la
+  // manche a été étendue pour couvrir un média plus long que le temps imparti.
+  const [totalTime, setTotalTime] = useState(time)
+
+  useEffect(() => {
+    setTotalTime(time)
+  }, [time])
+
+  // Le serveur a rallongé la manche pour laisser la vidéo se terminer : on
+  // recale la fin ET la référence de progression sur les nouvelles valeurs.
+  useEvent(EVENTS.GAME.ROUND_EXTENDED, ({ time: extended, endsAt: newEnd }) => {
+    setTotalTime((prev) => Math.max(prev, extended))
+    setEndTime((prev) => Math.max(prev, newEnd))
+  })
+
   useEffect(() => {
     const interval = setInterval(() => {
       const remainingMs = endTime - Date.now()
@@ -285,14 +300,14 @@ const Answers = ({
       setCooldown(remainingSec)
 
       const pct =
-        time > 0
-          ? Math.max(0, Math.min(100, (remainingMs / (time * 1000)) * 100))
+        totalTime > 0
+          ? Math.max(0, Math.min(100, (remainingMs / (totalTime * 1000)) * 100))
           : 0
       setProgress(pct)
     }, 50)
 
     return () => clearInterval(interval)
-  }, [endTime, time])
+  }, [endTime, totalTime])
 
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     // Si dérive significative (> 1.2 seconde), on resynchronise la date de fin

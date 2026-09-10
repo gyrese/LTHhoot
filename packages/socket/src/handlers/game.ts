@@ -375,6 +375,19 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }),
   )
 
+  // L'écran principal remonte la durée réelle d'une vidéo dès que son lecteur la
+  // connaît. Réservé au manager (withManagerGame vérifie la room `manager-`) :
+  // un joueur ne doit pas pouvoir rallonger la manche à volonté.
+  socket.on(EVENTS.GAME.VIDEO_DURATION, ({ gameId, duration }) =>
+    withManagerGame(gameId, socket, (game) => {
+      if (typeof duration !== "number") {
+        return
+      }
+
+      game.extendRoundForMedia(duration)
+    }),
+  )
+
   socket.on("disconnect", () => {
     console.log(`[DISCONNECT] socket=${socket.id}`)
 

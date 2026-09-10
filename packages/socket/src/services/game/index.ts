@@ -755,6 +755,12 @@ class Game {
     }
   }
 
+  // Durée réelle d'une vidéo remontée par l'écran principal : la manche en
+  // cours est étendue si le média dépasse le temps imparti.
+  extendRoundForMedia(duration: number): boolean {
+    return this.round.extendForMedia(duration)
+  }
+
   // ── Reconnect ────────────────────────────────────────────────────────────────
 
   reconnect(socket: Socket) {

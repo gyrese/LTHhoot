@@ -96,7 +96,11 @@ const baseQuestionValidator = z.object({
   answerReveal: answerRevealValidator.optional(),
   suddenDeath: z.boolean().optional(),
   cooldown: z.number().int().min(3).max(15),
-  time: z.number().int().min(5).max(120),
+  // 600s (10 min) et non 120s : une manche peut être calée sur la durée d'une
+  // vidéo YouTube (cf. resolveRoundDuration). Le champ de saisie manuelle de
+  // l'éditeur reste borné à 120s ; ce plafond ne sert qu'aux durées dérivées
+  // d'un média.
+  time: z.number().int().min(5).max(600),
   revelationEnabled: z.boolean().optional(),
   revealDuration: z.number().int().min(3).max(120).optional(),
   gridCols: z.number().int().min(2).max(30).optional(),
@@ -208,7 +212,11 @@ const titleValidator = z.object({
   audio: z.string().optional(),
   showLeaderboard: z.boolean().optional(),
   cooldown: z.number().int().min(3).max(120),
-  time: z.number().int().min(5).max(120),
+  // 600s (10 min) et non 120s : une manche peut être calée sur la durée d'une
+  // vidéo YouTube (cf. resolveRoundDuration). Le champ de saisie manuelle de
+  // l'éditeur reste borné à 120s ; ce plafond ne sert qu'aux durées dérivées
+  // d'un média.
+  time: z.number().int().min(5).max(600),
   revelationEnabled: z.boolean().optional(),
   revealDuration: z.number().int().min(3).max(120).optional(),
   gridCols: z.number().int().min(2).max(30).optional(),

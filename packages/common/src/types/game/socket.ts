@@ -87,6 +87,11 @@ export interface ServerToClientEvents {
   }) => void
   [EVENTS.GAME.REMOVE_PLAYER]: (_playerId: string) => void
   [EVENTS.GAME.MEDIA_PRELOAD]: (_urls: string[]) => void
+  // Nouvelle fin de manche après extension pour couvrir un média.
+  [EVENTS.GAME.ROUND_EXTENDED]: (_data: {
+    time: number
+    endsAt: number
+  }) => void
 
   // Player events
   [EVENTS.PLAYER.SUCCESS_RECONNECT]: (_data: {
@@ -233,6 +238,12 @@ export interface ClientToServerEvents {
         },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
+  // Durée réelle d'une vidéo, remontée par le lecteur de l'écran principal
+  // quand l'éditeur n'a pas de borne de fin.
+  [EVENTS.GAME.VIDEO_DURATION]: (_message: {
+    gameId: string
+    duration: number
+  }) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
   [EVENTS.MANAGER.KICK_PLAYER]: (_message: {
     gameId: string

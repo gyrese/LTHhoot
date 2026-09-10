@@ -14,6 +14,12 @@ export const EVENTS = {
     NEW_PLAYER: "game:newPlayer",
     REMOVE_PLAYER: "game:removePlayer",
     MEDIA_PRELOAD: "game:mediaPreload",
+    // L'écran principal remonte la durée réelle d'une vidéo YouTube dès que son
+    // lecteur la connaît (bornes non saisies dans l'éditeur).
+    VIDEO_DURATION: "game:videoDuration",
+    // Le serveur rediffuse la nouvelle fin de manche après extension pour un
+    // média : les décomptes de tous les appareils se réalignent dessus.
+    ROUND_EXTENDED: "game:roundExtended",
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",
