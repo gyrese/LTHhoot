@@ -77,7 +77,19 @@ export interface RoundManagerOptions {
   // Mode sans rapidité : toute bonne réponse vaut le barème plein, quel que
   // soit le temps mis pour répondre.
   noSpeedMode?: boolean
+  // Mode rapide (quiz de rapidité) : la partie s'enchaîne toute seule, sans
+  // attendre le moindre clic de l'hôte entre deux questions.
+  fastMode?: boolean
 }
+
+// ── Mode rapide : temporisations ────────────────────────────────────────────
+// Décompte d'intro raccourci (4 s en temps normal) : sur des questions de ~5 s,
+// une intro plus longue que la question elle-même casse le rythme.
+const FAST_PREPARED_SECONDS = 1
+// Pause d'affichage du résultat avant d'enchaîner. Les joueurs doivent voir
+// juste/faux et les points gagnés — sans cette pause, SHOW_RESULT est écrasé
+// aussitôt par le SHOW_PREPARED suivant et le scoring devient opaque.
+const FAST_RESULTS_SECONDS = 2
 
 /** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
 function isOpenLike(type: string): boolean {
@@ -380,7 +392,9 @@ export class RoundManager {
         roundEvent: this.currentRoundEvent ?? undefined,
       })
 
-      await this.opts.cooldown.start(4)
+      await this.opts.cooldown.start(
+        this.opts.fastMode ? FAST_PREPARED_SECONDS : 4,
+      )
 
       if (!this.started) {
         return
@@ -921,13 +935,29 @@ export class RoundManager {
       // est immédiatement écrasé par le SHOW_PREPARED de la question
       // suivante, et le joueur ne voit jamais les points qu'il vient de
       // gagner (cas du repêchage d'une réponse ouverte notamment).
-      await sleep(3)
+      await sleep(this.opts.fastMode ? FAST_RESULTS_SECONDS : 3)
       this.showLeaderboard()
-    } else {
-      this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
-        ...responsesBase,
-        ...responsesExtra,
-      })
+
+      return
+    }
+
+    this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
+      ...responsesBase,
+      ...responsesExtra,
+    })
+
+    // Mode rapide : on affiche bien SHOW_RESPONSES (hôte) et SHOW_RESULT
+    // (joueurs) ci-dessus, mais on enchaîne tout seul au lieu d'attendre le
+    // clic « Classement ». `started` est revérifié après la pause : une fin de
+    // partie ou un abort survenu entre-temps ne doit pas relancer de manche.
+    if (this.opts.fastMode) {
+      await sleep(FAST_RESULTS_SECONDS)
+
+      if (!this.started) {
+        return
+      }
+
+      this.showLeaderboard()
     }
   }
 
@@ -1128,7 +1158,11 @@ export class RoundManager {
       return
     }
 
-    if (!question?.showLeaderboard) {
+    // Mode rapide : le classement intermédiaire est sauté quoi qu'en dise la
+    // question — c'est l'écran le plus long à lire, et le seul but ici est
+    // d'enchaîner. Le classement final (isLastRound, traité plus haut) et le
+    // podium restent eux inchangés.
+    if (!question?.showLeaderboard || this.opts.fastMode) {
       this.tempOldLeaderboard = null
       this.currentQuestion += 1
       void this.newQuestion()

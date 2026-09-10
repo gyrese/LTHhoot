@@ -6,6 +6,10 @@
     "label": "Ohne Tempo",
     "hint": "Jede richtige Antwort zählt 1000 Punkte, unabhängig von der Antwortzeit. Gleichstände werden per Sudden Death entschieden."
   },
+  "fastMode": {
+    "label": "Schnellmodus",
+    "hint": "Die Fragen laufen automatisch durch, ohne Wartebildschirm oder Klick dazwischen: kürzerer Intro-Countdown, Ergebnis 2 s sichtbar, Zwischenwertung übersprungen. Ideal für Schnellquiz."
+  },
   "quizz": {
     "create": "Quiz erstellen",
     "delete": "Quiz löschen",

@@ -6,6 +6,10 @@
     "label": "Sans rapidité",
     "hint": "Chaque bonne réponse vaut 1000 points, quel que soit le temps mis pour répondre. Les égalités sont départagées par la mort subite."
   },
+  "fastMode": {
+    "label": "Mode rapide",
+    "hint": "Les questions s'enchaînent automatiquement, sans écran d'attente ni clic entre elles : décompte d'intro raccourci, résultat affiché 2 s, classement intermédiaire sauté. Idéal pour les quiz de rapidité."
+  },
   "quizz": {
     "create": "Créer un quizz",
     "delete": "Supprimer le quizz",

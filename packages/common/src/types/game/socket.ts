@@ -235,6 +235,9 @@ export interface ClientToServerEvents {
           // Mode sans rapidité : barème fixe, le temps de réponse n'entre pas
           // dans le calcul des points.
           noSpeedMode?: boolean
+          // Mode rapide : la partie s'enchaîne sans attendre de clic de l'hôte
+          // entre les questions (quiz de rapidité, cf. RoundManager).
+          fastMode?: boolean
         },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
@@ -381,6 +384,7 @@ export interface ClientToServerEvents {
     powerUpsEnabled?: boolean
     disabledPowerUps?: string[]
     noSpeedMode?: boolean
+    fastMode?: boolean
   }) => void
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 
