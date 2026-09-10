@@ -90,6 +90,12 @@ const FAST_PREPARED_SECONDS = 1
 // juste/faux et les points gagnés — sans cette pause, SHOW_RESULT est écrasé
 // aussitôt par le SHOW_PREPARED suivant et le scoring devient opaque.
 const FAST_RESULTS_SECONDS = 2
+// Temps de lecture de l'énoncé (`question.cooldown`, 3 à 15 s selon l'éditeur)
+// avant l'ouverture des réponses. C'est de loin la plus longue des attentes
+// entre deux questions : la plafonner est l'essentiel du mode rapide. On garde
+// 1 s plutôt que 0 pour que la question soit affichée avant que le chrono ne
+// démarre — sinon les joueurs répondraient sans avoir eu le temps de lire.
+const FAST_QUESTION_READ_SECONDS = 1
 
 /** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
 function isOpenLike(type: string): boolean {
@@ -272,18 +278,24 @@ export class RoundManager {
 
     this.started = true
 
+    // Préambule de lancement, raccourci lui aussi en mode rapide : 6 s d'écran
+    // d'accueil + décompte avant la toute première question cassaient l'entrée
+    // en matière d'un quiz de rapidité.
+    const introSeconds = this.opts.fastMode ? 1 : 3
+    const countdownSeconds = this.opts.fastMode ? 2 : 3
+
     const startNow = Date.now()
     this.opts.broadcast(STATUS.SHOW_START, {
-      time: 3,
+      time: introSeconds,
       subject: quizzDisplayName(this.opts.quizz),
       startedAt: startNow,
-      endsAt: startNow + 3000,
+      endsAt: startNow + introSeconds * 1000,
     })
 
-    await sleep(3)
+    await sleep(introSeconds)
 
     this.opts.io.to(this.opts.gameId).emit(EVENTS.GAME.START_COOLDOWN)
-    await this.opts.cooldown.start(3)
+    await this.opts.cooldown.start(countdownSeconds)
 
     void this.newQuestion()
   }
@@ -324,7 +336,11 @@ export class RoundManager {
           revelationStyle: question.revelationStyle,
         })
 
-        await this.opts.cooldown.start(question.cooldown)
+        await this.opts.cooldown.start(
+          this.opts.fastMode
+            ? Math.min(question.cooldown, FAST_QUESTION_READ_SECONDS)
+            : question.cooldown,
+        )
 
         if (!this.started) {
           return
@@ -455,7 +471,13 @@ export class RoundManager {
         ...RoundManager.getQuestionSolutionData(question),
       })
 
-      await this.opts.cooldown.start(question.cooldown)
+      // Mode rapide : on plafonne le temps de lecture au lieu de l'ignorer —
+      // une question déjà configurée à 1 s ne doit pas se retrouver rallongée.
+      await this.opts.cooldown.start(
+        this.opts.fastMode
+          ? Math.min(question.cooldown, FAST_QUESTION_READ_SECONDS)
+          : question.cooldown,
+      )
 
       if (!this.started) {
         return
