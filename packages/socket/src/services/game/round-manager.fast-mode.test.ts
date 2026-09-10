@@ -36,7 +36,11 @@ const buildPlayer = (id: string): Player => ({
 })
 
 // Enregistre l'ordre des statuts diffusés/envoyés pour vérifier l'enchaînement.
-const setup = (fastMode: boolean, questionCount: number) => {
+const setup = (
+  fastMode: boolean,
+  questionCount: number,
+  questionOverrides: Partial<Question> = {},
+) => {
   const io = buildIo()
   const gameId = "g1"
   const cooldown = new CooldownTimer(io, gameId)
@@ -45,11 +49,14 @@ const setup = (fastMode: boolean, questionCount: number) => {
 
   const broadcasted: Status[] = []
   const managerStatuses: Status[] = []
+  const playerStatuses: Status[] = []
   let finished = 0
 
   const quizz: Quizz = {
     subject: "Rapidité",
-    questions: Array.from({ length: questionCount }, () => buildQuestion()),
+    questions: Array.from({ length: questionCount }, () =>
+      buildQuestion(questionOverrides),
+    ),
   } as Quizz
 
   const round = new RoundManager({
@@ -69,6 +76,8 @@ const setup = (fastMode: boolean, questionCount: number) => {
     ) => {
       if (target === "manager") {
         managerStatuses.push(status)
+      } else {
+        playerStatuses.push(status)
       }
     },
     onNewQuestion: () => undefined,
@@ -82,6 +91,7 @@ const setup = (fastMode: boolean, questionCount: number) => {
     round,
     broadcasted,
     managerStatuses,
+    playerStatuses,
     getFinished: () => finished,
   }
 }
@@ -129,6 +139,25 @@ describe("RoundManager — mode rapide", () => {
     expect(managerStatuses).not.toContain("FINISHED")
   })
 
+  // Régression : la lecture de l'énoncé (`question.cooldown`, ici 10 s) était
+  // la plus longue attente entre deux questions, et le premier jet du mode
+  // rapide ne la touchait pas — l'écran d'attente restait donc bien visible.
+  it("plafonne le temps de lecture de l'énoncé avant les réponses", async () => {
+    const fast = setup(true, 1, { cooldown: 10 })
+    const normal = setup(false, 1, { cooldown: 10 })
+
+    void fast.round.start(managerSocket)
+    void normal.round.start(managerSocket)
+
+    // Mode rapide : intro 1 s + décompte 2 s + prepared 1 s + lecture 1 s = 5 s.
+    // Mode normal : 3 + 3 + 4 = 10 s avant même de commencer à lire l'énoncé.
+    await vi.advanceTimersByTimeAsync(6000)
+
+    // SELECT_ANSWER = les joueurs peuvent enfin répondre.
+    expect(fast.playerStatuses).toContain("SELECT_ANSWER")
+    expect(normal.playerStatuses).not.toContain("SELECT_ANSWER")
+  })
+
   it("raccourcit le décompte d'intro (1 s au lieu de 4 s)", async () => {
     const fast = setup(true, 1)
     const normal = setup(false, 1)
@@ -136,10 +165,10 @@ describe("RoundManager — mode rapide", () => {
     void fast.round.start(managerSocket)
     void normal.round.start(managerSocket)
 
-    // Préambule commun de start() : sleep(3) + cooldown(3) = 6 s, puis
-    // SHOW_PREPARED. À 6 s + 2 s, le mode rapide (intro 1 s) a déjà diffusé
-    // la question, tandis que le mode normal (intro 4 s) décompte encore.
-    await vi.advanceTimersByTimeAsync(6000 + 2000)
+    // Préambule : 3 s + 3 s en normal, 1 s + 2 s en rapide. À 8 s, le mode
+    // rapide a largement diffusé sa question ; le mode normal (6 s de
+    // préambule + 4 s d'écran « Prêt ? ») décompte encore.
+    await vi.advanceTimersByTimeAsync(8000)
 
     expect(fast.broadcasted).toContain("SHOW_QUESTION")
     expect(normal.broadcasted).not.toContain("SHOW_QUESTION")
