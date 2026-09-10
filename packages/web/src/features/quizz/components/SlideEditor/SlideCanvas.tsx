@@ -1339,6 +1339,11 @@ const SlideCanvas = ({
                   controls: el.controls ? "1" : "0",
                   rel: "0",
                   playsinline: "1",
+                  // Nécessaire pour que le lecteur réponde aux messages de
+                  // l'API iframe : c'est ainsi qu'on lit la durée réelle de la
+                  // vidéo pour caler la durée de la manche dessus
+                  // (cf. useYoutubeDuration).
+                  enablejsapi: "1",
                 })
 
                 if (el.loop) {

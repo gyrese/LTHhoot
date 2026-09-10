@@ -6,6 +6,10 @@
     "label": "Sin rapidez",
     "hint": "Cada respuesta correcta vale 1000 puntos, sin importar el tiempo de respuesta. Los empates se deciden por muerte súbita."
   },
+  "fastMode": {
+    "label": "Modo rápido",
+    "hint": "Las preguntas se encadenan automáticamente, sin pantalla de espera ni clic entre ellas: cuenta atrás de introducción más corta, resultado mostrado 2 s, clasificación intermedia omitida. Ideal para cuestionarios de rapidez."
+  },
   "quizz": {
     "create": "Crear cuestionario",
     "delete": "Eliminar cuestionario",

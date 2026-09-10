@@ -6,6 +6,10 @@
     "label": "Senza rapidità",
     "hint": "Ogni risposta corretta vale 1000 punti, indipendentemente dal tempo impiegato. I pari merito si decidono con la morte improvvisa."
   },
+  "fastMode": {
+    "label": "Modalità rapida",
+    "hint": "Le domande si susseguono automaticamente, senza schermate di attesa né clic tra una e l'altra: conto alla rovescia iniziale più breve, risultato mostrato per 2 s, classifica intermedia saltata. Ideale per i quiz di rapidità."
+  },
   "quizz": {
     "create": "Crea quiz",
     "delete": "Elimina quiz",

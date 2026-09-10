@@ -89,6 +89,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     let powerUpsEnabled = false
     let disabledPowerUps: string[] = []
     let noSpeedMode = false
+    let fastMode = false
     let questionIndex = -1
 
     if (typeof payload === "string") {
@@ -97,6 +98,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       quizzId = payload.quizId
       powerUpsEnabled = Boolean(payload.powerUpsEnabled)
       noSpeedMode = Boolean(payload.noSpeedMode)
+      fastMode = Boolean(payload.fastMode)
       disabledPowerUps = Array.isArray(payload.disabledPowerUps)
         ? payload.disabledPowerUps
         : []
@@ -145,6 +147,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       powerUpsEnabled,
       disabledPowerUps,
       noSpeedMode,
+      fastMode,
       // Partie invité = test solo : seul START_DEMO pourra la démarrer.
       demoOnly: session.role === "guest",
     })
@@ -293,7 +296,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(
     EVENTS.EVENING.START,
-    ({ quizIds, powerUpsEnabled, disabledPowerUps, noSpeedMode }) => {
+    ({ quizIds, powerUpsEnabled, disabledPowerUps, noSpeedMode, fastMode }) => {
       if (!Manager.isLogged(socket)) {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
@@ -318,12 +321,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       }
 
       const game = new Game(io, socket, firstQuizz)
-      game.initEveningMode(
-        quizIds,
-        powerUpsEnabled ?? true,
-        Array.isArray(disabledPowerUps) ? disabledPowerUps : [],
-        Boolean(noSpeedMode),
-      )
+      game.initEveningMode(quizIds, {
+        powerUpsEnabled: powerUpsEnabled ?? true,
+        disabledPowerUps: Array.isArray(disabledPowerUps)
+          ? disabledPowerUps
+          : [],
+        noSpeedMode: Boolean(noSpeedMode),
+        fastMode: Boolean(fastMode),
+      })
       registry.addGame(game)
     },
   )
@@ -372,6 +377,19 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       for (const entry of game.getLogs()) {
         socket.emit(EVENTS.MANAGER.LOG_ENTRY, entry)
       }
+    }),
+  )
+
+  // L'écran principal remonte la durée réelle d'une vidéo dès que son lecteur la
+  // connaît. Réservé au manager (withManagerGame vérifie la room `manager-`) :
+  // un joueur ne doit pas pouvoir rallonger la manche à volonté.
+  socket.on(EVENTS.GAME.VIDEO_DURATION, ({ gameId, duration }) =>
+    withManagerGame(gameId, socket, (game) => {
+      if (typeof duration !== "number") {
+        return
+      }
+
+      game.extendRoundForMedia(duration)
     }),
   )
 

@@ -60,6 +60,30 @@ export class CooldownTimer {
     })
   }
 
+  // Prolonge un décompte DÉJÀ en cours jusqu'à `seconds` au total depuis son
+  // démarrage, sans recréer la promesse (le `await` de la manche reste valide).
+  // Sert aux vidéos dont la durée réelle n'est connue qu'une fois le lecteur
+  // prêt, côté navigateur. Ne raccourcit jamais : un décompte plus long que
+  // demandé est laissé intact.
+  extendTo(seconds: number): boolean {
+    if (!this.active || seconds <= 0) {
+      return false
+    }
+
+    const nextEndsAt = this.startedAt + seconds * 1000
+
+    if (nextEndsAt <= this.endsAt) {
+      return false
+    }
+
+    this.endsAt = nextEndsAt
+    // `count` est le prochain entier à diffuser : on le réaligne sur le nouveau
+    // reste pour que l'affichage du décompte reparte de la bonne valeur.
+    this.count = Math.max(0, Math.ceil((nextEndsAt - Date.now()) / 1000) - 1)
+
+    return true
+  }
+
   abort() {
     this.clear()
   }

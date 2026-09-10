@@ -72,6 +72,9 @@ class Game {
   // soit le temps de réponse (les égalités restent tranchées par la mort
   // subite du classement final).
   private noSpeedMode = false
+  // Mode rapide : enchaînement automatique des questions, sans clic de l'hôte
+  // entre elles (quiz de rapidité). Réglé au lancement de la partie.
+  private fastMode = false
   // Partie de test créée par un compte invité : seul le mode démo (solo) peut
   // la démarrer — START_GAME est refusé (cf. handlers/game).
   readonly demoOnly: boolean = false
@@ -120,6 +123,7 @@ class Game {
       powerUpsEnabled?: boolean
       disabledPowerUps?: string[]
       noSpeedMode?: boolean
+      fastMode?: boolean
       demoOnly?: boolean
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
@@ -144,6 +148,7 @@ class Game {
     this.singleQuizPowerUpsEnabled = powerUpsEnabled
     this.disabledPowerUps = options?.disabledPowerUps ?? []
     this.noSpeedMode = options?.noSpeedMode ?? false
+    this.fastMode = options?.fastMode ?? false
     this.demoOnly = options?.demoOnly ?? false
 
     this.cooldown = new CooldownTimer(io, this.gameId)
@@ -207,6 +212,7 @@ class Game {
       singleQuizPowerUpsEnabled: this.singleQuizPowerUpsEnabled,
       disabledPowerUps: this.disabledPowerUps,
       noSpeedMode: this.noSpeedMode,
+      fastMode: this.fastMode,
       demoOnly: this.demoOnly,
       savedAt: Date.now(),
     }
@@ -227,6 +233,7 @@ class Game {
       powerUpsEnabled: snapshot.singleQuizPowerUpsEnabled,
       disabledPowerUps: snapshot.disabledPowerUps,
       noSpeedMode: snapshot.noSpeedMode,
+      fastMode: snapshot.fastMode,
       demoOnly: snapshot.demoOnly,
       restore: {
         gameId: snapshot.gameId,
@@ -292,6 +299,7 @@ class Game {
               this.eveningSession.quizIds.length
         : () => true,
       noSpeedMode: this.noSpeedMode,
+      fastMode: this.fastMode,
       // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
       onCoinsEarned: this.powerUpsActive
@@ -304,15 +312,24 @@ class Game {
 
   // ── Mode Soirée ─────────────────────────────────────────────────────────────
 
+  // Options nommées plutôt que positionnelles : la liste ne contenait déjà que
+  // des booléens interchangeables à l'appel, où une inversion serait passée
+  // inaperçue au typage.
   initEveningMode(
     quizIds: string[],
-    powerUpsEnabled: boolean = true,
-    disabledPowerUps: string[] = [],
-    noSpeedMode: boolean = false,
+    options?: {
+      powerUpsEnabled?: boolean
+      disabledPowerUps?: string[]
+      noSpeedMode?: boolean
+      fastMode?: boolean
+    },
   ) {
+    const powerUpsEnabled = options?.powerUpsEnabled ?? true
+
     this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
-    this.disabledPowerUps = disabledPowerUps
-    this.noSpeedMode = noSpeedMode
+    this.disabledPowerUps = options?.disabledPowerUps ?? []
+    this.noSpeedMode = options?.noSpeedMode ?? false
+    this.fastMode = options?.fastMode ?? false
     const firstQuizz = Config.findQuizzByAnyId(quizIds[0])
 
     if (!firstQuizz) {
@@ -753,6 +770,12 @@ class Game {
       this.playerStatus.delete(playerId)
       this.logAndEmit("warn", `${player?.username ?? playerId} a été expulsé`)
     }
+  }
+
+  // Durée réelle d'une vidéo remontée par l'écran principal : la manche en
+  // cours est étendue si le média dépasse le temps imparti.
+  extendRoundForMedia(duration: number): boolean {
+    return this.round.extendForMedia(duration)
   }
 
   // ── Reconnect ────────────────────────────────────────────────────────────────

@@ -27,6 +27,10 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
     playlist: src.videoId,
     rel: "0",
     playsinline: "1",
+    // Permet de lire la durée réelle du morceau via l'API iframe, pour caler la
+    // manche dessus quand aucune borne de fin n'a été saisie
+    // (cf. useYoutubeDuration).
+    enablejsapi: "1",
     origin: typeof window !== "undefined" ? window.location.origin : "",
   })
 

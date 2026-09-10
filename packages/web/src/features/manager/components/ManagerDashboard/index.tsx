@@ -24,6 +24,7 @@ import {
   Sparkles,
   TimerOff,
   Users,
+  Zap,
 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -56,6 +57,9 @@ const ManagerDashboard = ({ data }: Props) => {
   // Mode sans rapidité : partagé par la partie simple et la soirée — chaque
   // bonne réponse vaut 1000 points quel que soit le temps de réponse.
   const [noSpeedMode, setNoSpeedMode] = useState(false)
+  // Mode rapide : partagé lui aussi par la partie simple et la soirée — les
+  // questions s'enchaînent sans clic de l'hôte entre elles.
+  const [fastMode, setFastMode] = useState(false)
   const [powerUpsModalMode, setPowerUpsModalMode] = useState<
     "single" | "evening"
   >("single")
@@ -86,6 +90,7 @@ const ManagerDashboard = ({ data }: Props) => {
       powerUpsEnabled: isGuest ? false : singlePowerUpsEnabled,
       disabledPowerUps: isGuest ? [] : disabledPowerUps,
       noSpeedMode,
+      fastMode,
     })
   }
 
@@ -110,6 +115,7 @@ const ManagerDashboard = ({ data }: Props) => {
       powerUpsEnabled,
       disabledPowerUps,
       noSpeedMode,
+      fastMode,
     })
   }
 
@@ -204,6 +210,8 @@ const ManagerDashboard = ({ data }: Props) => {
             powerUpsEnabled={powerUpsEnabled}
             noSpeedMode={noSpeedMode}
             onToggleNoSpeed={() => setNoSpeedMode((v) => !v)}
+            fastMode={fastMode}
+            onToggleFastMode={() => setFastMode((v) => !v)}
             onRemove={handleToggleEveningQuizz}
             onStart={handleEveningStart}
             onToggleOff={handleToggleEveningOff}
@@ -258,6 +266,21 @@ const ManagerDashboard = ({ data }: Props) => {
               >
                 <TimerOff className="size-3.5" />
                 <span>{t("manager:noSpeed.label")}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFastMode((v) => !v)}
+                className={clsx(
+                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+                  fastMode
+                    ? "bg-orange-500/20 text-orange-200 ring-1 ring-orange-500/40 hover:bg-orange-500/30"
+                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+                )}
+                title={t("manager:fastMode.hint")}
+              >
+                <Zap className="size-3.5" />
+                <span>{t("manager:fastMode.label")}</span>
               </button>
 
               {!isGuest && (

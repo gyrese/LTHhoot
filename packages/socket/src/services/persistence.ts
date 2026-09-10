@@ -48,6 +48,9 @@ export interface GameSnapshot {
   // Absent des instantanés écrits avant l'ajout du mode sans rapidité : une
   // partie restaurée repart alors sur le barème temporel (comportement d'origine).
   noSpeedMode?: boolean
+  // Idem pour le mode rapide : absent des anciens instantanés → une partie
+  // restaurée repart sur le flux normal piloté par l'hôte.
+  fastMode?: boolean
   demoOnly?: boolean
   savedAt: number
 }
