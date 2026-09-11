@@ -13,7 +13,7 @@ import DashboardSidebar from "./DashboardSidebar"
 import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
 import EveningFooter from "./EveningFooter"
-import FastModeToggle from "./FastModeToggle"
+import LaunchModal from "./LaunchModal"
 import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
 import GuestAccountsModal from "./GuestAccountsModal"
 import {
@@ -29,6 +29,7 @@ import {
   Sparkles,
   TimerOff,
   Users,
+  Zap,
 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -58,6 +59,7 @@ const ManagerDashboard = ({ data }: Props) => {
   const [singlePowerUpsEnabled, setSinglePowerUpsEnabled] = useState(false)
   const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [powerUpsModalOpen, setPowerUpsModalOpen] = useState(false)
+  const [launchModalOpen, setLaunchModalOpen] = useState(false)
   // Mode sans rapidité : partagé par la partie simple et la soirée — chaque
   // bonne réponse vaut 1000 points quel que soit le temps de réponse.
   const [noSpeedMode, setNoSpeedMode] = useState(false)
@@ -91,6 +93,8 @@ const ManagerDashboard = ({ data }: Props) => {
 
       return
     }
+
+    setLaunchModalOpen(false)
 
     socket?.emit(EVENTS.GAME.CREATE, {
       quizId: selectedQuizz,
@@ -140,6 +144,31 @@ const ManagerDashboard = ({ data }: Props) => {
   }
 
   const selectedName = data.quizz.find((q) => q.id === selectedQuizz)?.subject
+
+  // Pastilles de rappel dans la barre : les réglages vivent désormais dans la
+  // modale, ce résumé évite qu'ils deviennent invisibles depuis le dashboard.
+  const activeModes = [
+    fastMode && {
+      key: "fastMode.label",
+      icon: Zap,
+      className: "bg-orange-500/20 text-orange-200",
+    },
+    noSpeedMode && {
+      key: "noSpeed.label",
+      icon: TimerOff,
+      className: "bg-sky-500/20 text-sky-200",
+    },
+    !isGuest &&
+      singlePowerUpsEnabled && {
+        key: "quizz.powerUps",
+        icon: Sparkles,
+        className: "bg-yellow-500/20 text-yellow-200",
+      },
+  ].filter(Boolean) as {
+    key: string
+    icon: typeof Zap
+    className: string
+  }[]
 
   return (
     <ConfigProvider data={data}>
@@ -264,50 +293,27 @@ const ManagerDashboard = ({ data }: Props) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setNoSpeedMode((v) => !v)}
-                className={clsx(
-                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
-                  noSpeedMode
-                    ? "bg-sky-500/20 text-sky-200 ring-1 ring-sky-500/40 hover:bg-sky-500/30"
-                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
-                )}
-                title={t("manager:noSpeed.hint")}
-              >
-                <TimerOff className="size-3.5" />
-                <span>{t("manager:noSpeed.label")}</span>
-              </button>
-
-              <FastModeToggle
-                fastMode={fastMode}
-                intensity={fastModeIntensity}
-                onToggle={() => setFastMode((v) => !v)}
-                onIntensityChange={setFastModeIntensity}
-              />
-
-              {!isGuest && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPowerUpsModalMode("single")
-                    setPowerUpsModalOpen(true)
-                  }}
-                  className={clsx(
-                    "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
-                    singlePowerUpsEnabled
-                      ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-500/40 hover:bg-yellow-500/30"
-                      : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
-                  )}
-                  title={t("manager:quizz.powerUpsToggle")}
-                >
-                  <Sparkles className="size-3.5" />
-                  <span>{t("manager:quizz.powerUps")}</span>
-                </button>
+              {/* Résumé des modes actifs : sans lui, les réglages déplacés dans
+                  la modale deviendraient invisibles depuis le dashboard. */}
+              {activeModes.length > 0 && (
+                <div className="hidden items-center gap-1.5 sm:flex">
+                  {activeModes.map(({ key, icon: Icon, className }) => (
+                    <span
+                      key={key}
+                      className={clsx(
+                        "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold",
+                        className,
+                      )}
+                      title={t(`manager:${key}`)}
+                    >
+                      <Icon className="size-3" />
+                    </span>
+                  ))}
+                </div>
               )}
 
               <button
-                onClick={handleStart}
+                onClick={() => setLaunchModalOpen(true)}
                 disabled={!selectedQuizz}
                 className={clsx(
                   "flex shrink-0 items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all",
@@ -339,6 +345,24 @@ const ManagerDashboard = ({ data }: Props) => {
           guests={data.guests ?? []}
         />
       )}
+      <LaunchModal
+        isOpen={launchModalOpen}
+        onClose={() => setLaunchModalOpen(false)}
+        quizzName={selectedName}
+        isGuest={isGuest}
+        fastMode={fastMode}
+        onToggleFastMode={setFastMode}
+        fastModeIntensity={fastModeIntensity}
+        onIntensityChange={setFastModeIntensity}
+        noSpeedMode={noSpeedMode}
+        onToggleNoSpeed={setNoSpeedMode}
+        powerUpsEnabled={singlePowerUpsEnabled}
+        onOpenPowerUpsConfig={() => {
+          setPowerUpsModalMode("single")
+          setPowerUpsModalOpen(true)
+        }}
+        onStart={handleStart}
+      />
       <PowerUpsSettingsModal
         isOpen={powerUpsModalOpen}
         onClose={() => setPowerUpsModalOpen(false)}
