@@ -96,7 +96,8 @@
     "section": {
       "rhythm": "Pace",
       "score": "Scoring",
-      "bonus": "Bonus"
+      "bonus": "Bonus",
+      "options": "Options"
     },
     "rhythm": {
       "normal": "Normal",
@@ -106,6 +107,9 @@
     "powerUps": {
       "on": "Enabled — click to configure",
       "off": "Disabled — click to enable"
-    }
+    },
+    "custom": "Custom game",
+    "customHint": "Pick the pace, scoring and bonuses before starting",
+    "noSpeedShort": "1000 points per correct answer, whatever the time"
   }
 }
