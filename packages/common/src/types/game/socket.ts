@@ -8,6 +8,7 @@ import type {
   Question,
   QuestionDifficulty,
 } from "@rahoot/common/types/game"
+import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
 import type {
   PowerUp,
@@ -238,6 +239,7 @@ export interface ClientToServerEvents {
           // Mode rapide : la partie s'enchaîne sans attendre de clic de l'hôte
           // entre les questions (quiz de rapidité, cf. RoundManager).
           fastMode?: boolean
+          fastModeIntensity?: FastModeIntensity
         },
   ) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
@@ -385,6 +387,7 @@ export interface ClientToServerEvents {
     disabledPowerUps?: string[]
     noSpeedMode?: boolean
     fastMode?: boolean
+    fastModeIntensity?: FastModeIntensity
   }) => void
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 

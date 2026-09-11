@@ -8,7 +8,22 @@
   },
   "fastMode": {
     "label": "Fast mode",
-    "hint": "Questions follow one another automatically, with no waiting screen or click in between: shorter intro countdown, results shown for 2s, intermediate leaderboard skipped. Ideal for speed quizzes."
+    "hint": "Questions follow one another automatically, with no waiting screen or click in between. Ideal for speed quizzes.",
+    "intensityLabel": "Fast mode intensity",
+    "intensity": {
+      "smooth": {
+        "label": "Smooth",
+        "hint": "Brisk but readable: the \"Ready?\" screen is kept and reading time stays at 2s."
+      },
+      "nervous": {
+        "label": "Snappy",
+        "hint": "\"Ready?\" screen removed, 1s to read the question, 2s of results. The sweet spot."
+      },
+      "hurryUp": {
+        "label": "Hurry Up!",
+        "hint": "Maximum pressure: 1s of results and a shrinking answer time (-1s per question, 3s floor)."
+      }
+    }
   },
   "quizz": {
     "create": "Create Quizz",

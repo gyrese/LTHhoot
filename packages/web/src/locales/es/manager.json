@@ -8,7 +8,22 @@
   },
   "fastMode": {
     "label": "Modo rápido",
-    "hint": "Las preguntas se encadenan automáticamente, sin pantalla de espera ni clic entre ellas: cuenta atrás de introducción más corta, resultado mostrado 2 s, clasificación intermedia omitida. Ideal para cuestionarios de rapidez."
+    "hint": "Las preguntas se encadenan automáticamente, sin pantalla de espera ni clic entre ellas. Ideal para cuestionarios de rapidez.",
+    "intensityLabel": "Intensidad del modo rápido",
+    "intensity": {
+      "smooth": {
+        "label": "Suave",
+        "hint": "Ágil pero legible: se mantiene la pantalla «¿Listo?» y el tiempo de lectura queda en 2 s."
+      },
+      "nervous": {
+        "label": "Nervioso",
+        "hint": "Pantalla «¿Listo?» eliminada, 1 s para leer, 2 s de resultado. El mejor equilibrio."
+      },
+      "hurryUp": {
+        "label": "¡Hurry Up!",
+        "hint": "Presión máxima: 1 s de resultado y tiempo de respuesta decreciente (-1 s por pregunta, mínimo 3 s)."
+      }
+    }
   },
   "quizz": {
     "create": "Crear cuestionario",

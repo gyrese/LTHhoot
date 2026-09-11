@@ -8,7 +8,22 @@
   },
   "fastMode": {
     "label": "Schnellmodus",
-    "hint": "Die Fragen laufen automatisch durch, ohne Wartebildschirm oder Klick dazwischen: kürzerer Intro-Countdown, Ergebnis 2 s sichtbar, Zwischenwertung übersprungen. Ideal für Schnellquiz."
+    "hint": "Die Fragen laufen automatisch durch, ohne Wartebildschirm oder Klick dazwischen. Ideal für Schnellquiz.",
+    "intensityLabel": "Intensität des Schnellmodus",
+    "intensity": {
+      "smooth": {
+        "label": "Sanft",
+        "hint": "Zügig, aber lesbar: Der „Bereit?\"-Bildschirm bleibt, die Lesezeit beträgt 2 s."
+      },
+      "nervous": {
+        "label": "Flott",
+        "hint": "„Bereit?\"-Bildschirm entfällt, 1 s zum Lesen, 2 s Ergebnis. Der beste Kompromiss."
+      },
+      "hurryUp": {
+        "label": "Hurry Up!",
+        "hint": "Maximaler Druck: 1 s Ergebnis und sinkende Antwortzeit (-1 s pro Frage, Minimum 3 s)."
+      }
+    }
   },
   "quizz": {
     "create": "Quiz erstellen",

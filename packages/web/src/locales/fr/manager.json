@@ -8,7 +8,22 @@
   },
   "fastMode": {
     "label": "Mode rapide",
-    "hint": "Les questions s'enchaînent automatiquement, sans écran d'attente ni clic entre elles : décompte d'intro raccourci, résultat affiché 2 s, classement intermédiaire sauté. Idéal pour les quiz de rapidité."
+    "hint": "Les questions s'enchaînent automatiquement, sans écran d'attente ni clic entre elles. Idéal pour les quiz de rapidité.",
+    "intensityLabel": "Intensité du mode rapide",
+    "intensity": {
+      "smooth": {
+        "label": "Souple",
+        "hint": "Enchaîné mais lisible : l'écran « Prêt ? » est conservé et le temps de lecture reste à 2 s."
+      },
+      "nervous": {
+        "label": "Nerveux",
+        "hint": "Écran « Prêt ? » supprimé, lecture de l'énoncé à 1 s, résultat 2 s. Le bon compromis."
+      },
+      "hurryUp": {
+        "label": "Hurry Up !",
+        "hint": "Pression maximale : résultat 1 s et temps de réponse dégressif (-1 s par question, plancher 3 s)."
+      }
+    }
   },
   "quizz": {
     "create": "Créer un quizz",
