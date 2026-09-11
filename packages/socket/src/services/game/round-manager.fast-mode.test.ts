@@ -4,6 +4,10 @@ import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { RoundManager } from "@rahoot/socket/services/game/round-manager"
+import {
+  FAST_MODE_INTENSITY,
+  type FastModeIntensity,
+} from "@rahoot/common/types/fast-mode"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Serveur socket factice : le RoundManager ne fait qu'émettre dessus, on
@@ -40,6 +44,7 @@ const setup = (
   fastMode: boolean,
   questionCount: number,
   questionOverrides: Partial<Question> = {},
+  fastModeIntensity?: FastModeIntensity,
 ) => {
   const io = buildIo()
   const gameId = "g1"
@@ -50,6 +55,9 @@ const setup = (
   const broadcasted: Status[] = []
   const managerStatuses: Status[] = []
   const playerStatuses: Status[] = []
+  // Temps de réponse réellement accordé à chaque question (SELECT_ANSWER.time),
+  // pour vérifier l'accélération progressive.
+  const selectAnswerTimes: number[] = []
   let finished = 0
 
   const quizz: Quizz = {
@@ -72,10 +80,14 @@ const setup = (
     send: <T extends Status>(
       target: string,
       status: T,
-      _data: StatusDataMap[T],
+      data: StatusDataMap[T],
     ) => {
       if (target === "manager") {
         managerStatuses.push(status)
+
+        if (status === "SELECT_ANSWER") {
+          selectAnswerTimes.push((data as { time: number }).time)
+        }
       } else {
         playerStatuses.push(status)
       }
@@ -85,6 +97,7 @@ const setup = (
       finished += 1
     },
     fastMode,
+    fastModeIntensity,
   })
 
   return {
@@ -92,9 +105,17 @@ const setup = (
     broadcasted,
     managerStatuses,
     playerStatuses,
+    selectAnswerTimes,
     getFinished: () => finished,
   }
 }
+
+// Socket joueur minimal : selectAnswer n'utilise que `id` et `to().emit()`.
+const playerSocket = (id: string) =>
+  ({
+    id,
+    to: () => ({ emit: () => undefined }),
+  }) as unknown as Socket
 
 // `start()` exige un socket dans la room manager.
 const managerSocket = {
@@ -156,6 +177,66 @@ describe("RoundManager — mode rapide", () => {
     // SELECT_ANSWER = les joueurs peuvent enfin répondre.
     expect(fast.playerStatuses).toContain("SELECT_ANSWER")
     expect(normal.playerStatuses).not.toContain("SELECT_ANSWER")
+  })
+
+  it("supprime l'écran « Prêt ? » aux intensités nerveuses", async () => {
+    const nervous = setup(true, 2, {}, FAST_MODE_INTENSITY.NERVOUS)
+    const smooth = setup(true, 2, {}, FAST_MODE_INTENSITY.SMOOTH)
+
+    void nervous.round.start(managerSocket)
+    void smooth.round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(60 * 1000)
+
+    // NERVOUS : l'écran n'est jamais diffusé, la question enchaîne directement.
+    expect(nervous.broadcasted).not.toContain("SHOW_PREPARED")
+    // SMOOTH le conserve : l'intensité douce reste lisible.
+    expect(smooth.broadcasted).toContain("SHOW_PREPARED")
+  })
+
+  it("laisse le joueur sur sa réponse au lieu de l'écran d'attente", async () => {
+    // Les deux fenêtres de réponse ne s'ouvrent PAS au même instant : il faut
+    // répondre pendant celle de chaque mode, sinon selectAnswer est rejeté
+    // (acceptingAnswers=false) et le test passerait sans rien prouver.
+    const fast = setup(true, 1)
+    void fast.round.start(managerSocket)
+    // Rapide : 1 + 2 de préambule, pas d'écran « Prêt ? », 1 de lecture = 4 s.
+    await vi.advanceTimersByTimeAsync(4500)
+    const fastAccepted = fast.round.selectAnswer(playerSocket("a"), {
+      answerId: 0,
+    })
+
+    const normal = setup(false, 1)
+    void normal.round.start(managerSocket)
+    // Normal : 3 + 3 de préambule, 4 d'écran « Prêt ? », 5 de lecture = 15 s.
+    await vi.advanceTimersByTimeAsync(15500)
+    const normalAccepted = normal.round.selectAnswer(playerSocket("a"), {
+      answerId: 0,
+    })
+
+    // Garde-fou : sans réponse réellement acceptée, les assertions ci-dessous
+    // seraient vraies par vacuité.
+    expect(fastAccepted).toBe("ok")
+    expect(normalAccepted).toBe("ok")
+
+    // Mode normal : bascule sur WAIT (loader). Mode rapide : rien, le joueur
+    // garde sa réponse verrouillée sous les yeux.
+    expect(normal.playerStatuses).toContain("WAIT")
+    expect(fast.playerStatuses).not.toContain("WAIT")
+  })
+
+  it("réduit le temps de réponse question après question en HURRY_UP", async () => {
+    const { round, selectAnswerTimes } = setup(
+      true,
+      3,
+      { time: 7 },
+      FAST_MODE_INTENSITY.HURRY_UP,
+    )
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(60 * 1000)
+
+    // 7s pleine, puis -1s par question franchie (speedUpStep: 1).
+    expect(selectAnswerTimes).toEqual([7, 6, 5])
   })
 
   it("raccourcit le décompte d'intro (1 s au lieu de 4 s)", async () => {

@@ -148,6 +148,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       disabledPowerUps,
       noSpeedMode,
       fastMode,
+      // Intensité : seule la forme objet du payload la porte (l'ancienne forme
+      // « id de quiz en chaîne » n'a jamais d'options) → défaut côté Game.
+      fastModeIntensity:
+        typeof payload === "object" ? payload.fastModeIntensity : undefined,
       // Partie invité = test solo : seul START_DEMO pourra la démarrer.
       demoOnly: session.role === "guest",
     })
@@ -296,7 +300,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(
     EVENTS.EVENING.START,
-    ({ quizIds, powerUpsEnabled, disabledPowerUps, noSpeedMode, fastMode }) => {
+    ({
+      quizIds,
+      powerUpsEnabled,
+      disabledPowerUps,
+      noSpeedMode,
+      fastMode,
+      fastModeIntensity,
+    }) => {
       if (!Manager.isLogged(socket)) {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
@@ -328,6 +339,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
           : [],
         noSpeedMode: Boolean(noSpeedMode),
         fastMode: Boolean(fastMode),
+        fastModeIntensity,
       })
       registry.addGame(game)
     },

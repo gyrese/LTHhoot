@@ -8,7 +8,22 @@
   },
   "fastMode": {
     "label": "Modalità rapida",
-    "hint": "Le domande si susseguono automaticamente, senza schermate di attesa né clic tra una e l'altra: conto alla rovescia iniziale più breve, risultato mostrato per 2 s, classifica intermedia saltata. Ideale per i quiz di rapidità."
+    "hint": "Le domande si susseguono automaticamente, senza schermate di attesa né clic tra una e l'altra. Ideale per i quiz di rapidità.",
+    "intensityLabel": "Intensità della modalità rapida",
+    "intensity": {
+      "smooth": {
+        "label": "Morbida",
+        "hint": "Incalzante ma leggibile: la schermata «Pronto?» resta e il tempo di lettura è di 2 s."
+      },
+      "nervous": {
+        "label": "Nervosa",
+        "hint": "Schermata «Pronto?» rimossa, 1 s per leggere, 2 s di risultato. Il compromesso migliore."
+      },
+      "hurryUp": {
+        "label": "Hurry Up!",
+        "hint": "Pressione massima: 1 s di risultato e tempo di risposta decrescente (-1 s per domanda, minimo 3 s)."
+      }
+    }
   },
   "quizz": {
     "create": "Crea quiz",

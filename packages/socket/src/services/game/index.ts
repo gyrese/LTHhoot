@@ -1,4 +1,8 @@
 import { EVENTS } from "@rahoot/common/constants"
+import {
+  DEFAULT_FAST_MODE_INTENSITY,
+  type FastModeIntensity,
+} from "@rahoot/common/types/fast-mode"
 /* eslint-disable max-lines */
 import type { GameResult, Player, Quizz } from "@rahoot/common/types/game"
 import { SHOP, type PowerUpType } from "@rahoot/common/types/powerup"
@@ -75,6 +79,7 @@ class Game {
   // Mode rapide : enchaînement automatique des questions, sans clic de l'hôte
   // entre elles (quiz de rapidité). Réglé au lancement de la partie.
   private fastMode = false
+  private fastModeIntensity: FastModeIntensity = DEFAULT_FAST_MODE_INTENSITY
   // Partie de test créée par un compte invité : seul le mode démo (solo) peut
   // la démarrer — START_GAME est refusé (cf. handlers/game).
   readonly demoOnly: boolean = false
@@ -124,6 +129,7 @@ class Game {
       disabledPowerUps?: string[]
       noSpeedMode?: boolean
       fastMode?: boolean
+      fastModeIntensity?: FastModeIntensity
       demoOnly?: boolean
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
@@ -149,6 +155,8 @@ class Game {
     this.disabledPowerUps = options?.disabledPowerUps ?? []
     this.noSpeedMode = options?.noSpeedMode ?? false
     this.fastMode = options?.fastMode ?? false
+    this.fastModeIntensity =
+      options?.fastModeIntensity ?? DEFAULT_FAST_MODE_INTENSITY
     this.demoOnly = options?.demoOnly ?? false
 
     this.cooldown = new CooldownTimer(io, this.gameId)
@@ -213,6 +221,7 @@ class Game {
       disabledPowerUps: this.disabledPowerUps,
       noSpeedMode: this.noSpeedMode,
       fastMode: this.fastMode,
+      fastModeIntensity: this.fastModeIntensity,
       demoOnly: this.demoOnly,
       savedAt: Date.now(),
     }
@@ -234,6 +243,7 @@ class Game {
       disabledPowerUps: snapshot.disabledPowerUps,
       noSpeedMode: snapshot.noSpeedMode,
       fastMode: snapshot.fastMode,
+      fastModeIntensity: snapshot.fastModeIntensity,
       demoOnly: snapshot.demoOnly,
       restore: {
         gameId: snapshot.gameId,
@@ -300,6 +310,7 @@ class Game {
         : () => true,
       noSpeedMode: this.noSpeedMode,
       fastMode: this.fastMode,
+      fastModeIntensity: this.fastModeIntensity,
       // Power-ups (+ boutique) uniquement quand activés pour la partie
       powerUpManager: this.powerUpsActive ? this.powerUpManager : undefined,
       onCoinsEarned: this.powerUpsActive
@@ -322,6 +333,7 @@ class Game {
       disabledPowerUps?: string[]
       noSpeedMode?: boolean
       fastMode?: boolean
+      fastModeIntensity?: FastModeIntensity
     },
   ) {
     const powerUpsEnabled = options?.powerUpsEnabled ?? true
@@ -330,6 +342,8 @@ class Game {
     this.disabledPowerUps = options?.disabledPowerUps ?? []
     this.noSpeedMode = options?.noSpeedMode ?? false
     this.fastMode = options?.fastMode ?? false
+    this.fastModeIntensity =
+      options?.fastModeIntensity ?? DEFAULT_FAST_MODE_INTENSITY
     const firstQuizz = Config.findQuizzByAnyId(quizIds[0])
 
     if (!firstQuizz) {

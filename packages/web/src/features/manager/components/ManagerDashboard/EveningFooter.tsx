@@ -1,5 +1,7 @@
+import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
 import type { QuizzMeta } from "@rahoot/common/types/game"
-import { Play, X, PartyPopper, Sparkles, TimerOff, Zap } from "lucide-react"
+import FastModeToggle from "./FastModeToggle"
+import { Play, X, PartyPopper, Sparkles, TimerOff } from "lucide-react"
 import clsx from "clsx"
 import { useTranslation } from "react-i18next"
 
@@ -9,12 +11,14 @@ type Props = {
   powerUpsEnabled: boolean
   noSpeedMode: boolean
   fastMode: boolean
+  fastModeIntensity: FastModeIntensity
   onRemove: (_id: string) => void
   onStart: () => void
   onToggleOff: () => void
   onOpenPowerUpsConfig: () => void
   onToggleNoSpeed: () => void
   onToggleFastMode: () => void
+  onFastModeIntensityChange: (_intensity: FastModeIntensity) => void
 }
 
 const EveningFooter = ({
@@ -23,12 +27,14 @@ const EveningFooter = ({
   powerUpsEnabled,
   noSpeedMode,
   fastMode,
+  fastModeIntensity,
   onRemove,
   onStart,
   onToggleOff,
   onOpenPowerUpsConfig,
   onToggleNoSpeed,
   onToggleFastMode,
+  onFastModeIntensityChange,
 }: Props) => {
   const { t } = useTranslation()
   const canStart = eveningQuizIds.length >= 2
@@ -114,20 +120,12 @@ const EveningFooter = ({
         </button>
 
         {/* Mode rapide */}
-        <button
-          type="button"
-          onClick={onToggleFastMode}
-          className={clsx(
-            "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
-            fastMode
-              ? "bg-orange-500/20 text-orange-200 ring-1 ring-orange-500/40 hover:bg-orange-500/30"
-              : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
-          )}
-          title={t("manager:fastMode.hint")}
-        >
-          <Zap className="size-3.5" />
-          <span>{t("manager:fastMode.label")}</span>
-        </button>
+        <FastModeToggle
+          fastMode={fastMode}
+          intensity={fastModeIntensity}
+          onToggle={onToggleFastMode}
+          onIntensityChange={onFastModeIntensityChange}
+        />
 
         {/* Configure power-ups */}
         <button

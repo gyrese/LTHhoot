@@ -13,8 +13,13 @@ import DashboardSidebar from "./DashboardSidebar"
 import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
 import EveningFooter from "./EveningFooter"
+import FastModeToggle from "./FastModeToggle"
 import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
 import GuestAccountsModal from "./GuestAccountsModal"
+import {
+  DEFAULT_FAST_MODE_INTENSITY,
+  type FastModeIntensity,
+} from "@rahoot/common/types/fast-mode"
 import { useNavigate } from "@tanstack/react-router"
 import {
   LogOut,
@@ -24,7 +29,6 @@ import {
   Sparkles,
   TimerOff,
   Users,
-  Zap,
 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -60,6 +64,9 @@ const ManagerDashboard = ({ data }: Props) => {
   // Mode rapide : partagé lui aussi par la partie simple et la soirée — les
   // questions s'enchaînent sans clic de l'hôte entre elles.
   const [fastMode, setFastMode] = useState(false)
+  const [fastModeIntensity, setFastModeIntensity] = useState<FastModeIntensity>(
+    DEFAULT_FAST_MODE_INTENSITY,
+  )
   const [powerUpsModalMode, setPowerUpsModalMode] = useState<
     "single" | "evening"
   >("single")
@@ -91,6 +98,7 @@ const ManagerDashboard = ({ data }: Props) => {
       disabledPowerUps: isGuest ? [] : disabledPowerUps,
       noSpeedMode,
       fastMode,
+      fastModeIntensity,
     })
   }
 
@@ -116,6 +124,7 @@ const ManagerDashboard = ({ data }: Props) => {
       disabledPowerUps,
       noSpeedMode,
       fastMode,
+      fastModeIntensity,
     })
   }
 
@@ -212,6 +221,8 @@ const ManagerDashboard = ({ data }: Props) => {
             onToggleNoSpeed={() => setNoSpeedMode((v) => !v)}
             fastMode={fastMode}
             onToggleFastMode={() => setFastMode((v) => !v)}
+            fastModeIntensity={fastModeIntensity}
+            onFastModeIntensityChange={setFastModeIntensity}
             onRemove={handleToggleEveningQuizz}
             onStart={handleEveningStart}
             onToggleOff={handleToggleEveningOff}
@@ -268,20 +279,12 @@ const ManagerDashboard = ({ data }: Props) => {
                 <span>{t("manager:noSpeed.label")}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setFastMode((v) => !v)}
-                className={clsx(
-                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
-                  fastMode
-                    ? "bg-orange-500/20 text-orange-200 ring-1 ring-orange-500/40 hover:bg-orange-500/30"
-                    : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
-                )}
-                title={t("manager:fastMode.hint")}
-              >
-                <Zap className="size-3.5" />
-                <span>{t("manager:fastMode.label")}</span>
-              </button>
+              <FastModeToggle
+                fastMode={fastMode}
+                intensity={fastModeIntensity}
+                onToggle={() => setFastMode((v) => !v)}
+                onIntensityChange={setFastModeIntensity}
+              />
 
               {!isGuest && (
                 <button

@@ -24,6 +24,12 @@ import {
   ROUND_EVENT_TYPE,
   type RoundEventType,
 } from "@rahoot/common/types/round-event"
+import {
+  getFastModeTiming,
+  resolveFastAnswerTime,
+  type FastModeIntensity,
+  type FastModeTiming,
+} from "@rahoot/common/types/fast-mode"
 import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
 import {
   getQuestionRoundDuration,
@@ -80,22 +86,13 @@ export interface RoundManagerOptions {
   // Mode rapide (quiz de rapidité) : la partie s'enchaîne toute seule, sans
   // attendre le moindre clic de l'hôte entre deux questions.
   fastMode?: boolean
+  // Intensité du mode rapide (durées + accélération). Ignorée hors fastMode.
+  fastModeIntensity?: FastModeIntensity
 }
 
-// ── Mode rapide : temporisations ────────────────────────────────────────────
-// Décompte d'intro raccourci (4 s en temps normal) : sur des questions de ~5 s,
-// une intro plus longue que la question elle-même casse le rythme.
-const FAST_PREPARED_SECONDS = 1
-// Pause d'affichage du résultat avant d'enchaîner. Les joueurs doivent voir
-// juste/faux et les points gagnés — sans cette pause, SHOW_RESULT est écrasé
-// aussitôt par le SHOW_PREPARED suivant et le scoring devient opaque.
-const FAST_RESULTS_SECONDS = 2
-// Temps de lecture de l'énoncé (`question.cooldown`, 3 à 15 s selon l'éditeur)
-// avant l'ouverture des réponses. C'est de loin la plus longue des attentes
-// entre deux questions : la plafonner est l'essentiel du mode rapide. On garde
-// 1 s plutôt que 0 pour que la question soit affichée avant que le chrono ne
-// démarre — sinon les joueurs répondraient sans avoir eu le temps de lire.
-const FAST_QUESTION_READ_SECONDS = 1
+// Toutes les temporisations du mode rapide vivent désormais dans
+// `@rahoot/common/types/fast-mode` (partagées avec le client, réglées par
+// l'intensité choisie au lancement).
 
 /** Types qui se comportent comme `open` pour la collecte/validation/scoring. */
 function isOpenLike(type: string): boolean {
@@ -206,6 +203,12 @@ export class RoundManager {
     return true
   }
 
+  // Temporisations de l'intensité choisie. Toujours consultées via ce getter :
+  // le mode normal ne doit jamais lire ces valeurs (cf. gardes `fastMode`).
+  private get fastTiming(): FastModeTiming {
+    return getFastModeTiming(this.opts.fastModeIntensity)
+  }
+
   private getNonTitleCount() {
     const total = this.opts.quizz.questions.filter(
       (q) => q.type !== "title",
@@ -281,8 +284,8 @@ export class RoundManager {
     // Préambule de lancement, raccourci lui aussi en mode rapide : 6 s d'écran
     // d'accueil + décompte avant la toute première question cassaient l'entrée
     // en matière d'un quiz de rapidité.
-    const introSeconds = this.opts.fastMode ? 1 : 3
-    const countdownSeconds = this.opts.fastMode ? 2 : 3
+    const introSeconds = this.opts.fastMode ? this.fastTiming.intro : 3
+    const countdownSeconds = this.opts.fastMode ? this.fastTiming.countdown : 3
 
     const startNow = Date.now()
     this.opts.broadcast(STATUS.SHOW_START, {
@@ -338,7 +341,7 @@ export class RoundManager {
 
         await this.opts.cooldown.start(
           this.opts.fastMode
-            ? Math.min(question.cooldown, FAST_QUESTION_READ_SECONDS)
+            ? Math.min(question.cooldown, this.fastTiming.questionRead)
             : question.cooldown,
         )
 
@@ -401,16 +404,22 @@ export class RoundManager {
         }
       })()
 
-      this.opts.broadcast(STATUS.SHOW_PREPARED, {
-        totalAnswers,
-        questionNumber,
-        type: question.type,
-        roundEvent: this.currentRoundEvent ?? undefined,
-      })
+      // Écran « Prêt ? ». Aux intensités nerveuses il est SUPPRIMÉ (durée 0) et
+      // non simplement raccourci : sous la seconde il ne renseigne plus rien et
+      // ne fait que clignoter entre deux questions. La question enchaîne alors
+      // directement — c'est l'essentiel du ressenti « Hurry Up! ».
+      const preparedSeconds = this.opts.fastMode ? this.fastTiming.prepared : 4
 
-      await this.opts.cooldown.start(
-        this.opts.fastMode ? FAST_PREPARED_SECONDS : 4,
-      )
+      if (preparedSeconds > 0) {
+        this.opts.broadcast(STATUS.SHOW_PREPARED, {
+          totalAnswers,
+          questionNumber,
+          type: question.type,
+          roundEvent: this.currentRoundEvent ?? undefined,
+        })
+
+        await this.opts.cooldown.start(preparedSeconds)
+      }
 
       if (!this.started) {
         return
@@ -475,7 +484,7 @@ export class RoundManager {
       // une question déjà configurée à 1 s ne doit pas se retrouver rallongée.
       await this.opts.cooldown.start(
         this.opts.fastMode
-          ? Math.min(question.cooldown, FAST_QUESTION_READ_SECONDS)
+          ? Math.min(question.cooldown, this.fastTiming.questionRead)
           : question.cooldown,
       )
 
@@ -491,7 +500,21 @@ export class RoundManager {
       // entier. Les bornes connues (startTime/endTime) sont appliquées ici ;
       // une vidéo sans borne de fin verra sa durée remontée par le lecteur du
       // navigateur (EVENTS.GAME.VIDEO_DURATION → extendForMedia).
-      this.roundDuration = getQuestionRoundDuration(question)
+      // Accélération progressive (« Hurry Up! ») : on rogne le temps CONFIGURÉ,
+      // puis seulement ensuite l'extension média — dans l'autre ordre, un
+      // blind test se ferait couper son extrait par l'accélération.
+      const answerTime = this.opts.fastMode
+        ? resolveFastAnswerTime(
+            question.time,
+            this.getNonTitleCount().current - 1,
+            this.fastTiming,
+          )
+        : question.time
+
+      this.roundDuration = getQuestionRoundDuration({
+        ...question,
+        time: answerTime,
+      })
       const answerEndsAt = this.startTime + this.roundDuration * 1000
 
       const selectAnswerBase = {
@@ -957,7 +980,7 @@ export class RoundManager {
       // est immédiatement écrasé par le SHOW_PREPARED de la question
       // suivante, et le joueur ne voit jamais les points qu'il vient de
       // gagner (cas du repêchage d'une réponse ouverte notamment).
-      await sleep(this.opts.fastMode ? FAST_RESULTS_SECONDS : 3)
+      await sleep(this.opts.fastMode ? this.fastTiming.results : 3)
       this.showLeaderboard()
 
       return
@@ -973,7 +996,7 @@ export class RoundManager {
     // clic « Classement ». `started` est revérifié après la pause : une fin de
     // partie ou un abort survenu entre-temps ne doit pas relancer de manche.
     if (this.opts.fastMode) {
-      await sleep(FAST_RESULTS_SECONDS)
+      await sleep(this.fastTiming.results)
 
       if (!this.started) {
         return
@@ -1036,9 +1059,15 @@ export class RoundManager {
 
     this.playersAnswers.push(answer)
 
-    this.opts.send(socket.id, STATUS.WAIT, {
-      text: "game:waitingForAnswers",
-    })
+    // Mode rapide : on NE bascule PAS le joueur sur l'écran d'attente. Il reste
+    // sur sa réponse, verrouillée et surlignée (cf. l'état `answered` d'
+    // Answers.tsx), au lieu de fixer un loader pendant que les autres
+    // terminent — répondre vite ne doit pas se solder par un mur d'attente.
+    if (!this.opts.fastMode) {
+      this.opts.send(socket.id, STATUS.WAIT, {
+        text: "game:waitingForAnswers",
+      })
+    }
 
     socket
       .to(this.opts.gameId)

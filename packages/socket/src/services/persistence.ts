@@ -1,3 +1,4 @@
+import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
 import type { Player, Quizz, QuestionResult } from "@rahoot/common/types/game"
 import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 import { logHandlerError } from "@rahoot/socket/utils/safe-handler"
@@ -51,6 +52,7 @@ export interface GameSnapshot {
   // Idem pour le mode rapide : absent des anciens instantanés → une partie
   // restaurée repart sur le flux normal piloté par l'hôte.
   fastMode?: boolean
+  fastModeIntensity?: FastModeIntensity
   demoOnly?: boolean
   savedAt: number
 }
