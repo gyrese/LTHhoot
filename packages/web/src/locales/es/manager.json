@@ -88,5 +88,22 @@
     "delete": "Eliminar la cuenta",
     "deleteConfirm": "¿Eliminar la cuenta «{{name}}»? Su biblioteca de quizzes también se eliminará.",
     "testQuizz": "Probar el quiz"
+  },
+  "launch": {
+    "title": "Iniciar la partida",
+    "section": {
+      "rhythm": "Ritmo",
+      "score": "Puntuación",
+      "bonus": "Bonus"
+    },
+    "rhythm": {
+      "normal": "Normal",
+      "normalHint": "Tú controlas cada paso",
+      "fastHint": "Todo se encadena sin clics"
+    },
+    "powerUps": {
+      "on": "Activados — haz clic para configurar",
+      "off": "Desactivados — haz clic para activar"
+    }
   }
 }

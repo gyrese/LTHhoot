@@ -102,5 +102,22 @@
     "newFolderPlaceholder": "Nom du dossier",
     "deleteFolder": "Supprimer le dossier",
     "newFolder": "Nouveau dossier"
+  },
+  "launch": {
+    "title": "Lancer la partie",
+    "section": {
+      "rhythm": "Rythme",
+      "score": "Score",
+      "bonus": "Bonus"
+    },
+    "rhythm": {
+      "normal": "Normal",
+      "normalHint": "Tu pilotes chaque étape",
+      "fastHint": "Tout s'enchaîne sans clic"
+    },
+    "powerUps": {
+      "on": "Activés — cliquer pour configurer",
+      "off": "Désactivés — cliquer pour activer"
+    }
   }
 }

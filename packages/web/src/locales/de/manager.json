@@ -88,5 +88,22 @@
     "delete": "Konto löschen",
     "deleteConfirm": "Konto „{{name}}“ löschen? Seine Quiz-Bibliothek wird ebenfalls gelöscht.",
     "testQuizz": "Quiz testen"
+  },
+  "launch": {
+    "title": "Spiel starten",
+    "section": {
+      "rhythm": "Tempo",
+      "score": "Punkte",
+      "bonus": "Bonus"
+    },
+    "rhythm": {
+      "normal": "Normal",
+      "normalHint": "Du steuerst jeden Schritt",
+      "fastHint": "Alles läuft ohne Klick durch"
+    },
+    "powerUps": {
+      "on": "Aktiv — zum Einstellen klicken",
+      "off": "Inaktiv — zum Aktivieren klicken"
+    }
   }
 }

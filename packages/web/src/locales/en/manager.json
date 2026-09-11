@@ -90,5 +90,22 @@
     "delete": "Delete account",
     "deleteConfirm": "Delete account “{{name}}”? Their quiz library will also be deleted.",
     "testQuizz": "Test the quiz"
+  },
+  "launch": {
+    "title": "Start the game",
+    "section": {
+      "rhythm": "Pace",
+      "score": "Scoring",
+      "bonus": "Bonus"
+    },
+    "rhythm": {
+      "normal": "Normal",
+      "normalHint": "You drive every step",
+      "fastHint": "Everything flows, no clicks"
+    },
+    "powerUps": {
+      "on": "Enabled — click to configure",
+      "off": "Disabled — click to enable"
+    }
   }
 }
