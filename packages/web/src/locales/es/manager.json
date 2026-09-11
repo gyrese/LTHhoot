@@ -94,7 +94,8 @@
     "section": {
       "rhythm": "Ritmo",
       "score": "Puntuación",
-      "bonus": "Bonus"
+      "bonus": "Bonus",
+      "options": "Opciones"
     },
     "rhythm": {
       "normal": "Normal",
@@ -106,6 +107,7 @@
       "off": "Desactivados — haz clic para activar"
     },
     "custom": "Partida personalizada",
-    "customHint": "Elige el ritmo, la puntuación y los bonus antes de empezar"
+    "customHint": "Elige el ritmo, la puntuación y los bonus antes de empezar",
+    "noSpeedShort": "1000 puntos por respuesta correcta, sin importar el tiempo"
   }
 }

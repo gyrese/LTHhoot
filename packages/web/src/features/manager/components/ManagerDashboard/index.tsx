@@ -145,7 +145,8 @@ const ManagerDashboard = ({ data }: Props) => {
     setEveningQuizIds([])
   }
 
-  const selectedName = data.quizz.find((q) => q.id === selectedQuizz)?.subject
+  const selectedQuizzMeta = data.quizz.find((q) => q.id === selectedQuizz)
+  const selectedName = selectedQuizzMeta?.subject
 
   return (
     <ConfigProvider data={data}>
@@ -328,7 +329,7 @@ const ManagerDashboard = ({ data }: Props) => {
       <LaunchModal
         isOpen={launchModalOpen}
         onClose={() => setLaunchModalOpen(false)}
-        quizzName={selectedName}
+        quizz={selectedQuizzMeta}
         isGuest={isGuest}
         fastMode={fastMode}
         onToggleFastMode={setFastMode}

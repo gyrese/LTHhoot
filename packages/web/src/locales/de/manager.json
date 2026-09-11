@@ -94,7 +94,8 @@
     "section": {
       "rhythm": "Tempo",
       "score": "Punkte",
-      "bonus": "Bonus"
+      "bonus": "Bonus",
+      "options": "Optionen"
     },
     "rhythm": {
       "normal": "Normal",
@@ -106,6 +107,7 @@
       "off": "Inaktiv — zum Aktivieren klicken"
     },
     "custom": "Eigene Partie",
-    "customHint": "Tempo, Punkte und Boni vor dem Start wählen"
+    "customHint": "Tempo, Punkte und Boni vor dem Start wählen",
+    "noSpeedShort": "1000 Punkte pro richtiger Antwort, unabhängig von der Zeit"
   }
 }
