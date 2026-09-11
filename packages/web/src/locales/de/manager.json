@@ -104,6 +104,8 @@
     "powerUps": {
       "on": "Aktiv — zum Einstellen klicken",
       "off": "Inaktiv — zum Aktivieren klicken"
-    }
+    },
+    "custom": "Eigene Partie",
+    "customHint": "Tempo, Punkte und Boni vor dem Start wählen"
   }
 }

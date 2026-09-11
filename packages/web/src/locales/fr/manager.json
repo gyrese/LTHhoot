@@ -118,6 +118,8 @@
     "powerUps": {
       "on": "Activés — cliquer pour configurer",
       "off": "Désactivés — cliquer pour activer"
-    }
+    },
+    "custom": "Partie personnalisée",
+    "customHint": "Choisir le rythme, le score et les bonus avant de lancer"
   }
 }

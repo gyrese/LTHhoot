@@ -104,6 +104,8 @@
     "powerUps": {
       "on": "Attivi — clicca per configurare",
       "off": "Disattivati — clicca per attivare"
-    }
+    },
+    "custom": "Partita personalizzata",
+    "customHint": "Scegli ritmo, punteggio e bonus prima di iniziare"
   }
 }

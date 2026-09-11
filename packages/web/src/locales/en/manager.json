@@ -106,6 +106,8 @@
     "powerUps": {
       "on": "Enabled — click to configure",
       "off": "Disabled — click to enable"
-    }
+    },
+    "custom": "Custom game",
+    "customHint": "Pick the pace, scoring and bonuses before starting"
   }
 }

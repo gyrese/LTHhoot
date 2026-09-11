@@ -26,10 +26,8 @@ import {
   Play,
   PlayCircle,
   PartyPopper,
-  Sparkles,
-  TimerOff,
+  SlidersHorizontal,
   Users,
-  Zap,
 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -87,7 +85,11 @@ const ManagerDashboard = ({ data }: Props) => {
     socket?.emit(EVENTS.QUIZZ.MOVE_FOLDER, { id: quizzId, folder })
   }
 
-  const handleStart = () => {
+  // `custom` distingue les deux entrées du footer : « Démarrer » lance une
+  // partie standard et IGNORE les réglages de la modale (sinon une option
+  // laissée active s'appliquerait en douce à une partie censée être normale),
+  // tandis que « Partie personnalisée » les applique tels quels.
+  const handleStart = (custom = false) => {
     if (!selectedQuizz) {
       toast.error(t("manager:quizz.pleaseSelect"))
 
@@ -98,11 +100,11 @@ const ManagerDashboard = ({ data }: Props) => {
 
     socket?.emit(EVENTS.GAME.CREATE, {
       quizId: selectedQuizz,
-      powerUpsEnabled: isGuest ? false : singlePowerUpsEnabled,
-      disabledPowerUps: isGuest ? [] : disabledPowerUps,
-      noSpeedMode,
-      fastMode,
-      fastModeIntensity,
+      powerUpsEnabled: isGuest || !custom ? false : singlePowerUpsEnabled,
+      disabledPowerUps: isGuest || !custom ? [] : disabledPowerUps,
+      noSpeedMode: custom ? noSpeedMode : false,
+      fastMode: custom ? fastMode : false,
+      fastModeIntensity: custom ? fastModeIntensity : undefined,
     })
   }
 
@@ -144,31 +146,6 @@ const ManagerDashboard = ({ data }: Props) => {
   }
 
   const selectedName = data.quizz.find((q) => q.id === selectedQuizz)?.subject
-
-  // Pastilles de rappel dans la barre : les réglages vivent désormais dans la
-  // modale, ce résumé évite qu'ils deviennent invisibles depuis le dashboard.
-  const activeModes = [
-    fastMode && {
-      key: "fastMode.label",
-      icon: Zap,
-      className: "bg-orange-500/20 text-orange-200",
-    },
-    noSpeedMode && {
-      key: "noSpeed.label",
-      icon: TimerOff,
-      className: "bg-sky-500/20 text-sky-200",
-    },
-    !isGuest &&
-      singlePowerUpsEnabled && {
-        key: "quizz.powerUps",
-        icon: Sparkles,
-        className: "bg-yellow-500/20 text-yellow-200",
-      },
-  ].filter(Boolean) as {
-    key: string
-    icon: typeof Zap
-    className: string
-  }[]
 
   return (
     <ConfigProvider data={data}>
@@ -293,27 +270,30 @@ const ManagerDashboard = ({ data }: Props) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              {/* Résumé des modes actifs : sans lui, les réglages déplacés dans
-                  la modale deviendraient invisibles depuis le dashboard. */}
-              {activeModes.length > 0 && (
-                <div className="hidden items-center gap-1.5 sm:flex">
-                  {activeModes.map(({ key, icon: Icon, className }) => (
-                    <span
-                      key={key}
-                      className={clsx(
-                        "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold",
-                        className,
-                      )}
-                      title={t(`manager:${key}`)}
-                    >
-                      <Icon className="size-3" />
-                    </span>
-                  ))}
-                </div>
+              {/* Partie personnalisée : seul chemin qui passe par la modale de
+                  réglages. Le bouton principal, lui, rejoint le salon
+                  directement avec les valeurs par défaut. */}
+              {!isGuest && (
+                <button
+                  onClick={() => setLaunchModalOpen(true)}
+                  disabled={!selectedQuizz}
+                  className={clsx(
+                    "flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all",
+                    selectedQuizz
+                      ? "bg-white/10 text-white/70 ring-1 ring-white/15 hover:bg-white/15 hover:text-white"
+                      : "cursor-not-allowed bg-white/5 text-white/20",
+                  )}
+                  title={t("manager:launch.customHint")}
+                >
+                  <SlidersHorizontal className="size-4" />
+                  <span className="hidden sm:inline">
+                    {t("manager:launch.custom")}
+                  </span>
+                </button>
               )}
 
               <button
-                onClick={() => setLaunchModalOpen(true)}
+                onClick={() => handleStart()}
                 disabled={!selectedQuizz}
                 className={clsx(
                   "flex shrink-0 items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all",
@@ -361,7 +341,7 @@ const ManagerDashboard = ({ data }: Props) => {
           setPowerUpsModalMode("single")
           setPowerUpsModalOpen(true)
         }}
-        onStart={handleStart}
+        onStart={() => handleStart(true)}
       />
       <PowerUpsSettingsModal
         isOpen={powerUpsModalOpen}
