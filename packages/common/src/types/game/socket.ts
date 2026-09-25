@@ -61,6 +61,10 @@ export type AnswerAck = { status: AnswerAckStatus }
 export type TieBreakAckStatus = "ok" | "duplicate" | "closed" | "no_player"
 export type TieBreakAck = { status: TieBreakAckStatus }
 
+export type QuizSaveAck =
+  | { id: string; updatedAt: number; replayed?: boolean }
+  | { error: string }
+
 export interface ServerToClientEvents {
   connect: () => void
 
@@ -286,8 +290,14 @@ export interface ClientToServerEvents {
 
   // Quizz actions
   [EVENTS.QUIZZ.GET]: (_id: string) => void
-  [EVENTS.QUIZZ.SAVE]: (_quizz: Quizz) => void
-  [EVENTS.QUIZZ.UPDATE]: (_data: QuizzWithId) => void
+  [EVENTS.QUIZZ.SAVE]: (
+    _quizz: Quizz & { creationId?: string },
+    _ack?: (_result: QuizSaveAck) => void,
+  ) => void
+  [EVENTS.QUIZZ.UPDATE]: (
+    _data: QuizzWithId,
+    _ack?: (_result: QuizSaveAck) => void,
+  ) => void
   [EVENTS.QUIZZ.DELETE]: (_id: string) => void
   [EVENTS.QUIZZ.MOVE_FOLDER]: (_data: {
     id: string

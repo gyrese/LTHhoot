@@ -3,22 +3,21 @@ const toBase64 = async (url: string): Promise<string> => {
     return url
   }
 
-  try {
-    const response = await fetch(url)
-    const blob = await response.blob()
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  } catch (error) {
-    console.error(`Failed to convert ${url} to base64:`, error)
-
-    // Return original URL if failed
-    return url
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) })
+  if (!response.ok) {
+    throw new Error(`Media unavailable: ${response.status}`)
   }
+  const blob = await response.blob()
+  if (!/^(image|audio|video)\//u.test(blob.type)) {
+    throw new Error("Invalid media response")
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
 }
 
 const convertElement = async (el: any): Promise<any> => {
@@ -43,6 +42,29 @@ const convertQuestion = async (question: any): Promise<any> => {
     }
   }
 
+  if (updated.images) {
+    const images = []
+    for (const url of updated.images) {
+      // eslint-disable-next-line no-await-in-loop
+      images.push(await toBase64(url))
+    }
+    updated.images = images
+  }
+  if (updated.cells) {
+    const cells = []
+    for (const cell of updated.cells) {
+      // eslint-disable-next-line no-await-in-loop -- encodage séquentiel volontaire : évite de saturer le réseau
+      const image = cell.image ? await toBase64(cell.image) : ""
+      cells.push({ ...cell, image })
+    }
+    updated.cells = cells
+  }
+  if (updated.answerReveal?.image) {
+    updated.answerReveal = {
+      ...updated.answerReveal,
+      image: await toBase64(updated.answerReveal.image),
+    }
+  }
   updated.audio &&= await toBase64(updated.audio)
   updated.pinImage &&= await toBase64(updated.pinImage)
 
@@ -58,9 +80,12 @@ export const exportQuizzWithMedia = async (quizz: any) => {
   exported.salonImage &&= await toBase64(exported.salonImage)
   exported.listingImage &&= await toBase64(exported.listingImage)
 
-  exported.questions = await Promise.all(
-    exported.questions.map(convertQuestion),
-  )
+  const questions = []
+  for (const question of exported.questions) {
+    // eslint-disable-next-line no-await-in-loop -- encodage séquentiel volontaire : évite de saturer le réseau
+    questions.push(await convertQuestion(question))
+  }
+  exported.questions = questions
 
   return exported
 }

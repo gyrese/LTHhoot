@@ -1,3 +1,5 @@
+import { SaveSession } from "@rahoot/web/features/quizz/utils/save-session"
+import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
 import type {
   AnswerReveal,
   DropPinZone,
@@ -25,16 +27,13 @@ import {
   useState,
   type PropsWithChildren,
 } from "react"
-import {
-  useSocket,
-  useEvent,
-} from "@rahoot/web/features/game/contexts/socket-context"
+import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
 import { EVENTS } from "@rahoot/common/constants"
 import toast from "react-hot-toast"
-import { useNavigate } from "@tanstack/react-router"
+import { useBlocker } from "@tanstack/react-router"
+import type { QuizSaveAck } from "@rahoot/common/types/game/socket"
 import { useTranslation } from "react-i18next"
 import Button from "@rahoot/web/components/Button"
-import { validateQuestion } from "@rahoot/web/features/quizz/utils/validation"
 import { RotateCcw } from "lucide-react"
 
 export type QuestionWithId = Question & { id: string }
@@ -117,7 +116,10 @@ type QuizzEditorContextType = {
   setSelectedQuestionIds: (_ids: string[]) => void
   selectSlide: (_index: number, _ctrlKey: boolean, _shiftKey: boolean) => void
   importQuestions: (_imported: Question[]) => void
-  saveQuizz: (_options?: { silent?: boolean; navigate?: boolean }) => void
+  saveQuizz: (_options?: {
+    silent?: boolean
+    navigate?: boolean
+  }) => Promise<string | null>
   isDirty: boolean
   isSaving: boolean
   lastSaved: Date | null
@@ -140,6 +142,20 @@ const defaultQuestion = (): QuestionWithId => ({
   cooldown: 5,
   time: 20,
 })
+
+// Le serveur fait foi une fois la sauvegarde confirmée : les brouillons locaux
+// n'ont plus de raison d'être, et un localStorage indisponible ne doit pas
+// transformer un enregistrement réussi en erreur.
+const clearBackups = (backupKey: string, previousId?: string) => {
+  try {
+    localStorage.removeItem(backupKey)
+    if (previousId) {
+      localStorage.removeItem(`rahoot-backup-${previousId}`)
+    }
+  } catch {
+    /* Saving on the server succeeded */
+  }
+}
 
 const toQuestionWithId = (q: Question): QuestionWithId => ({
   ...q,
@@ -241,7 +257,6 @@ export const QuizzEditorProvider = ({
   initialData,
 }: QuizzEditorProviderProps) => {
   const { socket, isConnected } = useSocket()
-  const navigate = useNavigate()
   const { t } = useTranslation()
 
   const [subject, setSubject] = useState(
@@ -283,36 +298,49 @@ export const QuizzEditorProvider = ({
     initialData?.updatedAt,
   )
   const [saveConflict, setSaveConflict] = useState(false)
-
-  // Nettoyage automatique des anciens backups volumineux de localStorage contenant du base64
-  useEffect(() => {
+  const saveSession = useRef(new SaveSession())
+  const dirtyRef = useRef(false)
+  const [creationId] = useState(() => {
     try {
-      const backupKeys = Array.from({ length: localStorage.length }, (_, i) =>
-        localStorage.key(i),
-      ).filter((key): key is string =>
-        Boolean(key?.startsWith("rahoot-backup-")),
-      )
-
-      const keysToRemove = backupKeys.filter((key) =>
-        localStorage.getItem(key)?.includes("data:image/"),
-      )
-      keysToRemove.forEach((key) => {
-        console.warn(
-          `[LocalStorage Cleanup] Suppression d'un ancien backup lourd contenant du base64 : ${key}`,
-        )
-        localStorage.removeItem(key)
-      })
-    } catch (e) {
-      console.error("Échec du nettoyage automatique de localStorage :", e)
+      const id = sessionStorage.getItem("quiz-draft-id") || generateId()
+      sessionStorage.setItem("quiz-draft-id", id)
+      return id
+    } catch {
+      return generateId()
     }
-  }, [])
+  })
+  const [backupKey] = useState(() => {
+    let clientId = "local"
+    try {
+      clientId = localStorage.getItem("client_id") || clientId
+    } catch {
+      /* Storage unavailable */
+    }
+    return `rahoot-backup-${clientId}-${initialData?.id ?? creationId}`
+  })
+  useBlocker({
+    enableBeforeUnload: () => dirtyRef.current,
+    shouldBlockFn: () => {
+      if (!dirtyRef.current) {
+        return false
+      }
+      // eslint-disable-next-line no-alert
+      return !window.confirm(
+        "Des modifications ne sont pas enregistrées sur le serveur. Quitter l'éditeur ?",
+      )
+    },
+  })
 
   const currentQuestion =
     questions[currentIndex] ||
     questions[Math.max(0, questions.length - 1)] ||
     questions[0]
 
-  const markDirty = () => setIsDirty(true)
+  const markDirty = () => {
+    saveSession.current.change()
+    dirtyRef.current = true
+    setIsDirty(true)
+  }
 
   const wrappedSetSubject = (val: string) => {
     setSubject(val)
@@ -423,6 +451,9 @@ export const QuizzEditorProvider = ({
     setCanRedo(index < stack.length - 1)
   }
 
+  const historySelectionRef = useRef({ currentIndex, selectedQuestionIds })
+  historySelectionRef.current = { currentIndex, selectedQuestionIds }
+
   const takeSnapshot = useCallback(
     (): Snapshot => ({
       questions,
@@ -434,8 +465,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       podiumTheme,
-      currentIndex,
-      selectedQuestionIds,
+      ...historySelectionRef.current,
     }),
     [
       questions,
@@ -447,8 +477,6 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       podiumTheme,
-      currentIndex,
-      selectedQuestionIds,
     ],
   )
 
@@ -508,8 +536,6 @@ export const QuizzEditorProvider = ({
     salonImage,
     listingImage,
     podiumTheme,
-    currentIndex,
-    selectedQuestionIds,
     takeSnapshot,
   ])
 
@@ -531,7 +557,7 @@ export const QuizzEditorProvider = ({
     )
     setSelectedQuestionIds(s.selectedQuestionIds || [])
     setSelectedId(undefined)
-    setIsDirty(true)
+    markDirty()
   }
 
   const undo = useCallback(() => {
@@ -734,115 +760,147 @@ export const QuizzEditorProvider = ({
   }
 
   const changeQuestionType = (index: number, type: QuestionType) => {
+    const question = questions[index]
+    if (!question || question.type === type) {
+      return
+    }
+
+    if (
+      // eslint-disable-next-line no-alert -- garde-fou volontaire : le changement de type détruit les réponses saisies
+      !window.confirm(
+        "Changer de type remplacera les réponses de cette question. Continuer ?",
+      )
+    ) {
+      return
+    }
+    flushPendingHistoryPush()
     setQuestions((prev) =>
       prev.map((q, i) => {
         if (i !== index) {
           return q
         }
-
-        const base = {
-          id: q.id,
-          question: q.question,
-          media: q.media,
-          background: q.background,
-          backgroundOpacity: q.backgroundOpacity,
-          elements: q.elements,
-          audio: q.audio,
-          showLeaderboard: q.showLeaderboard,
-          answerReveal: q.answerReveal,
-          cooldown: q.cooldown,
-          time: q.time,
+        const converted = buildDefaultForType(q, type)
+        return {
+          ...converted,
+          difficulty: q.difficulty,
+          suddenDeath: q.suddenDeath,
+          pointsMultiplier: q.pointsMultiplier,
+          revelationEnabled: q.revelationEnabled,
+          revealDuration: q.revealDuration,
+          gridCols: q.gridCols,
+          gridRows: q.gridRows,
+          revelationStyle: q.revelationStyle,
         }
-
-        return buildDefaultForType(base, type)
       }),
     )
     markDirty()
   }
 
-  const [pendingNavigation, setPendingNavigation] = useState(false)
-
   const saveQuizz = useCallback(
-    (options?: { silent?: boolean; navigate?: boolean; force?: boolean }) => {
+    async (options?: {
+      silent?: boolean
+      navigate?: boolean
+      force?: boolean
+    }): Promise<string | null> => {
+      if (saveSession.current.saving || (saveConflict && !options?.force)) {
+        return null
+      }
       if (!socket || !isConnected) {
         if (!options?.silent) {
-          toast.error(
-            t("errors:quizz.failedToSave") ||
-              "Connexion perdue. Sauvegarde impossible.",
-            {
-              id: "quizz-save",
-            },
-          )
+          toast.error("Connexion perdue. Le brouillon reste local.", {
+            id: "quizz-save",
+          })
         }
-
-        return
+        return null
       }
-
-      // Client-side slide validation check
-      if (!options?.silent) {
-        const allErrors: { index: number; errors: string[] }[] = []
-        questions.forEach((q, i) => {
-          const errs = validateQuestion(q)
-
-          if (errs.length > 0) {
-            allErrors.push({ index: i + 1, errors: errs })
-          }
-        })
-
-        if (allErrors.length > 0) {
-          const [first] = allErrors
-          toast.error(
-            `Veuillez corriger les erreurs sur la diapositive ${first.index} : ${first.errors[0]}`,
-            { id: "quizz-save" },
-          )
-
-          return
-        }
-      }
-
-      const payload = {
+      const result = quizzValidator.safeParse({
         subject,
         publicName: publicName.trim() || undefined,
         description: description || undefined,
         folder: folder || undefined,
         tags: tags.length ? tags : undefined,
-        salonImage: salonImage || undefined,
-        listingImage: listingImage || undefined,
-        podiumTheme: podiumTheme || undefined,
+        salonImage,
+        listingImage,
+        podiumTheme,
         questions,
-        // `force` omet volontairement `updatedAt` : le serveur saute alors le
-        // contrôle de concurrence et écrase quoi qu'il arrive.
         updatedAt: options?.force ? undefined : updatedAt,
-      }
-
-      const result = quizzValidator.safeParse(payload)
-
+      })
       if (!result.success) {
         if (!options?.silent) {
           const [first] = result.error.issues
-          const path = first.path.length ? ` (${first.path.join(".")})` : ""
-          toast.error(`${t(first.message, first.message)}${path}`, {
-            id: "quizz-save",
-          })
+          if (
+            first.path[0] === "questions" &&
+            typeof first.path[1] === "number"
+          ) {
+            handleSetCurrentIndex(first.path[1])
+          }
+          toast.error(t(first.message, first.message), { id: "quizz-save" })
         }
-
-        return
+        return null
       }
-
-      if (options?.navigate) {
-        setPendingNavigation(true)
+      const sentRevision = saveSession.current.begin()
+      if (sentRevision === null) {
+        return null
       }
-
       setIsSaving(true)
-
-      if (quizzId) {
-        socket?.emit(EVENTS.QUIZZ.UPDATE, { id: quizzId, ...payload })
-      } else {
-        socket?.emit(EVENTS.QUIZZ.SAVE, payload)
-      }
-
       if (!options?.silent) {
         toast.loading(t("quizz:saving"), { id: "quizz-save" })
+      }
+      try {
+        const response = await new Promise<QuizSaveAck>((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error("Sauvegarde non confirmée. Réessayez.")),
+            15000,
+          )
+          const ack = (value: QuizSaveAck) => {
+            clearTimeout(timer)
+            resolve(value)
+          }
+          if (quizzId) {
+            socket.emit(
+              EVENTS.QUIZZ.UPDATE,
+              { id: quizzId, ...result.data },
+              ack,
+            )
+          } else {
+            socket.emit(EVENTS.QUIZZ.SAVE, { ...result.data, creationId }, ack)
+          }
+        })
+        if ("error" in response) {
+          throw new Error(response.error)
+        }
+        setQuizzId(response.id)
+        setUpdatedAt(response.updatedAt)
+        setLastSaved(new Date())
+        const currentSaved = saveSession.current.complete(
+          sentRevision,
+          response.replayed,
+        )
+        dirtyRef.current = !currentSaved
+        setIsDirty(!currentSaved)
+        if (currentSaved) {
+          clearBackups(backupKey, initialData?.id)
+        }
+        if (!options?.silent) {
+          toast.success(
+            currentSaved
+              ? t("quizz:quizzSaved")
+              : "Version enregistrée ; de nouvelles modifications restent à sauvegarder.",
+            { id: "quizz-save" },
+          )
+        }
+        return currentSaved ? response.id : null
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "errors:quizz.failedToSave"
+        if (message === "errors:quizz.conflict") {
+          setSaveConflict(true)
+        }
+        toast.error(t(message, message), { id: "quizz-save" })
+        return null
+      } finally {
+        saveSession.current.fail()
+        setIsSaving(false)
       }
     },
     [
@@ -860,80 +918,50 @@ export const QuizzEditorProvider = ({
       quizzId,
       updatedAt,
       t,
+      saveConflict,
+      creationId,
+      backupKey,
     ],
   )
 
-  useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, ({ id, updatedAt: newUpdatedAt }) => {
-    setQuizzId(id)
-    setUpdatedAt(newUpdatedAt)
-    setIsDirty(false)
-    setIsSaving(false)
-    setLastSaved(new Date())
-    localStorage.removeItem(`rahoot-backup-${id}`)
-    toast.success(t("quizz:quizzSaved"), { id: "quizz-save" })
-
-    if (pendingNavigation) {
-      navigate({ to: "/manager/config" })
-    }
-  })
-
-  useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, ({ updatedAt: newUpdatedAt }) => {
-    setUpdatedAt(newUpdatedAt)
-    setIsDirty(false)
-    setIsSaving(false)
-    setLastSaved(new Date())
-
-    if (quizzId) {
-      localStorage.removeItem(`rahoot-backup-${quizzId}`)
-    }
-
-    toast.success(t("quizz:quizzUpdated"), { id: "quizz-save" })
-
-    if (pendingNavigation) {
-      navigate({ to: "/manager/config" })
-    }
-  })
-
-  useEvent(EVENTS.QUIZZ.ERROR, (message) => {
-    setPendingNavigation(false)
-    setIsSaving(false)
-
-    if (message === "errors:quizz.conflict") {
-      toast.dismiss("quizz-save")
-      setSaveConflict(true)
-
-      return
-    }
-
-    toast.error(t(message), { id: "quizz-save" })
-  })
-
   const handleConflictOverwrite = () => {
     setSaveConflict(false)
-    saveQuizz({ force: true })
+    void saveQuizz({ force: true })
   }
 
   const handleConflictReload = () => {
+    // Retain the local copy until the user explicitly discards it on reload.
     window.location.reload()
   }
 
-  // Recovery check on load
+  // Backups may contain incomplete questions: restore drafts without applying
+  // the playable schema, but reject malformed storage before using it as state.
   useEffect(() => {
-    if (!quizzId) {
-      return
-    }
-
-    const backupStr = localStorage.getItem(`rahoot-backup-${quizzId}`)
-
-    if (backupStr) {
-      try {
-        const backup = JSON.parse(backupStr)
-        setPendingRestore(backup)
-      } catch (err) {
-        console.error("Failed to parse local backup:", err)
+    try {
+      const raw =
+        localStorage.getItem(backupKey) ??
+        (initialData?.id
+          ? localStorage.getItem(`rahoot-backup-${initialData.id}`)
+          : null)
+      if (raw) {
+        const backup = JSON.parse(raw)
+        if (
+          Array.isArray(backup.questions) &&
+          backup.questions.length &&
+          backup.questions.every(
+            (q: unknown) =>
+              q &&
+              typeof q === "object" &&
+              typeof (q as Question).type === "string",
+          )
+        ) {
+          setPendingRestore(backup)
+        }
       }
+    } catch {
+      toast.error("Le brouillon local ne peut pas être lu.")
     }
-  }, [quizzId])
+  }, [backupKey])
 
   const handleApplyRestore = () => {
     if (pendingRestore) {
@@ -973,7 +1001,18 @@ export const QuizzEditorProvider = ({
         setQuestions(pendingRestore.questions.map(toQuestionWithId))
       }
 
-      setIsDirty(true)
+      setSalonImage(pendingRestore.salonImage)
+      setListingImage(pendingRestore.listingImage)
+      setPodiumTheme(pendingRestore.podiumTheme)
+      if (typeof pendingRestore.savedId === "string") {
+        setQuizzId(pendingRestore.savedId)
+      }
+      if (typeof pendingRestore.baseUpdatedAt === "number") {
+        setUpdatedAt(pendingRestore.baseUpdatedAt)
+      } else if (initialData?.id) {
+        setSaveConflict(true)
+      }
+      markDirty()
       toast.success("Modifications restaurées depuis le cache local.")
     }
 
@@ -981,48 +1020,50 @@ export const QuizzEditorProvider = ({
   }
 
   const handleDiscardRestore = () => {
-    if (quizzId) {
-      localStorage.removeItem(`rahoot-backup-${quizzId}`)
+    try {
+      localStorage.removeItem(backupKey)
+      if (initialData?.id) {
+        localStorage.removeItem(`rahoot-backup-${initialData.id}`)
+      }
+    } catch {
+      /* Unavailable storage */
     }
-
     setPendingRestore(null)
   }
 
-  // Autosave to localStorage backup
-  useEffect(() => {
-    if (!quizzId || !isDirty) {
-      return undefined
+  const backupRef = useRef<() => void>(() => undefined)
+  backupRef.current = () => {
+    if (!dirtyRef.current || pendingRestore) {
+      return
     }
-
-    const timer = setTimeout(() => {
-      const backupData = {
-        subject,
-        publicName,
-        description,
-        folder,
-        tags,
-        salonImage,
-        listingImage,
-        podiumTheme,
-        questions: questions.map(({ id: _id, ...q }) => q),
-      }
-
-      try {
-        localStorage.setItem(
-          `rahoot-backup-${quizzId}`,
-          JSON.stringify(backupData),
-        )
-      } catch (err) {
-        console.warn(
-          "Failed to write to localStorage backup (likely quota exceeded due to large quiz size):",
-          err,
-        )
-      }
-    }, 3000)
-
+    try {
+      localStorage.setItem(
+        backupKey,
+        JSON.stringify({
+          savedId: quizzId,
+          baseUpdatedAt: updatedAt,
+          subject,
+          publicName,
+          description,
+          folder,
+          tags,
+          salonImage,
+          listingImage,
+          podiumTheme,
+          questions: questions.map(({ id: _id, ...q }) => q),
+        }),
+      )
+    } catch {
+      toast.error(
+        "Le stockage local est plein ou indisponible. Enregistrez sur le serveur ou exportez le quiz.",
+        { id: "quiz-backup-error" },
+      )
+    }
+  }
+  useEffect(() => {
+    const timer = setTimeout(() => backupRef.current(), 400)
     return () => clearTimeout(timer)
   }, [
-    isDirty,
     subject,
     publicName,
     description,
@@ -1032,31 +1073,35 @@ export const QuizzEditorProvider = ({
     listingImage,
     podiumTheme,
     questions,
-    quizzId,
   ])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isDirty) {
-        saveQuizz({ silent: true })
-      }
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [isDirty, saveQuizz])
-
-  useEffect(() => {
-    if (!isConnected && isSaving) {
-      setIsSaving(false)
-      toast.error(
-        t("errors:quizz.failedToSave") ||
-          "Connexion perdue. Sauvegarde impossible.",
-        {
-          id: "quizz-save",
-        },
-      )
+  const autosaveRef = useRef<() => void>(() => undefined)
+  autosaveRef.current = () => {
+    if (dirtyRef.current && !pendingRestore && !saveConflict) {
+      void saveQuizz({ silent: true })
     }
-  }, [isConnected, isSaving, t])
+  }
+  useEffect(() => {
+    const localTimer = setInterval(() => backupRef.current(), 3000)
+    const serverTimer = setInterval(() => autosaveRef.current(), 10000)
+    const flush = () => backupRef.current()
+    window.addEventListener("beforeunload", flush)
+    document.addEventListener("visibilitychange", flush)
+    return () => {
+      flush()
+      if (!dirtyRef.current && !initialData) {
+        try {
+          sessionStorage.removeItem("quiz-draft-id")
+        } catch {
+          /* Unavailable */
+        }
+      }
+      clearInterval(localTimer)
+      clearInterval(serverTimer)
+      window.removeEventListener("beforeunload", flush)
+      document.removeEventListener("visibilitychange", flush)
+    }
+  }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1067,7 +1112,11 @@ export const QuizzEditorProvider = ({
         tag === "textarea" ||
         target?.isContentEditable === true
 
-      if (inTextField) {
+      if (
+        e.defaultPrevented ||
+        inTextField ||
+        document.querySelector("[aria-modal=true], dialog[open]")
+      ) {
         return
       }
 
@@ -1215,7 +1264,7 @@ export const QuizzEditorProvider = ({
 
       {/* Emergency Cache Recovery Prompt Modal */}
       {pendingRestore && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <EditorDialog label="Restauration de session">
           <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
             {/* Header */}
             <div className="border-border text-primary flex items-center gap-2 border-b px-6 py-4">
@@ -1246,12 +1295,12 @@ export const QuizzEditorProvider = ({
               </Button>
             </div>
           </div>
-        </div>
+        </EditorDialog>
       )}
 
       {/* Conflit de sauvegarde : le quiz a été modifié ailleurs entre-temps */}
       {saveConflict && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <EditorDialog label="Conflit de sauvegarde">
           <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
             {/* Header */}
             <div className="border-border text-danger flex items-center gap-2 border-b px-6 py-4">
@@ -1282,7 +1331,7 @@ export const QuizzEditorProvider = ({
               </Button>
             </div>
           </div>
-        </div>
+        </EditorDialog>
       )}
     </QuizzEditorContext.Provider>
   )
