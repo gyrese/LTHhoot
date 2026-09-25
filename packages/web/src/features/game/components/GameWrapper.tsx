@@ -23,6 +23,11 @@ import PowerUpBar from "@rahoot/web/features/game/components/PowerUpBar"
 import PowerUpEarnedToast from "@rahoot/web/features/game/components/PowerUpEarnedToast"
 import PowerUpConfirmDrawer from "@rahoot/web/features/game/components/PowerUpConfirmDrawer"
 import PowerUpEffectToast from "@rahoot/web/features/game/components/PowerUpEffectToast"
+import {
+  isAttackEffect,
+  PowerUpAttackLayer,
+  usePowerUpAttackQueue,
+} from "@rahoot/web/features/game/components/PowerUpAttackAnnounce"
 import ShopDrawer from "@rahoot/web/features/game/components/ShopDrawer"
 import useWakeLock from "@rahoot/web/features/game/hooks/useWakeLock"
 import clsx from "clsx"
@@ -177,6 +182,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   }, [manager, socket, statusName])
 
   const [globalFlash, setGlobalFlash] = useState<string | null>(null)
+  // Annonce plein écran des attaques (écran principal uniquement) : les joueurs
+  // gardent le toast, seul le vidéoprojecteur met l'attaque en scène.
+  const attackQueue = usePowerUpAttackQueue()
 
   useEvent(EVENTS.GAME.MEDIA_PRELOAD, (urls) => {
     if (Array.isArray(urls)) {
@@ -209,9 +217,16 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       return
     }
 
-    toast.custom(() => <PowerUpEffectToast effect={effect} />, {
-      duration: 4000,
-    })
+    // Sur l'écran principal, une attaque ciblée devient un moment de jeu :
+    // annonce plein écran (qui remplace le toast, redondant) plutôt qu'une
+    // pastille dans un coin que personne ne voit depuis la salle.
+    if (manager && isAttackEffect(effect.type)) {
+      attackQueue.push(effect)
+    } else {
+      toast.custom(() => <PowerUpEffectToast effect={effect} />, {
+        duration: 4000,
+      })
+    }
 
     // Flash fullscreen pour les effets globaux légendaires
     if (effect.type === POWER_UP_TYPE.APOCALYPSE) {
@@ -523,6 +538,14 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   />
                 )}
               </AnimatePresence>
+
+              {/* Annonce d'attaque plein écran (écran principal) */}
+              {manager && (
+                <PowerUpAttackLayer
+                  current={attackQueue.current}
+                  onDone={attackQueue.shift}
+                />
+              )}
 
               {/* Barre joueur en bas (overlay) — contient aussi les power-ups */}
               {!manager && (

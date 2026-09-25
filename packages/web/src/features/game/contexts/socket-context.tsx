@@ -329,7 +329,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   // Watchdog mobile : quand l'app revient au premier plan (téléphone
   // déverrouillé, retour d'onglet) ou que le réseau revient, on ne laisse PAS
   // Socket.IO attendre son backoff (timers gelés en arrière-plan par l'OS) ni
-  // son ping timeout (~20s) pour découvrir que le lien est mort. On vérifie
+  // son ping timeout (~35s) pour découvrir que le lien est mort. On vérifie
   // immédiatement : déconnecté → connect() direct ; « connecté » → sonde ping
   // ack 7s, sans réponse → recyclage de la connexion. C'est ce qui ramène un
   // joueur qui rallume son téléphone dans la partie en ~1s au lieu de 8–45s.
@@ -383,12 +383,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
+    const onOffline = () => {
+      // Le navigateur connaît l'état réseau avant Engine.IO. Marquer la
+      // connexion comme indisponible immédiatement évite que la télécommande
+      // continue d'envoyer des actions pendant une coupure Wi‑Fi/4G.
+      setIsConnected(false)
+    }
+
     window.addEventListener("online", verifyLiveness)
+    window.addEventListener("offline", onOffline)
     window.addEventListener("pageshow", verifyLiveness)
     document.addEventListener("visibilitychange", onVisibilityChange)
 
     return () => {
       window.removeEventListener("online", verifyLiveness)
+      window.removeEventListener("offline", onOffline)
       window.removeEventListener("pageshow", verifyLiveness)
       document.removeEventListener("visibilitychange", onVisibilityChange)
     }
