@@ -28,7 +28,7 @@ type Props = {
 const SlidePreviewModal = ({ onClose }: Props) => {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
-  const { questions, currentIndex, quizzId, salonImage } = useQuizzEditor()
+  const { questions, currentIndex, salonImage } = useQuizzEditor()
   const [index, setIndex] = useState(() =>
     Math.max(0, Math.min(currentIndex, questions.length - 1)),
   )
@@ -82,6 +82,9 @@ const SlidePreviewModal = ({ onClose }: Props) => {
   return createPortal(
     <motion.div
       ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("quizz:preview", "Aperçu du quiz")}
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
@@ -187,16 +190,8 @@ const SlidePreviewModal = ({ onClose }: Props) => {
           <Button
             variant="primary"
             className="gap-2"
-            disabled={!quizzId || isTestDriving}
-            onClick={() => startTestDrive(index)}
-            title={
-              !quizzId
-                ? t(
-                    "quizz:testDriveNeedsSave",
-                    "Sauvegardez le quiz avant de le tester",
-                  )
-                : undefined
-            }
+            disabled={isTestDriving}
+            onClick={() => void startTestDrive(index)}
           >
             <Play className="size-4" />
             {t("quizz:launchDemo", "Lancer la démonstration")}

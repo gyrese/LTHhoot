@@ -24,7 +24,12 @@ import multer from "multer"
 import { extname, resolve } from "path"
 import sharp from "sharp"
 import { Server as ServerIO } from "socket.io"
-import { unlink, copyFile, readdir, stat, writeFile } from "fs/promises"
+import { unlink, readdir, stat } from "fs/promises"
+import { randomUUID } from "node:crypto"
+import {
+  downloadRemoteImage,
+  MAX_IMAGE_BYTES,
+} from "@rahoot/socket/utils/media-security"
 import { z } from "zod"
 
 // Schémas TOLÉRANTS des réponses des API média tierces : tous les champs sont
@@ -109,12 +114,11 @@ if (!existsSync(uploadsDir)) {
 // Multer stocke temporairement dans uploads, on convertira en WebP ensuite
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) =>
-    cb(null, `tmp-${Date.now()}${extname(file.originalname)}`),
+  filename: (_req, _file, cb) => cb(null, `tmp-${randomUUID()}`),
 })
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 0 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true)
@@ -128,7 +132,15 @@ const app = express()
 const httpServer = createServer(app)
 
 app.use(express.json())
-app.use("/uploads", express.static(uploadsDir))
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff")
+      res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox")
+    },
+  }),
+)
 
 // Garde d'authentification placée AVANT multer : on rejette les requêtes non
 // authentifiées sur les seuls headers, donc avant que le fichier ne soit écrit
@@ -152,65 +164,120 @@ const requireManager = (
   next()
 }
 
-app.post(
-  "/upload",
-  requireManager,
-  upload.single("image"),
-  async (req: express.Request, res: express.Response) => {
-    if (!req.file) {
-      res.status(400).json({ error: "No file" })
+const requireAdmin: express.RequestHandler = (req, res, next) => {
+  if (!Manager.isAdminAuthorized(req.get("x-client-id"))) {
+    res.status(403).json({ error: "Action réservée à l'administrateur" })
 
+    return
+  }
+
+  next()
+}
+
+let activeMediaJobs = 0
+const mediaJobs = new Set<string>()
+const mediaRequests = new Map<string, { count: number; resetAt: number }>()
+const limitMediaWork: express.RequestHandler = (req, res, next) => {
+  const key = Manager.getMediaAccount(req.get("x-client-id")) || ""
+  const now = Date.now()
+  for (const [id, entry] of mediaRequests) {
+    if (entry.resetAt <= now) {
+      mediaRequests.delete(id)
+    }
+  }
+  const quota = mediaRequests.get(key) ?? { count: 0, resetAt: now + 60000 }
+
+  if (quota.count >= 20) {
+    res
+      .status(429)
+      .json({ error: "Limite de 20 traitements par minute atteinte." })
+
+    return
+  }
+
+  if (activeMediaJobs >= 3 || mediaJobs.has(key)) {
+    res
+      .status(429)
+      .json({ error: "Traitement en cours. Réessayez dans un instant." })
+
+    return
+  }
+
+  activeMediaJobs += 1
+  quota.count += 1
+  mediaRequests.set(key, quota)
+  mediaJobs.add(key)
+  let released = false
+  const release = () => {
+    if (released) {
       return
     }
 
-    console.log(
-      `Réception d'un fichier : ${req.file.originalname} (${req.file.size} octets)`,
-    )
+    released = true
+    activeMediaJobs -= 1
+    mediaJobs.delete(key)
+  }
+  res.locals.releaseMediaJob = release
+  res.once("finish", release)
+  res.once("close", () => {
+    if (!res.locals.mediaProcessing) {
+      release()
+    }
+  })
+  next()
+}
 
-    const tmpPath = req.file.path
-    const outName = `img-${Date.now()}.webp`
-    const outPath = resolve(uploadsDir, outName)
+app.post(
+  "/upload",
+  requireManager,
+  limitMediaWork,
+  upload.single("image"),
+  async (req: express.Request, res: express.Response) => {
+    res.locals.mediaProcessing = true
 
     try {
-      // Limiter la concurrence pour éviter de saturer la RAM sur de gros GIFs
-      sharp.concurrency(1)
+      if (!req.file) {
+        res.status(400).json({ error: "No file" })
 
-      await sharp(tmpPath, { animated: true })
-        .webp({ quality: 82 })
-        .toFile(outPath)
+        return
+      }
 
-      // Supprimer le fichier temporaire
-      await unlink(tmpPath).catch((err) =>
-        console.error("Erreur lors de la suppression du temporaire :", err),
+      console.log(
+        `Réception d'un fichier : ${req.file.originalname} (${req.file.size} octets)`,
       )
 
-      res.json({ url: `/uploads/${outName}` })
-    } catch (err) {
-      console.error(
-        "Échec de la conversion WebP, tentative de conservation du fichier original. Raison :",
-        err,
-      )
+      const tmpPath = req.file.path
+      const outName = `img-${randomUUID()}.webp`
+      const outPath = resolve(uploadsDir, outName)
 
       try {
-        // Fallback : on garde le fichier original avec son extension d'origine
-        const originalExt = extname(req.file.originalname) || ".bin"
-        const fallbackName = `img-orig-${Date.now()}${originalExt}`
-        const fallbackPath = resolve(uploadsDir, fallbackName)
+        // Limiter la concurrence pour éviter de saturer la RAM sur de gros GIFs
+        sharp.concurrency(1)
 
-        console.log(
-          `Tentative de fallback par copie : ${tmpPath} -> ${fallbackPath}`,
+        await sharp(tmpPath, { animated: true, limitInputPixels: 40_000_000 })
+          .webp({ quality: 82 })
+          .toFile(outPath)
+
+        // Supprimer le fichier temporaire
+        await unlink(tmpPath).catch((err) =>
+          console.error("Erreur lors de la suppression du temporaire :", err),
         )
-        await copyFile(tmpPath, fallbackPath)
-        // Nettoyage non critique
-        await unlink(tmpPath).catch(console.error)
 
-        res.json({ url: `/uploads/${fallbackName}` })
-      } catch (fallbackErr) {
-        console.error("Échec critique du fallback :", fallbackErr)
-        res.status(422).json({
-          error: `Échec du traitement de l'image. Erreur Sharp: ${err instanceof Error ? err.message : String(err)}. Erreur Fallback: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`,
-        })
+        res.json({ url: `/uploads/${outName}` })
+      } catch (err) {
+        console.error("Image upload rejected:", err)
+        await unlink(tmpPath).catch((cleanupError) =>
+          console.warn("Temporary image cleanup failed", cleanupError),
+        )
+        await unlink(outPath).catch((cleanupError) =>
+          console.warn("Output image cleanup failed", cleanupError),
+        )
+        res
+          .status(422)
+          .json({ error: "Image illisible ou format non pris en charge" })
       }
+    } finally {
+      res.locals.releaseMediaJob?.()
     }
   },
 )
@@ -218,79 +285,93 @@ app.post(
 app.post(
   "/ai-image",
   requireManager,
+  limitMediaWork,
   async (req: express.Request, res: express.Response) => {
-    const { subject } = req.body as { subject?: string }
-
-    if (!subject || typeof subject !== "string" || !subject.trim()) {
-      res.status(400).json({ error: "Sujet requis pour la génération d'image" })
-
-      return
-    }
-
-    const apiKey =
-      process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
-
-    if (!apiKey) {
-      console.error(
-        "GEMINI_IMAGE_API_KEY ou GEMINI_API_KEY manquante dans les variables d'environnement",
-      )
-      res.status(500).json({
-        error: "Clé API Gemini Image/Globale non configurée sur le serveur",
-      })
-
-      return
-    }
-
-    const IMAGE_STYLES = [
-      "Pixar style, vibrant colors, 3D render, studio lighting, square format",
-      "cinematic photo, highly detailed, realistic, dramatic lighting, 8k resolution, photorealistic, square format",
-      "cyberpunk style, neon lighting, futuristic, highly detailed, sci-fi aesthetic, square format",
-      "Studio Ghibli style, anime watercolor painting, soft lighting, detailed background, hand-drawn aesthetic, square format",
-      "vintage comic book style, pop art, retro color palette, ink outline, halftone shading, square format",
-      "minimalist vector illustration, clean lines, flat colors, modern abstract design, geometric shapes, square format",
-      "fantasy oil painting, classical art style, dramatic chiaroscuro lighting, rich textures, fine art, square format",
-      "cute claymation style, plasticine texture, stop-motion look, soft studio lighting, playful 3D, square format",
-      "watercolor and ink sketch illustration, artistic splatters, soft colors, elegant hand-drawn look, square format",
-      "low poly 3D style, geometric shapes, colorful facets, clean rendering, modern game art look, square format",
-      "3D model block style, voxel art, cute blocky characters, vibrant colors, isometric view, square format",
-      "origami paper art style, layered paper cuts, soft textures, pastel colors, elegant lighting, square format",
-    ]
-    const chosenStyle =
-      IMAGE_STYLES[Math.floor(Math.random() * IMAGE_STYLES.length)]
-    const prompt = `${subject}, ${chosenStyle}`
-    const genAI = new GoogleGenAI({ apiKey })
+    res.locals.mediaProcessing = true
 
     try {
-      const response = await genAI.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: prompt,
-      })
+      const { subject } = req.body as { subject?: string }
 
-      const part = response.candidates?.[0]?.content?.parts?.find(
-        (p) => p.inlineData,
-      )
-      const imageData = part?.inlineData?.data
+      if (
+        !subject ||
+        typeof subject !== "string" ||
+        !subject.trim() ||
+        subject.length > 2000
+      ) {
+        res
+          .status(400)
+          .json({ error: "Sujet requis pour la génération d'image" })
 
-      if (!imageData) {
-        throw new Error(
-          "Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.",
-        )
+        return
       }
 
-      const buffer = Buffer.from(imageData, "base64")
-      const outName = `img-ai-${Date.now()}.webp`
-      const outPath = resolve(uploadsDir, outName)
+      const apiKey =
+        process.env.GEMINI_IMAGE_API_KEY || process.env.GEMINI_API_KEY
 
-      // Conversion WebP
-      sharp.concurrency(1)
-      await sharp(buffer).webp({ quality: 82 }).toFile(outPath)
+      if (!apiKey) {
+        console.error(
+          "GEMINI_IMAGE_API_KEY ou GEMINI_API_KEY manquante dans les variables d'environnement",
+        )
+        res.status(500).json({
+          error: "Clé API Gemini Image/Globale non configurée sur le serveur",
+        })
 
-      res.json({ url: `/uploads/${outName}` })
-    } catch (err) {
-      console.error("Échec de la génération d'image par Gemini :", err)
-      res.status(500).json({
-        error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
-      })
+        return
+      }
+
+      const IMAGE_STYLES = [
+        "Pixar style, vibrant colors, 3D render, studio lighting, square format",
+        "cinematic photo, highly detailed, realistic, dramatic lighting, 8k resolution, photorealistic, square format",
+        "cyberpunk style, neon lighting, futuristic, highly detailed, sci-fi aesthetic, square format",
+        "Studio Ghibli style, anime watercolor painting, soft lighting, detailed background, hand-drawn aesthetic, square format",
+        "vintage comic book style, pop art, retro color palette, ink outline, halftone shading, square format",
+        "minimalist vector illustration, clean lines, flat colors, modern abstract design, geometric shapes, square format",
+        "fantasy oil painting, classical art style, dramatic chiaroscuro lighting, rich textures, fine art, square format",
+        "cute claymation style, plasticine texture, stop-motion look, soft studio lighting, playful 3D, square format",
+        "watercolor and ink sketch illustration, artistic splatters, soft colors, elegant hand-drawn look, square format",
+        "low poly 3D style, geometric shapes, colorful facets, clean rendering, modern game art look, square format",
+        "3D model block style, voxel art, cute blocky characters, vibrant colors, isometric view, square format",
+        "origami paper art style, layered paper cuts, soft textures, pastel colors, elegant lighting, square format",
+      ]
+      const chosenStyle =
+        IMAGE_STYLES[Math.floor(Math.random() * IMAGE_STYLES.length)]
+      const prompt = `${subject}, ${chosenStyle}`
+      const genAI = new GoogleGenAI({ apiKey })
+
+      try {
+        const response = await genAI.models.generateContent({
+          model: "gemini-2.5-flash-image",
+          contents: prompt,
+        })
+
+        const part = response.candidates?.[0]?.content?.parts?.find(
+          (p) => p.inlineData,
+        )
+        const imageData = part?.inlineData?.data
+
+        if (!imageData) {
+          throw new Error(
+            "Aucune image retournée par Gemini. Assurez-vous que la facturation est activée dans AI Studio.",
+          )
+        }
+
+        const buffer = Buffer.from(imageData, "base64")
+        const outName = `img-ai-${randomUUID()}.webp`
+        const outPath = resolve(uploadsDir, outName)
+
+        // Conversion WebP
+        sharp.concurrency(1)
+        await sharp(buffer).webp({ quality: 82 }).toFile(outPath)
+
+        res.json({ url: `/uploads/${outName}` })
+      } catch (err) {
+        console.error("Échec de la génération d'image par Gemini :", err)
+        res.status(500).json({
+          error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
+        })
+      }
+    } finally {
+      res.locals.releaseMediaJob?.()
     }
   },
 )
@@ -300,131 +381,47 @@ app.post(
 // lien externe meurt, se fait bloquer par referer, ou disparaît du CDN — et le
 // quiz perd son image en pleine partie. Même traitement que /upload : WebP
 // animé (les GIF gardent leur animation), fallback binaire d'origine.
-const MAX_IMPORT_BYTES = 25 * 1024 * 1024
-
-// Refus des cibles internes : le serveur ferait sinon office de relais pour
-// sonder son propre réseau (SSRF).
-const isPrivateHost = (hostname: string): boolean => {
-  const host = hostname.toLowerCase().replace(/^\[|\]$/gu, "")
-
-  if (
-    host === "localhost" ||
-    host === "::1" ||
-    host.endsWith(".localhost") ||
-    host.endsWith(".internal") ||
-    host.endsWith(".local")
-  ) {
-    return true
-  }
-
-  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/u.exec(host)
-
-  if (!ipv4) {
-    // Adresses IPv6 uniques locales / lien-local
-    return (
-      host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80")
-    )
-  }
-
-  const [a, b] = ipv4.slice(1).map(Number)
-
-  return (
-    a === 0 ||
-    a === 127 ||
-    a === 10 ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 169 && b === 254)
-  )
-}
-
 app.post(
   "/api/media/import-url",
   requireManager,
+  limitMediaWork,
   async (req: express.Request, res: express.Response) => {
-    const { url } = req.body as { url?: string }
-    const parsed = URL.parse((url ?? "").trim())
-
-    if (!parsed) {
-      res.status(400).json({ error: "Lien invalide" })
-
-      return
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      res.status(400).json({ error: "Seuls les liens http(s) sont acceptés" })
-
-      return
-    }
-
-    if (isPrivateHost(parsed.hostname)) {
-      res.status(400).json({ error: "Ce lien pointe vers une adresse interne" })
-
-      return
-    }
+    res.locals.mediaProcessing = true
 
     try {
-      const response = await fetch(parsed.toString(), {
-        redirect: "follow",
-        signal: AbortSignal.timeout(15000),
-        headers: { accept: "image/*,video/*;q=0.8,*/*;q=0.5" },
-      })
+      const url = req.body?.url
 
-      if (!response.ok) {
-        res
-          .status(422)
-          .json({ error: `La source a répondu ${response.status}` })
+      if (typeof url !== "string" || url.length > 4096) {
+        res.status(400).json({ error: "Lien invalide" })
 
         return
       }
 
-      const contentType = response.headers.get("content-type") ?? ""
-
-      if (!contentType.startsWith("image/")) {
-        res.status(422).json({
-          error: `Le lien ne pointe pas vers une image (${contentType || "type inconnu"})`,
-        })
-
-        return
-      }
-
-      const buffer = Buffer.from(await response.arrayBuffer())
-
-      if (buffer.byteLength > MAX_IMPORT_BYTES) {
-        res.status(413).json({ error: "Image trop lourde (25 Mo maximum)" })
-
-        return
-      }
-
-      const outName = `img-${Date.now()}.webp`
+      const outName = `img-${randomUUID()}.webp`
+      const outPath = resolve(uploadsDir, outName)
 
       try {
-        sharp.concurrency(1)
-        await sharp(buffer, { animated: true })
+        const buffer = await downloadRemoteImage(url.trim())
+        await sharp(buffer, { animated: true, limitInputPixels: 40_000_000 })
           .webp({ quality: 82 })
-          .toFile(resolve(uploadsDir, outName))
-
+          .toFile(outPath)
         res.json({ url: `/uploads/${outName}` })
       } catch (err) {
-        // Format que sharp ne sait pas lire (SVG animé, APNG exotique…) : on
-        // garde l'original plutôt que de refuser l'import.
-        console.error("Import par lien — conversion WebP échouée :", err)
-
-        const ext = contentType.split("/")[1]?.split(";")[0] || "bin"
-        const fallbackName = `img-orig-${Date.now()}.${ext}`
-
-        await writeFile(resolve(uploadsDir, fallbackName), buffer)
-
-        res.json({ url: `/uploads/${fallbackName}` })
+        await unlink(outPath).catch((cleanupError) =>
+          console.warn("Output image cleanup failed", cleanupError),
+        )
+        console.error("Image import rejected:", err)
+        res.status(422).json({
+          error:
+            "Import impossible : image invalide, trop volumineuse, adresse interdite ou redirection.",
+        })
       }
-    } catch (err) {
-      console.error("Import par lien échoué :", err)
-      res.status(502).json({ error: "Impossible de récupérer ce lien" })
+    } finally {
+      res.locals.releaseMediaJob?.()
     }
   },
 )
 
-// ─── Bibliothèque locale : liste toutes les images du dossier uploads/ ────────
 app.get(
   "/api/media/library",
   requireManager,
@@ -473,7 +470,7 @@ app.get(
 // ─── Suppression d'une image de la bibliothèque locale ────────────────────────
 app.delete(
   "/api/media/library/:filename",
-  requireManager,
+  requireAdmin,
   async (req: express.Request, res: express.Response) => {
     const filename = req.params.filename as string
 
@@ -485,6 +482,14 @@ app.delete(
       filename.includes("\\")
     ) {
       res.status(400).json({ error: "Nom de fichier invalide" })
+
+      return
+    }
+
+    if (Config.listReferencedMedia().has(filename)) {
+      res
+        .status(409)
+        .json({ error: "Ce média est utilisé dans un quiz ou un résultat." })
 
       return
     }
@@ -507,7 +512,7 @@ app.delete(
 // La purge réelle exige donc un geste explicite après avoir vérifié la liste.
 app.post(
   "/api/media/prune",
-  requireManager,
+  requireAdmin,
   (req: express.Request, res: express.Response) => {
     const dryRun = req.query.dryRun !== "0"
 
@@ -656,7 +661,7 @@ app.get(
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
   // 5MB : les uploads d'images passent déjà par l'endpoint HTTP /upload (multer,
-  // limite 50MB), ce buffer ne sert plus qu'aux échanges JSON classiques du socket.
+  // limite 20MB), ce buffer ne sert plus qu'aux échanges JSON classiques du socket.
   maxHttpBufferSize: 5 * 1024 * 1024,
   cors: {
     origin: process.env.ALLOWED_ORIGIN ?? "*",
@@ -673,14 +678,13 @@ const io: Server = new ServerIO(httpServer, {
   // régression possible par rapport au mode polling-only précédent.
   transports: ["polling", "websocket"],
   allowUpgrades: true,
-  // Hardening pour réseaux instables (mobile). Lien mort détecté en ≤20s
-  // (pingInterval + pingTimeout) au lieu de ~45s : pendant une question de 20s,
-  // 45s de lien mort non détecté = question ratée sans que le joueur le sache.
-  // Un faux positif ne coûte qu'un blip : la reconnexion se fait par clientId
-  // avec resync d'état, et la manche ne compte que les joueurs connectés
-  // (cf. countConnected). Le client dispose en plus d'un watchdog au retour de
-  // premier plan (sonde connection:ping) pour ne même pas attendre ces 20s.
-  pingTimeout: 10000,
+  // Réseau mobile : une suspension radio, un changement de relais ou une
+  // reprise d'onglet peut dépasser 10 s sans que la session soit perdue.
+  // Une fenêtre de 25 s évite les faux décrochages de la télécommande tout en
+  // conservant une détection suffisamment rapide d'un lien réellement mort.
+  // Le client dispose en plus d'un watchdog au retour au premier plan
+  // (sonde connection:ping) pour ne pas attendre cette fenêtre.
+  pingTimeout: 25000,
   pingInterval: 10000,
   connectTimeout: 45000,
   allowEIO3: false,

@@ -53,7 +53,11 @@ const QuestionAnswerEditor = () => {
   }
 }
 
-const QuestionEditor = () => {
+const QuestionEditor = ({
+  showInspector = true,
+}: {
+  showInspector?: boolean
+}) => {
   const { currentQuestion, updateQuestion, currentIndex } = useQuizzEditor()
 
   if (!currentQuestion) {
@@ -61,7 +65,7 @@ const QuestionEditor = () => {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex min-w-0 flex-1 overflow-hidden">
       <main className="relative mx-auto flex max-w-7xl flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <SlideEditor
@@ -86,7 +90,7 @@ const QuestionEditor = () => {
           )}
         </div>
       </main>
-      <QuestionEditorConfig />
+      {showInspector && <QuestionEditorConfig />}
     </div>
   )
 }

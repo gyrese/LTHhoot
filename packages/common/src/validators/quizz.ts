@@ -85,7 +85,7 @@ export const answerRevealValidator = z.object({
 const difficultyValidator = z.enum(["easy", "medium", "hard", "expert"])
 
 const baseQuestionValidator = z.object({
-  question: z.string().min(1, "errors:quizz.questionEmpty"),
+  question: z.string().trim().min(1, "errors:quizz.questionEmpty"),
   difficulty: difficultyValidator.optional(),
   media: questionMediaValidator.optional(),
   background: slideBackgroundValidator.optional(),
@@ -112,7 +112,7 @@ const baseQuestionValidator = z.object({
 const mcqValidator = baseQuestionValidator.extend({
   type: z.literal("mcq"),
   answers: z
-    .array(z.string().min(1, "errors:quizz.answerEmpty"))
+    .array(z.string().trim().min(1, "errors:quizz.answerEmpty"))
     .min(2, "errors:quizz.tooFewAnswers")
     .max(4, "errors:quizz.tooManyAnswers"),
   solutions: z
@@ -128,7 +128,7 @@ const trueFalseValidator = baseQuestionValidator.extend({
 const openValidator = baseQuestionValidator.extend({
   type: z.literal("open"),
   correctAnswers: z
-    .array(z.string().min(1, "errors:quizz.answerEmpty"))
+    .array(z.string().trim().min(1, "errors:quizz.answerEmpty"))
     .min(1, "errors:quizz.tooFewCorrectAnswers"),
 })
 
@@ -136,7 +136,7 @@ const imageSequenceValidator = baseQuestionValidator.extend({
   type: z.literal("image_sequence"),
   images: z.array(z.string().min(1)).min(1, "errors:quizz.tooFewImages"),
   correctAnswers: z
-    .array(z.string().min(1, "errors:quizz.answerEmpty"))
+    .array(z.string().trim().min(1, "errors:quizz.answerEmpty"))
     .min(1, "errors:quizz.tooFewCorrectAnswers"),
   imageInterval: z.number().int().min(2).max(60).optional(),
 })
@@ -160,7 +160,7 @@ const sliderValidator = baseQuestionValidator.extend({
 const puzzleValidator = baseQuestionValidator.extend({
   type: z.literal("puzzle"),
   items: z
-    .array(z.string().min(1, "errors:quizz.answerEmpty"))
+    .array(z.string().trim().min(1, "errors:quizz.answerEmpty"))
     .min(2, "errors:quizz.tooFewAnswers"),
 })
 
@@ -228,7 +228,7 @@ const titleValidator = z.object({
 const legacyMcqValidator = baseQuestionValidator
   .extend({
     answers: z
-      .array(z.string().min(1, "errors:quizz.answerEmpty"))
+      .array(z.string().trim().min(1, "errors:quizz.answerEmpty"))
       .min(2, "errors:quizz.tooFewAnswers")
       .max(4, "errors:quizz.tooManyAnswers"),
     solutions: z
@@ -245,22 +245,86 @@ export const questionValidator = z.preprocess(
 
     return val
   },
-  z.discriminatedUnion("type", [
-    mcqValidator,
-    trueFalseValidator,
-    openValidator,
-    imageSequenceValidator,
-    dateValidator,
-    sliderValidator,
-    puzzleValidator,
-    dropPinValidator,
-    gridValidator,
-    titleValidator,
-  ]),
+  z
+    .discriminatedUnion("type", [
+      mcqValidator,
+      trueFalseValidator,
+      openValidator,
+      imageSequenceValidator,
+      dateValidator,
+      sliderValidator,
+      puzzleValidator,
+      dropPinValidator,
+      gridValidator,
+      titleValidator,
+    ])
+    .superRefine((q, ctx) => {
+      const issue = (message: string, path: (string | number)[]) =>
+        ctx.addIssue({ code: "custom", message, path })
+
+      if (
+        q.type === "mcq" &&
+        (q.solutions.some((i) => i >= q.answers.length) ||
+          new Set(q.solutions).size !== q.solutions.length)
+      ) {
+        issue(
+          "Les bonnes réponses doivent correspondre aux propositions, sans doublons.",
+          ["solutions"],
+        )
+      }
+
+      if (q.type === "grid") {
+        if (q.cells.some((cell) => !cell.image.trim())) {
+          issue("Chaque case doit contenir une image.", ["cells"])
+        }
+
+        if (
+          q.correctIndexes.some((i) => i >= q.cells.length) ||
+          new Set(q.correctIndexes).size !== q.correctIndexes.length
+        ) {
+          issue("Les cases correctes doivent exister, sans doublons.", [
+            "correctIndexes",
+          ])
+        }
+      }
+
+      if (q.type === "slider") {
+        if (q.min >= q.max) {
+          issue("Le minimum doit être inférieur au maximum.", ["max"])
+        }
+
+        if (q.correctValue < q.min || q.correctValue > q.max) {
+          issue("La réponse doit être dans l'intervalle.", ["correctValue"])
+        }
+      }
+
+      if (q.type === "date") {
+        if (
+          q.minYear !== undefined &&
+          q.maxYear !== undefined &&
+          q.minYear >= q.maxYear
+        ) {
+          issue("Les bornes des années sont invalides.", ["maxYear"])
+        }
+
+        if (
+          (q.minYear !== undefined && q.correctYear < q.minYear) ||
+          (q.maxYear !== undefined && q.correctYear > q.maxYear)
+        ) {
+          issue("L'année correcte doit être dans l'intervalle.", [
+            "correctYear",
+          ])
+        }
+      }
+
+      if (q.type === "drop_pin" && !q.zones.some((zone) => zone.isCorrect)) {
+        issue("Désignez au moins une zone correcte.", ["zones"])
+      }
+    }),
 )
 
 export const quizzValidator = z.object({
-  subject: z.string().min(1, "errors:quizz.subjectEmpty"),
+  subject: z.string().trim().min(1, "errors:quizz.subjectEmpty"),
   publicName: z.string().optional(),
   description: z.string().optional(),
   folder: z.string().optional(),

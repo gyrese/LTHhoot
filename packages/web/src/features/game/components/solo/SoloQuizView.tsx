@@ -33,6 +33,7 @@ import {
   User,
   XCircle,
 } from "lucide-react"
+import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import React, { useEffect, useRef, useState } from "react"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
@@ -130,6 +131,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     correctAnswersCount: number
     totalQuestions: number
   } | null>(null)
+
+  // Dimensions réelles de la fenêtre : `react-confetti` prend 300×200 par
+  // défaut et déborde du flux (barre de défilement) si on ne les lui donne pas.
+  const { width: screenWidth, height: screenHeight } = useScreenSize()
 
   const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.2 })
@@ -1187,19 +1192,36 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       {/* ── SCREEN 3: FINISHED ── */}
       {step === "FINISHED" && resultSummary && (
         <>
-          <Confetti recycle={false} numberOfPieces={350} />
-          <div className="relative z-20 flex max-h-screen flex-1 items-center justify-center overflow-y-auto p-4 py-8">
-            <div className="flex w-full max-w-lg flex-col items-center rounded-3xl border border-white/20 bg-black/75 p-6 text-center shadow-2xl backdrop-blur-2xl sm:p-8">
+          <Confetti
+            width={screenWidth}
+            height={screenHeight}
+            className="pointer-events-none"
+            recycle={false}
+            numberOfPieces={350}
+          />
+          {/* `items-center` centre tant que la carte tient, `my-auto` sur
+              l'enfant prend le relais quand elle dépasse : sans lui, un
+              conteneur défilant centré rogne le haut de la carte et le rend
+              inatteignable au scroll. */}
+          <div className="relative z-20 flex min-h-0 flex-1 justify-center overflow-y-auto overscroll-contain p-4">
+            <div className="my-auto flex h-fit w-full max-w-lg flex-col items-center rounded-3xl border border-white/20 bg-black/75 p-5 text-center shadow-2xl backdrop-blur-2xl sm:p-8">
+              {/* Échelles fluides plutôt que deux paliers : la carte doit se
+                  compacter progressivement, pas basculer d'un coup au point de
+                  rupture `sm`. */}
               <img
                 src={logoImg}
                 alt="L'Apéro Quiz"
-                className="mb-3 h-16 w-auto object-contain drop-shadow-[0_8px_20px_rgba(249,115,22,0.4)] sm:h-20"
+                className="mb-3 w-auto object-contain drop-shadow-[0_8px_20px_rgba(249,115,22,0.4)]"
+                style={{ height: "clamp(3rem, 9vh, 5rem)" }}
               />
 
-              <h2 className="text-2xl font-black text-white sm:text-3xl">
+              <h2
+                className="font-black text-white"
+                style={{ fontSize: "clamp(1.35rem, 5vw, 1.875rem)" }}
+              >
                 Partie Terminée !
               </h2>
-              <p className="mb-5 text-sm text-gray-300">
+              <p className="mb-4 text-sm text-gray-300">
                 Bravo{" "}
                 <span className="font-bold text-orange-400">{playerName}</span>{" "}
                 ! Vos réponses ont bien été enregistrées.

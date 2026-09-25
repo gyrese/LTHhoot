@@ -7,14 +7,14 @@ import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 /**
  * Traverses a JSON data structure recursively, finds any base64 image data URL
  * (`data:image/...;base64,...`), writes the binary image to `uploadsDir` (converted
- * to WebP if possible), and replaces the base64 string with the relative file URL
+ * to validated WebP), and replaces the base64 string with the relative file URL
  * (`/uploads/img-migrated-XXXX.webp`).
  */
 const IMAGE_DATA_URL_RE = /^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/u
 
 /**
  * Écrit une image décodée dans `uploadsDir` : en WebP si sharp y parvient,
- * sinon le binaire d'origine tel quel. Extrait de la boucle de migration, qui
+ * uniquement si le contenu peut être décodé. La migration
  * empilait sinon quatre niveaux d'imbrication.
  *
  * Le nom de fichier dérive du CONTENU (sha1) : la même image croisée dans dix
@@ -23,7 +23,7 @@ const IMAGE_DATA_URL_RE = /^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/u
  */
 async function writeMigratedImage(
   buffer: Buffer,
-  ext: string,
+  _ext: string,
   uploadsDir: string,
 ): Promise<string> {
   const hash = crypto
@@ -33,32 +33,22 @@ async function writeMigratedImage(
     .slice(0, 16)
   const baseName = `img-migrated-${hash}`
 
-  for (const name of [`${baseName}.webp`, `${baseName}.${ext}`]) {
-    if (fs.existsSync(path.join(uploadsDir, name))) {
-      return `/uploads/${name}`
-    }
-  }
+  const outName = `${baseName}.webp`
 
-  try {
-    sharp.concurrency(1)
-    const outName = `${baseName}.webp`
-
-    await sharp(buffer)
-      .webp({ quality: 82 })
-      .toFile(path.join(uploadsDir, outName))
-
-    return `/uploads/${outName}`
-  } catch (err) {
-    console.error(
-      "[Base64 Migration] Sharp WebP conversion failed, falling back to direct write:",
-      err,
-    )
-    const outName = `${baseName}.${ext}`
-
-    fs.writeFileSync(path.join(uploadsDir, outName), buffer)
-
+  if (fs.existsSync(path.join(uploadsDir, outName))) {
     return `/uploads/${outName}`
   }
+
+  // Never publish unvalidated original bytes, including imported data URLs.
+  const encoded = await sharp(buffer, {
+    animated: true,
+    limitInputPixels: 40_000_000,
+  })
+    .webp({ quality: 82 })
+    .toBuffer()
+  fs.writeFileSync(path.join(uploadsDir, outName), encoded)
+
+  return `/uploads/${outName}`
 }
 
 export async function migrateBase64InObject<T>(

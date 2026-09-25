@@ -297,7 +297,7 @@ class Config {
       throw new Error("errors:quizz.conflict")
     }
 
-    const updatedAt = Date.now()
+    const updatedAt = Math.max(Date.now(), (existingRaw.updatedAt ?? 0) + 1)
 
     writeFileAtomic(
       oldPath,
@@ -323,16 +323,13 @@ class Config {
       raw.folder = folder
     }
 
-    // NB : on réécrit `raw` tel quel, `updatedAt` du disque est donc préservé —
-    // ne pas le régénérer ici, sinon on invaliderait le contrôle de concurrence
-    // optimiste d'un `updateQuizz` concurrent (cf. errors:quizz.conflict).
+    // Every document mutation must invalidate stale editor snapshots.
+    raw.updatedAt = Math.max(Date.now(), (raw.updatedAt ?? 0) + 1)
     writeFileAtomic(filePath, JSON.stringify(raw, null, 2))
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
   }
 
-  // Champs vus par les joueurs (nom public + description/règles), modifiables
-  // sans passer par l'éditeur : même précaution que `moveToFolder` sur
-  // `updatedAt` (préservé, cf. concurrence optimiste).
+  // Public metadata shares the document revision used by the editor.
   static setPublicInfo(
     id: string,
     info: { publicName: string | null; description: string | null },
@@ -356,6 +353,7 @@ class Config {
       }
     }
 
+    raw.updatedAt = Math.max(Date.now(), (raw.updatedAt ?? 0) + 1)
     writeFileAtomic(filePath, JSON.stringify(raw, null, 2))
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
   }
@@ -502,7 +500,8 @@ class Config {
   static async saveQuizz(
     data: unknown,
     owner?: string,
-  ): Promise<{ id: string; updatedAt: number }> {
+    creationId?: string,
+  ): Promise<{ id: string; updatedAt: number; replayed?: boolean }> {
     const result = quizzValidator.safeParse(data)
 
     if (!result.success) {
@@ -512,8 +511,21 @@ class Config {
     const uploadsDir = getPath("uploads")
     const cleanedData = await migrateBase64InObject(result.data, uploadsDir)
 
-    const id = normalizeFilename(cleanedData.subject)
+    if (creationId && !/^[a-f0-9-]{36}$/iu.test(creationId)) {
+      throw new Error("Invalid creation id")
+    }
+
+    const id = creationId
+      ? `draft-${creationId}`
+      : normalizeFilename(cleanedData.subject)
     const filePath = getPath(`${quizzDir(owner)}/${id}.json`)
+
+    if (creationId && fs.existsSync(filePath)) {
+      const existing = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+
+      return { id, updatedAt: existing.updatedAt, replayed: true }
+    }
+
     const updatedAt = Date.now()
 
     writeFileAtomic(

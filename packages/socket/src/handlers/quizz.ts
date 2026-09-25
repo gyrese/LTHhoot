@@ -35,7 +35,51 @@ const readScope = (session: ManagerSession, id: string) => {
 const isReadonlyForSession = (session: ManagerSession, id: string) =>
   session.role === "admin" && isGuestQuizId(id)
 
+const aiRequests = new Map<string, { count: number; resetAt: number }>()
+const activeAIAccounts = new Set<string>()
+
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
+  const withAIAuth = <T extends unknown[]>(
+    handler: (_session: ManagerSession, ..._args: T) => Promise<void>,
+  ) =>
+    manager.withAnyAuth(socket, async (session, ...args: T) => {
+      const account = session.role === "admin" ? "admin" : session.guestId
+      const now = Date.now()
+      for (const [id, quota] of aiRequests) {
+        if (quota.resetAt <= now) {
+          aiRequests.delete(id)
+        }
+      }
+      const quota = aiRequests.get(account) ?? {
+        count: 0,
+        resetAt: now + 60000,
+      }
+
+      if (
+        activeAIAccounts.size >= 3 ||
+        activeAIAccounts.has(account) ||
+        quota.count >= 10 ||
+        JSON.stringify(args).length > 20000
+      ) {
+        socket.emit(
+          EVENTS.QUIZZ.AI_ERROR,
+          "Limite IA atteinte ou requête trop longue. Réessayez dans une minute.",
+        )
+
+        return
+      }
+
+      quota.count += 1
+      aiRequests.set(account, quota)
+      activeAIAccounts.add(account)
+
+      try {
+        await handler(session, ...args)
+      } finally {
+        activeAIAccounts.delete(account)
+      }
+    })
+
   socket.on(
     EVENTS.QUIZZ.GET,
     manager.withAnyAuth(socket, (session, id) => {
@@ -54,20 +98,31 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.SAVE,
-    manager.withAnyAuth(socket, async (session, data) => {
+    manager.withAnyAuth(socket, async (session, data, ack) => {
       try {
-        const { id, updatedAt } = await Config.saveQuizz(
+        const saved = await Config.saveQuizz(
           data,
           ownerFor(session),
+          data.creationId,
         )
 
-        socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id, updatedAt })
+        if (typeof ack === "function") {
+          ack(saved)
+        } else {
+          socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, saved)
+        }
+
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to save quizz:", error)
         const message =
           error instanceof Error ? error.message : "errors:quizz.failedToSave"
-        socket.emit(EVENTS.QUIZZ.ERROR, message)
+
+        if (typeof ack === "function") {
+          ack({ error: message })
+        } else {
+          socket.emit(EVENTS.QUIZZ.ERROR, message)
+        }
       }
     }),
   )
@@ -94,10 +149,14 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.UPDATE,
-    manager.withAnyAuth(socket, async (session, { id, ...data }) => {
+    manager.withAnyAuth(socket, async (session, { id, ...data }, ack) => {
       try {
         if (isReadonlyForSession(session, id)) {
-          socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+          if (typeof ack === "function") {
+            ack({ error: "errors:quizz.guestReadonly" })
+          } else {
+            socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.guestReadonly")
+          }
 
           return
         }
@@ -108,13 +167,23 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
           ownerFor(session),
         )
 
-        socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId, updatedAt })
+        if (typeof ack === "function") {
+          ack({ id: newId, updatedAt })
+        } else {
+          socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId, updatedAt })
+        }
+
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to update quizz:", error)
         const message =
           error instanceof Error ? error.message : "errors:quizz.failedToUpdate"
-        socket.emit(EVENTS.QUIZZ.ERROR, message)
+
+        if (typeof ack === "function") {
+          ack({ error: message })
+        } else {
+          socket.emit(EVENTS.QUIZZ.ERROR, message)
+        }
       }
     }),
   )
@@ -170,8 +239,7 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_GENERATE,
-    manager.withAnyAuth(
-      socket,
+    withAIAuth(
       async (
         _session,
         {
@@ -219,7 +287,7 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_REPHRASE,
-    manager.withAnyAuth(socket, async (_session, { currentText }) => {
+    withAIAuth(async (_session, { currentText }) => {
       try {
         const rephrased = await AIService.rephraseQuestion(currentText)
 
@@ -237,53 +305,47 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS,
-    manager.withAnyAuth(
-      socket,
-      async (_session, { correctAnswer, questionContext }) => {
-        try {
-          const wrongAnswers = await AIService.generateWrongAnswers(
-            correctAnswer,
-            questionContext,
-          )
+    withAIAuth(async (_session, { correctAnswer, questionContext }) => {
+      try {
+        const wrongAnswers = await AIService.generateWrongAnswers(
+          correctAnswer,
+          questionContext,
+        )
 
-          socket.emit(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, {
-            wrongAnswers,
-          })
-        } catch (error) {
-          console.error("Failed to generate wrong answers with AI:", error)
-          const message =
-            error instanceof Error
-              ? error.message
-              : "errors:quizz.aiGenerationFailed"
-          socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
-        }
-      },
-    ),
+        socket.emit(EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS, {
+          wrongAnswers,
+        })
+      } catch (error) {
+        console.error("Failed to generate wrong answers with AI:", error)
+        const message =
+          error instanceof Error
+            ? error.message
+            : "errors:quizz.aiGenerationFailed"
+        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+      }
+    }),
   )
 
   socket.on(
     EVENTS.QUIZZ.AI_GENERATE_EXPLANATION,
-    manager.withAnyAuth(
-      socket,
-      async (_session, { question, solutionText }) => {
-        try {
-          const explanation = await AIService.generateExplanation(
-            question,
-            solutionText,
-          )
+    withAIAuth(async (_session, { question, solutionText }) => {
+      try {
+        const explanation = await AIService.generateExplanation(
+          question,
+          solutionText,
+        )
 
-          socket.emit(EVENTS.QUIZZ.AI_GENERATE_EXPLANATION_SUCCESS, {
-            explanation,
-          })
-        } catch (error) {
-          console.error("Failed to generate explanation with AI:", error)
-          const message =
-            error instanceof Error
-              ? error.message
-              : "errors:quizz.aiGenerationFailed"
-          socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
-        }
-      },
-    ),
+        socket.emit(EVENTS.QUIZZ.AI_GENERATE_EXPLANATION_SUCCESS, {
+          explanation,
+        })
+      } catch (error) {
+        console.error("Failed to generate explanation with AI:", error)
+        const message =
+          error instanceof Error
+            ? error.message
+            : "errors:quizz.aiGenerationFailed"
+        socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+      }
+    }),
   )
 }
