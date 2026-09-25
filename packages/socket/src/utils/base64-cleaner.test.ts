@@ -63,6 +63,15 @@ describe("base64-cleaner utility", () => {
     expect(createdFiles.length).toBe(1)
   })
 
+  it("never publishes HTML disguised as an image", async () => {
+    const uploadsDir = path.join(createTempDir(), "uploads")
+    const data = `data:image/html;base64,${Buffer.from("<html>not an image</html>").toString("base64")}`
+    await expect(
+      migrateBase64InObject({ image: data }, uploadsDir),
+    ).rejects.toThrow()
+    expect(fs.readdirSync(uploadsDir)).toEqual([])
+  })
+
   it("migrates base64 images in quiz json files on disk", async () => {
     const configDir = createTempDir()
     const quizzDir = path.join(configDir, "quizz")

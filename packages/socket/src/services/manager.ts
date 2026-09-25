@@ -51,6 +51,19 @@ class Manager {
   // Utilisé hors-socket (endpoints HTTP /upload, médias) : on ne dispose alors
   // que du clientId transmis par le client, qui doit correspondre à une session
   // authentifiée — admin OU invité (les invités uploadent aussi des images).
+  getMediaAccount(clientId: string | undefined) {
+    const session = clientId ? this.loggedClients.get(clientId) : undefined
+
+    return session?.role === "admin" ? "admin" : session?.guestId
+  }
+
+  isAdminAuthorized(clientId: string | undefined) {
+    return (
+      Boolean(clientId) &&
+      this.loggedClients.get(clientId as string)?.role === "admin"
+    )
+  }
+
   isAuthorized(clientId: string | undefined) {
     return Boolean(clientId) && this.loggedClients.has(clientId as string)
   }

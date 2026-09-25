@@ -67,6 +67,14 @@ export class AIService {
     withExplanations: boolean
     instructions?: string
   }): Promise<{ questions: Question[]; description: string }> {
+    if (
+      !Number.isInteger(params.count) ||
+      params.count < 1 ||
+      params.count > 50
+    ) {
+      throw new Error("Le nombre de questions doit être compris entre 1 et 50.")
+    }
+
     const client = this.getClient()
 
     const systemInstruction = buildGenerationPrompt(params)

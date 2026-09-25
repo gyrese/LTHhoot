@@ -41,6 +41,50 @@ writeFileSync(
 )
 
 describe("comptes invités", () => {
+  it("retries a creation without duplicating or overwriting a quiz", async () => {
+    const { default: Config } = await import("@rahoot/socket/services/config")
+    const creationId = "aabbccdd-1234-4567-8910-aabbccddeeff"
+    const original = await Config.saveQuizz(
+      validQuizz("Original"),
+      "audit-retry",
+      creationId,
+    )
+    const retry = await Config.saveQuizz(
+      validQuizz("Changed"),
+      "audit-retry",
+      creationId,
+    )
+    expect(retry.id).toBe(original.id)
+    expect(retry.replayed).toBe(true)
+    expect(Config.quizz("audit-retry")).toHaveLength(1)
+    expect(Config.quizzById(original.id, "audit-retry").subject).toBe(
+      "Original",
+    )
+  })
+
+  it("detects edits after a folder or public metadata change", async () => {
+    const { default: Config } = await import("@rahoot/socket/services/config")
+    const quiz = validQuizz("Concurrent")
+    const saved = await Config.saveQuizz(quiz, "audit-conflict")
+    Config.moveToFolder(saved.id, "Updated", "audit-conflict")
+    await expect(
+      Config.updateQuizz(
+        saved.id,
+        { ...quiz, updatedAt: saved.updatedAt },
+        "audit-conflict",
+      ),
+    ).rejects.toThrow("errors:quizz.conflict")
+    const current = Config.quizzById(saved.id, "audit-conflict")
+    Config.setPublicInfo(
+      saved.id,
+      { publicName: "Changed", description: null },
+      "audit-conflict",
+    )
+    await expect(
+      Config.updateQuizz(saved.id, current, "audit-conflict"),
+    ).rejects.toThrow("errors:quizz.conflict")
+  })
+
   afterAll(() => {
     rmSync(dir, { recursive: true, force: true })
     delete process.env.CONFIG_PATH
