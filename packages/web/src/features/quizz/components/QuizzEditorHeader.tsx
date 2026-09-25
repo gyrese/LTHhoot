@@ -40,6 +40,7 @@ const QuizzEditorHeader = () => {
     isDirty,
     isSaving,
     lastSaved,
+    quizzId,
   } = useQuizzEditor()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -135,7 +136,9 @@ const QuizzEditorHeader = () => {
     }
   }
 
-  let status: SaveStatus = lastSaved ? "saved" : "dirty"
+  // Un quiz déjà présent sur le serveur est enregistré tant qu'on ne l'a pas
+  // modifié ; seul un quiz neuf, jamais sauvegardé, est d'emblée « non enregistré ».
+  let status: SaveStatus = lastSaved || quizzId ? "saved" : "dirty"
 
   if (isSaving) {
     status = "saving"
