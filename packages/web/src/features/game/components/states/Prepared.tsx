@@ -2,6 +2,7 @@ import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import dateImg from "@rahoot/web/assets/game/types/date.png"
 import dropPinImg from "@rahoot/web/assets/game/types/drop_pin.png"
 import gridImg from "@rahoot/web/assets/game/types/grid.png"
+import imageSequenceImg from "@rahoot/web/assets/game/types/image_sequence.png"
 import mcqImg from "@rahoot/web/assets/game/types/mcq.png"
 import openImg from "@rahoot/web/assets/game/types/open.png"
 import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
@@ -18,7 +19,7 @@ type Props = {
 
 const TYPE_ASSETS = new Map<string, string>([
   ["open", openImg],
-  ["image_sequence", openImg],
+  ["image_sequence", imageSequenceImg],
   ["date", dateImg],
   ["slider", sliderImg],
   ["mcq", mcqImg],
