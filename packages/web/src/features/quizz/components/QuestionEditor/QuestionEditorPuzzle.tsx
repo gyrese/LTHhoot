@@ -38,8 +38,9 @@ const QuestionEditorPuzzle = () => {
         </span>
         <button
           type="button"
+          aria-label="Ajouter un élément"
           onClick={addItem}
-          className="focus-ring bg-surface/90 text-ink-muted hover:bg-panel hover:text-ink flex size-7 items-center justify-center rounded-lg shadow-sm backdrop-blur-sm transition-colors active:scale-95"
+          className="focus-ring bg-surface/90 text-ink-muted hover:bg-panel hover:text-ink flex size-9 items-center justify-center rounded-lg shadow-sm backdrop-blur-sm transition-colors active:scale-95"
         >
           <Plus className="size-4" />
         </button>
@@ -58,15 +59,17 @@ const QuestionEditorPuzzle = () => {
             </span>
             <input
               className="flex-1 bg-transparent font-semibold text-white placeholder-white/70 outline-none"
+              aria-label={`${t("quizz:puzzle.itemPlaceholder")} ${i + 1}`}
               placeholder={t("quizz:puzzle.itemPlaceholder")}
               value={item}
               onChange={(e) => updateItem(i, e.target.value)}
             />
             <button
               type="button"
+              aria-label={`Supprimer l’élément ${i + 1}`}
               onClick={() => removeItem(i)}
               disabled={q.items.length <= 2}
-              className="flex size-6 items-center justify-center rounded-full border-2 border-white/60 text-white/80 hover:border-white disabled:opacity-30"
+              className="flex size-9 items-center justify-center rounded-full border-2 border-white/60 text-white/80 hover:border-white disabled:opacity-30"
             >
               <Minus className="size-3" />
             </button>

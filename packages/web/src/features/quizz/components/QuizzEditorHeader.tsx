@@ -25,8 +25,9 @@ type SaveStatus = "saving" | "dirty" | "saved"
 
 const QuizzEditorHeader = () => {
   const {
-    quizzId,
     subject,
+    publicName,
+    podiumTheme,
     description,
     folder,
     tags,
@@ -113,6 +114,8 @@ const QuizzEditorHeader = () => {
     try {
       const payload = {
         subject,
+        publicName,
+        podiumTheme,
         description: description || undefined,
         folder: folder || undefined,
         tags: tags.length ? tags : undefined,
@@ -132,7 +135,7 @@ const QuizzEditorHeader = () => {
     }
   }
 
-  let status: SaveStatus = "saved"
+  let status: SaveStatus = lastSaved ? "saved" : "dirty"
 
   if (isSaving) {
     status = "saving"
@@ -157,28 +160,12 @@ const QuizzEditorHeader = () => {
 
   return (
     <>
-      <header className="border-border bg-surface relative z-40 flex h-13 items-center gap-3 border-b px-4">
+      <header className="border-border bg-surface relative z-40 flex min-h-13 flex-wrap items-center gap-2 border-b px-3 py-2 md:flex-nowrap md:gap-3 md:px-4">
         {/* Gauche : logo + titre + autosave (tronqué sur petits écrans) */}
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex min-w-0 basis-full items-center gap-3 md:flex-1 md:basis-auto">
           <button
             type="button"
-            onClick={() => {
-              if (isDirty) {
-                if (
-                  // eslint-disable-next-line no-alert
-                  confirm(
-                    t(
-                      "common:unsavedChangesConfirm",
-                      "Attention : vous avez des modifications non enregistrées. Voulez-vous vraiment quitter sans sauvegarder ?",
-                    ),
-                  )
-                ) {
-                  navigate({ to: "/manager" })
-                }
-              } else {
-                navigate({ to: "/manager" })
-              }
-            }}
+            onClick={() => navigate({ to: "/manager" })}
             className="focus-ring shrink-0 rounded-lg transition-transform active:scale-95"
             title={t("common:backToManager", "Retour au manager")}
           >
@@ -198,10 +185,12 @@ const QuizzEditorHeader = () => {
             <Settings className="text-ink-subtle group-hover:text-ink-muted size-4 shrink-0 transition-colors" />
           </button>
 
-          {lastSaved && (
+          {
             <div
               className="flex shrink-0 items-center gap-2 text-xs"
               title={statusLabel[status]}
+              role="status"
+              aria-label={statusLabel[status]}
             >
               <span
                 className={clsx(
@@ -225,12 +214,12 @@ const QuizzEditorHeader = () => {
                       : { opacity: 0, filter: "blur(2px)" }
                   }
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                  className="hidden items-baseline gap-1.5 whitespace-nowrap 2xl:flex"
+                  className="hidden items-baseline gap-1.5 whitespace-nowrap lg:flex"
                 >
                   <span className="text-ink-muted font-semibold">
                     {statusLabel[status]}
                   </span>
-                  {status === "saved" && (
+                  {status === "saved" && lastSaved && (
                     <span className="text-ink-subtle">
                       ·{" "}
                       {lastSaved.toLocaleTimeString(i18n.language, {
@@ -242,7 +231,7 @@ const QuizzEditorHeader = () => {
                 </motion.div>
               </AnimatePresence>
             </div>
-          )}
+          }
         </div>
 
         {/* Droite : actions */}
@@ -266,6 +255,7 @@ const QuizzEditorHeader = () => {
             variant="ghost"
             size="sm"
             className="text-ink-muted h-8 gap-2"
+            aria-label="Générer par IA"
             onClick={() => setShowAIGenerator(true)}
           >
             <Sparkles className="text-primary size-4 animate-pulse" />
@@ -275,16 +265,9 @@ const QuizzEditorHeader = () => {
             variant="ghost"
             size="sm"
             className="text-ink-muted h-8 gap-2"
-            disabled={!quizzId || questions.length === 0 || isTestDriving}
-            onClick={() => startTestDrive(currentIndex)}
-            title={
-              !quizzId
-                ? t(
-                    "quizz:testDriveNeedsSave",
-                    "Sauvegardez le quiz avant de le tester",
-                  )
-                : undefined
-            }
+            disabled={questions.length === 0 || isTestDriving || isSaving}
+            aria-label={t("quizz:testDrive", "Tester")}
+            onClick={() => void startTestDrive(currentIndex)}
           >
             <PlayCircle className="size-4" />
             <span className="hidden md:inline">
@@ -295,6 +278,7 @@ const QuizzEditorHeader = () => {
             variant="ghost"
             size="sm"
             className="text-ink-muted h-8 gap-2"
+            aria-label={t("quizz:importCsv", "Importer")}
             onClick={() => csvInputRef.current?.click()}
           >
             <Upload className="size-4" />
@@ -306,6 +290,7 @@ const QuizzEditorHeader = () => {
             variant="secondary"
             size="sm"
             className="h-8"
+            aria-label={t("common:export")}
             onClick={handleExport}
           >
             <Download className="size-4" />
@@ -315,7 +300,8 @@ const QuizzEditorHeader = () => {
             variant="primary"
             size="sm"
             className="h-8 px-5"
-            onClick={() => saveQuizz({ navigate: true })}
+            disabled={isSaving}
+            onClick={() => void saveQuizz()}
           >
             {t("common:save")}
           </Button>

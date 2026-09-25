@@ -8,7 +8,7 @@ import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
 import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import PreviewPresenterView from "@rahoot/web/features/quizz/components/SlideEditor/PreviewPresenterView"
+import LazySlidePreview from "@rahoot/web/features/quizz/components/LazySlidePreview"
 import clsx from "clsx"
 import {
   Presentation,
@@ -112,16 +112,12 @@ const QuizzEditorCard = ({
           )}
         </div>
 
-        <PreviewPresenterView
-          question={question}
-          className="rounded-none shadow-none"
-          hideYoutube
-        />
+        <LazySlidePreview question={question} />
 
         {validationErrors.length > 0 && (
           <div
             className="bg-danger absolute bottom-1 left-1 z-10 flex h-4.5 w-4.5 cursor-help items-center justify-center rounded text-white shadow-sm"
-            title={validationErrors.join("\n")}
+            title={validationErrors.map((error) => t(error, error)).join("\n")}
           >
             <AlertTriangle className="size-3 animate-pulse" />
           </div>

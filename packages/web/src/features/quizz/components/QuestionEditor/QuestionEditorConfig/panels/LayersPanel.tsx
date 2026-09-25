@@ -98,6 +98,19 @@ const LayersPanel = () => {
         return (
           <div
             key={el.id}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isSelected}
+            aria-label={el.name || el.type}
+            onKeyDown={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                (event.key === "Enter" || event.key === " ")
+              ) {
+                event.preventDefault()
+                setSelectedId(el.id)
+              }
+            }}
             onClick={() => setSelectedId(el.id)}
             className={clsx(
               "ease-out-soft flex cursor-pointer items-center justify-between rounded-lg border p-2 text-[11px] transition-all duration-150",

@@ -1,3 +1,4 @@
+import EditorDialog from "./EditorDialog"
 import { PODIUM_THEMES } from "@rahoot/common/constants"
 import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { PODIUM_THEME_TOKENS } from "@rahoot/web/features/game/components/states/podium/themes"
@@ -200,428 +201,436 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   }
 
   return (
-    <div className="bg-surface text-ink fixed inset-0 z-50 flex flex-col">
-      {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-6 py-4">
-        <h1 className="text-ink text-lg font-bold">
-          {t("quizz:settings.title")}
-        </h1>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="focus-ring border-border text-ink-muted hover:bg-panel rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
-          >
-            {t("common:cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={handleDone}
-            disabled={!localSubject.trim()}
-            className="focus-ring bg-primary text-secondary rounded-lg px-4 py-2 text-sm font-semibold transition-transform hover:brightness-[0.97] active:scale-[0.98] disabled:opacity-40"
-          >
-            {t("common:done")}
-          </button>
+    <EditorDialog
+      label={t("quizz:settings.title")}
+      onClose={handleCancel}
+      fullscreen
+    >
+      <div className="bg-surface text-ink flex min-h-full flex-col">
+        {/* Header */}
+        <div className="border-border flex items-center justify-between border-b px-6 py-4">
+          <h1 className="text-ink text-lg font-bold">
+            {t("quizz:settings.title")}
+          </h1>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="focus-ring border-border text-ink-muted hover:bg-panel rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
+            >
+              {t("common:cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={handleDone}
+              disabled={!localSubject.trim()}
+              className="focus-ring bg-primary text-secondary rounded-lg px-4 py-2 text-sm font-semibold transition-transform hover:brightness-[0.97] active:scale-[0.98] disabled:opacity-40"
+            >
+              {t("common:done")}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="border-border w-52 border-r p-4">
-          <button
-            type="button"
-            className="bg-primary-soft text-primary-ink w-full rounded-lg px-3 py-2 text-left text-sm font-semibold"
-          >
-            {t("quizz:settings.generalInfo")}
-          </button>
-        </aside>
+        {/* Body */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar */}
+          <aside className="border-border hidden w-52 shrink-0 border-r p-4 lg:block">
+            <button
+              type="button"
+              className="bg-primary-soft text-primary-ink w-full rounded-lg px-3 py-2 text-left text-sm font-semibold"
+            >
+              {t("quizz:settings.generalInfo")}
+            </button>
+          </aside>
 
-        {/* Main content */}
-        <main className="flex flex-1 gap-10 overflow-y-auto px-10 py-8">
-          {/* Left column */}
-          <div className="flex max-w-xl flex-1 flex-col gap-6">
-            {/* Titre */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.titleLabel")}
-              </label>
-              <p className="text-ink-subtle mb-2 text-xs">
-                {t("quizz:settings.titleHint")}
-              </p>
-              <div className="relative">
-                <input
-                  value={localSubject}
-                  onChange={(e) => setLocalSubject(e.target.value)}
-                  maxLength={90}
-                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
-                  placeholder={t("quizz:titleQuizzPlaceholder")}
-                />
-                <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
-                  {localSubject.length}/90
-                </span>
-              </div>
-            </div>
-
-            {/* Nom public — affiché aux joueurs à la place du titre interne */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.publicNameLabel")}{" "}
-                <span className="text-ink-subtle font-normal">
-                  ({t("common:optional")})
-                </span>
-              </label>
-              <p className="text-ink-subtle mb-2 text-xs">
-                {t("quizz:settings.publicNameHint")}
-              </p>
-              <div className="relative">
-                <input
-                  value={localPublicName}
-                  onChange={(e) => setLocalPublicName(e.target.value)}
-                  maxLength={90}
-                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
-                  placeholder={localSubject || t("quizz:titleQuizzPlaceholder")}
-                />
-                <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
-                  {localPublicName.length}/90
-                </span>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.descriptionLabel")}{" "}
-                <span className="text-ink-subtle font-normal">
-                  ({t("common:optional")})
-                </span>
-              </label>
-              <p className="text-ink-subtle mb-2 text-xs">
-                {t("quizz:settings.descriptionHint")}
-              </p>
-              <div className="relative">
-                <textarea
-                  value={localDescription}
-                  onChange={(e) => setLocalDescription(e.target.value)}
-                  maxLength={500}
-                  rows={4}
-                  className="border-border focus:border-primary w-full resize-none rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
-                  placeholder={t("quizz:settings.descriptionPlaceholder")}
-                />
-                <span className="text-ink-subtle absolute right-3 bottom-3 text-xs">
-                  {localDescription.length}/500
-                </span>
-              </div>
-            </div>
-
-            {/* Dossier */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.folderLabel")}
-              </label>
-              <input
-                type="text"
-                value={localFolder}
-                onChange={(e) => setLocalFolder(e.target.value)}
-                className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 text-sm outline-none"
-                placeholder={t("quizz:folderPlaceholder")}
-              />
-            </div>
-
-            {/* Tags */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.tagsLabel")}
-              </label>
-              <div className="border-border focus-within:border-primary flex flex-wrap items-center gap-1.5 rounded-lg border px-3 py-2">
-                {localTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-primary-soft text-primary-ink flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      className="text-primary-ink/60 hover:text-danger"
-                      onClick={() =>
-                        setLocalTags(localTags.filter((t) => t !== tag))
-                      }
-                    >
-                      <X className="size-3" />
-                    </button>
+          {/* Main content */}
+          <main className="flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-5 md:flex-row md:px-8">
+            {/* Left column */}
+            <div className="flex max-w-xl flex-1 flex-col gap-6">
+              {/* Titre */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.titleLabel")}
+                </label>
+                <p className="text-ink-subtle mb-2 text-xs">
+                  {t("quizz:settings.titleHint")}
+                </p>
+                <div className="relative">
+                  <input
+                    value={localSubject}
+                    onChange={(e) => setLocalSubject(e.target.value)}
+                    maxLength={90}
+                    className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
+                    placeholder={t("quizz:titleQuizzPlaceholder")}
+                  />
+                  <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    {localSubject.length}/90
                   </span>
-                ))}
+                </div>
+              </div>
+
+              {/* Nom public — affiché aux joueurs à la place du titre interne */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.publicNameLabel")}{" "}
+                  <span className="text-ink-subtle font-normal">
+                    ({t("common:optional")})
+                  </span>
+                </label>
+                <p className="text-ink-subtle mb-2 text-xs">
+                  {t("quizz:settings.publicNameHint")}
+                </p>
+                <div className="relative">
+                  <input
+                    value={localPublicName}
+                    onChange={(e) => setLocalPublicName(e.target.value)}
+                    maxLength={90}
+                    className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
+                    placeholder={
+                      localSubject || t("quizz:titleQuizzPlaceholder")
+                    }
+                  />
+                  <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    {localPublicName.length}/90
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.descriptionLabel")}{" "}
+                  <span className="text-ink-subtle font-normal">
+                    ({t("common:optional")})
+                  </span>
+                </label>
+                <p className="text-ink-subtle mb-2 text-xs">
+                  {t("quizz:settings.descriptionHint")}
+                </p>
+                <div className="relative">
+                  <textarea
+                    value={localDescription}
+                    onChange={(e) => setLocalDescription(e.target.value)}
+                    maxLength={500}
+                    rows={4}
+                    className="border-border focus:border-primary w-full resize-none rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
+                    placeholder={t("quizz:settings.descriptionPlaceholder")}
+                  />
+                  <span className="text-ink-subtle absolute right-3 bottom-3 text-xs">
+                    {localDescription.length}/500
+                  </span>
+                </div>
+              </div>
+
+              {/* Dossier */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.folderLabel")}
+                </label>
                 <input
                   type="text"
-                  className="min-w-24 flex-1 bg-transparent text-sm outline-none"
-                  placeholder={t("quizz:tagsPlaceholder")}
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagKeyDown}
+                  value={localFolder}
+                  onChange={(e) => setLocalFolder(e.target.value)}
+                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 text-sm outline-none"
+                  placeholder={t("quizz:folderPlaceholder")}
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Right column */}
-          <div className="flex w-72 flex-col gap-6">
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.coverImageLabel")}
-              </label>
-              <p className="text-ink-subtle mb-3 text-xs">
-                {t("quizz:settings.coverImageHint")}
-              </p>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-
-                  if (file) {
-                    void handleImageUpload(file)
-                  }
-
-                  e.target.value = ""
-                }}
-              />
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || generating}
-                  className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
-                >
-                  <Upload className="size-5" />
-                  <span className="text-xs">
-                    {uploading ? "…" : t("quizz:settings.upload")}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleAiGenerate(
-                      localSubject,
-                      setLocalImage,
-                      setGenerating,
-                    )
-                  }
-                  disabled={!localSubject.trim() || generating || uploading}
-                  title={t("quizz:settings.aiGenerateTooltip")}
-                  className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
-                >
-                  <Sparkles className="size-5" />
-                  <span className="text-xs font-medium">
-                    {generating ? "…" : t("quizz:settings.aiGenerate")}
-                  </span>
-                </button>
-
-                {localImage && (
-                  <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
-                    <img
-                      src={localImage}
-                      alt="cover"
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setLocalImage(undefined)}
-                      className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+              {/* Tags */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.tagsLabel")}
+                </label>
+                <div className="border-border focus-within:border-primary flex flex-wrap items-center gap-1.5 rounded-lg border px-3 py-2">
+                  {localTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-primary-soft text-primary-ink flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
                     >
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                )}
+                      {tag}
+                      <button
+                        type="button"
+                        className="text-primary-ink/60 hover:text-danger"
+                        onClick={() =>
+                          setLocalTags(localTags.filter((t) => t !== tag))
+                        }
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    className="min-w-24 flex-1 bg-transparent text-sm outline-none"
+                    placeholder={t("quizz:tagsPlaceholder")}
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Salon image */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                Image du salon{" "}
-                <span className="text-ink-subtle font-normal">
-                  ({t("common:optional")})
-                </span>
-              </label>
-              <p className="text-ink-subtle mb-3 text-xs">
-                Affichée en arrière-plan sur l'écran d'attente des joueurs.
-              </p>
+            {/* Right column */}
+            <div className="flex w-full flex-col gap-6 md:w-64 md:shrink-0">
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.coverImageLabel")}
+                </label>
+                <p className="text-ink-subtle mb-3 text-xs">
+                  {t("quizz:settings.coverImageHint")}
+                </p>
 
-              <input
-                ref={salonFileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
 
-                  if (file) {
-                    void handleSalonImageUpload(file)
-                  }
+                    if (file) {
+                      void handleImageUpload(file)
+                    }
 
-                  e.target.value = ""
-                }}
-              />
+                    e.target.value = ""
+                  }}
+                />
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => salonFileInputRef.current?.click()}
-                  disabled={uploadingSalon || generatingSalon}
-                  className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
-                >
-                  <Upload className="size-5" />
-                  <span className="text-xs">
-                    {uploadingSalon ? "…" : t("quizz:settings.upload")}
-                  </span>
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || generating}
+                    className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
+                  >
+                    <Upload className="size-5" />
+                    <span className="text-xs">
+                      {uploading ? "…" : t("quizz:settings.upload")}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleAiGenerate(
-                      localSubject,
-                      setLocalSalonImage,
-                      setGeneratingSalon,
-                    )
-                  }
-                  disabled={
-                    !localSubject.trim() || generatingSalon || uploadingSalon
-                  }
-                  title={t("quizz:settings.aiGenerateTooltip")}
-                  className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
-                >
-                  <Sparkles className="size-5" />
-                  <span className="text-xs font-medium">
-                    {generatingSalon ? "…" : t("quizz:settings.aiGenerate")}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleAiGenerate(
+                        localSubject,
+                        setLocalImage,
+                        setGenerating,
+                      )
+                    }
+                    disabled={!localSubject.trim() || generating || uploading}
+                    title={t("quizz:settings.aiGenerateTooltip")}
+                    className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
+                  >
+                    <Sparkles className="size-5" />
+                    <span className="text-xs font-medium">
+                      {generating ? "…" : t("quizz:settings.aiGenerate")}
+                    </span>
+                  </button>
 
-                {localSalonImage && (
-                  <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
-                    <img
-                      src={localSalonImage}
-                      alt="salon"
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setLocalSalonImage(undefined)}
-                      className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Thème du podium */}
-            <div>
-              <label className="text-ink mb-1 block text-sm font-bold">
-                {t("quizz:settings.podiumThemeLabel")}
-              </label>
-              <p className="text-ink-subtle mb-3 text-xs">
-                {t("quizz:settings.podiumThemeHint")}
-              </p>
-
-              <div className="grid grid-cols-3 gap-2">
-                {/* Neutre (défaut) — aperçu sur la couverture du quiz */}
-                <button
-                  type="button"
-                  onClick={() => setLocalPodiumTheme("neutre")}
-                  className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
-                    localPodiumTheme === "neutre"
-                      ? "border-primary"
-                      : "border-border hover:border-border-strong"
-                  }`}
-                >
-                  {localImage || localSalonImage ? (
-                    <img
-                      src={localImage || localSalonImage}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover blur-[2px]"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "radial-gradient(ellipse at 50% 30%, #26262c 0%, #131317 100%)",
-                      }}
-                    />
+                  {localImage && (
+                    <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
+                      <img
+                        src={localImage}
+                        alt="cover"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setLocalImage(undefined)}
+                        className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
                   )}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-                  <Trophy className="absolute top-2 left-1/2 size-4 -translate-x-1/2 text-[#f5d67a]" />
-                  <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
-                    {t("quizz:settings.podiumThemes.neutre")}
+                </div>
+              </div>
+
+              {/* Salon image */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  Image du salon{" "}
+                  <span className="text-ink-subtle font-normal">
+                    ({t("common:optional")})
                   </span>
-                </button>
+                </label>
+                <p className="text-ink-subtle mb-3 text-xs">
+                  Affichée en arrière-plan sur l'écran d'attente des joueurs.
+                </p>
 
-                {/* Aléatoire — tire un univers au sort à chaque partie */}
-                <button
-                  type="button"
-                  onClick={() => setLocalPodiumTheme("random")}
-                  className={`bg-panel flex h-16 flex-col items-center justify-center gap-1 rounded-lg border-2 transition-colors ${
-                    localPodiumTheme === "random"
-                      ? "border-primary"
-                      : "border-border hover:border-border-strong"
-                  }`}
-                >
-                  <Dices className="text-ink-muted size-5" />
-                  <span className="text-ink text-[11px] font-semibold">
-                    {t("quizz:settings.podiumThemes.random")}
-                  </span>
-                </button>
+                <input
+                  ref={salonFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
 
-                {PODIUM_THEMES.map((themeId) => {
-                  const tokens = PODIUM_THEME_TOKENS[themeId]
+                    if (file) {
+                      void handleSalonImageUpload(file)
+                    }
 
-                  return (
-                    <button
-                      key={themeId}
-                      type="button"
-                      onClick={() => setLocalPodiumTheme(themeId)}
-                      className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
-                        localPodiumTheme === themeId
-                          ? "border-primary"
-                          : "border-border hover:border-border-strong"
-                      }`}
-                    >
-                      {/* Dégradé toujours présent en base, image en CSS
+                    e.target.value = ""
+                  }}
+                />
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => salonFileInputRef.current?.click()}
+                    disabled={uploadingSalon || generatingSalon}
+                    className="border-border-strong text-ink-subtle hover:border-primary hover:text-primary-ink flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
+                  >
+                    <Upload className="size-5" />
+                    <span className="text-xs">
+                      {uploadingSalon ? "…" : t("quizz:settings.upload")}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleAiGenerate(
+                        localSubject,
+                        setLocalSalonImage,
+                        setGeneratingSalon,
+                      )
+                    }
+                    disabled={
+                      !localSubject.trim() || generatingSalon || uploadingSalon
+                    }
+                    title={t("quizz:settings.aiGenerateTooltip")}
+                    className="border-primary/40 text-primary-ink hover:border-primary hover:bg-primary-soft flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed disabled:opacity-50"
+                  >
+                    <Sparkles className="size-5" />
+                    <span className="text-xs font-medium">
+                      {generatingSalon ? "…" : t("quizz:settings.aiGenerate")}
+                    </span>
+                  </button>
+
+                  {localSalonImage && (
+                    <div className="border-border relative h-24 w-36 overflow-hidden rounded-lg border">
+                      <img
+                        src={localSalonImage}
+                        alt="salon"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setLocalSalonImage(undefined)}
+                        className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Thème du podium */}
+              <div>
+                <label className="text-ink mb-1 block text-sm font-bold">
+                  {t("quizz:settings.podiumThemeLabel")}
+                </label>
+                <p className="text-ink-subtle mb-3 text-xs">
+                  {t("quizz:settings.podiumThemeHint")}
+                </p>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Neutre (défaut) — aperçu sur la couverture du quiz */}
+                  <button
+                    type="button"
+                    onClick={() => setLocalPodiumTheme("neutre")}
+                    className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
+                      localPodiumTheme === "neutre"
+                        ? "border-primary"
+                        : "border-border hover:border-border-strong"
+                    }`}
+                  >
+                    {localImage || localSalonImage ? (
+                      <img
+                        src={localImage || localSalonImage}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover blur-[2px]"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            "radial-gradient(ellipse at 50% 30%, #26262c 0%, #131317 100%)",
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                    <Trophy className="absolute top-2 left-1/2 size-4 -translate-x-1/2 text-[#f5d67a]" />
+                    <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
+                      {t("quizz:settings.podiumThemes.neutre")}
+                    </span>
+                  </button>
+
+                  {/* Aléatoire — tire un univers au sort à chaque partie */}
+                  <button
+                    type="button"
+                    onClick={() => setLocalPodiumTheme("random")}
+                    className={`bg-panel flex h-16 flex-col items-center justify-center gap-1 rounded-lg border-2 transition-colors ${
+                      localPodiumTheme === "random"
+                        ? "border-primary"
+                        : "border-border hover:border-border-strong"
+                    }`}
+                  >
+                    <Dices className="text-ink-muted size-5" />
+                    <span className="text-ink text-[11px] font-semibold">
+                      {t("quizz:settings.podiumThemes.random")}
+                    </span>
+                  </button>
+
+                  {PODIUM_THEMES.map((themeId) => {
+                    const tokens = PODIUM_THEME_TOKENS[themeId]
+
+                    return (
+                      <button
+                        key={themeId}
+                        type="button"
+                        onClick={() => setLocalPodiumTheme(themeId)}
+                        className={`relative h-16 overflow-hidden rounded-lg border-2 transition-colors ${
+                          localPodiumTheme === themeId
+                            ? "border-primary"
+                            : "border-border hover:border-border-strong"
+                        }`}
+                      >
+                        {/* Dégradé toujours présent en base, image en CSS
                           background par-dessus si elle existe : un fichier
                           manquant ne casse jamais l'aperçu (pas d'icône
                           "image brisée"). */}
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: tokens.baseGradient }}
-                      />
-                      {tokens.bgImage && (
                         <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{
-                            backgroundImage: `url(${tokens.bgImage})`,
-                          }}
+                          className="absolute inset-0"
+                          style={{ background: tokens.baseGradient }}
                         />
-                      )}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-                      <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
-                        {t(`quizz:settings.podiumThemes.${themeId}`)}
-                      </span>
-                    </button>
-                  )
-                })}
+                        {tokens.bgImage && (
+                          <div
+                            className="absolute inset-0 bg-cover bg-center"
+                            style={{
+                              backgroundImage: `url(${tokens.bgImage})`,
+                            }}
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                        <span className="absolute inset-x-1 bottom-1 truncate text-center text-[11px] font-semibold text-white">
+                          {t(`quizz:settings.podiumThemes.${themeId}`)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </EditorDialog>
   )
 }
 

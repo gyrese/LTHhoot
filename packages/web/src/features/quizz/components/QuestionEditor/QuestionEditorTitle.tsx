@@ -19,7 +19,9 @@ const QuestionEditorTitle = () => {
   // Slide capturé À L'ENVOI (index + id) : la réponse IA arrive 1-3 s plus
   // tard, et l'utilisateur peut avoir changé de slide entre-temps — appliquer
   // au `currentIndex` de réception écraserait la mauvaise question.
-  const pendingRef = useRef<{ index: number; id: string } | null>(null)
+  const pendingRef = useRef<{ index: number; id: string; text: string } | null>(
+    null,
+  )
 
   const handleChangeQuestion = (e: ChangeEvent<HTMLTextAreaElement>) => {
     updateQuestion(currentIndex, { question: e.target.value })
@@ -30,7 +32,11 @@ const QuestionEditorTitle = () => {
       return
     }
 
-    pendingRef.current = { index: currentIndex, id: currentQuestion.id }
+    pendingRef.current = {
+      index: currentIndex,
+      id: currentQuestion.id,
+      text: currentQuestion.question,
+    }
     setIsRephrasing(true)
     socket.emit(EVENTS.QUIZZ.AI_REPHRASE, {
       currentText: currentQuestion.question,
@@ -49,8 +55,9 @@ const QuestionEditorTitle = () => {
 
     // On n'applique que si le slide d'origine est toujours à cet index
     // (réordonnancement/suppression pendant la requête → on abandonne).
-    if (questions[request.index]?.id === request.id) {
-      updateQuestion(request.index, { question: rephrased })
+    const index = questions.findIndex((q) => q.id === request.id)
+    if (index >= 0 && questions[index].question === request.text) {
+      updateQuestion(index, { question: rephrased })
     }
   })
 

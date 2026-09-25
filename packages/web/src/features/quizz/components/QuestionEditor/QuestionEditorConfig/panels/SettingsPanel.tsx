@@ -62,6 +62,7 @@ const SettingsPanel = () => {
           <ConfigNumberInput
             value={currentQuestion.cooldown}
             min={3}
+            max={isSlide ? 120 : 15}
             onChange={(val) => {
               handleUpdateQuestion("cooldown")(val)
             }}
@@ -84,6 +85,7 @@ const SettingsPanel = () => {
             <ConfigNumberInput
               value={currentQuestion.time}
               min={5}
+              max={600}
               onChange={handleUpdateQuestion("time")}
             />
             <ConfigField.Description>

@@ -320,14 +320,15 @@ const MediaSearchModal = ({
       })
 
       if (!res.ok) {
-        throw new Error("Échec de la suppression")
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Échec de la suppression")
       }
 
       setLibraryItems((prev) => prev.filter((i) => i.id !== item.id))
       toast.success("Média supprimé")
     } catch (err) {
       console.error(err)
-      toast.error("Impossible de supprimer le média")
+      toast.error(err instanceof Error ? err.message : "Suppression impossible")
     }
   }
 

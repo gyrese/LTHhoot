@@ -270,7 +270,11 @@ const SlideEditor = ({
         tag === "textarea" ||
         target?.isContentEditable === true
 
-      if (inTextField) {
+      if (
+        e.defaultPrevented ||
+        inTextField ||
+        document.querySelector("[aria-modal=true], dialog[open]")
+      ) {
         return
       }
 
