@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import react from "@vitejs/plugin-react"
@@ -17,6 +18,9 @@ export default defineConfig({
       routeToken: "layout",
       routesDirectory: "./src/pages",
       generatedRouteTree: "./src/route.gen.ts",
+      // Découpe chaque route en chunk chargé à la demande : la page joueur ne
+      // télécharge plus l'éditeur (Konva, dnd…) ni le dashboard manager.
+      autoCodeSplitting: true,
     }),
     react(),
     tailwindcss(),
@@ -87,6 +91,51 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 2000,
+    // Seuil par défaut de Vite : le découpage par route + vendors ci-dessous
+    // garde chaque chunk sous 500 kB, un dépassement signale une régression.
+    chunkSizeWarningLimit: 500,
+    rolldownOptions: {
+      output: {
+        // Vendors isolés dans des chunks stables (cache navigateur conservé
+        // d'un déploiement à l'autre) et, pour Konva/pptxgenjs, chargés
+        // uniquement par les routes qui en ont besoin (éditeur, jeu).
+        codeSplitting: {
+          groups: [
+            {
+              name: "vendor-react",
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/u,
+              priority: 30,
+            },
+            {
+              name: "vendor-konva",
+              test: /[\\/]node_modules[\\/](konva|react-konva|react-reconciler|use-image)[\\/]/u,
+              priority: 20,
+            },
+            {
+              name: "vendor-router",
+              test: /[\\/]node_modules[\\/]@tanstack[\\/]/u,
+              priority: 10,
+            },
+            {
+              name: "vendor-i18n",
+              test: /[\\/]node_modules[\\/](i18next|react-i18next|i18next-browser-languagedetector)[\\/]/u,
+              priority: 10,
+            },
+            {
+              name: "vendor-socket",
+              test: /[\\/]node_modules[\\/](socket\.io-client|engine\.io-client|engine\.io-parser|socket\.io-parser|@socket\.io)[\\/]/u,
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
+  },
+  test: {
+    // Tests unitaires front (Vitest) : DOM simulé par jsdom, nettoyage du
+    // rendu Testing Library entre chaque test (cf. src/test/setup.ts).
+    environment: "jsdom",
+    include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: ["./src/test/setup.ts"],
   },
 })

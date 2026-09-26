@@ -9,7 +9,8 @@
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "lint": "pnpm -r --parallel run lint",
     "format": "pnpm -r --parallel run format",
-    "format:fix": "pnpm -r --parallel run format:fix"
+    "format:fix": "pnpm -r --parallel run format:fix",
+    "i18n:check": "node scripts/check-i18n.mjs"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",

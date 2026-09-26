@@ -33,11 +33,17 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Parité des traductions : toute clé ajoutée en français doit exister
+      # dans les autres langues (en, de, es, it).
+      - name: i18n
+        run: pnpm i18n:check
+
       - name: Build
         run: pnpm build
 
+      # Suites Vitest de tous les paquets : socket (serveur) et web (front).
       - name: Test
-        run: pnpm --filter socket test
+        run: pnpm -r test
 
   e2e:
     name: E2E (crash-recovery, self-hosted)
