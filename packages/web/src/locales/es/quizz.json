@@ -64,7 +64,9 @@
     "mediaUrlPlaceholder": "Introduce la URL...",
     "placeholder": "Empieza a escribir tu pregunta...",
     "aiRephrase": "Reformular con IA",
-    "aiSuggestWrongAnswers": "Generar respuestas incorrectas con IA"
+    "aiSuggestWrongAnswers": "Generar respuestas incorrectas con IA",
+    "aiGenerateExplanation": "Generar con IA",
+    "aiGenerateExplanationTooltip": "Generar una explicación automática a partir de la pregunta y la respuesta"
   },
   "testDrive": "Probar",
   "testDriveNeedsSave": "Guarda el cuestionario antes de probarlo",
@@ -184,5 +186,6 @@
   "tolerance": "Tolerancia",
   "toleranceYears": "años",
   "trueFalseFalse": "Falso",
-  "trueFalseTrue": "Verdadero"
+  "trueFalseTrue": "Verdadero",
+  "quizzExported": "Cuestionario exportado correctamente"
 }

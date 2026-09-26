@@ -186,5 +186,6 @@
   "tolerance": "Tolerance",
   "toleranceYears": "years",
   "trueFalseFalse": "False",
-  "trueFalseTrue": "True"
+  "trueFalseTrue": "True",
+  "quizzExported": "Quiz exported successfully"
 }

@@ -64,7 +64,9 @@
     "mediaUrlPlaceholder": "URL eingeben...",
     "placeholder": "Beginne deine Frage zu tippen...",
     "aiRephrase": "Mit KI umformulieren",
-    "aiSuggestWrongAnswers": "Falsche Antworten mit KI generieren"
+    "aiSuggestWrongAnswers": "Falsche Antworten mit KI generieren",
+    "aiGenerateExplanation": "Mit KI generieren",
+    "aiGenerateExplanationTooltip": "Automatisch eine Erklärung aus Frage und Antwort generieren"
   },
   "testDrive": "Testen",
   "testDriveNeedsSave": "Speichere das Quiz, bevor du es testest",
@@ -184,5 +186,6 @@
   "tolerance": "Toleranz",
   "toleranceYears": "Jahre",
   "trueFalseFalse": "Falsch",
-  "trueFalseTrue": "Wahr"
+  "trueFalseTrue": "Wahr",
+  "quizzExported": "Quiz erfolgreich exportiert"
 }
