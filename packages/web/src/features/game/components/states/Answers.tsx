@@ -24,6 +24,7 @@ import {
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import {
   HAPTIC_PATTERNS,
@@ -42,6 +43,14 @@ import ImageSequenceReveal from "@rahoot/web/features/game/components/states/Ima
 
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
+
+// Géométrie du timer circulaire de l'écran principal (viewBox 100×100).
+const TIMER_RADIUS = 44
+const TIMER_CIRCUMFERENCE = 2 * Math.PI * TIMER_RADIUS
+// Secondes restantes annoncées aux lecteurs d'écran.
+const ANNOUNCED_SECONDS = [10, 5]
+// Durée du gel appliqué aux adversaires (cf. power-up FREEZE).
+const FREEZE_DURATION_MS = 3000
 
 type Props = {
   data: CommonStatusDataMap["SELECT_ANSWER"]
@@ -123,8 +132,9 @@ const Answers = ({
     undefined,
   )
 
-  const { isHost } = useGameConfig()
+  const { isHost, isFreezeRound } = useGameConfig()
   const isPlayer = !isHost
+  const muted = useSoundStore((state) => state.muted)
   const eventMeta = roundEvent ? ROUND_EVENT_META[roundEvent] : null
 
   useEffect(() => {
@@ -134,7 +144,7 @@ const Answers = ({
       setIsFreezeBlocked(true)
       timer = setTimeout(() => {
         setIsFreezeBlocked(false)
-      }, 3000)
+      }, FREEZE_DURATION_MS)
     } else {
       setIsFreezeBlocked(false)
     }
@@ -171,7 +181,32 @@ const Answers = ({
     }
   }, [isScrambled, isPlayer, question, type])
 
-  const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.1 })
+  const [sfxPop] = useSound(SFX.ANSWERS.SOUND, {
+    volume: 0.1,
+    soundEnabled: !muted,
+  })
+
+  // Musique d'ambiance de la phase de réponses, jouée sur l'écran principal
+  // uniquement. Pas de musique par-dessus un son ou une vidéo propre à la
+  // question, pour ne pas couvrir le média.
+  const hasOwnMedia =
+    Boolean(audio) || Boolean(elements?.some((el) => el.type === "youtube"))
+  const [, { sound: musicSound }] = useSound(SFX.ANSWERS.MUSIC, {
+    volume: 0.2,
+    loop: true,
+  })
+
+  useEffect(() => {
+    if (!musicSound || !isHost || hasOwnMedia || muted) {
+      return undefined
+    }
+
+    musicSound.play()
+
+    return () => {
+      musicSound.stop()
+    }
+  }, [musicSound, isHost, hasOwnMedia, muted])
 
   // Envoi fiabilisé d'une réponse : accusé de réception serveur + retry borné.
   // L'ancien envoi était « fire-and-forget » + `setAnswered(true)` inconditionnel :
@@ -254,8 +289,8 @@ const Answers = ({
   const audioCtxRef = useRef<AudioContext | null>(null)
 
   function playTick(urgent: boolean) {
-    // Ticks sonores autorisés uniquement sur le Host
-    if (!isHost) {
+    // Ticks sonores autorisés uniquement sur le Host, et jamais son coupé
+    if (!isHost || muted) {
       return
     }
 
@@ -293,9 +328,12 @@ const Answers = ({
     setEndTime((prev) => Math.max(prev, newEnd))
   })
 
+  // Toutes les comparaisons se font sur l'horloge serveur (`getServerTime`) :
+  // `endTime` provient du serveur, le comparer à `Date.now()` faussait le
+  // décompte sur un téléphone dont l'horloge est décalée.
   useEffect(() => {
     const interval = setInterval(() => {
-      const remainingMs = endTime - Date.now()
+      const remainingMs = endTime - getServerTime()
       const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000))
       setCooldown(remainingSec)
 
@@ -307,21 +345,45 @@ const Answers = ({
     }, 50)
 
     return () => clearInterval(interval)
-  }, [endTime, totalTime])
+  }, [endTime, totalTime, getServerTime])
 
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     // Si dérive significative (> 1.2 seconde), on resynchronise la date de fin
-    const currentRemainingMs = endTime - Date.now()
+    const currentRemainingMs = endTime - getServerTime()
     const targetRemainingMs = sec * 1000
 
     if (Math.abs(currentRemainingMs - targetRemainingMs) > 1200) {
-      setEndTime(Date.now() + targetRemainingMs)
+      setEndTime(getServerTime() + targetRemainingMs)
     }
 
     if (isHost && sec <= 5 && sec > 0) {
       playTick(sec <= 3)
     }
   })
+
+  // Indicateur FREEZE sur le timer de l'écran principal, le temps du gel.
+  const [freezeVisible, setFreezeVisible] = useState(false)
+
+  useEffect(() => {
+    if (!isHost || !isFreezeRound) {
+      setFreezeVisible(false)
+
+      return undefined
+    }
+
+    setFreezeVisible(true)
+    const timer = setTimeout(() => setFreezeVisible(false), FREEZE_DURATION_MS)
+
+    return () => clearTimeout(timer)
+  }, [isHost, isFreezeRound, question])
+
+  const [timeAnnouncement, setTimeAnnouncement] = useState("")
+
+  useEffect(() => {
+    if (ANNOUNCED_SECONDS.includes(cooldown)) {
+      setTimeAnnouncement(t("game:a11y.timeLeft", { count: cooldown }))
+    }
+  }, [cooldown, t])
 
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setTotalAnswer(count)
@@ -483,32 +545,115 @@ const Answers = ({
         <div className="flex-1" />
       )}
 
-      <div className={clsx("relative z-10", isPlayer && "pb-12")}>
-        <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
-          <div
-            className={clsx(
-              "flex flex-col items-center rounded-full px-4 text-lg font-bold transition-colors",
-              cooldown <= 5 ? "anim-pulse-urgent bg-red-600" : "bg-black/40",
-            )}
-          >
-            <span className="translate-y-1 text-sm">{t("game:hud.time")}</span>
-            <span
-              id="timer"
-              key={cooldown}
-              className="anim-pop-in tabular-nums"
+      {/* Annonce discrète du temps restant pour les lecteurs d'écran : à 10 s
+          et 5 s seulement, pas à chaque seconde. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {timeAnnouncement}
+      </p>
+
+      <div
+        className="relative z-10"
+        // Réserve la hauteur réelle de la barre joueur (safe-area incluse),
+        // mesurée par GameWrapper : plus de boutons de réponse masqués.
+        style={
+          isPlayer ? { paddingBottom: "var(--player-bar-h, 5rem)" } : undefined
+        }
+      >
+        {isHost ? (
+          <div className="mx-auto mb-4 flex w-full max-w-7xl items-end justify-between gap-4 px-4 text-white">
+            {/* Timer circulaire géant, lisible depuis le fond de la salle */}
+            <div
+              className={clsx(
+                "relative flex size-24 shrink-0 items-center justify-center rounded-full border-4 bg-black/50 backdrop-blur-md transition-colors md:size-32",
+                freezeVisible
+                  ? "animate-pulse border-cyan-400"
+                  : "border-white/10",
+                cooldown <= 5 && "anim-pulse-urgent",
+              )}
+              aria-label={t("game:hud.time")}
             >
-              {cooldown}
-            </span>
+              <svg
+                className="absolute inset-0 size-full -rotate-90"
+                viewBox="0 0 100 100"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r={TIMER_RADIUS}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r={TIMER_RADIUS}
+                  fill="none"
+                  stroke={getProgressColor(progress)}
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={TIMER_CIRCUMFERENCE}
+                  strokeDashoffset={
+                    TIMER_CIRCUMFERENCE * (1 - Math.max(0, progress) / 100)
+                  }
+                  className="transition-[stroke-dashoffset] duration-100 ease-linear"
+                />
+              </svg>
+              <span
+                id="timer"
+                key={cooldown}
+                className="anim-pop-in relative text-4xl font-black tabular-nums drop-shadow-lg md:text-5xl"
+              >
+                {cooldown}
+              </span>
+            </div>
+
+            {/* Compteur de réponses */}
+            <div className="flex flex-col items-center rounded-3xl border border-white/10 bg-black/50 px-6 py-3 backdrop-blur-md md:px-8">
+              <span className="text-sm font-bold tracking-widest text-white/70 uppercase md:text-base">
+                {t("game:hud.answers")}
+              </span>
+              <span
+                key={totalAnswer}
+                className="anim-pop-in text-4xl font-black tabular-nums md:text-6xl"
+              >
+                {totalAnswer}
+                <span className="text-2xl text-white/60 md:text-4xl">
+                  /{totalPlayer}
+                </span>
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
-            <span className="translate-y-1 text-sm">
-              {t("game:hud.answers")}
-            </span>
-            <span key={totalAnswer} className="anim-pop-in tabular-nums">
-              {totalAnswer}/{totalPlayer}
-            </span>
+        ) : (
+          <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
+            <div
+              className={clsx(
+                "flex flex-col items-center rounded-full px-4 text-lg font-bold transition-colors",
+                cooldown <= 5 ? "anim-pulse-urgent bg-red-600" : "bg-black/40",
+              )}
+            >
+              <span className="translate-y-1 text-sm">
+                {t("game:hud.time")}
+              </span>
+              <span
+                id="timer"
+                key={cooldown}
+                className="anim-pop-in tabular-nums"
+              >
+                {cooldown}
+              </span>
+            </div>
+            <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
+              <span className="translate-y-1 text-sm">
+                {t("game:hud.answers")}
+              </span>
+              <span key={totalAnswer} className="anim-pop-in tabular-nums">
+                {totalAnswer}/{totalPlayer}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {isPlayer && sendState === "failed" && (
           <div className="mx-auto mb-3 w-full max-w-7xl px-2">
@@ -592,7 +737,11 @@ const Answers = ({
         )}
 
         {isPlayer && answered && (
-          <div className="mx-auto mb-4 flex w-full max-w-7xl justify-center px-2">
+          <div
+            className="mx-auto mb-4 flex w-full max-w-7xl justify-center px-2"
+            role="status"
+            aria-live="polite"
+          >
             <motion.div
               variants={fadeUp}
               initial="hidden"
@@ -609,7 +758,10 @@ const Answers = ({
                   <Check className="size-4 stroke-4 text-white" />
                 </motion.span>
               ) : (
-                <Loader2 className="size-5 shrink-0 animate-spin text-white/70" />
+                <Loader2
+                  className="size-5 shrink-0 animate-spin text-white/70"
+                  aria-hidden="true"
+                />
               )}
               {sendState === "sent"
                 ? t("game:answerSent")

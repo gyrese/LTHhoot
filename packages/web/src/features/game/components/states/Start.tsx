@@ -5,6 +5,8 @@ import { SFX } from "@rahoot/web/features/game/utils/constants"
 import clsx from "clsx"
 import { useState } from "react"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
+import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
 type Props = {
@@ -15,7 +17,12 @@ const Start = ({ data: { time, subject } }: Props) => {
   const [showTitle, setShowTitle] = useState(true)
   const [cooldown, setCooldown] = useState(time)
 
-  const [sfxBoump] = useSound(SFX.BOUMP_SOUND, { volume: 0.2 })
+  const { t } = useTranslation()
+  const muted = useSoundStore((state) => state.muted)
+  const [sfxBoump] = useSound(SFX.BOUMP_SOUND, {
+    volume: 0.2,
+    soundEnabled: !muted,
+  })
 
   const { isHost } = useGameConfig()
 
@@ -40,7 +47,7 @@ const Start = ({ data: { time, subject } }: Props) => {
       {showTitle ? (
         <div className="flex flex-col items-center gap-6 text-center">
           <span className="anim-badge border-primary/50 bg-primary/20 text-primary rounded-full border px-8 py-2 text-sm font-bold tracking-[0.25em] uppercase backdrop-blur-sm">
-            Quiz
+            {t("game:quiz")}
           </span>
           <h1
             className="anim-title-big leading-none font-black tracking-tight text-white"
@@ -63,7 +70,11 @@ const Start = ({ data: { time, subject } }: Props) => {
               transform: `rotate(${45 * (time - cooldown)}deg)`,
             }}
           />
-          <span className="absolute text-6xl font-black text-white drop-shadow-md md:text-8xl">
+          <span
+            className="absolute text-6xl font-black text-white drop-shadow-md md:text-8xl"
+            role="timer"
+            aria-live="off"
+          >
             {cooldown}
           </span>
         </div>

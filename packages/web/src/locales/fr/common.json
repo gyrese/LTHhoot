@@ -20,5 +20,12 @@
   "save": "Enregistrer",
   "seconds": "sec",
   "skip": "Passer",
-  "submit": "Valider"
+  "submit": "Valider",
+  "quit": "Quitter",
+  "close": "Fermer",
+  "reconnecting": {
+    "title": "Connexion interrompue",
+    "subtitle": "Restauration de ta session…",
+    "hint": "Vérifie ta connexion Wi-Fi ou mobile."
+  }
 }

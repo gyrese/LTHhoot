@@ -105,5 +105,161 @@
     "sniper": "Der Scharfschütze"
   },
   "podiumShare": "Teilen",
-  "podiumExporting": "Exportieren…"
+  "podiumExporting": "Exportieren…",
+  "closeSession": "Sitzung schließen",
+  "confirmEndGame": "Möchtest du diese Sitzung wirklich schließen? Alle Spieler werden getrennt.",
+  "sessionClosedByManager": "Die Sitzung wurde vom Spielleiter geschlossen.",
+  "quit": "Verlassen",
+  "you": "du",
+  "question": "Frage",
+  "quiz": "Quiz",
+  "player": "Spieler",
+  "score": "Punkte",
+  "joining": "Verbinde…",
+  "changeAvatar": "Avatar ändern",
+  "joinGame": "Einem Spiel beitreten",
+  "enterPinDesc": "Gib die PIN des Raums ein, um loszulegen",
+  "yourPseudo": "Dein Spitzname",
+  "scorecardShare": "Meine Karte teilen",
+  "scorecardExporting": "Wird erstellt…",
+  "startIn": "Start in",
+  "preparation": "Vorbereitung",
+  "readingTime": "Lesezeit",
+  "readingByPlayers": "Spieler lesen",
+  "waiting": "Warten…",
+  "waitingForGame": "Warten auf das Spiel…",
+  "evening": {
+    "quizComplete": "Quiz beendet!",
+    "progress": "Quiz {{current}} von {{total}}",
+    "cumulativeRanking": "Gesamtwertung des Abends",
+    "nextQuiz": "Nächstes Quiz",
+    "waitingHost": "Warten auf das nächste Quiz…",
+    "continue": "Weiter",
+    "winner": "Sieger des Abends!",
+    "finale": "Großes Finale des Abends"
+  },
+  "shop": {
+    "open": "Shop öffnen",
+    "title": "Shop",
+    "subtitle": "Gib deine Münzen aus",
+    "buy": "Kaufen",
+    "notEnough": "Nicht genug Münzen",
+    "inventoryFull": "Inventar voll (3/3) – nutze ein Power-up, bevor du kaufst"
+  },
+  "sound": {
+    "mute": "Ton aus",
+    "unmute": "Ton an"
+  },
+  "shapes": {
+    "triangle": "Dreieck",
+    "rhombus": "Raute",
+    "circle": "Kreis",
+    "square": "Quadrat"
+  },
+  "a11y": {
+    "answerOption": "Antwort {{number}} ({{shape}}): {{text}}",
+    "timeLeft_one": "Noch {{count}} Sekunde",
+    "timeLeft_other": "Noch {{count}} Sekunden"
+  },
+  "podium": {
+    "finalRanking": "Und jetzt die Endwertung...",
+    "eveningWinner": "Der große Sieger des Abends",
+    "winnerIs": "Und der Sieger ist..."
+  },
+  "powerupDrawer": {
+    "leaderAuto": "Automatisches Ziel: der aktuelle Spitzenreiter",
+    "allOpponents": "Trifft ALLE Gegner",
+    "use": "Einsetzen",
+    "chooseTarget_one": "Wähle ein Ziel",
+    "chooseTarget_other": "Wähle {{count}} Ziele",
+    "noTarget_one": "Gerade kein Gegner als Ziel verfügbar.",
+    "noTarget_other": "Für dieses Power-up brauchst du mindestens {{count}} Gegner als Ziel."
+  },
+  "powerupToast": {
+    "someone": "Ein Spieler",
+    "on": "Auf {{names}}",
+    "mirroredOn": "Zurückgeworfen auf {{names}}",
+    "self": "Persönlicher Effekt"
+  },
+  "powerupBar": {
+    "new": "NEU!",
+    "unavailable": "gerade nicht verfügbar"
+  },
+  "powerups": {
+    "rarity": {
+      "COMMON": "Gewöhnlich",
+      "RARE": "Selten",
+      "LEGENDARY": "Legendär"
+    },
+    "SHIELD": {
+      "label": "Schild",
+      "description": "Blockt den nächsten Angriff"
+    },
+    "FREEZE": {
+      "label": "Timer-Frost",
+      "description": "Sperrt die Antworten der Gegner für 3 s"
+    },
+    "SAFETY_NET": {
+      "label": "Sicherheitsnetz",
+      "description": "+50 Pkt. garantiert, auch bei falscher Antwort"
+    },
+    "SCRAMBLE": {
+      "label": "Durcheinander",
+      "description": "Mischt die Antwortreihenfolge eines Gegners"
+    },
+    "SPARK": {
+      "label": "Funke",
+      "description": "+25 Pkt. bei richtiger Antwort auf die nächste Frage"
+    },
+    "DIESEL": {
+      "label": "Diesel",
+      "description": "+500 Pkt., wenn du als Letzter richtig antwortest"
+    },
+    "DOUBLE_POINTS": {
+      "label": "Doppelte Punkte",
+      "description": "×2 bei der nächsten Frage"
+    },
+    "STEAL_POINTS": {
+      "label": "Punkteraub",
+      "description": "Klaut dem Spitzenreiter 200 Pkt."
+    },
+    "BOMB": {
+      "label": "Bombe",
+      "description": "−150 Pkt. für einen Zielspieler"
+    },
+    "SWAP": {
+      "label": "Teleport",
+      "description": "Tauscht deinen Punktestand mit einem Gegner"
+    },
+    "SNIPER": {
+      "label": "Scharfschütze",
+      "description": "Präzise −100 Pkt. für 2 Zielspieler"
+    },
+    "MIRROR": {
+      "label": "Spiegel",
+      "description": "Wirft den nächsten Angriff auf den Absender zurück"
+    },
+    "POISONED_GIFT": {
+      "label": "Vergiftetes Geschenk",
+      "description": "Halbiert die Punkte eines Gegners bei der nächsten Frage"
+    },
+    "TRIPLE_POINTS": {
+      "label": "Dreifache Punkte",
+      "description": "×3 bei der nächsten Frage"
+    },
+    "APOCALYPSE": {
+      "label": "Apokalypse",
+      "description": "−300 Pkt. für ALLE Gegner"
+    },
+    "MEGA_BOMB": {
+      "label": "Megabombe",
+      "description": "−500 Pkt., ignoriert den Schild"
+    },
+    "ROYAL_THEFT": {
+      "label": "Königlicher Raub",
+      "description": "Klaut 50 % der Punkte des Spitzenreiters"
+    }
+  },
+  "playersConnected_one": "{{count}} Spieler verbunden",
+  "playersConnected_other": "{{count}} Spieler verbunden"
 }

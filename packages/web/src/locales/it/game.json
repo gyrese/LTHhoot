@@ -105,5 +105,165 @@
     "sniper": "Il cecchino"
   },
   "podiumShare": "Condividi",
-  "podiumExporting": "Esportazione…"
+  "podiumExporting": "Esportazione…",
+  "closeSession": "Chiudi la sessione",
+  "confirmEndGame": "Vuoi davvero chiudere questa sessione? Tutti i giocatori verranno disconnessi.",
+  "sessionClosedByManager": "La sessione è stata chiusa dall'host.",
+  "quit": "Esci",
+  "you": "tu",
+  "question": "Domanda",
+  "quiz": "Quiz",
+  "player": "Giocatore",
+  "score": "Punteggio",
+  "joining": "Connessione…",
+  "changeAvatar": "Cambia avatar",
+  "joinGame": "Unisciti a una partita",
+  "enterPinDesc": "Inserisci il PIN della stanza per iniziare",
+  "yourPseudo": "Il tuo nickname",
+  "scorecardShare": "Condividi la mia carta",
+  "scorecardExporting": "Generazione…",
+  "startIn": "Inizio tra",
+  "preparation": "Preparazione",
+  "readingTime": "Tempo di lettura",
+  "readingByPlayers": "i giocatori stanno leggendo",
+  "waiting": "In attesa…",
+  "waitingForGame": "In attesa della partita…",
+  "evening": {
+    "quizComplete": "Quiz terminato!",
+    "progress": "Quiz {{current}} di {{total}}",
+    "cumulativeRanking": "Classifica della serata",
+    "nextQuiz": "Quiz successivo",
+    "waitingHost": "In attesa del prossimo quiz…",
+    "continue": "Continua",
+    "winner": "Vincitore della serata!",
+    "finale": "Gran finale della serata"
+  },
+  "shop": {
+    "open": "Apri il negozio",
+    "title": "Negozio",
+    "subtitle": "Spendi le tue monete",
+    "buy": "Acquista",
+    "notEnough": "Monete insufficienti",
+    "inventoryFull": "Inventario pieno (3/3): usa un power-up prima di acquistare"
+  },
+  "sound": {
+    "mute": "Disattiva audio",
+    "unmute": "Riattiva audio"
+  },
+  "shapes": {
+    "triangle": "Triangolo",
+    "rhombus": "Rombo",
+    "circle": "Cerchio",
+    "square": "Quadrato"
+  },
+  "a11y": {
+    "answerOption": "Risposta {{number}} ({{shape}}): {{text}}",
+    "timeLeft_one": "Manca {{count}} secondo",
+    "timeLeft_other": "Mancano {{count}} secondi",
+    "timeLeft_many": "Mancano {{count}} secondi"
+  },
+  "podium": {
+    "finalRanking": "E ora, la classifica finale...",
+    "eveningWinner": "Il grande vincitore della serata",
+    "winnerIs": "E il vincitore è..."
+  },
+  "powerupDrawer": {
+    "leaderAuto": "Bersaglio automatico: l'attuale leader",
+    "allOpponents": "Colpisce TUTTI gli avversari",
+    "use": "Usa",
+    "chooseTarget_one": "Scegli un bersaglio",
+    "chooseTarget_other": "Scegli {{count}} bersagli",
+    "chooseTarget_many": "Scegli {{count}} bersagli",
+    "noTarget_one": "Nessun avversario da colpire al momento.",
+    "noTarget_other": "Servono almeno {{count}} avversari da colpire per usare questo power-up.",
+    "noTarget_many": "Servono almeno {{count}} avversari da colpire per usare questo power-up."
+  },
+  "powerupToast": {
+    "someone": "Un giocatore",
+    "on": "Su {{names}}",
+    "mirroredOn": "Rimandato su {{names}}",
+    "self": "Effetto personale"
+  },
+  "powerupBar": {
+    "new": "NUOVO!",
+    "unavailable": "non disponibile ora"
+  },
+  "powerups": {
+    "rarity": {
+      "COMMON": "Comune",
+      "RARE": "Raro",
+      "LEGENDARY": "Leggendario"
+    },
+    "SHIELD": {
+      "label": "Scudo",
+      "description": "Blocca il prossimo attacco ricevuto"
+    },
+    "FREEZE": {
+      "label": "Congela il timer",
+      "description": "Blocca le risposte degli avversari per 3 s"
+    },
+    "SAFETY_NET": {
+      "label": "Rete di sicurezza",
+      "description": "+50 pt garantiti anche se sbagli"
+    },
+    "SCRAMBLE": {
+      "label": "Scompiglio",
+      "description": "Mescola l'ordine delle risposte di un avversario"
+    },
+    "SPARK": {
+      "label": "Scintilla",
+      "description": "+25 pt se rispondi bene alla prossima domanda"
+    },
+    "DIESEL": {
+      "label": "Diesel",
+      "description": "+500 pt se sei l'ultimo a rispondere correttamente"
+    },
+    "DOUBLE_POINTS": {
+      "label": "Punti doppi",
+      "description": "×2 alla prossima domanda"
+    },
+    "STEAL_POINTS": {
+      "label": "Furto di punti",
+      "description": "Ruba 200 pt al leader"
+    },
+    "BOMB": {
+      "label": "Bomba",
+      "description": "−150 pt a un giocatore scelto"
+    },
+    "SWAP": {
+      "label": "Teletrasporto",
+      "description": "Scambia il tuo punteggio con un avversario"
+    },
+    "SNIPER": {
+      "label": "Cecchino",
+      "description": "−100 pt precisi su 2 giocatori scelti"
+    },
+    "MIRROR": {
+      "label": "Specchio",
+      "description": "Rimanda il prossimo attacco al mittente"
+    },
+    "POISONED_GIFT": {
+      "label": "Regalo avvelenato",
+      "description": "Dimezza i punti di un avversario alla prossima domanda"
+    },
+    "TRIPLE_POINTS": {
+      "label": "Punti tripli",
+      "description": "×3 alla prossima domanda"
+    },
+    "APOCALYPSE": {
+      "label": "Apocalisse",
+      "description": "−300 pt a TUTTI gli avversari"
+    },
+    "MEGA_BOMB": {
+      "label": "Megabomba",
+      "description": "−500 pt, ignora lo Scudo"
+    },
+    "ROYAL_THEFT": {
+      "label": "Furto reale",
+      "description": "Ruba il 50% dei punti del leader"
+    }
+  },
+  "playersConnected_one": "{{count}} giocatore connesso",
+  "playersConnected_other": "{{count}} giocatori connessi",
+  "playersConnected_many": "{{count}} giocatori connessi"
 }

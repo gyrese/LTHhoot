@@ -59,16 +59,19 @@ const ShopDrawer = ({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 400, damping: 35 }}
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[82vh] flex-col rounded-t-3xl border-t-2 border-yellow-500/40 bg-slate-900/90 backdrop-blur-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("game:shop.title")}
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[82dvh] flex-col rounded-t-3xl border-t-2 border-yellow-500/40 bg-slate-900/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
               <div>
                 <p className="text-[10px] font-black tracking-widest text-yellow-300/70 uppercase">
-                  {t("game:shop.subtitle", "Dépense tes pièces")}
+                  {t("game:shop.subtitle")}
                 </p>
                 <p className="text-xl font-black text-white">
-                  {t("game:shop.title", "Boutique")}
+                  {t("game:shop.title")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -78,9 +81,10 @@ const ShopDrawer = ({
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-xl p-2 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label={t("common:close")}
                 >
-                  <X className="size-5" />
+                  <X className="size-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -166,12 +170,10 @@ const ShopDrawer = ({
                               )}
                               title={
                                 affordable
-                                  ? t("game:shop.buy", "Acheter")
-                                  : t(
-                                      "game:shop.notEnough",
-                                      "Pièces insuffisantes",
-                                    )
+                                  ? t("game:shop.buy")
+                                  : t("game:shop.notEnough")
                               }
+                              aria-label={`${t("game:shop.buy")} ${meta.label} (${price})`}
                             >
                               <Coins className="size-3.5" />
                               <span className="tabular-nums">{price}</span>

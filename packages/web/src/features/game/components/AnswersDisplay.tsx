@@ -3,6 +3,8 @@ import clsx from "clsx"
 import {
   ANSWERS_COLORS,
   ANSWERS_ICONS,
+  ANSWERS_SHAPE_KEYS,
+  isDarkTextAnswer,
 } from "@rahoot/web/features/game/utils/constants"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import { useState, type FormEvent } from "react"
@@ -18,6 +20,7 @@ export const McqAnswers = ({
   iconOnly?: boolean
   shuffledIndices?: number[]
 }) => {
+  const { t } = useTranslation()
   const displayIndices = shuffledIndices ?? answers.map((_, i) => i)
 
   return (
@@ -40,6 +43,18 @@ export const McqAnswers = ({
             )}
             icon={ANSWERS_ICONS[origIndex]}
             iconOnly={iconOnly}
+            darkText={isDarkTextAnswer(origIndex)}
+            // En mode icône seule, le bouton n'a pas de texte visible : son nom
+            // accessible reprend la forme, le numéro et l'intitulé.
+            aria-label={
+              iconOnly
+                ? t("game:a11y.answerOption", {
+                    shape: t(ANSWERS_SHAPE_KEYS[origIndex] ?? ""),
+                    number: origIndex + 1,
+                    text: answer,
+                  })
+                : undefined
+            }
             onClick={() => onAnswer(origIndex)}
           >
             {answer}

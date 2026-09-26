@@ -6,6 +6,20 @@ export type GameStatus = { name: Status; data: Record<string, unknown> } | null
 export type QuestionStates = { current: number; total: number } | null
 export type RemoteTab = "jeu" | "joueurs" | "journal"
 
+// Interstitiel de soirée entre deux quiz (EVENING.QUIZ_COMPLETE) : classement
+// cumulé affiché sur la télécommande, qui peut enchaîner comme l'écran hôte.
+export type EveningInterlude = {
+  quizIndex: number
+  totalQuizzes: number
+  subject: string
+  leaderboard: {
+    id: string
+    username: string
+    points: number
+    rank: number
+  }[]
+} | null
+
 export interface PrimaryAction {
   label: string
   disabled: boolean

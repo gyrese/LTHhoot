@@ -10,6 +10,7 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -19,6 +20,7 @@ import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import ReconnectingOverlay from "@rahoot/web/features/game/components/ReconnectingOverlay"
 import { EVENTS } from "@rahoot/common/constants"
+import { useNavigate } from "@tanstack/react-router"
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
@@ -45,6 +47,50 @@ const SocketContext = createContext<SocketContextValue>({
   disconnect: () => {},
   reconnect: () => {},
 })
+
+// Traces de diagnostic réservées au développement : en production elles
+// inondaient la console (et coûtaient à chaque event reçu).
+const debugLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) {
+    console.log(...args)
+  }
+}
+
+// Resynchronisation métier (RECONNECT) : une seule émission par (re)connexion.
+// Le provider l'émet au `connect` quand une session est mémorisée, et les pages
+// de partie au montage / à la connexion (arrivée dans une partie, store vidé) :
+// sans dédoublonnage, le joueur l'émettait 2× et le manager 3× par connexion.
+// La clé inclut l'id du socket (nouveau à chaque connexion) ; la fenêtre
+// courte laisse passer une resynchronisation volontaire ultérieure.
+const RESYNC_DEDUP_WINDOW = 3000
+let lastResync: { key: string; at: number } | null = null
+
+export const emitResync = (
+  client: TypedSocket,
+  role: "player" | "manager",
+  gameId: string,
+): boolean => {
+  const key = `${role}:${gameId}:${client.id ?? ""}`
+  const now = Date.now()
+
+  if (
+    lastResync &&
+    lastResync.key === key &&
+    now - lastResync.at < RESYNC_DEDUP_WINDOW
+  ) {
+    return false
+  }
+
+  lastResync = { key, at: now }
+
+  if (role === "player") {
+    client.emit(EVENTS.PLAYER.RECONNECT, { gameId })
+  } else {
+    client.emit(EVENTS.MANAGER.RECONNECT, { gameId })
+  }
+
+  return true
+}
 
 const getClientId = (): string => {
   try {
@@ -109,7 +155,7 @@ const createSocketClient = (
 
     overlayGraceTimeout = setTimeout(() => {
       overlayGraceTimeout = null
-      console.log(
+      debugLog(
         "[SESSION] Coupure > fenêtre silencieuse, affichage de l'overlay",
       )
       setIsReconnecting(true)
@@ -156,7 +202,7 @@ const createSocketClient = (
 
     socketClient.on("connect", () => {
       const transport = socketClient.io?.engine?.transport?.name
-      console.log(
+      debugLog(
         `[SOCKET] Connecté (POLLING) socket=${socketClient.id} transport=${transport}`,
       )
       setIsConnected(true)
@@ -168,10 +214,10 @@ const createSocketClient = (
       const guestRaw = localStorage.getItem("rc_guest")
 
       if (playerGameId) {
-        console.log(`[SESSION] Restauration session Joueur: ${playerGameId}`)
+        debugLog(`[SESSION] Restauration session Joueur: ${playerGameId}`)
         showOverlayAfterGrace()
         armReconnectTimeout()
-        socketClient.emit(EVENTS.PLAYER.RECONNECT, { gameId: playerGameId })
+        emitResync(socketClient, "player", playerGameId)
       } else {
         // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
         // Cela permet au manager de rester authentifié sur les écrans hors-partie (config, éditeur)
@@ -181,7 +227,7 @@ const createSocketClient = (
           try {
             const { name, password } = JSON.parse(guestRaw)
 
-            console.log(
+            debugLog(
               `[SESSION] Restauration authentification Invité (guest=true)`,
             )
             socketClient.emit(EVENTS.MANAGER.GUEST_AUTH, { name, password })
@@ -189,19 +235,17 @@ const createSocketClient = (
             localStorage.removeItem("rc_guest")
           }
         } else if (pwd) {
-          console.log(
+          debugLog(
             `[SESSION] Restauration authentification Manager (auth=true)`,
           )
           socketClient.emit(EVENTS.MANAGER.AUTH, pwd)
         }
 
         if (managerGameId) {
-          console.log(
-            `[SESSION] Restauration session Manager: ${managerGameId}`,
-          )
+          debugLog(`[SESSION] Restauration session Manager: ${managerGameId}`)
           showOverlayAfterGrace()
           armReconnectTimeout()
-          socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: managerGameId })
+          emitResync(socketClient, "manager", managerGameId)
         } else {
           finishReconnecting()
         }
@@ -209,7 +253,7 @@ const createSocketClient = (
     })
 
     socketClient.on("disconnect", (reason) => {
-      console.log(`[SOCKET] Déconnecté (POLLING) raison=${reason}`)
+      debugLog(`[SOCKET] Déconnecté (POLLING) raison=${reason}`)
       setIsConnected(false)
 
       // Déconnexion involontaire → reconnexion silencieuse d'abord : l'overlay
@@ -220,7 +264,7 @@ const createSocketClient = (
     })
 
     socketClient.io.on("reconnect_attempt", (attempt) => {
-      console.log(`[SOCKET] Tentative de reconnexion #${attempt}`)
+      debugLog(`[SOCKET] Tentative de reconnexion #${attempt}`)
     })
 
     socketClient.io.on("reconnect_error", (err) => {
@@ -237,11 +281,11 @@ const createSocketClient = (
 
     // Listeners métiers IMMÉDIATS pour éviter les race conditions
     socketClient.on(EVENTS.PLAYER.SUCCESS_RECONNECT, () => {
-      console.log("[SESSION] SUCCESS_RECONNECT reçu (global)")
+      debugLog("[SESSION] SUCCESS_RECONNECT reçu (global)")
       finishReconnecting()
     })
     socketClient.on(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
-      console.log("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
+      debugLog("[SESSION] SUCCESS_RECONNECT reçu (global manager)")
       finishReconnecting()
     })
     socketClient.on(EVENTS.GAME.ERROR_MESSAGE, (msg) => {
@@ -299,27 +343,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const socket = socketRef.current
 
-  const playerStore = usePlayerStore()
-  const managerStore = useManagerStore()
-
-  useEffect(() => {
-    const currentStatus =
-      playerStore.status?.name || managerStore.status?.name || "NONE"
-    console.log(
-      `[UI_TRACE_v1k8qp] isReconnecting=${isReconnecting} isConnected=${isConnected} currentStatus=${currentStatus} overlayVisible=${isReconnecting}`,
-    )
-  }, [
-    isReconnecting,
-    isConnected,
-    playerStore.status?.name,
-    managerStore.status?.name,
-  ])
-
   // Déconnexion propre au démontage du provider.
   useEffect(
     () => () => {
       if (socketRef.current) {
-        console.log("[SOCKET] Nettoyage socketClient (unmount)")
+        debugLog("[SOCKET] Nettoyage socketClient (unmount)")
         socketRef.current.disconnect()
       }
     },
@@ -346,7 +374,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (!socket.connected) {
-        console.log(
+        debugLog(
           "[WATCHDOG] Premier plan et socket déconnecté → reconnexion immédiate",
         )
         socket.connect()
@@ -363,7 +391,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
       lastProbe = now
 
-      console.log("[WATCHDOG] Envoi sonde de vivacité...")
+      debugLog("[WATCHDOG] Envoi sonde de vivacité...")
       socket.timeout(7000).emit(EVENTS.CONNECTION.PING, (err) => {
         if (err) {
           console.warn(
@@ -372,7 +400,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           socket.disconnect()
           socket.connect()
         } else {
-          console.log("[WATCHDOG] Sonde de vivacité OK")
+          debugLog("[WATCHDOG] Sonde de vivacité OK")
         }
       })
     }
@@ -427,7 +455,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
           clockOffsetRef.current = best.offset
           setClockOffset(best.offset)
-          console.log(
+          debugLog(
             `[NTP_SYNC] Offset horloge calculé: ${Math.round(best.offset)}ms (RTT: ${best.rtt}ms)`,
           )
         }
@@ -475,7 +503,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   )
 
   const connect = useCallback(() => {
-    console.log("[SOCKET] Action: connect")
+    debugLog("[SOCKET] Action: connect")
 
     if (socket && !socket.connected) {
       socket.connect()
@@ -483,15 +511,34 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, [socket])
 
   const disconnect = useCallback(() => {
-    console.log("[SOCKET] Action: disconnect")
+    debugLog("[SOCKET] Action: disconnect")
 
     if (socket && socket.connected) {
       socket.disconnect()
     }
   }, [socket])
 
+  const navigate = useNavigate()
+
+  // « Quitter » depuis l'overlay de reconnexion : on abandonne la session
+  // mémorisée (sinon chaque reconnexion la relancerait) et on revient à
+  // l'accueil du rôle concerné.
+  const quitSession = useCallback(() => {
+    const isManager = Boolean(useManagerStore.getState().gameId)
+
+    usePlayerStore.getState().reset()
+    useManagerStore.getState().reset()
+    setIsReconnecting(false)
+
+    if (isManager) {
+      void navigate({ to: "/manager/config" })
+    } else {
+      void navigate({ to: "/", search: { pin: undefined } })
+    }
+  }, [navigate])
+
   const reconnect = useCallback(() => {
-    console.log("[SOCKET] Action: reconnect")
+    debugLog("[SOCKET] Action: reconnect")
 
     if (socket) {
       socket.disconnect()
@@ -499,21 +546,41 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [socket])
 
+  // Valeur mémoïsée : un nouvel objet à chaque rendu re-rendait tous les
+  // consommateurs du contexte, même sans changement.
+  const value = useMemo(
+    () => ({
+      socket,
+      isConnected,
+      isReconnecting,
+      clientId,
+      clockOffset,
+      getServerTime,
+      connect,
+      disconnect,
+      reconnect,
+    }),
+    [
+      socket,
+      isConnected,
+      isReconnecting,
+      clientId,
+      clockOffset,
+      getServerTime,
+      connect,
+      disconnect,
+      reconnect,
+    ],
+  )
+
   return (
-    <SocketContext.Provider
-      value={{
-        socket,
-        isConnected,
-        isReconnecting,
-        clientId,
-        clockOffset,
-        getServerTime,
-        connect,
-        disconnect,
-        reconnect,
-      }}
-    >
-      {isReconnecting && <ReconnectingOverlay key="global-reconnect-overlay" />}
+    <SocketContext.Provider value={value}>
+      {isReconnecting && (
+        <ReconnectingOverlay
+          key="global-reconnect-overlay"
+          onQuit={quitSession}
+        />
+      )}
       <div
         style={{ display: isReconnecting ? "none" : "block", height: "100%" }}
         id="app-content-root"
@@ -538,29 +605,17 @@ export const useEvent = <E extends keyof ServerToClientEvents>(
   })
 
   useEffect(() => {
-    console.log(`[EVENT] Mount hook for event: ${event}`)
-
     if (!socket) {
-      console.warn(`[EVENT] Skip attach ${event}: socket is null`)
-
       return () => {}
     }
 
     const stableHandler = (...args: Parameters<ServerToClientEvents[E]>) => {
-      if (event.includes("SUCCESS_RECONNECT")) {
-        console.log(
-          `[RESYNC] Réussite de la resynchronisation métier: ${event}`,
-        )
-      }
-
       ;(callbackRef.current as (..._a: unknown[]) => void)(...args)
     }
 
-    console.log(`[EVENT] Attach listener: ${event}`)
     socket.on(event, stableHandler as any)
 
     return () => {
-      console.log(`[EVENT] Detach listener: ${event}`)
       socket?.off?.(event, stableHandler as any)
     }
   }, [socket, event])

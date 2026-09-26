@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { EVENTS } from "@rahoot/common/constants"
 import GameWrapper from "@rahoot/web/features/game/components/GameWrapper"
 import {
+  emitResync,
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
@@ -27,9 +28,11 @@ const PlayerGamePage = () => {
   // pour assurer que l'overlay Reconnecting s'affiche correctement.
 
   useEvent(EVENTS.PLAYER.SUCCESS_RECONNECT, (data) => {
-    console.log(
-      `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer} hasAnswered=${data.hasAnswered}`,
-    )
+    if (import.meta.env.DEV) {
+      console.log(
+        `[RECONNECT] Succès → gameId=${data.gameId} joueur=${data.player.username} status=${data.status.name} timer=${data.timer} hasAnswered=${data.hasAnswered}`,
+      )
+    }
     // On utilise hydrate pour un remplacement atomique de l'état
     usePlayerStore.getState().hydrate({
       gameId: data.gameId,
@@ -58,9 +61,10 @@ const PlayerGamePage = () => {
   // au montage le socket n'est pas encore connecté, l'émission part au moment
   // où il l'est. Le serveur identifie le joueur par clientId (localStorage),
   // donc la session est restaurée même si le store a été vidé entre-temps.
+  // `emitResync` évite le doublon avec l'émission du SocketProvider au connect.
   useEffect(() => {
     if (isConnected && socket && gameIdParam) {
-      socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
+      emitResync(socket, "player", gameIdParam)
     }
   }, [isConnected, socket, gameIdParam])
 
@@ -68,7 +72,6 @@ const PlayerGamePage = () => {
 
   useEffect(
     () => () => {
-      console.log("[DEBUG] PlayerGamePage unmounted, cleaning up store")
       reset()
       setQuestionStates(null)
     },
@@ -80,7 +83,6 @@ const PlayerGamePage = () => {
   // est autoritaire (partie expirée/fermée, joueur retiré ou kické). L'ignorer
   // pendant une reconnexion laissait le joueur bloqué sur un écran vide.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    console.log(`[DEBUG] Processing GAME.RESET (msg: ${message})`)
     navigate({ to: "/", search: { pin: undefined } })
     toast.error(t(message))
   })

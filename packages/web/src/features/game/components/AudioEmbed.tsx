@@ -1,6 +1,7 @@
 import { forwardRef } from "react"
 import { parseAudio } from "@rahoot/web/features/game/utils/audio"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 
 type Props = {
   audio: string
@@ -8,6 +9,7 @@ type Props = {
 
 const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
   const { isHost } = useGameConfig()
+  const muted = useSoundStore((state) => state.muted)
   const src = parseAudio(audio)
 
   if (!isHost) {
@@ -15,7 +17,7 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
   }
 
   if (src.type === "file") {
-    return <audio ref={ref} src={src.url} autoPlay loop hidden />
+    return <audio ref={ref} src={src.url} autoPlay loop hidden muted={muted} />
   }
 
   // YouTube audio : iframe minuscule hors-écran
@@ -23,7 +25,8 @@ const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
     autoplay: "1",
     loop: "1",
     controls: "0",
-    mute: "0",
+    // Son coupé par l'hôte : pris en compte au chargement du lecteur.
+    mute: muted ? "1" : "0",
     playlist: src.videoId,
     rel: "0",
     playsinline: "1",

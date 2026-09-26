@@ -81,9 +81,6 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>()(
           submittedAnswer: null,
         }),
       hydrate: (data) => {
-        console.log(
-          `[STORE] Player hydrate gameId=${data.gameId} hasAnswered=${data.hasAnswered}`,
-        )
         set({
           gameId: data.gameId,
           player: data.player,

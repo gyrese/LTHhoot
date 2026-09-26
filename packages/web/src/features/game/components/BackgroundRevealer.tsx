@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from "react"
+import clsx from "clsx"
+import { type CSSProperties, useEffect, useState, useMemo, useRef } from "react"
 
 type Props = {
   duration: number // En secondes
@@ -49,6 +50,199 @@ function createPRNG(seedString: string) {
   }
 }
 /* eslint-enable no-bitwise, no-plusplus */
+
+// Styles continus : pour chaque mode, le style de la couche principale (et
+// d'une éventuelle sous-couche) en fonction de la progression 0 → 1.
+type LayerStyles = {
+  main: (_progress: number) => CSSProperties
+  sub?: (_progress: number) => CSSProperties
+}
+
+const radialMask = (mask: string): CSSProperties => ({
+  maskImage: mask,
+  WebkitMaskImage: mask,
+})
+
+const CONTINUOUS_LAYERS: Record<string, LayerStyles> = {
+  blur: {
+    main: (progress) => ({
+      backdropFilter: `blur(${40 * (1 - progress)}px)`,
+      WebkitBackdropFilter: `blur(${40 * (1 - progress)}px)`,
+      backgroundColor: `rgba(9, 13, 22, ${1 - progress})`,
+    }),
+  },
+  iris: {
+    main: (progress) => {
+      const radiusPercent = progress * 140
+
+      return radialMask(
+        `radial-gradient(circle at 50% 50%, transparent ${radiusPercent}%, black ${radiusPercent + 4}%)`,
+      )
+    },
+  },
+  spotlight: {
+    main: (progress) => {
+      const time = progress * 10
+      let spotX = 50 + Math.sin(time * 3) * 35
+      let spotY = 50 + Math.cos(time * 2) * 25
+      let radius = 120
+
+      if (progress > 0.6) {
+        const expandProgress = (progress - 0.6) / 0.4
+        spotX = spotX * (1 - expandProgress) + 50 * expandProgress
+        spotY = spotY * (1 - expandProgress) + 50 * expandProgress
+        radius = 120 + expandProgress * 1500
+      }
+
+      return radialMask(
+        `radial-gradient(circle ${radius}px at ${spotX}% ${spotY}%, transparent 80%, black 100%)`,
+      )
+    },
+  },
+  thermal: {
+    main: (progress) => {
+      const factor = 1 - progress
+      const filter = `hue-rotate(${factor * 200}deg) invert(${factor * 0.7}) contrast(${100 + factor * 100}%)`
+
+      return {
+        backgroundColor: `rgba(9, 13, 22, ${factor * 0.9})`,
+        backdropFilter: filter,
+        WebkitBackdropFilter: filter,
+      }
+    },
+  },
+  printer: {
+    main: (progress) => {
+      const topPct = progress * 100
+
+      return {
+        clipPath: `polygon(0 ${topPct}%, 100% ${topPct}%, 100% 100%, 0 100%)`,
+      }
+    },
+    sub: (progress) => ({ top: `${progress * 100}%` }),
+  },
+  burn: {
+    main: (progress) => {
+      const r = progress * 140
+
+      return radialMask(
+        `radial-gradient(circle at 50% 50%, transparent ${r}%, black ${r + 6}%)`,
+      )
+    },
+    sub: (progress) => ({
+      clipPath: `circle(${progress * 140 + 1}% at 50% 50%)`,
+    }),
+  },
+  ink: {
+    main: (progress) => {
+      const r = progress * 130
+
+      return radialMask(
+        `radial-gradient(circle at 50% 50%, transparent ${r}%, transparent ${r + 2}%, black ${r + 8}%), radial-gradient(circle at 20% 30%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%), radial-gradient(circle at 80% 70%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%)`,
+      )
+    },
+  },
+}
+
+// Modes dont la couche principale est le voile sombre lui-même.
+const LAYER_BACKGROUND_STYLES = new Set(["iris", "spotlight", "burn", "ink"])
+
+// Application impérative d'un style React (camelCase) sur un nœud du DOM,
+// préfixes vendeurs compris (WebkitMaskImage → -webkit-mask-image).
+const applyStyle = (el: HTMLElement | null, style?: CSSProperties) => {
+  if (!el || !style) {
+    return
+  }
+
+  for (const [key, value] of Object.entries(style)) {
+    const property = key.replace(/[A-Z]/gu, (m) => `-${m.toLowerCase()}`)
+    el.style.setProperty(property, String(value))
+  }
+}
+
+// Une frame des modes canvas : dépixélisation de l'image ou neige TV.
+const drawCanvasFrame = ({
+  canvas,
+  offscreen,
+  style,
+  progress,
+  img,
+}: {
+  canvas: HTMLCanvasElement
+  offscreen: HTMLCanvasElement
+  style: string | undefined
+  progress: number
+  img: HTMLImageElement | null
+}) => {
+  const ctx = canvas.getContext("2d")
+  const { width, height } = canvas
+
+  if (!ctx || width === 0 || height === 0) {
+    return
+  }
+
+  if (progress >= 1) {
+    ctx.clearRect(0, 0, width, height)
+
+    return
+  }
+
+  if (style === "pixelate") {
+    const blockSize = Math.max(1, Math.round((1 - progress) ** 2.2 * 80))
+
+    ctx.imageSmoothingEnabled = false
+
+    if (!img || !img.complete) {
+      ctx.fillStyle = "#090d16"
+      ctx.fillRect(0, 0, width, height)
+
+      return
+    }
+
+    const scaledW = Math.max(1, Math.floor(width / blockSize))
+    const scaledH = Math.max(1, Math.floor(height / blockSize))
+
+    offscreen.width = scaledW
+    offscreen.height = scaledH
+    const offCtx = offscreen.getContext("2d")
+
+    if (!offCtx) {
+      return
+    }
+
+    offCtx.imageSmoothingEnabled = false
+
+    const { sx, sy, sw, sh } = computeCoverCrop(img, width / height)
+
+    offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
+
+    ctx.clearRect(0, 0, width, height)
+    ctx.drawImage(offscreen, 0, 0, scaledW, scaledH, 0, 0, width, height)
+
+    return
+  }
+
+  // Neige TV / Static Noise
+  ctx.clearRect(0, 0, width, height)
+  const opacity = 1 - progress
+  const imageData = ctx.createImageData(width, height)
+  const { data } = imageData
+
+  for (let i = 0; i < data.length; i += 4) {
+    const val = Math.floor(Math.random() * 255)
+    data[i] = val // R
+    data[i + 1] = val // G
+    data[i + 2] = val // B
+    data[i + 3] = Math.floor(opacity * 255 * (Math.random() * 0.8 + 0.2)) // A
+  }
+  ctx.putImageData(imageData, 0, 0)
+
+  // Draw Scanlines
+  ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.3})`
+  for (let y = 0; y < height; y += 4) {
+    ctx.fillRect(0, y, width, 1.5)
+  }
+}
 
 export const BackgroundRevealer = ({
   duration,
@@ -176,38 +370,87 @@ export const BackgroundRevealer = ({
     return { sequence: seq, selectedStyle }
   }, [totalCells, gridCols, gridRows, seedString, configuredStyle])
 
-  // Timer à haute fréquence unifié pour animer de manière ultra-fluide (60 FPS)
-  const [progress, setProgress] = useState(0)
+  const isCanvasStyle =
+    selectedStyle === "pixelate" || selectedStyle === "glitch"
+  const layerStyles = selectedStyle ? CONTINUOUS_LAYERS[selectedStyle] : null
+  const isGridStyle = !isCanvasStyle && !layerStyles
+
+  // Progression initiale (reprise après reconnexion via startTimeOffset).
+  const initialProgress =
+    duration > 0 ? Math.min(1, startTimeOffset / duration) : 1
+
+  // Seuls deux états React subsistent, mis à jour rarement : la fin de
+  // l'animation et, pour les grilles, le nombre de cases révélées (≤ une
+  // mise à jour par case). Tout le reste est peint à chaque frame via
+  // requestAnimationFrame directement sur le DOM / le canvas — l'ancien
+  // `setProgress` toutes les 16 ms re-rendait ce composant à 60 Hz sur
+  // l'hôte ET sur chaque téléphone.
+  const [done, setDone] = useState(initialProgress >= 1)
+  const [revealedCount, setRevealedCount] = useState(() =>
+    Math.floor(initialProgress * totalCells),
+  )
+  const mainLayerRef = useRef<HTMLDivElement | null>(null)
+  const subLayerRef = useRef<HTMLDivElement | null>(null)
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    if (duration <= 0) {
-      setProgress(1)
-
-      return undefined
-    }
-
-    const initialProgress = Math.min(1, startTimeOffset / duration)
-    setProgress(initialProgress)
-
     if (initialProgress >= 1) {
+      setDone(true)
+
       return undefined
     }
 
-    const startTime = Date.now() - initialProgress * duration * 1000
+    setDone(false)
 
-    const timer = setInterval(() => {
-      const elapsedMs = Date.now() - startTime
-      const currentProgress = Math.min(1, elapsedMs / (duration * 1000))
+    const startTime = performance.now() - initialProgress * duration * 1000
+    let frame = 0
+    let lastCount = -1
 
-      setProgress(currentProgress)
+    const paint = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / (duration * 1000))
 
-      if (currentProgress >= 1) {
-        clearInterval(timer)
+      if (layerStyles) {
+        applyStyle(mainLayerRef.current, layerStyles.main(progress))
+        applyStyle(subLayerRef.current, layerStyles.sub?.(progress))
+      } else if (isCanvasStyle && canvasRef.current) {
+        offscreenRef.current ||= document.createElement("canvas")
+        drawCanvasFrame({
+          canvas: canvasRef.current,
+          offscreen: offscreenRef.current,
+          style: selectedStyle,
+          progress,
+          img: loadedImageRef.current,
+        })
+      } else if (isGridStyle) {
+        const count = Math.floor(progress * totalCells)
+
+        if (count !== lastCount) {
+          lastCount = count
+          setRevealedCount(count)
+        }
       }
-    }, 16)
 
-    return () => clearInterval(timer)
-  }, [duration, startTimeOffset])
+      if (progress >= 1) {
+        setDone(true)
+
+        return
+      }
+
+      frame = requestAnimationFrame(paint)
+    }
+
+    frame = requestAnimationFrame(paint)
+
+    return () => cancelAnimationFrame(frame)
+  }, [
+    duration,
+    initialProgress,
+    selectedStyle,
+    layerStyles,
+    isCanvasStyle,
+    isGridStyle,
+    totalCells,
+  ])
 
   // Préchargement de l'image pour le mode dépixélisation canvas
   useEffect(() => {
@@ -229,97 +472,9 @@ export const BackgroundRevealer = ({
     }
   }, [selectedStyle, imageUrl])
 
-  // Rendu Canvas pour Dépixélisation & Neige TV (Glitch)
-  useEffect(() => {
-    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
-      return undefined
-    }
-
-    const canvas = canvasRef.current
-
-    if (!canvas) {
-      return undefined
-    }
-
-    const ctx = canvas.getContext("2d")
-
-    if (!ctx) {
-      return undefined
-    }
-
-    const { width } = canvas
-    const { height } = canvas
-
-    if (width === 0 || height === 0) {
-      return undefined
-    }
-
-    if (progress >= 1) {
-      ctx.clearRect(0, 0, width, height)
-
-      return undefined
-    }
-
-    if (selectedStyle === "pixelate") {
-      const img = loadedImageRef.current
-      const blockSize = Math.max(1, Math.round((1 - progress) ** 2.2 * 80))
-
-      ctx.imageSmoothingEnabled = false
-
-      if (img && img.complete) {
-        const scaledW = Math.max(1, Math.floor(width / blockSize))
-        const scaledH = Math.max(1, Math.floor(height / blockSize))
-
-        const offscreen = document.createElement("canvas")
-        offscreen.width = scaledW
-        offscreen.height = scaledH
-        const offCtx = offscreen.getContext("2d")
-
-        if (offCtx) {
-          offCtx.imageSmoothingEnabled = false
-
-          const { sx, sy, sw, sh } = computeCoverCrop(img, width / height)
-
-          offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, scaledW, scaledH)
-
-          ctx.clearRect(0, 0, width, height)
-          ctx.drawImage(offscreen, 0, 0, scaledW, scaledH, 0, 0, width, height)
-        }
-      } else {
-        ctx.fillStyle = "#090d16"
-        ctx.fillRect(0, 0, width, height)
-      }
-    } else if (selectedStyle === "glitch") {
-      // Neige TV / Static Noise
-      ctx.clearRect(0, 0, width, height)
-      const opacity = 1 - progress
-      const imageData = ctx.createImageData(width, height)
-      const { data } = imageData
-
-      for (let i = 0; i < data.length; i += 4) {
-        const val = Math.floor(Math.random() * 255)
-        data[i] = val // R
-        data[i + 1] = val // G
-        data[i + 2] = val // B
-        data[i + 3] = Math.floor(opacity * 255 * (Math.random() * 0.8 + 0.2)) // A
-      }
-      ctx.putImageData(imageData, 0, 0)
-
-      // Draw Scanlines
-      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.3})`
-      for (let y = 0; y < height; y += 4) {
-        ctx.fillRect(0, y, width, 1.5)
-      }
-    }
-
-    // Rendu ponctuel : rien à nettoyer, mais toutes les branches doivent
-    // rendre la même chose (l'effet sort tôt dans plusieurs cas).
-    return undefined
-  }, [progress, selectedStyle])
-
   // Redimensionnement du Canvas
   useEffect(() => {
-    if (selectedStyle !== "pixelate" && selectedStyle !== "glitch") {
+    if (!isCanvasStyle) {
       return undefined
     }
 
@@ -343,14 +498,14 @@ export const BackgroundRevealer = ({
     ro.observe(canvas)
 
     return () => ro.disconnect()
-  }, [selectedStyle])
+  }, [isCanvasStyle])
+
+  if (done) {
+    return null
+  }
 
   // ─── 1. MODE CANVASES (Pixelate & Glitch) ──────────────────────────────────
-  if (selectedStyle === "pixelate" || selectedStyle === "glitch") {
-    if (progress >= 1) {
-      return null
-    }
-
+  if (isCanvasStyle) {
     return (
       <canvas
         ref={canvasRef}
@@ -359,168 +514,49 @@ export const BackgroundRevealer = ({
     )
   }
 
-  // ─── 2. MODE OPTIQUE & SPÉCIAUX (Blur, Iris, Spotlight, Thermal) ────────────
-  if (selectedStyle === "blur") {
-    if (progress >= 1) {
-      return null
-    }
+  // ─── 2 & 3. MODES CONTINUS (Blur, Iris, Spotlight, Thermal, Printer, Burn,
+  // Ink) : style initial rendu ici, puis mis à jour par la boucle rAF.
+  if (layerStyles) {
+    const mainStyle = layerStyles.main(initialProgress)
 
-    const currentBlur = 40 * (1 - progress)
-    const overlayOpacity = 1 - progress
-
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-[5] select-none"
-        style={{
-          backdropFilter: `blur(${currentBlur}px)`,
-          WebkitBackdropFilter: `blur(${currentBlur}px)`,
-          backgroundColor: `rgba(9, 13, 22, ${overlayOpacity})`,
-          transition:
-            "backdrop-filter 50ms linear, background-color 50ms linear",
-        }}
-      />
-    )
-  }
-
-  if (selectedStyle === "iris") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const radiusPercent = progress * 140
-
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
-        style={{
-          maskImage: `radial-gradient(circle at 50% 50%, transparent ${radiusPercent}%, black ${radiusPercent + 4}%)`,
-          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${radiusPercent}%, black ${radiusPercent + 4}%)`,
-        }}
-      />
-    )
-  }
-
-  if (selectedStyle === "spotlight") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const time = progress * 10
-
-    let spotX = 50 + Math.sin(time * 3) * 35
-    let spotY = 50 + Math.cos(time * 2) * 25
-    let radius = 120
-
-    if (progress > 0.6) {
-      const expandProgress = (progress - 0.6) / 0.4
-      spotX = spotX * (1 - expandProgress) + 50 * expandProgress
-      spotY = spotY * (1 - expandProgress) + 50 * expandProgress
-      radius = 120 + expandProgress * 1500
+    if (selectedStyle === "printer") {
+      return (
+        <div className="pointer-events-none absolute inset-0 z-[5] select-none">
+          <div
+            ref={mainLayerRef}
+            className="absolute inset-0 bg-[#090d16]"
+            style={mainStyle}
+          />
+          <div
+            ref={subLayerRef}
+            className="absolute right-0 left-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
+            style={layerStyles.sub?.(initialProgress)}
+          />
+        </div>
+      )
     }
 
     return (
       <div
-        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
-        style={{
-          maskImage: `radial-gradient(circle ${radius}px at ${spotX}% ${spotY}%, transparent 80%, black 100%)`,
-          WebkitMaskImage: `radial-gradient(circle ${radius}px at ${spotX}% ${spotY}%, transparent 80%, black 100%)`,
-        }}
-      />
-    )
-  }
-
-  if (selectedStyle === "thermal") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const factor = 1 - progress
-
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-[5] transition-all duration-100 select-none"
-        style={{
-          backgroundColor: `rgba(9, 13, 22, ${factor * 0.9})`,
-          backdropFilter: `hue-rotate(${factor * 200}deg) invert(${factor * 0.7}) contrast(${100 + factor * 100}%)`,
-          WebkitBackdropFilter: `hue-rotate(${factor * 200}deg) invert(${factor * 0.7}) contrast(${100 + factor * 100}%)`,
-        }}
-      />
-    )
-  }
-
-  // ─── 3. MODE ÉLÉMENTS & MATIÈRES (Burn, Ink, Printer) ──────────────────────
-  if (selectedStyle === "printer") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const topPct = progress * 100
-
-    return (
-      <div className="pointer-events-none absolute inset-0 z-[5] select-none">
-        <div
-          className="absolute inset-0 bg-[#090d16]"
-          style={{
-            clipPath: `polygon(0 ${topPct}%, 100% ${topPct}%, 100% 100%, 0 100%)`,
-          }}
-        />
-        <div
-          className="absolute right-0 left-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
-          style={{ top: `${topPct}%` }}
-        />
-      </div>
-    )
-  }
-
-  if (selectedStyle === "burn") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const r = progress * 140
-
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
-        style={{
-          maskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, black ${r + 6}%)`,
-          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, black ${r + 6}%)`,
-        }}
+        ref={mainLayerRef}
+        className={clsx(
+          "pointer-events-none absolute inset-0 z-[5] select-none",
+          LAYER_BACKGROUND_STYLES.has(selectedStyle ?? "") && "bg-[#090d16]",
+        )}
+        style={mainStyle}
       >
-        <div
-          className="absolute inset-0 rounded-full border-[8px] border-amber-500/80 shadow-[0_0_30px_#f59e0b]"
-          style={{
-            clipPath: `circle(${r + 1}% at 50% 50%)`,
-          }}
-        />
+        {selectedStyle === "burn" && (
+          <div
+            ref={subLayerRef}
+            className="absolute inset-0 rounded-full border-[8px] border-amber-500/80 shadow-[0_0_30px_#f59e0b]"
+            style={layerStyles.sub?.(initialProgress)}
+          />
+        )}
       </div>
-    )
-  }
-
-  if (selectedStyle === "ink") {
-    if (progress >= 1) {
-      return null
-    }
-
-    const r = progress * 130
-
-    return (
-      <div
-        className="pointer-events-none absolute inset-0 z-[5] bg-[#090d16] transition-all duration-75 select-none"
-        style={{
-          maskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, transparent ${r + 2}%, black ${r + 8}%), radial-gradient(circle at 20% 30%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%), radial-gradient(circle at 80% 70%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%)`,
-          WebkitMaskImage: `radial-gradient(circle at 50% 50%, transparent ${r}%, transparent ${r + 2}%, black ${r + 8}%), radial-gradient(circle at 20% 30%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%), radial-gradient(circle at 80% 70%, transparent ${r * 0.8}%, black ${r * 0.8 + 6}%)`,
-        }}
-      />
     )
   }
 
   // ─── 4. MODE GRILLES & GÉOMÉTRIE (HoneyComb, Puzzle, Cases Standard) ────────
-  if (progress >= 1) {
-    return null
-  }
-
-  const revealedCount = Math.floor(progress * totalCells)
   const revealedSet = new Set(sequence.slice(0, revealedCount))
 
   const getTileStyle = (isRevealed: boolean) => {

@@ -5,7 +5,13 @@ import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
-import { useEffect, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronRight, Trophy } from "lucide-react"
 
@@ -65,32 +71,47 @@ const EveningInterstitiel = ({
     setVisible(true)
   }, [])
 
+  // Dernière version de `onContinue` gardée en ref : le compte à rebours et
+  // les écouteurs ne dépendent plus de l'identité de la fonction du parent.
+  const onContinueRef = useRef(onContinue)
+
+  useLayoutEffect(() => {
+    onContinueRef.current = onContinue
+  })
+
+  // Un seul avancement par interstitiel, qu'il vienne du compte à rebours,
+  // du bouton, du clic global ou de la flèche.
+  const hasContinuedRef = useRef(false)
+
+  const handleNext = useCallback(() => {
+    if (hasContinuedRef.current) {
+      return
+    }
+
+    hasContinuedRef.current = true
+    socket?.emit(EVENTS.EVENING.NEXT, { gameId })
+    onContinueRef.current()
+  }, [socket, gameId])
+
+  // Le compte à rebours ne fait que décrémenter : l'effet de bord (emit) est
+  // déclenché hors de l'updater, qui doit rester pur.
   useEffect(() => {
     if (!isHost) {
       return undefined
     }
 
     const timer = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timer)
-          socket?.emit(EVENTS.EVENING.NEXT, { gameId })
-          onContinue()
-
-          return 0
-        }
-
-        return c - 1
-      })
+      setCountdown((c) => Math.max(0, c - 1))
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isHost, gameId, onContinue, socket])
+  }, [isHost])
 
-  const handleNext = () => {
-    socket?.emit(EVENTS.EVENING.NEXT, { gameId })
-    onContinue()
-  }
+  useEffect(() => {
+    if (isHost && countdown === 0) {
+      handleNext()
+    }
+  }, [isHost, countdown, handleNext])
 
   useEffect(() => {
     if (!isHost) {
@@ -150,16 +171,16 @@ const EveningInterstitiel = ({
           className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black/80 backdrop-blur-xl"
         >
           {/* Header */}
-          <div className="flex shrink-0 flex-col items-center gap-1 px-4 py-6">
+          <div className="flex shrink-0 flex-col items-center gap-1 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
             <div className="flex items-center gap-2 rounded-full bg-orange-500/20 px-4 py-1.5 text-sm font-bold text-orange-300 ring-1 ring-orange-500/40">
               <Trophy className="size-4" />
-              {t("game:evening.quizComplete", "Quiz terminé !")}
+              {t("game:evening.quizComplete")}
             </div>
             <h2 className="mt-2 text-center text-2xl font-black text-white">
               {subject}
             </h2>
             <p className="text-sm text-white/50">
-              {t("game:evening.progress", "Quiz {{current}} sur {{total}}", {
+              {t("game:evening.progress", {
                 current: quizIndex + 1,
                 total: totalQuizzes,
               })}
@@ -176,7 +197,7 @@ const EveningInterstitiel = ({
           {/* Classement cumulatif */}
           <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 pb-4">
             <h3 className="text-center text-sm font-bold text-white/60">
-              {t("game:evening.cumulativeRanking", "Classement soirée")}
+              {t("game:evening.cumulativeRanking")}
             </h3>
             <div className="mx-auto w-full max-w-md space-y-2">
               {leaderboard.slice(0, 8).map((entry, index) => {
@@ -216,7 +237,7 @@ const EveningInterstitiel = ({
                       {entry.username}
                       {isMe && (
                         <span className="ml-1 text-xs text-white/50">
-                          ({t("game:you", "toi")})
+                          ({t("game:you")})
                         </span>
                       )}
                     </p>
@@ -264,13 +285,13 @@ const EveningInterstitiel = ({
           </div>
 
           {/* Footer */}
-          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-white/10 px-4 py-4">
+          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-white/10 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {isHost ? (
               <button
                 onClick={handleNext}
                 className="flex items-center gap-2 rounded-2xl bg-orange-500 px-8 py-3 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-105 hover:bg-orange-400"
               >
-                {t("game:evening.nextQuiz", "Quiz suivant")}
+                {t("game:evening.nextQuiz")}
                 <ChevronRight className="size-5" />
                 <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-sm">
                   {countdown}
@@ -278,7 +299,7 @@ const EveningInterstitiel = ({
               </button>
             ) : (
               <p className="text-sm text-white/50">
-                {t("game:evening.waitingHost", "En attente du prochain quiz…")}
+                {t("game:evening.waitingHost")}
               </p>
             )}
           </div>

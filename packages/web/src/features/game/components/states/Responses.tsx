@@ -16,8 +16,11 @@ import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import {
   ANSWERS_COLORS,
   ANSWERS_ICONS,
+  ANSWERS_SHAPE_KEYS,
+  isDarkTextAnswer,
   SFX,
 } from "@rahoot/web/features/game/utils/constants"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
 import { useEffect, useRef, useState, type CSSProperties } from "react"
@@ -239,6 +242,51 @@ const SliderResult = ({
 
 // ── MCQ / True-False bar chart ────────────────────────────────────────────────
 
+// Barre de distribution : la forme de la réponse accompagne la couleur (écran
+// projecteur, daltonisme), le compteur est écrit en grand au pied de la barre.
+const DistributionBar = ({
+  index,
+  colorClass,
+  height,
+  count,
+}: {
+  index: number
+  colorClass?: string
+  height?: string
+  count: number
+}) => {
+  const { t } = useTranslation()
+  const Icon = ANSWERS_ICONS[index]
+  const dark = isDarkTextAnswer(index)
+
+  return (
+    <div
+      className={clsx(
+        "anim-bar-grow flex min-h-14 origin-bottom flex-col items-center justify-end self-end overflow-hidden rounded-md",
+        colorClass,
+      )}
+      style={{ height, animationDelay: `${index * 0.1}s` }}
+      role="img"
+      aria-label={`${t(ANSWERS_SHAPE_KEYS[index] ?? "")} : ${count}`}
+    >
+      <span
+        className={clsx(
+          "flex w-full items-center justify-center gap-2 bg-black/10 py-1 text-center text-2xl font-black md:text-3xl",
+          dark ? "text-slate-900" : "text-white drop-shadow-md",
+        )}
+      >
+        {Icon && (
+          <Icon
+            className="size-5 shrink-0 md:size-6"
+            fill={dark ? "#0f172a" : undefined}
+          />
+        )}
+        {count}
+      </span>
+    </div>
+  )
+}
+
 const McqResult = ({
   answers,
   responses,
@@ -254,22 +302,17 @@ const McqResult = ({
 }) => (
   <>
     <div
-      className="mt-8 grid h-40 w-full max-w-3xl gap-4 px-2"
+      className="mt-8 grid h-40 w-full max-w-3xl gap-4 px-2 md:h-56"
       style={{ gridTemplateColumns: `repeat(${answers.length}, 1fr)` }}
     >
       {answers.map((_, key) => (
-        <div
+        <DistributionBar
           key={key}
-          className={clsx(
-            "anim-bar-grow flex origin-bottom flex-col justify-end self-end overflow-hidden rounded-md",
-            ANSWERS_COLORS[key],
-          )}
-          style={{ height: percentages[key], animationDelay: `${key * 0.1}s` }}
-        >
-          <span className="w-full bg-black/10 text-center text-lg font-bold text-white drop-shadow-md">
-            {responses[key] || 0}
-          </span>
-        </div>
+          index={key}
+          colorClass={ANSWERS_COLORS[key]}
+          height={percentages[key]}
+          count={responses[key] || 0}
+        />
       ))}
     </div>
 
@@ -280,6 +323,7 @@ const McqResult = ({
           index={key}
           className={clsx(ANSWERS_COLORS[key])}
           icon={ANSWERS_ICONS[key]}
+          darkText={isDarkTextAnswer(key)}
           correct={revealed ? solutions.includes(key) : undefined}
         >
           {answer}
@@ -308,23 +352,15 @@ const TrueFalseResult = ({
 
   return (
     <>
-      <div className="mt-8 grid h-40 w-full max-w-3xl grid-cols-2 gap-4 px-2">
+      <div className="mt-8 grid h-40 w-full max-w-3xl grid-cols-2 gap-4 px-2 md:h-56">
         {labels.map((_, key) => (
-          <div
+          <DistributionBar
             key={key}
-            className={clsx(
-              "anim-bar-grow flex origin-bottom flex-col justify-end self-end overflow-hidden rounded-md",
-              colors[key],
-            )}
-            style={{
-              height: percentages[key],
-              animationDelay: `${key * 0.1}s`,
-            }}
-          >
-            <span className="w-full bg-black/10 text-center text-lg font-bold text-white drop-shadow-md">
-              {responses[key] || 0}
-            </span>
-          </div>
+            index={key}
+            colorClass={colors[key]}
+            height={percentages[key]}
+            count={responses[key] || 0}
+          />
         ))}
       </div>
 
@@ -620,7 +656,11 @@ const Responses = ({
   const solutions = rawSolutions ?? []
   const [percentages, setPercentages] = useState<Record<string, string>>({})
   const [revealed, setRevealed] = useState(false)
-  const [sfxResults] = useSound(SFX.RESULTS_SOUND, { volume: 0.2 })
+  const muted = useSoundStore((state) => state.muted)
+  const [sfxResults] = useSound(SFX.RESULTS_SOUND, {
+    volume: 0.2,
+    soundEnabled: !muted,
+  })
 
   const { isHost } = useGameConfig()
 

@@ -5,17 +5,30 @@ import {
 } from "@rahoot/web/features/game/utils/powerupMeta"
 import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
+import { useTranslation } from "react-i18next"
 
 type Props = {
   powerUps: PowerUp[]
   onUse: (_powerUp: PowerUp) => void
   compact?: boolean
+  // Phase où aucun power-up n'est jouable (salon, pause, duel, fin) : les
+  // slots restent visibles mais grisés et inactifs.
+  disabled?: boolean
+  // Power-ups fraîchement obtenus : badge « NOUVEAU ! » temporaire.
+  freshIds?: string[]
 }
 
 // Re-export pour compat
 export { POWER_UP_META_UI as POWER_UP_META }
 
-const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
+const PowerUpBar = ({
+  powerUps,
+  onUse,
+  compact = false,
+  disabled = false,
+  freshIds = [],
+}: Props) => {
+  const { t } = useTranslation()
   const slots = Array.from({ length: 3 }, (_, i) => powerUps[i] ?? null)
   const slotSize = compact ? "h-11 w-11" : "h-14 w-14"
   const iconSize = compact ? "size-5" : "size-7"
@@ -39,6 +52,7 @@ const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
           const meta = POWER_UP_META_UI[powerUp.type]
           const style = RARITY_STYLE[meta.rarity]
           const isLegendary = meta.rarity === "LEGENDARY"
+          const isFresh = freshIds.includes(powerUp.id)
 
           return (
             <motion.button
@@ -70,16 +84,27 @@ const PowerUpBar = ({ powerUps, onUse, compact = false }: Props) => {
                 }),
               }}
               onClick={() => onUse(powerUp)}
+              disabled={disabled}
               className={clsx(
                 "relative flex items-center justify-center rounded-xl border-2 backdrop-blur-sm transition-transform active:scale-90",
                 slotSize,
                 style.bg,
                 style.border,
                 isLegendary && "shadow-lg",
+                disabled && "cursor-not-allowed opacity-40 grayscale",
               )}
-              title={`${meta.label} — ${style.label}`}
+              title={
+                disabled
+                  ? `${meta.label} — ${t("game:powerupBar.unavailable")}`
+                  : `${meta.label} — ${style.label}`
+              }
               aria-label={meta.label}
             >
+              {isFresh && (
+                <span className="anim-pop-in absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] leading-none font-black whitespace-nowrap text-white shadow-md">
+                  {t("game:powerupBar.new")}
+                </span>
+              )}
               <meta.Icon
                 className={clsx(iconSize, style.text)}
                 style={

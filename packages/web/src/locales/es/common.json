@@ -18,5 +18,14 @@
   "save": "Guardar",
   "seconds": "seg",
   "skip": "Omitir",
-  "submit": "Enviar"
+  "submit": "Enviar",
+  "quit": "Salir",
+  "close": "Cerrar",
+  "edit": "Editar",
+  "export": "Exportar",
+  "reconnecting": {
+    "title": "Conexión interrumpida",
+    "subtitle": "Restaurando tu sesión…",
+    "hint": "Comprueba tu conexión wifi o móvil."
+  }
 }

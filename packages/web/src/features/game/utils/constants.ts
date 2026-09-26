@@ -32,6 +32,18 @@ export const ANSWERS_COLORS = [
 
 export const ANSWERS_ICONS = [Triangle, Rhombus, Circle, Square]
 
+// Nom de chaque forme (lecteurs d'écran, écran projecteur).
+export const ANSWERS_SHAPE_KEYS = [
+  "game:shapes.triangle",
+  "game:shapes.rhombus",
+  "game:shapes.circle",
+  "game:shapes.square",
+]
+
+// Fonds trop clairs pour du texte blanc (jaune ≈ 2:1 de contraste) : on y
+// écrit en sombre.
+export const isDarkTextAnswer = (index: number) => index === 2
+
 export const GAME_STATES = {
   status: {
     name: STATUS.WAIT,

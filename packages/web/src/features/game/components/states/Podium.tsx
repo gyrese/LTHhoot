@@ -14,6 +14,7 @@ import {
   type PodiumThemeTokens,
 } from "@rahoot/web/features/game/components/states/podium/themes"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import {
   HAPTIC_PATTERNS,
@@ -58,12 +59,15 @@ const RANK_LAYOUT = {
 const usePodiumAnimation = (topLength: number) => {
   const [apparition, setApparition] = useState(0)
   const { isHost } = useGameConfig()
-  const [sfxtThree] = useSound(SFX.PODIUM.THREE, { volume: 0.2 })
-  const [sfxSecond] = useSound(SFX.PODIUM.SECOND, { volume: 0.2 })
-  const [sfxRool, { stop: sfxRoolStop }] = useSound(SFX.PODIUM.SNEAR_ROOL, {
-    volume: 0.2,
-  })
-  const [sfxFirst] = useSound(SFX.PODIUM.FIRST, { volume: 0.2 })
+  const muted = useSoundStore((state) => state.muted)
+  const soundOptions = { volume: 0.2, soundEnabled: !muted }
+  const [sfxtThree] = useSound(SFX.PODIUM.THREE, soundOptions)
+  const [sfxSecond] = useSound(SFX.PODIUM.SECOND, soundOptions)
+  const [sfxRool, { stop: sfxRoolStop }] = useSound(
+    SFX.PODIUM.SNEAR_ROOL,
+    soundOptions,
+  )
+  const [sfxFirst] = useSound(SFX.PODIUM.FIRST, soundOptions)
 
   useEffect(() => {
     if (!isHost) {
@@ -111,20 +115,24 @@ const ScoreCounter = ({ target, show }: { target: number; show: boolean }) => {
   const [displayed, setDisplayed] = useState(0)
   useEffect(() => {
     if (!show) {
-      return
+      return undefined
     }
 
     const duration = 1200
     const start = performance.now()
+    let frame = 0
     const tick = (now: number) => {
       const p = Math.min((now - start) / duration, 1)
       setDisplayed(Math.round((1 - (1 - p) ** 3) * target))
 
       if (p < 1) {
-        requestAnimationFrame(tick)
+        frame = requestAnimationFrame(tick)
       }
     }
-    requestAnimationFrame(tick)
+    frame = requestAnimationFrame(tick)
+
+    // Boucle annulée au démontage (fin de partie, changement d'écran).
+    return () => cancelAnimationFrame(frame)
   }, [show, target])
 
   return <>{displayed.toLocaleString()}</>
@@ -557,12 +565,12 @@ const Podium = ({
   // gardent leur image dédiée.
   const bgImage = theme.id === PODIUM_THEME_NEUTRAL ? coverImage : theme.bgImage
 
-  let subtitle = "Et maintenant, le classement final..."
+  let subtitle = t("game:podium.finalRanking")
 
   if (isFinal) {
     subtitle = isEveningFinale
-      ? "Le grand vainqueur de la soirée"
-      : "Et le vainqueur est..."
+      ? t("game:podium.eveningWinner")
+      : t("game:podium.winnerIs")
   }
 
   // Mini burst de confettis localisé à l'annonce du 3e puis du 2e — le
@@ -750,7 +758,7 @@ const Podium = ({
                   opacity: 0.9,
                 }}
               >
-                Grande finale de la soirée
+                {t("game:evening.finale")}
               </span>
               <div
                 className="h-1.5 w-1.5 rotate-45"

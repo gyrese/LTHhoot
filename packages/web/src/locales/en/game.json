@@ -113,5 +113,153 @@
     "sniper": "The sniper"
   },
   "podiumShare": "Share",
-  "podiumExporting": "Exporting…"
+  "podiumExporting": "Exporting…",
+  "closeSession": "Close session",
+  "confirmEndGame": "Do you really want to close this session? All players will be disconnected.",
+  "sessionClosedByManager": "The session was closed by the host.",
+  "quit": "Quit",
+  "you": "you",
+  "question": "Question",
+  "quiz": "Quiz",
+  "player": "Player",
+  "score": "Score",
+  "joining": "Joining…",
+  "changeAvatar": "Change avatar",
+  "joinGame": "Join a game",
+  "enterPinDesc": "Enter the room PIN to get started",
+  "yourPseudo": "Your nickname",
+  "scorecardShare": "Share my card",
+  "scorecardExporting": "Generating…",
+  "startIn": "Starting in",
+  "preparation": "Getting ready",
+  "readingTime": "Reading time",
+  "readingByPlayers": "players are reading",
+  "waiting": "Waiting…",
+  "waitingForGame": "Waiting for the game…",
+  "evening": {
+    "quizComplete": "Quiz complete!",
+    "progress": "Quiz {{current}} of {{total}}",
+    "cumulativeRanking": "Evening ranking",
+    "nextQuiz": "Next quiz",
+    "waitingHost": "Waiting for the next quiz…",
+    "continue": "Continue",
+    "winner": "Winner of the evening!",
+    "finale": "Grand finale of the evening"
+  },
+  "sound": {
+    "mute": "Mute sound",
+    "unmute": "Unmute sound"
+  },
+  "shapes": {
+    "triangle": "Triangle",
+    "rhombus": "Diamond",
+    "circle": "Circle",
+    "square": "Square"
+  },
+  "a11y": {
+    "answerOption": "Answer {{number}} ({{shape}}): {{text}}",
+    "timeLeft_one": "{{count}} second left",
+    "timeLeft_other": "{{count}} seconds left"
+  },
+  "podium": {
+    "finalRanking": "And now, the final ranking...",
+    "eveningWinner": "The big winner of the evening",
+    "winnerIs": "And the winner is..."
+  },
+  "powerupDrawer": {
+    "leaderAuto": "Automatic target: the current leader",
+    "allOpponents": "Affects ALL opponents",
+    "use": "Use",
+    "chooseTarget_one": "Choose a target",
+    "chooseTarget_other": "Choose {{count}} targets",
+    "noTarget_one": "No opponent to target right now.",
+    "noTarget_other": "You need at least {{count}} opponents to target to use this power-up."
+  },
+  "powerupToast": {
+    "someone": "A player",
+    "on": "On {{names}}",
+    "mirroredOn": "Reflected onto {{names}}",
+    "self": "Personal effect"
+  },
+  "powerupBar": {
+    "new": "NEW!",
+    "unavailable": "unavailable right now"
+  },
+  "powerups": {
+    "rarity": {
+      "COMMON": "Common",
+      "RARE": "Rare",
+      "LEGENDARY": "Legendary"
+    },
+    "SHIELD": {
+      "label": "Shield",
+      "description": "Blocks the next incoming attack"
+    },
+    "FREEZE": {
+      "label": "Timer freeze",
+      "description": "Locks opponents' answers for 3 s"
+    },
+    "SAFETY_NET": {
+      "label": "Safety net",
+      "description": "+50 pts guaranteed even if wrong"
+    },
+    "SCRAMBLE": {
+      "label": "Scramble",
+      "description": "Shuffles an opponent's answer order"
+    },
+    "SPARK": {
+      "label": "Spark",
+      "description": "+25 pts for a correct answer on the next question"
+    },
+    "DIESEL": {
+      "label": "Diesel",
+      "description": "+500 pts if you are the last to answer correctly"
+    },
+    "DOUBLE_POINTS": {
+      "label": "Double Points",
+      "description": "×2 on the next question"
+    },
+    "STEAL_POINTS": {
+      "label": "Point Theft",
+      "description": "Steals 200 pts from the leader"
+    },
+    "BOMB": {
+      "label": "Bomb",
+      "description": "−150 pts to a targeted player"
+    },
+    "SWAP": {
+      "label": "Teleport",
+      "description": "Swaps your score with an opponent"
+    },
+    "SNIPER": {
+      "label": "Sniper",
+      "description": "Precise −100 pts on 2 targeted players"
+    },
+    "MIRROR": {
+      "label": "Mirror",
+      "description": "Reflects the next attack back to its sender"
+    },
+    "POISONED_GIFT": {
+      "label": "Poisoned gift",
+      "description": "Halves an opponent's points on the next question"
+    },
+    "TRIPLE_POINTS": {
+      "label": "Triple Points",
+      "description": "×3 on the next question"
+    },
+    "APOCALYPSE": {
+      "label": "Apocalypse",
+      "description": "−300 pts to ALL opponents"
+    },
+    "MEGA_BOMB": {
+      "label": "Mega Bomb",
+      "description": "−500 pts, ignores Shield"
+    },
+    "ROYAL_THEFT": {
+      "label": "Royal Theft",
+      "description": "Steals 50% of the leader's points"
+    }
+  },
+  "playersConnected_one": "{{count}} player connected",
+  "playersConnected_other": "{{count}} players connected"
 }

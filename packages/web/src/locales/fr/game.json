@@ -62,7 +62,10 @@
     "progress": "Quiz {{current}} sur {{total}}",
     "cumulativeRanking": "Classement soirée",
     "nextQuiz": "Quiz suivant",
-    "waitingHost": "En attente du prochain quiz…"
+    "waitingHost": "En attente du prochain quiz…",
+    "continue": "Continuer",
+    "winner": "Gagnant de la soirée !",
+    "finale": "Grande finale de la soirée"
   },
   "shop": {
     "open": "Ouvrir la boutique",
@@ -125,5 +128,142 @@
     "sniper": "Le sniper"
   },
   "podiumShare": "Partager",
-  "podiumExporting": "Export…"
+  "podiumExporting": "Export…",
+  "question": "Question",
+  "quiz": "Quiz",
+  "player": "Joueur",
+  "score": "Score",
+  "joining": "Connexion…",
+  "changeAvatar": "Changer d'avatar",
+  "joinGame": "Rejoindre une partie",
+  "enterPinDesc": "Saisis le code PIN du salon pour commencer",
+  "yourPseudo": "Ton pseudo",
+  "scorecardShare": "Partager ma carte",
+  "scorecardExporting": "Génération…",
+  "startIn": "Début dans",
+  "preparation": "Préparation",
+  "readingTime": "Temps de lecture",
+  "readingByPlayers": "lecture par les joueurs",
+  "waiting": "En attente…",
+  "waitingForGame": "En attente de la partie…",
+  "sound": {
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son"
+  },
+  "shapes": {
+    "triangle": "Triangle",
+    "rhombus": "Losange",
+    "circle": "Cercle",
+    "square": "Carré"
+  },
+  "a11y": {
+    "answerOption": "Réponse {{number}} ({{shape}}) : {{text}}",
+    "timeLeft_one": "Plus que {{count}} seconde",
+    "timeLeft_other": "Plus que {{count}} secondes",
+    "timeLeft_many": "Plus que {{count}} secondes"
+  },
+  "podium": {
+    "finalRanking": "Et maintenant, le classement final...",
+    "eveningWinner": "Le grand vainqueur de la soirée",
+    "winnerIs": "Et le vainqueur est..."
+  },
+  "powerupDrawer": {
+    "leaderAuto": "Cible automatique : le leader actuel du classement",
+    "allOpponents": "Affecte TOUS les adversaires",
+    "use": "Utiliser",
+    "chooseTarget_one": "Choisir une cible",
+    "chooseTarget_other": "Choisir {{count}} cibles",
+    "chooseTarget_many": "Choisir {{count}} cibles",
+    "noTarget_one": "Aucun adversaire à cibler pour le moment.",
+    "noTarget_other": "Il faut au moins {{count}} adversaires à cibler pour utiliser ce power-up.",
+    "noTarget_many": "Il faut au moins {{count}} adversaires à cibler pour utiliser ce power-up."
+  },
+  "powerupToast": {
+    "someone": "Un joueur",
+    "on": "Sur {{names}}",
+    "mirroredOn": "Renvoyé sur {{names}}",
+    "self": "Effet personnel"
+  },
+  "powerupBar": {
+    "new": "NOUVEAU !",
+    "unavailable": "indisponible pour le moment"
+  },
+  "powerups": {
+    "rarity": {
+      "COMMON": "Commun",
+      "RARE": "Rare",
+      "LEGENDARY": "Légendaire"
+    },
+    "SHIELD": {
+      "label": "Bouclier",
+      "description": "Bloque la prochaine attaque reçue"
+    },
+    "FREEZE": {
+      "label": "Gel du timer",
+      "description": "Bloque la saisie des adversaires pendant 3 s"
+    },
+    "SAFETY_NET": {
+      "label": "Filet de sécurité",
+      "description": "+50 pts garantis même si faux"
+    },
+    "SCRAMBLE": {
+      "label": "Embrouille",
+      "description": "Mélange l'ordre des réponses d'un adversaire"
+    },
+    "SPARK": {
+      "label": "Étincelle",
+      "description": "+25 pts si bonne réponse à la prochaine question"
+    },
+    "DIESEL": {
+      "label": "Diesel",
+      "description": "+500 pts si tu es le dernier à bien répondre"
+    },
+    "DOUBLE_POINTS": {
+      "label": "Double Points",
+      "description": "×2 sur la prochaine question"
+    },
+    "STEAL_POINTS": {
+      "label": "Vol de Points",
+      "description": "Vole 200 pts au leader"
+    },
+    "BOMB": {
+      "label": "Bombe",
+      "description": "−150 pts à un joueur ciblé"
+    },
+    "SWAP": {
+      "label": "Téléportation",
+      "description": "Échange ton score avec un adversaire"
+    },
+    "SNIPER": {
+      "label": "Sniper",
+      "description": "−100 pts précis sur 2 joueurs ciblés"
+    },
+    "MIRROR": {
+      "label": "Miroir",
+      "description": "Renvoie la prochaine attaque à l'envoyeur"
+    },
+    "POISONED_GIFT": {
+      "label": "Cadeau empoisonné",
+      "description": "Divise par 2 les points d'un adversaire à la prochaine question"
+    },
+    "TRIPLE_POINTS": {
+      "label": "Triple Points",
+      "description": "×3 sur la prochaine question"
+    },
+    "APOCALYPSE": {
+      "label": "Apocalypse",
+      "description": "−300 pts à TOUS les adversaires"
+    },
+    "MEGA_BOMB": {
+      "label": "Méga Bombe",
+      "description": "−500 pts, ignore le Bouclier"
+    },
+    "ROYAL_THEFT": {
+      "label": "Vol Royal",
+      "description": "Vole 50% des points du leader"
+    }
+  },
+  "playersConnected_one": "{{count}} joueur connecté",
+  "playersConnected_other": "{{count}} joueurs connectés",
+  "playersConnected_many": "{{count}} joueurs connectés"
 }

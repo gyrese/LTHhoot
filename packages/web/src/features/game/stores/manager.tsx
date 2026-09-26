@@ -58,7 +58,6 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>()(
 
       setPlayers: (players) => set({ players }),
       hydrate: (data) => {
-        console.log(`[STORE] Manager hydrate gameId=${data.gameId}`)
         set({
           gameId: data.gameId,
           inviteCode: data.inviteCode || null,

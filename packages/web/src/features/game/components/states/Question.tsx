@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import { type SlideElement } from "@rahoot/common/types/game"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
@@ -6,6 +6,8 @@ import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundR
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import useSound from "use-sound"
 
 type Props = {
@@ -36,11 +38,33 @@ const Question = ({
     gridCols,
     gridRows,
     revelationStyle,
+    startedAt,
+    endsAt,
   },
 }: Props) => {
-  const [sfxShow] = useSound(SFX.SHOW_SOUND, { volume: 0.5 })
+  const muted = useSoundStore((state) => state.muted)
+  const [sfxShow] = useSound(SFX.SHOW_SOUND, {
+    volume: 0.5,
+    soundEnabled: !muted,
+  })
 
   const { isHost } = useGameConfig()
+  const { getServerTime } = useSocket()
+
+  // Temps déjà écoulé de la phase, calculé sur l'horloge serveur : après une
+  // reconnexion (ou un montage tardif), la barre de progression et la
+  // révélation reprennent là où en est la partie au lieu de repartir de zéro.
+  const [elapsedSec] = useState(() => {
+    let elapsed = 0
+
+    if (endsAt && endsAt > 0) {
+      elapsed = cooldown - (endsAt - getServerTime()) / 1000
+    } else if (startedAt && startedAt > 0) {
+      elapsed = (getServerTime() - startedAt) / 1000
+    }
+
+    return Math.min(cooldown, Math.max(0, elapsed))
+  })
 
   useEffect(() => {
     if (isHost) {
@@ -84,13 +108,15 @@ const Question = ({
           gridCols={gridCols ?? 8}
           gridRows={gridRows ?? 6}
           seedString={question || background?.value}
-          startTimeOffset={0}
+          startTimeOffset={elapsedSec}
           configuredStyle={revelationStyle}
           imageUrl={background?.type === "image" ? background.value : undefined}
         />
       )}
 
-      {type === "title" && elements && elements.length > 0 && (
+      {/* Éléments de slide rendus pour TOUS les types : le média classique est
+          masqué dès qu'il y a des éléments, les omettre ici laissait un écran vide. */}
+      {elements && elements.length > 0 && (
         <div className="pointer-events-none absolute inset-0 z-10">
           <SlideCanvas
             elements={elements}
@@ -131,7 +157,10 @@ const Question = ({
         {type !== "title" && (
           <div
             className="bg-primary mb-20 h-4 self-start rounded-full"
-            style={{ animation: `progressBar ${cooldown}s linear forwards` }}
+            style={{
+              // Délai négatif = temps déjà écoulé côté serveur.
+              animation: `progressBar ${cooldown}s linear -${elapsedSec}s forwards`,
+            }}
           />
         )}
       </section>

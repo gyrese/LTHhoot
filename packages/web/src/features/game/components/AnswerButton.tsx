@@ -7,6 +7,9 @@ import type {
   PropsWithChildren,
 } from "react"
 
+// Couleur des formes / textes sur fond clair (slate-900).
+const DARK_TEXT_COLOR = "#0f172a"
+
 const childrenSizeClass = (text: string): string => {
   if (text.length > 50) {
     return "text-base leading-tight md:text-lg"
@@ -25,6 +28,9 @@ type Props = PropsWithChildren &
     correct?: boolean
     iconOnly?: boolean
     index?: number
+    // Texte et forme sombres (fond clair comme le jaune) pour garder un
+    // contraste lisible au vidéoprojecteur.
+    darkText?: boolean
   }
 
 const AnswerButton = ({
@@ -34,6 +40,7 @@ const AnswerButton = ({
   correct,
   iconOnly,
   index,
+  darkText,
   style,
   ...otherProps
 }: Props) => {
@@ -57,22 +64,34 @@ const AnswerButton = ({
       style={animStyle}
       {...otherProps}
     >
-      <Icon className={clsx("shrink-0", iconOnly ? "h-10 w-10" : "h-6 w-6")} />
+      <Icon
+        className={clsx("shrink-0", iconOnly ? "h-10 w-10" : "h-6 w-6")}
+        fill={darkText ? DARK_TEXT_COLOR : undefined}
+      />
       {!iconOnly && (
         <p
           className={clsx(
-            "w-full flex-1 font-black tracking-tight break-words text-white transition-all duration-300",
+            "w-full flex-1 font-black tracking-tight break-words transition-all duration-300",
+            darkText ? "text-slate-900" : "text-white",
             children && typeof children === "string"
               ? childrenSizeClass(children)
               : "text-3xl md:text-4xl",
           )}
-          style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
+          style={
+            darkText ? undefined : { textShadow: "0 2px 4px rgba(0,0,0,0.3)" }
+          }
         >
           {children}
         </p>
       )}
       {!iconOnly && correct !== undefined && (
-        <CorrectIcon className="size-8 shrink-0 stroke-6 text-white drop-shadow-md" />
+        <CorrectIcon
+          className={clsx(
+            "size-8 shrink-0 stroke-6 drop-shadow-md",
+            darkText ? "text-slate-900" : "text-white",
+          )}
+          aria-hidden="true"
+        />
       )}
     </button>
   )

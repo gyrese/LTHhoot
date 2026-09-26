@@ -226,6 +226,46 @@ export const downloadCanvasAsPng = (
   }, "image/png")
 }
 
+// Partage natif (feuille de partage iOS / Android) quand le navigateur accepte
+// les fichiers — bien plus pratique sur mobile qu'un téléchargement, que iOS
+// range dans un dossier introuvable. Repli : téléchargement classique.
+export const shareOrDownloadCanvas = async (
+  canvas: HTMLCanvasElement,
+  filename: string,
+  title?: string,
+): Promise<void> => {
+  const name = `${sanitizeFilename(filename)}.png`
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/png")
+  })
+
+  if (!blob) {
+    return
+  }
+
+  const file = new File([blob], name, { type: "image/png" })
+
+  if (
+    typeof navigator.share === "function" &&
+    typeof navigator.canShare === "function" &&
+    navigator.canShare({ files: [file] })
+  ) {
+    try {
+      await navigator.share({ files: [file], title })
+
+      return
+    } catch (error) {
+      // Partage annulé par l'utilisateur : rien d'autre à faire.
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return
+      }
+      // Autre refus (activation utilisateur expirée…) : on télécharge.
+    }
+  }
+
+  downloadBlob(blob, name)
+}
+
 // Six informations à peindre : passées en objet plutot qu'en liste d'arguments
 // positionnels, ou l'ordre username/avatar/subject etait facile a intervertir.
 export type ScorecardData = {

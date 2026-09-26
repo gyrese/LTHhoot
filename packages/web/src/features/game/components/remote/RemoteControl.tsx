@@ -26,6 +26,7 @@ import {
   RemoteHeader,
 } from "@rahoot/web/features/game/components/remote/RemoteControl.panels"
 import type {
+  EveningInterlude,
   GameStatus,
   QuestionStates,
   RemoteTab,
@@ -34,12 +35,6 @@ import type {
 export function RemoteControl({ gameId }: { gameId: string }) {
   const navigate = useNavigate()
   const { socket, isConnected } = useSocket()
-
-  useEffect(() => {
-    console.log("[MOUNT] RemoteControl")
-
-    return () => console.log("[UNMOUNT] RemoteControl")
-  }, [])
 
   // Stocké en localStorage (et non sessionStorage) : sur mobile, le navigateur
   // tue l'onglet en arrière-plan et sessionStorage part avec — le PIN doit survivre.
@@ -76,6 +71,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const [pendingConfirm, setPendingConfirm] = useState<"abort" | "end" | null>(
     null,
   )
+  const [eveningInterlude, setEveningInterlude] =
+    useState<EveningInterlude>(null)
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -173,6 +170,35 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     if (isAuthenticated) {
       setStatus({ name, data: data as Record<string, unknown> })
     }
+
+    // Quiz suivant lancé (retour au salon / démarrage) : fin de l'interstitiel.
+    if (name === STATUS.SHOW_ROOM || name === STATUS.SHOW_START) {
+      setEveningInterlude(null)
+    }
+  })
+
+  // Fin d'un quiz de soirée : même classement cumulé que l'écran hôte, et la
+  // télécommande peut enchaîner sur le quiz suivant.
+  useEvent(
+    EVENTS.EVENING.QUIZ_COMPLETE,
+    ({ quizIndex, totalQuizzes, subject, leaderboard }) => {
+      setEveningInterlude({
+        quizIndex,
+        totalQuizzes,
+        subject,
+        leaderboard: leaderboard.map(({ id, username, points, rank }) => ({
+          id,
+          username,
+          points,
+          rank,
+        })),
+      })
+      setActionPending(false)
+    },
+  )
+
+  useEvent(EVENTS.EVENING.COMPLETE, () => {
+    setEveningInterlude(null)
   })
 
   useEvent(EVENTS.MANAGER.ROUND_EVENT_ARMED, ({ eventType }) => {
@@ -271,7 +297,20 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   }, [isConnected])
 
   const runPrimary = useCallback(() => {
-    if (!socket || !status || actionPending) {
+    if (!socket || actionPending) {
+      return
+    }
+
+    // Interstitiel de soirée : « Continuer » enchaîne sur le quiz suivant,
+    // exactement comme le bouton de l'écran hôte.
+    if (eveningInterlude) {
+      setActionPending(true)
+      socket.emit(EVENTS.EVENING.NEXT, { gameId })
+
+      return
+    }
+
+    if (!status) {
       return
     }
 
@@ -317,7 +356,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
           setActionPending(false)
         }
     }
-  }, [socket, status, actionPending, gameId, navigate])
+  }, [socket, status, actionPending, gameId, navigate, eveningInterlude])
 
   // Couper le temps pendant SELECT_ANSWER prive de réponse les joueurs qui
   // n'ont pas encore validé : on confirme tant qu'il en reste.
@@ -404,7 +443,13 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     setPendingConfirm(null)
   }, [socket, gameId])
 
-  const primaryAction = getPrimaryAction(status, players.length, t)
+  const primaryAction = eveningInterlude
+    ? {
+        label: t("game:evening.continue"),
+        disabled: false,
+        variant: "orange" as const,
+      }
+    : getPrimaryAction(status, players.length, t)
 
   if (!isAuthenticated) {
     return (
@@ -449,6 +494,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             maxTime={maxTime}
             isEveningMode={isEveningMode}
             onOpenEventDrawer={() => setIsEventDrawerOpen(true)}
+            eveningInterlude={eveningInterlude}
           />
         )}
         {activeTab === "joueurs" && (

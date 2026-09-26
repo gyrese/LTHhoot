@@ -11,6 +11,7 @@ import {
 import clsx from "clsx"
 import { motion } from "motion/react"
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 type Props = {
   effect: PowerUpEffect
@@ -19,6 +20,7 @@ type Props = {
 const PowerUpEffectToast = ({ effect }: Props) => {
   const meta = POWER_UP_META_UI[effect.type]
   const { isHost } = useGameConfig()
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!isHost) {
@@ -31,7 +33,7 @@ const PowerUpEffectToast = ({ effect }: Props) => {
   }
 
   const style = RARITY_STYLE[meta.rarity]
-  const activator = effect.activatedByUsername ?? "Un joueur"
+  const activator = effect.activatedByUsername ?? t("game:powerupToast.someone")
   const targets = effect.affectedPlayers
     .filter((p) => p.username !== activator)
     .map((p) => p.username)
@@ -74,12 +76,13 @@ const PowerUpEffectToast = ({ effect }: Props) => {
         </p>
         {targets.length > 0 && (
           <p className="text-xs text-white/60">
-            {effect.mirrored ? "Renvoyé sur " : "Sur "}
-            {targets.join(", ")}
+            {effect.mirrored
+              ? t("game:powerupToast.mirroredOn", { names: targets.join(", ") })
+              : t("game:powerupToast.on", { names: targets.join(", ") })}
           </p>
         )}
         {targets.length === 0 && effect.affectedPlayers.length === 0 && (
-          <p className="text-xs text-white/60">Effet personnel</p>
+          <p className="text-xs text-white/60">{t("game:powerupToast.self")}</p>
         )}
       </div>
     </motion.div>

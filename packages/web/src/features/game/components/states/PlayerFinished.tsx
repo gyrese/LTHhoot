@@ -1,13 +1,19 @@
+import { PODIUM_THEME_NEUTRAL } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import GameAvatar from "@rahoot/web/features/game/components/GameAvatar"
+import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
+import {
+  LABEL_FONT,
+  PODIUM_THEME_TOKENS,
+} from "@rahoot/web/features/game/components/states/podium/themes"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useTranslation } from "react-i18next"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { LogOut, Share2 } from "lucide-react"
 import {
-  downloadCanvasAsPng,
   renderScorecardToCanvas,
+  shareOrDownloadCanvas,
 } from "@rahoot/web/features/game/utils/podium-export"
 import { motion } from "motion/react"
 
@@ -80,9 +86,22 @@ const WINNING_ANIMATION_STATES = ["waving"] as const
 const WAITING_ANIMATION_STATES = ["waiting"] as const
 const FAILED_ANIMATION_STATES = ["failed"] as const
 
-const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
+const PlayerFinished = ({
+  data: { rank, subject, totalPlayers, podiumTheme, coverImage },
+}: Props) => {
   const { player } = usePlayerStore()
+  const { isEveningFinale } = useGameConfig()
   const { t } = useTranslation()
+
+  // Même univers visuel que le podium de l'écran principal (thème résolu
+  // côté serveur ; neutre par défaut, avec la couverture du quiz en fond).
+  const podium = useMemo(
+    () => PODIUM_THEME_TOKENS[podiumTheme ?? PODIUM_THEME_NEUTRAL],
+    [podiumTheme],
+  )
+  const podiumBgImage =
+    podium.id === PODIUM_THEME_NEUTRAL ? coverImage : podium.bgImage
+  const podiumAccent = podium.ranks[1].accent
   const navigate = useNavigate()
   const [showQuit, setShowQuit] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -132,15 +151,20 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
     setIsExporting(true)
 
     try {
+      const fallbackName = t("game:player")
       const canvas = await renderScorecardToCanvas({
-        username: player.username ?? "Joueur",
-        avatar: player.avatar ?? player.username ?? "Joueur",
+        username: player.username ?? fallbackName,
+        avatar: player.avatar ?? player.username ?? fallbackName,
         points: player.points ?? 0,
         rank: rank ?? null,
         totalPlayers: totalPlayers ?? null,
         subject,
       })
-      downloadCanvasAsPng(canvas, `scorecard-${player.username}`)
+      await shareOrDownloadCanvas(
+        canvas,
+        `scorecard-${player.username}`,
+        subject,
+      )
     } catch (error) {
       console.error("Échec de la génération de la carte de score:", error)
     } finally {
@@ -153,12 +177,48 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
 
   return (
     <div className="relative flex h-full flex-1 flex-col items-center justify-center gap-6 px-4 py-8">
+      {/* Fond aux couleurs du thème de podium */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: podium.baseGradient }}
+      />
+      {podiumBgImage && (
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${podiumBgImage})`,
+            ...podium.bgStyle,
+          }}
+        />
+      )}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: podium.overlayGradient }}
+      />
+
+      {/* Finale de soirée : libellé contextuel, « gagnant » pour le 1er */}
+      {isEveningFinale && (
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 rounded-full border px-4 py-1.5 text-center text-xs font-bold tracking-[0.3em] uppercase backdrop-blur-md"
+          style={{
+            color: podiumAccent,
+            borderColor: `${podiumAccent}66`,
+            background: "rgba(0,0,0,0.45)",
+            fontFamily: LABEL_FONT,
+          }}
+        >
+          {rank === 1 ? t("game:evening.winner") : t("game:evening.finale")}
+        </motion.p>
+      )}
+
       {/* Superbe Carte Collectible / Scorecard Style Jeu Vidéo */}
       <motion.div
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 200, damping: 12 }}
-        className="relative"
+        className="relative z-10"
       >
         {/* Glow Effect */}
         <motion.div
@@ -243,7 +303,7 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
             {/* Colonne classement */}
             <div className="flex flex-col items-center justify-center border-r border-white/10 pr-2 text-center">
               <span className="font-mono text-[9px] font-bold tracking-wider text-white/40 uppercase">
-                Classement
+                {t("game:leaderboard")}
               </span>
               <span className={`text-2xl font-black ${theme.text}`}>
                 {rankKey !== null ? t(rankKey, { rank }) : "—"}
@@ -259,7 +319,7 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
             {/* Colonne score */}
             <div className="flex flex-col items-center justify-center pl-2 text-center">
               <span className="font-mono text-[9px] font-bold tracking-wider text-white/40 uppercase">
-                Score
+                {t("game:score")}
               </span>
               <span className="text-2xl font-black text-white">
                 {(player?.points ?? 0).toLocaleString()}
@@ -273,7 +333,7 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
       </motion.div>
 
       {/* Boutons d'action */}
-      <div className="flex w-full max-w-sm flex-col gap-3">
+      <div className="relative z-10 flex w-full max-w-sm flex-col gap-3">
         {player && (
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -285,8 +345,8 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
           >
             <Share2 size={22} className={isExporting ? "animate-pulse" : ""} />
             {isExporting
-              ? t("game:scorecardExporting", "Génération…")
-              : t("game:scorecardShare", "Télécharger ma carte")}
+              ? t("game:scorecardExporting")
+              : t("game:scorecardShare")}
           </motion.button>
         )}
 
@@ -301,7 +361,7 @@ const PlayerFinished = ({ data: { rank, subject, totalPlayers } }: Props) => {
             style={{ animationDelay: "0.4s" }}
           >
             <LogOut size={18} />
-            {t("common:quit", "Quitter")}
+            {t("common:quit")}
           </motion.button>
         )}
       </div>

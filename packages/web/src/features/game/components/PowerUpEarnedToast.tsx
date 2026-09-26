@@ -84,7 +84,7 @@ const PowerUpEarnedToast = ({ powerUp, onDismiss }: Props) => {
         damping: 22,
         ...(isLegendary && { rotate: { duration: 0.6, delay: 0.2 } }),
       }}
-      className="pointer-events-none absolute bottom-36 left-1/2 z-40 -translate-x-1/2 whitespace-nowrap"
+      className="pointer-events-none absolute bottom-[calc(var(--player-bar-h,5rem)+4rem)] left-1/2 z-40 -translate-x-1/2 whitespace-nowrap"
     >
       <div
         className={clsx(

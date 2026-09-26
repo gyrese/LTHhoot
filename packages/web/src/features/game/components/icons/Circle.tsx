@@ -5,6 +5,7 @@ type Props = {
 
 const Circle = ({ className, fill = "#FFF" }: Props) => (
   <svg
+    aria-hidden="true"
     className={className}
     viewBox="0 0 512 512"
     version="1.1"

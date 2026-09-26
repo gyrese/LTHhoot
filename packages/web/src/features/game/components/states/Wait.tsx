@@ -31,7 +31,7 @@ const Wait = ({ data: { text } }: Props) => {
         {totalPlayers > 0 && (
           <div className="anim-pop-in mt-2 flex items-center justify-center rounded-full bg-white/10 px-5 py-2 backdrop-blur-sm">
             <span className="text-lg font-bold text-white">
-              {totalPlayers} {t("game:playersJoined", "joueurs connectés")}
+              {t("game:playersConnected", { count: totalPlayers })}
             </span>
           </div>
         )}
@@ -48,7 +48,7 @@ const Wait = ({ data: { text } }: Props) => {
           className="mt-4 flex items-center gap-2 text-sm font-bold text-white/40 transition-colors hover:text-white/80"
         >
           <LogOut size={16} />
-          {t("common:quit", "Quitter la session")}
+          {t("common:quit")}
         </button>
       </div>
     </section>

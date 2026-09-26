@@ -5,6 +5,7 @@ type Props = {
 
 const Rhombus = ({ className, fill = "#FFF" }: Props) => (
   <svg
+    aria-hidden="true"
     className={className}
     fill={fill}
     viewBox="-56.32 -56.32 624.64 624.64"

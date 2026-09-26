@@ -18,5 +18,14 @@
   "save": "Save",
   "seconds": "sec",
   "skip": "Skip",
-  "submit": "Submit"
+  "submit": "Submit",
+  "quit": "Quit",
+  "close": "Close",
+  "edit": "Edit",
+  "export": "Export",
+  "reconnecting": {
+    "title": "Connection lost",
+    "subtitle": "Restoring your session…",
+    "hint": "Check your Wi-Fi or mobile connection."
+  }
 }

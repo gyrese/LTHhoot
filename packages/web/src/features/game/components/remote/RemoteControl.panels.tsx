@@ -28,7 +28,9 @@ import {
   IconUsers,
   IconX,
 } from "@rahoot/web/features/game/components/remote/RemoteControl.icons"
+import { EveningPanel } from "@rahoot/web/features/game/components/remote/RemoteControl.evening"
 import {
+  type EveningInterlude,
   type GameStatus,
   MCQ_COLORS,
   type PrimaryAction,
@@ -149,7 +151,7 @@ export function RemoteHeader({
   }
 
   return (
-    <header className="relative z-20 flex items-center gap-3 border-b border-white/8 bg-black/40 px-4 py-3 backdrop-blur-xl">
+    <header className="relative z-20 flex items-center gap-3 border-b border-white/8 bg-black/40 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-xl">
       <button
         onClick={onEndGame}
         className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-500 transition-colors hover:bg-red-500/20 active:scale-90"
@@ -218,7 +220,9 @@ export function GamePanel({
   maxTime,
   isEveningMode,
   onOpenEventDrawer,
+  eveningInterlude,
 }: {
+  eveningInterlude: EveningInterlude
   status: GameStatus
   answerCount: number
   players: Player[]
@@ -233,6 +237,12 @@ export function GamePanel({
   onOpenEventDrawer: () => void
 }) {
   const { t } = useTranslation()
+
+  // L'interstitiel de soirée prime sur l'état courant (qui reste celui de la
+  // fin du quiz précédent tant que l'hôte n'a pas enchaîné).
+  if (eveningInterlude) {
+    return <EveningPanel interlude={eveningInterlude} />
+  }
 
   if (!status) {
     return (
@@ -1604,7 +1614,7 @@ export function BottomBar({
   const showEventButton = canArmRoundEvent(statusName)
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-black/70 px-4 pt-3 pb-6 backdrop-blur-xl">
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-black/70 px-4 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
       {armedEvent && (
         <div className="mx-auto max-w-[430px]">
           <ArmedEventBanner armedEvent={armedEvent} onCancel={onCancelEvent} />

@@ -3,6 +3,7 @@ import { EVENTS } from "@rahoot/common/constants"
 import { STATUS } from "@rahoot/common/types/game/status"
 import GameWrapper from "@rahoot/web/features/game/components/GameWrapper"
 import {
+  emitResync,
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
@@ -20,7 +21,7 @@ import { useTranslation } from "react-i18next"
 const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
-  const { socket } = useSocket()
+  const { socket, isConnected } = useSocket()
   const { gameId, status, setStatus, setPlayers, reset } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
@@ -56,25 +57,23 @@ const ManagerGamePage = () => {
     setPlayers(current.filter((p) => p.id !== playerId))
   })
 
-  useEvent("connect", () => {
-    if (gameIdParam) {
-      socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
-    }
-  })
-
-  // Au montage, si DÉJÀ connecté : redemander l'état. L'event "connect" ne se
-  // redéclenche pas dans ce cas, et le reset() de démontage (rejoué par
-  // StrictMode en dev) efface le SHOW_ROOM posé par config.tsx → salon vide.
+  // Resynchronisation au montage (si déjà connecté) et à chaque (re)connexion.
+  // Au montage, le reset() de démontage (rejoué par StrictMode en dev) efface
+  // le SHOW_ROOM posé par config.tsx → sans resync, salon vide. `emitResync`
+  // dédoublonne avec l'émission du SocketProvider au connect : une seule
+  // demande par connexion au lieu de trois.
   useEffect(() => {
-    if (socket?.connected && gameIdParam) {
-      socket.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+    if (isConnected && socket && gameIdParam) {
+      emitResync(socket, "manager", gameIdParam)
     }
-  }, [socket, gameIdParam])
+  }, [isConnected, socket, gameIdParam])
 
   useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, (data) => {
-    console.log(
-      `[RECONNECT_MANAGER] Succès → gameId=${data.gameId} players=${data.players.length} status=${data.status.name} timer=${data.timer}`,
-    )
+    if (import.meta.env.DEV) {
+      console.log(
+        `[RECONNECT_MANAGER] Succès → gameId=${data.gameId} players=${data.players.length} status=${data.status.name} timer=${data.timer}`,
+      )
+    }
 
     // Hydratation atomique du store manager
     useManagerStore.getState().hydrate({
@@ -94,7 +93,6 @@ const ManagerGamePage = () => {
 
   useEffect(
     () => () => {
-      console.log("[DEBUG] ManagerGamePage unmounted, cleaning up store")
       reset()
       setQuestionStates(null)
     },
@@ -105,7 +103,6 @@ const ManagerGamePage = () => {
   // chaque RESET restant est autoritaire, l'ignorer pendant une reconnexion
   // laissait le manager bloqué sur une partie morte.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    console.log(`[DEBUG] Processing MANAGER GAME.RESET (msg: ${message})`)
     navigate({ to: "/manager/config" })
     toast.error(t(message))
   })

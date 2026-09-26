@@ -18,5 +18,14 @@
   "save": "Speichern",
   "seconds": "Sek",
   "skip": "Überspringen",
-  "submit": "Absenden"
+  "submit": "Absenden",
+  "quit": "Verlassen",
+  "close": "Schließen",
+  "edit": "Bearbeiten",
+  "export": "Exportieren",
+  "reconnecting": {
+    "title": "Verbindung unterbrochen",
+    "subtitle": "Deine Sitzung wird wiederhergestellt…",
+    "hint": "Prüfe deine WLAN- oder Mobilverbindung."
+  }
 }

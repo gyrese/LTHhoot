@@ -18,5 +18,14 @@
   "save": "Salva",
   "seconds": "sec",
   "skip": "Salta",
-  "submit": "Invia"
+  "submit": "Invia",
+  "quit": "Esci",
+  "close": "Chiudi",
+  "edit": "Modifica",
+  "export": "Esporta",
+  "reconnecting": {
+    "title": "Connessione interrotta",
+    "subtitle": "Ripristino della sessione…",
+    "hint": "Controlla la connessione Wi-Fi o mobile."
+  }
 }

@@ -5,6 +5,7 @@ type Props = {
 
 const Square = ({ className, fill = "#FFF" }: Props) => (
   <svg
+    aria-hidden="true"
     className={className}
     fill={fill}
     viewBox="0 0 512 512"

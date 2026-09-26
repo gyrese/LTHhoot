@@ -8,6 +8,7 @@ import clsx from "clsx"
 import { X } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type OtherPlayer = { id: string; username: string; avatar?: string }
 
@@ -24,6 +25,7 @@ const PowerUpConfirmDrawer = ({
   onConfirm,
   onCancel,
 }: Props) => {
+  const { t } = useTranslation()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const meta = powerUp ? POWER_UP_META_UI[powerUp.type] : null
@@ -54,8 +56,14 @@ const PowerUpConfirmDrawer = ({
     rarityTextColor = "text-blue-200"
   }
 
+  // Pas assez d'adversaires pour ce power-up ciblé : on l'explique au lieu
+  // d'afficher un bouton « Utiliser » désactivé sans raison apparente.
+  const noTargetAvailable =
+    requiredTargets > 0 && players.length < requiredTargets
+
   const canConfirm =
-    requiredTargets === 0 || selectedIds.length === requiredTargets
+    !noTargetAvailable &&
+    (requiredTargets === 0 || selectedIds.length === requiredTargets)
 
   const handleClose = () => {
     setSelectedIds([])
@@ -104,8 +112,11 @@ const PowerUpConfirmDrawer = ({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={meta.label}
             className={clsx(
-              "fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t-2 p-6 backdrop-blur-xl",
+              "fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t-2 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl",
               style.bg,
               style.border,
             )}
@@ -144,20 +155,30 @@ const PowerUpConfirmDrawer = ({
               </div>
               <button
                 onClick={handleClose}
-                className="rounded-xl p-2 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label={t("common:close")}
               >
-                <X className="size-5" />
+                <X className="size-5" aria-hidden="true" />
               </button>
             </div>
 
             <p className="mb-4 text-sm text-white/70">{meta.description}</p>
 
-            {requiredTargets > 0 && players.length > 0 && (
+            {noTargetAvailable && (
+              <div
+                className="mb-4 rounded-xl border border-orange-400/30 bg-orange-500/10 px-4 py-2.5 text-sm text-orange-100"
+                role="status"
+              >
+                {t("game:powerupDrawer.noTarget", { count: requiredTargets })}
+              </div>
+            )}
+
+            {requiredTargets > 0 && !noTargetAvailable && (
               <div className="mb-4 max-h-44 overflow-y-auto">
                 <p className="mb-2 text-xs font-bold tracking-wide text-white/50 uppercase">
-                  {requiredTargets === 1
-                    ? "Choisir une cible"
-                    : `Choisir ${requiredTargets} cibles`}
+                  {t("game:powerupDrawer.chooseTarget", {
+                    count: requiredTargets,
+                  })}
                   {selectedIds.length > 0 && (
                     <span className="ml-2 text-white/30">
                       ({selectedIds.length}/{requiredTargets})
@@ -172,8 +193,9 @@ const PowerUpConfirmDrawer = ({
                       <button
                         key={p.id}
                         onClick={() => toggleTarget(p.id)}
+                        aria-pressed={selected}
                         className={clsx(
-                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                          "flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                           selected
                             ? "bg-orange-500/20 ring-1 ring-orange-500/60"
                             : "bg-white/5 hover:bg-white/10",
@@ -205,34 +227,34 @@ const PowerUpConfirmDrawer = ({
 
             {targeting === "LEADER_AUTO" && (
               <div className="mb-4 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/60">
-                ⚡ Cible automatique : le leader actuel du classement
+                ⚡ {t("game:powerupDrawer.leaderAuto")}
               </div>
             )}
 
             {targeting === "ALL_OPPONENTS" && (
               <div className="mb-4 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/60">
-                💥 Affecte TOUS les adversaires
+                💥 {t("game:powerupDrawer.allOpponents")}
               </div>
             )}
 
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
-                className="flex-1 rounded-2xl border border-white/10 py-3 text-sm font-bold text-white/60 transition-colors hover:bg-white/5"
+                className="min-h-[44px] flex-1 rounded-2xl border border-white/10 py-3 text-sm font-bold text-white/60 transition-colors hover:bg-white/5"
               >
-                Annuler
+                {t("common:cancel")}
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!canConfirm}
                 className={clsx(
-                  "flex-1 rounded-2xl py-3 text-sm font-bold text-white transition-all",
+                  "min-h-[44px] flex-1 rounded-2xl py-3 text-sm font-bold text-white transition-all",
                   canConfirm
                     ? "bg-orange-500 shadow-lg shadow-orange-500/30 hover:scale-[1.02] hover:bg-orange-400"
                     : "cursor-not-allowed bg-white/10 text-white/30",
                 )}
               >
-                Utiliser
+                {t("game:powerupDrawer.use")}
               </button>
             </div>
           </motion.div>

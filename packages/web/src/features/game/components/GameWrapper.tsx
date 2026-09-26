@@ -15,6 +15,7 @@ import {
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
+import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { useYoutubeDuration } from "@rahoot/web/features/game/hooks/useYoutubeDuration"
 import { MANAGER_SKIP_BTN } from "@rahoot/web/features/game/utils/constants"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
@@ -31,13 +32,16 @@ import {
 import ShopDrawer from "@rahoot/web/features/game/components/ShopDrawer"
 import useWakeLock from "@rahoot/web/features/game/hooks/useWakeLock"
 import clsx from "clsx"
-import { Coins } from "lucide-react"
+import { Coins, Volume2, VolumeX } from "lucide-react"
 import {
   createContext,
   useCallback,
   useContext,
   type PropsWithChildren,
+  type RefObject,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from "react"
 import toast from "react-hot-toast"
@@ -65,12 +69,37 @@ type EveningData = {
 type GameConfig = {
   isHost: boolean
   isEveningFinale: boolean
+  // Vrai pendant la phase de réponses qui suit l'usage d'un FREEZE : sert à
+  // l'indicateur visuel du timer sur l'écran principal.
+  isFreezeRound: boolean
 }
 
 const GameConfigContext = createContext<GameConfig>({
   isHost: false,
   isEveningFinale: false,
+  isFreezeRound: false,
 })
+
+// Phases pendant lesquelles un power-up ne peut pas être joué : salon, pause,
+// duel de départage et fin de partie. La barre reste visible mais grisée.
+const POWER_UP_LOCKED_PHASES = new Set<Status>([
+  STATUS.SHOW_ROOM,
+  STATUS.PAUSED,
+  STATUS.FINISHED,
+  STATUS.SHOW_TIE_BREAK,
+  STATUS.SHOW_TIE_BREAK_SPECTATE,
+  STATUS.SHOW_TIE_BREAK_RESULT,
+])
+
+// Phases qui ouvrent un nouveau quiz : l'inventaire peut y avoir été remis à
+// zéro côté serveur (enchaînement de soirée), on le redemande.
+const INVENTORY_REFRESH_PHASES = new Set<Status | undefined>([
+  STATUS.SHOW_ROOM,
+  STATUS.SHOW_START,
+])
+
+// Durée d'affichage du badge « NOUVEAU ! » sur un power-up fraîchement obtenu.
+const NEW_POWER_UP_BADGE_MS = 2000
 
 export const useGameConfig = () => useContext(GameConfigContext)
 
@@ -80,8 +109,82 @@ type Props = PropsWithChildren & {
   manager?: boolean
 }
 
+type PlayerBarProps = {
+  barRef: RefObject<HTMLDivElement | null>
+  player: { username?: string; avatar?: string; points?: number } | null
+  coins: number | null
+  onOpenShop: () => void
+  powerUps: PowerUp[]
+  onUsePowerUp: (_powerUp: PowerUp) => void
+  freshPowerUpIds: string[]
+  powerUpsLocked: boolean
+}
+
+// Barre joueur en bas d'écran : avatar, pseudo, boutique, power-ups, points.
+// Les marges suivent la safe-area (encoche, indicateur d'accueil iOS).
+const PlayerBar = ({
+  barRef,
+  player,
+  coins,
+  onOpenShop,
+  powerUps,
+  onUsePowerUp,
+  freshPowerUpIds,
+  powerUpsLocked,
+}: PlayerBarProps) => {
+  const { t } = useTranslation()
+
+  return (
+    <div
+      ref={barRef}
+      className="absolute right-0 bottom-0 left-0 z-20 flex items-center gap-3 bg-black/60 px-[max(0.75rem,env(safe-area-inset-left))] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md"
+    >
+      {/* Avatar */}
+      {player?.avatar && (
+        <GameAvatar
+          seed={player.avatar}
+          animated
+          className="border-primary h-11 w-11 shrink-0 rounded-full border-2"
+        />
+      )}
+      {/* Pseudo */}
+      <p className="min-w-0 flex-1 truncate text-sm font-bold text-white">
+        {player?.username}
+      </p>
+      {/* Boutique : solde de pièces cliquable (uniquement si power-ups actifs) */}
+      {coins !== null && (
+        <button
+          onClick={onOpenShop}
+          className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-lg bg-yellow-500/20 px-2.5 py-1.5 text-sm font-black text-yellow-300 ring-1 ring-yellow-500/40 transition-colors hover:bg-yellow-500/30 active:scale-95"
+          title={t("game:shop.open")}
+          aria-label={`${t("game:shop.open")} (${coins})`}
+        >
+          <Coins className="size-4" aria-hidden="true" />
+          <span className="tabular-nums">{coins}</span>
+        </button>
+      )}
+      {/* Power-ups inline */}
+      {powerUps.length > 0 && (
+        <PowerUpBar
+          powerUps={powerUps}
+          onUse={onUsePowerUp}
+          freshIds={freshPowerUpIds}
+          disabled={powerUpsLocked}
+          compact
+        />
+      )}
+      {/* Points */}
+      <div className="anim-pop-in bg-primary/20 text-primary ring-primary/40 shrink-0 rounded-lg px-3 py-1.5 text-sm font-black ring-1">
+        <AnimatedPoints to={player?.points ?? 0} className="mr-1" />
+        pts
+      </div>
+    </div>
+  )
+}
+
 const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const { isConnected, socket } = useSocket()
+  const { muted, toggleMuted } = useSoundStore()
   const { player, gameId: playerGameId, updatePoints } = usePlayerStore()
   const { gameId: managerGameId, inviteCode } = useManagerStore()
   const { questionStates, setQuestionStates } = useQuestionStore()
@@ -95,6 +198,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const [disabledPowerUps, setDisabledPowerUps] = useState<string[]>([])
   const [shopOpen, setShopOpen] = useState(false)
   const [isEveningFinale, setIsEveningFinale] = useState(false)
+  const [isFreezeRound, setIsFreezeRound] = useState(false)
+  const freezePendingRef = useRef(false)
+  const [freshPowerUpIds, setFreshPowerUpIds] = useState<string[]>([])
+  const playerBarRef = useRef<HTMLDivElement>(null)
+  const [playerBarHeight, setPlayerBarHeight] = useState<number | null>(null)
   const [otherPlayers, setOtherPlayers] = useState<
     { id: string; username: string; avatar?: string }[]
   >([])
@@ -157,7 +265,22 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   useEvent(EVENTS.POWER_UP.EARNED, (powerUp) => {
     setPowerUps((prev) => [...prev.slice(-2), powerUp])
     setEarnedPowerUp(powerUp)
+    setFreshPowerUpIds((prev) => [...prev, powerUp.id])
   })
+
+  // Le badge « NOUVEAU ! » s'efface quelques secondes après la dernière obtention.
+  useEffect(() => {
+    if (freshPowerUpIds.length === 0) {
+      return undefined
+    }
+
+    const timer = setTimeout(
+      () => setFreshPowerUpIds([]),
+      NEW_POWER_UP_BADGE_MS,
+    )
+
+    return () => clearTimeout(timer)
+  }, [freshPowerUpIds])
 
   useEvent(EVENTS.POWER_UP.INVENTORY, (inventory) => {
     setPowerUps(inventory)
@@ -174,12 +297,28 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     },
   )
 
-  // Demander l'inventaire au mount et aux changements de phase (joueur uniquement)
+  // Demander l'inventaire (joueur uniquement) à l'arrivée dans une partie, à
+  // chaque (re)connexion et à l'ouverture d'un nouveau quiz — et non plus à
+  // chaque changement de phase : le serveur répond en rediffusant la liste des
+  // joueurs, soit une rafale en N² à chaque phase. Entre-temps, l'inventaire
+  // est tenu à jour par les events EARNED / INVENTORY poussés par le serveur.
   useEffect(() => {
-    if (!manager && socket) {
+    if (!manager && socket && isConnected && playerGameId) {
       socket.emit(EVENTS.POWER_UP.GET_INVENTORY)
     }
-  }, [manager, socket, statusName])
+  }, [manager, socket, isConnected, playerGameId])
+
+  useEffect(() => {
+    if (
+      !manager &&
+      socket?.connected &&
+      playerGameId &&
+      INVENTORY_REFRESH_PHASES.has(statusName)
+    ) {
+      socket.emit(EVENTS.POWER_UP.GET_INVENTORY)
+    }
+    // Uniquement à l'entrée dans une phase d'ouverture de quiz.
+  }, [statusName])
 
   const [globalFlash, setGlobalFlash] = useState<string | null>(null)
   // Annonce plein écran des attaques (écran principal uniquement) : les joueurs
@@ -188,9 +327,12 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
   useEvent(EVENTS.GAME.MEDIA_PRELOAD, (urls) => {
     if (Array.isArray(urls)) {
-      console.log(
-        `[MEDIA_PRELOAD] Début du préchargement de ${urls.length} média(s)`,
-      )
+      if (import.meta.env.DEV) {
+        console.log(
+          `[MEDIA_PRELOAD] Début du préchargement de ${urls.length} média(s)`,
+        )
+      }
+
       void assetPreloader.preload(urls)
     }
   })
@@ -208,6 +350,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     // Les power-ups self-only (effet uniquement sur l'activateur) ne sont pas
     // affichés si ce n'est pas le joueur concerné ou le manager
     const meta = POWER_UP_CATALOG[effect.type]
+
+    // Le gel s'applique au début de la prochaine phase de réponses.
+    if (effect.type === POWER_UP_TYPE.FREEZE) {
+      freezePendingRef.current = true
+    }
 
     if (
       meta?.target === "SELF" &&
@@ -274,7 +421,36 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     if (statusName === STATUS.SHOW_ROOM) {
       setQuestionStates(null)
     }
+
+    if (statusName === STATUS.SELECT_ANSWER) {
+      setIsFreezeRound(freezePendingRef.current)
+      freezePendingRef.current = false
+    } else {
+      setIsFreezeRound(false)
+    }
   }, [statusName, setQuestionStates, setCooldown])
+
+  // Hauteur réelle de la barre joueur (safe-area comprise), exposée en
+  // variable CSS pour que les écrans réservent exactement cette place.
+  useEffect(() => {
+    const bar = playerBarRef.current
+
+    if (!bar) {
+      return undefined
+    }
+
+    const update = () => setPlayerBarHeight(bar.offsetHeight)
+
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(bar)
+
+    return () => ro.disconnect()
+  }, [manager, isConnected, statusName])
+
+  // Référence stable : l'interstitiel relançait son compte à rebours à chaque
+  // rendu quand cette fonction était recréée inline.
+  const handleEveningContinue = useCallback(() => setEveningData(null), [])
 
   const handleNext = () => {
     if (isDisabled) {
@@ -391,21 +567,25 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
   const isRoomScreen = !statusName || statusName === STATUS.SHOW_ROOM
 
+  const gameConfig = useMemo(
+    () => ({ isHost: Boolean(manager), isEveningFinale, isFreezeRound }),
+    [manager, isEveningFinale, isFreezeRound],
+  )
+
   return (
-    <GameConfigContext.Provider
-      value={{ isHost: Boolean(manager), isEveningFinale }}
-    >
+    <GameConfigContext.Provider value={gameConfig}>
       <section
         className="relative flex h-dvh flex-col overflow-hidden bg-slate-950"
-        style={
-          !isRoomScreen
-            ? {
-                backgroundImage: "url(/bg-salon.png)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
+        style={{
+          ...(!isRoomScreen && {
+            backgroundImage: "url(/bg-salon.png)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }),
+          ...(playerBarHeight !== null && {
+            ["--player-bar-h" as string]: `${playerBarHeight}px`,
+          }),
+        }}
       >
         {/* Fond garage uniquement sur l'écran d'attente */}
         {isRoomScreen && (
@@ -423,26 +603,61 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
           {!isConnected && !statusName ? null : (
             <>
               {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
-              <div className="pointer-events-none absolute top-3 right-3 left-3 z-30 flex items-start justify-between">
+              <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3 z-30 flex items-start justify-between gap-2">
                 {questionStates && (
-                  <div className="pointer-events-auto rounded-xl bg-black/50 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm">
+                  <div
+                    className={clsx(
+                      "pointer-events-auto rounded-xl bg-black/50 font-bold text-white backdrop-blur-sm",
+                      // Écran principal : compteur lisible depuis le fond de la salle.
+                      manager
+                        ? "border border-white/10 px-5 py-2 text-xl tabular-nums md:text-3xl"
+                        : "px-4 py-1.5 text-sm",
+                    )}
+                  >
+                    {manager && (
+                      <span className="mr-2 text-base font-semibold text-white/60 md:text-xl">
+                        {t("game:question")}
+                      </span>
+                    )}
                     {questionStates.current} / {questionStates.total}
                   </div>
                 )}
-                {manager && next && (
-                  <button
-                    id="start-round"
-                    onClick={handleNext}
-                    disabled={isDisabled}
-                    className={clsx(
-                      // Ml-auto : sans le compteur (écran salon), justify-between
-                      // collerait le bouton à gauche, sous « Fermer la session ».
-                      "pointer-events-auto ml-auto rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
-                      isDisabled && "pointer-events-none opacity-50",
+                {manager && (
+                  // Ml-auto : sans le compteur (écran salon), justify-between
+                  // collerait les boutons à gauche, sous « Fermer la session ».
+                  <div className="ml-auto flex items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleMuted}
+                      className="pointer-events-auto flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+                      aria-label={
+                        muted ? t("game:sound.unmute") : t("game:sound.mute")
+                      }
+                      aria-pressed={muted}
+                      title={
+                        muted ? t("game:sound.unmute") : t("game:sound.mute")
+                      }
+                    >
+                      {muted ? (
+                        <VolumeX className="size-5" aria-hidden="true" />
+                      ) : (
+                        <Volume2 className="size-5" aria-hidden="true" />
+                      )}
+                    </button>
+                    {next && (
+                      <button
+                        id="start-round"
+                        onClick={handleNext}
+                        disabled={isDisabled}
+                        className={clsx(
+                          "pointer-events-auto min-h-[44px] rounded-xl bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/30",
+                          isDisabled && "pointer-events-none opacity-50",
+                        )}
+                      >
+                        {t(next)}
+                      </button>
                     )}
-                  >
-                    {t(next)}
-                  </button>
+                  </div>
                 )}
               </div>
 
@@ -482,12 +697,13 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
               {/* Interstitiel soirée */}
               {eveningData && (
                 <EveningInterstitiel
+                  key={`${eveningData.gameId}-${eveningData.quizIndex}`}
                   gameId={eveningData.gameId}
                   quizIndex={eveningData.quizIndex}
                   totalQuizzes={eveningData.totalQuizzes}
                   subject={eveningData.subject}
                   leaderboard={eveningData.leaderboard}
-                  onContinue={() => setEveningData(null)}
+                  onContinue={handleEveningContinue}
                 />
               )}
 
@@ -549,44 +765,18 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
 
               {/* Barre joueur en bas (overlay) — contient aussi les power-ups */}
               {!manager && (
-                <div className="absolute right-0 bottom-0 left-0 z-20 flex items-center gap-3 bg-black/60 px-3 py-3 backdrop-blur-md">
-                  {/* Avatar */}
-                  {player?.avatar && (
-                    <GameAvatar
-                      seed={player.avatar}
-                      animated
-                      className="border-primary h-11 w-11 shrink-0 rounded-full border-2"
-                    />
-                  )}
-                  {/* Pseudo */}
-                  <p className="min-w-0 flex-1 truncate text-sm font-bold text-white">
-                    {player?.username}
-                  </p>
-                  {/* Boutique : solde de pièces cliquable (uniquement si power-ups actifs) */}
-                  {coins !== null && (
-                    <button
-                      onClick={() => setShopOpen(true)}
-                      className="flex shrink-0 items-center gap-1 rounded-lg bg-yellow-500/20 px-2.5 py-1.5 text-sm font-black text-yellow-300 ring-1 ring-yellow-500/40 transition-colors hover:bg-yellow-500/30 active:scale-95"
-                      title={t("game:shop.open")}
-                    >
-                      <Coins className="size-4" />
-                      <span className="tabular-nums">{coins}</span>
-                    </button>
-                  )}
-                  {/* Power-ups inline */}
-                  {powerUps.length > 0 && (
-                    <PowerUpBar
-                      powerUps={powerUps}
-                      onUse={handleUsePowerUp}
-                      compact
-                    />
-                  )}
-                  {/* Points */}
-                  <div className="anim-pop-in bg-primary/20 text-primary ring-primary/40 shrink-0 rounded-lg px-3 py-1.5 text-sm font-black ring-1">
-                    <AnimatedPoints to={player?.points ?? 0} className="mr-1" />
-                    pts
-                  </div>
-                </div>
+                <PlayerBar
+                  barRef={playerBarRef}
+                  player={player}
+                  coins={coins}
+                  onOpenShop={() => setShopOpen(true)}
+                  powerUps={powerUps}
+                  onUsePowerUp={handleUsePowerUp}
+                  freshPowerUpIds={freshPowerUpIds}
+                  powerUpsLocked={
+                    !statusName || POWER_UP_LOCKED_PHASES.has(statusName)
+                  }
+                />
               )}
             </>
           )}
