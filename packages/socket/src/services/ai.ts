@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai"
+import { AI_TIMEOUT_MS, withTimeout } from "@rahoot/socket/utils/timeout"
 import { questionValidator } from "@rahoot/common/validators/quizz"
 import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
 import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
@@ -134,14 +135,17 @@ export class AIService {
     const systemInstruction = buildGenerationPrompt(params)
 
     try {
-      const response = await client.models.generateContent({
-        model: TEXT_MODEL,
-        contents: systemInstruction,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.7,
-        },
-      })
+      const response = await withTimeout(
+        client.models.generateContent({
+          model: TEXT_MODEL,
+          contents: systemInstruction,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.7,
+          },
+        }),
+        AI_TIMEOUT_MS,
+      )
 
       const { text } = response
 
@@ -232,14 +236,17 @@ Question to reformulate: "${currentText}"
 Output MUST be a valid JSON object: { "rephrased": "the reformulated question text" }`
 
     try {
-      const response = await client.models.generateContent({
-        model: TEXT_MODEL,
-        contents: systemInstruction,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.8,
-        },
-      })
+      const response = await withTimeout(
+        client.models.generateContent({
+          model: TEXT_MODEL,
+          contents: systemInstruction,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.8,
+          },
+        }),
+        AI_TIMEOUT_MS,
+      )
 
       const { text } = response
 
@@ -279,14 +286,17 @@ The wrong answers must be plausible, distinct from each other and from the corre
 Output MUST be a valid JSON object: { "wrongAnswers": ["wrong 1", "wrong 2", "wrong 3"] }`
 
     try {
-      const response = await client.models.generateContent({
-        model: TEXT_MODEL,
-        contents: systemInstruction,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.8,
-        },
-      })
+      const response = await withTimeout(
+        client.models.generateContent({
+          model: TEXT_MODEL,
+          contents: systemInstruction,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.8,
+          },
+        }),
+        AI_TIMEOUT_MS,
+      )
 
       const { text } = response
 
@@ -332,14 +342,17 @@ ${solutionText ? `Correct answer / Solution: "${solutionText}"` : ""}
 Output MUST be a valid JSON object: { "explanation": "the explanation text" }`
 
     try {
-      const response = await client.models.generateContent({
-        model: TEXT_MODEL,
-        contents: systemInstruction,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.7,
-        },
-      })
+      const response = await withTimeout(
+        client.models.generateContent({
+          model: TEXT_MODEL,
+          contents: systemInstruction,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.7,
+          },
+        }),
+        AI_TIMEOUT_MS,
+      )
 
       const { text } = response
 

@@ -1,11 +1,9 @@
 import {
   POWER_UP_TYPE,
-  POWER_UPS_BY_RARITY,
   POWER_UP_CATALOG,
   getPowerUpPrice,
   type PowerUp,
   type PowerUpType,
-  type PowerUpRarity,
 } from "@rahoot/common/types/powerup"
 import type { Player } from "@rahoot/common/types/game"
 import { nanoid } from "nanoid"
@@ -35,24 +33,20 @@ export interface ActiveEffects {
   diesel: Set<string>
 }
 
-export interface EarnedPowerUp {
-  playerId: string
-  powerUp: PowerUp
-}
-
 export interface PowerUpUseResult {
   success: boolean
+  // Clé i18n du refus (errors:powerup.*), renvoyée dans l'ack POWER_UP.USE.
+  error?: string
   type?: PowerUpType
   affectedPlayers?: { id: string; username: string; pointsDelta: number }[]
   blockedBy?: string
   mirroredTo?: string
 }
 
-const pick = <T>(arr: readonly T[]): T =>
-  arr[Math.floor(Math.random() * arr.length)]
-
-const randomFromRarity = (rarity: PowerUpRarity): PowerUpType =>
-  pick(POWER_UPS_BY_RARITY[rarity])
+// Garde de type pour un power-up reçu du client (BUY_POWER_UP) : un type
+// inconnu du catalogue faisait lever une exception au calcul du prix.
+export const isPowerUpType = (value: unknown): value is PowerUpType =>
+  typeof value === "string" && Object.hasOwn(POWER_UP_CATALOG, value)
 
 const consumeFromSet = (set: Set<string>, playerId: string): boolean => {
   if (!set.has(playerId)) {
@@ -77,15 +71,59 @@ const emptyEffects = (): ActiveEffects => ({
   diesel: new Set(),
 })
 
+// Cibles d'un power-up, vérifiées AVANT de consommer l'objet : pas
+// d'auto-ciblage (bombe/échange/sniper sur soi-même contournaient la logique
+// de jeu), cibles distinctes et existantes, et un adversaire au moins pour un
+// vol automatique.
+const resolveTargets = (
+  players: Player[],
+  activatorId: string,
+  type: PowerUpType,
+  targetIds?: string[],
+): Player[] | { error: string } => {
+  if (targetIds?.includes(activatorId)) {
+    return { error: "errors:powerup.selfTarget" }
+  }
+
+  const { target } = POWER_UP_CATALOG[type]
+  const targets = [...new Set(targetIds ?? [])]
+    .map((id) => players.find((p) => p.id === id))
+    .filter((p): p is Player => Boolean(p))
+
+  if (
+    (target === "ONE_OPPONENT" && targets.length !== 1) ||
+    (target === "TWO_OPPONENTS" && targets.length !== 2)
+  ) {
+    return { error: "errors:powerup.invalidTarget" }
+  }
+
+  if (target === "LEADER_AUTO" && !players.some((p) => p.id !== activatorId)) {
+    return { error: "errors:powerup.noTarget" }
+  }
+
+  return targets
+}
+
 export class PowerUpManager {
   private playerPowerUps = new Map<string, PowerUp[]>()
   private activeEffects: ActiveEffects = emptyEffects()
-  private consecutiveWinsByPlayer = new Map<string, number>()
 
   // ── Inventaire ────────────────────────────────────────────────────────────
 
   getPlayerPowerUps(playerId: string): PowerUp[] {
     return this.playerPowerUps.get(playerId) ?? []
+  }
+
+  // Restauration après crash (cf. persistence) : inventaire tronqué à la
+  // capacité maximale par sûreté.
+  setPlayerPowerUps(playerId: string, powerUps: PowerUp[]) {
+    if (powerUps.length === 0) {
+      this.playerPowerUps.delete(playerId)
+
+      return
+    }
+
+    this.playerPowerUps.set(playerId, powerUps.slice(-MAX_POWER_UPS))
   }
 
   private addPowerUp(playerId: string, type: PowerUpType): PowerUp | null {
@@ -114,95 +152,6 @@ export class PowerUpManager {
     this.playerPowerUps.set(playerId, filtered)
 
     return true
-  }
-
-  // ── Attribution ───────────────────────────────────────────────────────────
-
-  /** Cadeau aléatoire commun à l'arrivée d'un joueur. */
-  grantStartGift(playerId: string): EarnedPowerUp | null {
-    const type = randomFromRarity("COMMON")
-    const powerUp = this.addPowerUp(playerId, type)
-
-    return powerUp ? { playerId, powerUp } : null
-  }
-
-  /** Évaluation post-question : combos ×3 (commun) et ×6 (rare). */
-  evaluateRoundEarnings(streaks: Map<string, number>): EarnedPowerUp[] {
-    const earned: EarnedPowerUp[] = []
-
-    for (const [playerId, streak] of streaks) {
-      if (streak === 3) {
-        const powerUp = this.addPowerUp(playerId, randomFromRarity("COMMON"))
-
-        if (powerUp) {
-          earned.push({ playerId, powerUp })
-        }
-      }
-
-      if (streak === 6) {
-        const powerUp = this.addPowerUp(playerId, randomFromRarity("RARE"))
-
-        if (powerUp) {
-          earned.push({ playerId, powerUp })
-        }
-      }
-    }
-
-    return earned
-  }
-
-  /**
-   * Évaluation fin de quiz :
-   * - Victoire de quiz → rare
-   * - Quiz sans faute (toutes bonnes) → légendaire
-   * - 2 victoires d'affilée → légendaire
-   */
-  evaluateQuizEndEarnings(
-    winnerId: string | null,
-    perfectPlayerIds: string[],
-    allPlayerIds: string[],
-  ): EarnedPowerUp[] {
-    const earned: EarnedPowerUp[] = []
-
-    if (winnerId) {
-      const powerUp = this.addPowerUp(winnerId, randomFromRarity("RARE"))
-
-      if (powerUp) {
-        earned.push({ playerId: winnerId, powerUp })
-      }
-
-      const prevWins = this.consecutiveWinsByPlayer.get(winnerId) ?? 0
-      const newWins = prevWins + 1
-      this.consecutiveWinsByPlayer.set(winnerId, newWins)
-
-      if (newWins >= 2) {
-        const legendary = this.addPowerUp(
-          winnerId,
-          randomFromRarity("LEGENDARY"),
-        )
-
-        if (legendary) {
-          earned.push({ playerId: winnerId, powerUp: legendary })
-        }
-      }
-
-      // Reset des autres joueurs (ils n'ont pas gagné ce quiz)
-      for (const id of allPlayerIds) {
-        if (id !== winnerId) {
-          this.consecutiveWinsByPlayer.set(id, 0)
-        }
-      }
-    }
-
-    for (const playerId of perfectPlayerIds) {
-      const powerUp = this.addPowerUp(playerId, randomFromRarity("LEGENDARY"))
-
-      if (powerUp) {
-        earned.push({ playerId, powerUp })
-      }
-    }
-
-    return earned
   }
 
   // ── Boutique ──────────────────────────────────────────────────────────────
@@ -254,27 +203,24 @@ export class PowerUpManager {
     const powerUp = inventory.find((p) => p.id === powerUpId)
 
     if (!powerUp) {
-      return { success: false }
+      return { success: false, error: "errors:powerup.notFound" }
     }
 
     const activator = players.find((p) => p.id === activatorId)
 
     if (!activator) {
-      return { success: false }
+      return { success: false, error: "errors:game.notFound" }
     }
 
-    const meta = POWER_UP_CATALOG[powerUp.type]
-    const targets = (targetIds ?? [])
-      .map((id) => players.find((p) => p.id === id))
-      .filter((p): p is Player => Boolean(p))
+    const targets = resolveTargets(
+      players,
+      activatorId,
+      powerUp.type,
+      targetIds,
+    )
 
-    // Vérification ciblage
-    if (meta.target === "ONE_OPPONENT" && targets.length !== 1) {
-      return { success: false }
-    }
-
-    if (meta.target === "TWO_OPPONENTS" && targets.length !== 2) {
-      return { success: false }
+    if (!Array.isArray(targets)) {
+      return { success: false, error: targets.error }
     }
 
     this.removePowerUp(activatorId, powerUpId)
@@ -376,7 +322,7 @@ export class PowerUpManager {
           .sort((a, b) => b.points - a.points)
 
         if (!leader) {
-          return { success: false }
+          return { success: false, error: "errors:powerup.noTarget" }
         }
 
         if (this.activeEffects.shields.has(leader.id)) {
@@ -409,7 +355,7 @@ export class PowerUpManager {
           .sort((a, b) => b.points - a.points)
 
         if (!leader) {
-          return { success: false }
+          return { success: false, error: "errors:powerup.noTarget" }
         }
 
         if (this.activeEffects.shields.has(leader.id)) {
@@ -610,7 +556,7 @@ export class PowerUpManager {
       }
 
       default:
-        return { success: false }
+        return { success: false, error: "errors:powerup.notFound" }
     }
   }
 
@@ -718,13 +664,6 @@ export class PowerUpManager {
       this.playerPowerUps.set(newId, inventory)
     }
 
-    const wins = this.consecutiveWinsByPlayer.get(oldId)
-
-    if (wins !== undefined) {
-      this.consecutiveWinsByPlayer.delete(oldId)
-      this.consecutiveWinsByPlayer.set(newId, wins)
-    }
-
     for (const set of this.effectSets()) {
       if (set.has(oldId)) {
         set.delete(oldId)
@@ -739,11 +678,9 @@ export class PowerUpManager {
     for (const set of this.effectSets()) {
       set.delete(playerId)
     }
-
-    this.consecutiveWinsByPlayer.delete(playerId)
   }
 
-  /** Reset entre quiz d'une soirée (inventaire et effets, mais conserve les wins). */
+  /** Reset entre quiz d'une soirée (inventaire et effets). */
   resetBetweenQuizzes() {
     this.playerPowerUps.clear()
     this.activeEffects = emptyEffects()
@@ -753,6 +690,5 @@ export class PowerUpManager {
   reset() {
     this.playerPowerUps.clear()
     this.activeEffects = emptyEffects()
-    this.consecutiveWinsByPlayer.clear()
   }
 }

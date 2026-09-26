@@ -11,6 +11,10 @@ import {
   GUEST_FOLDER,
   parseGuestQuizId,
 } from "@rahoot/common/utils/guest"
+import {
+  countPlayableQuestions,
+  estimateQuizzDurationSec,
+} from "@rahoot/common/utils/round-duration"
 import { quizzValidator } from "@rahoot/common/validators/quizz"
 import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 import {
@@ -167,7 +171,7 @@ class Config {
     writeFileAtomic(filePath, JSON.stringify(raw, null, 2))
   }
 
-  static quizzMeta(owner?: string) {
+  static quizzMeta(owner?: string): QuizzMeta[] {
     return Config.quizz(owner).map(
       ({
         id,
@@ -178,6 +182,7 @@ class Config {
         tags,
         salonImage,
         listingImage,
+        questions,
       }) => ({
         id,
         subject,
@@ -187,6 +192,8 @@ class Config {
         tags,
         salonImage,
         listingImage,
+        questionCount: countPlayableQuestions(questions),
+        estimatedDurationSec: estimateQuizzDurationSec(questions),
       }),
     )
   }

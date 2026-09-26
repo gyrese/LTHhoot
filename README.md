@@ -32,10 +32,10 @@ Par rapport au projet original, LTNHoot apporte :
 
 ## ⚙️ Prérequis
 
-| Méthode | Outils nécessaires |
-|---|---|
+| Méthode                 | Outils nécessaires      |
+| ----------------------- | ----------------------- |
 | **Docker** (recommandé) | Docker + Docker Compose |
-| **Sans Docker** | Node.js 22+ et pnpm |
+| **Sans Docker**         | Node.js 22+ et pnpm     |
 
 ---
 
@@ -91,6 +91,15 @@ pnpm build && pnpm start
 
 > ⚠️ Change le mot de passe par défaut `"PASSWORD"`, sinon l'accès au manager est bloqué.
 
+### Variables d'environnement
+
+| Variable                                                        | Description                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REMOTE_PIN`                                                    | Optionnel — PIN de la télécommande (`/remote`), 4 caractères minimum. Absent ou trop court : désactivé, la télécommande se connecte avec le mot de passe manager. Le PIN ne donne accès **qu'au pilotage** d'une partie en cours (ni quiz, ni résultats, ni invités, ni médias). |
+| `ALLOWED_ORIGIN`                                                | Optionnel — origine autorisée pour le socket (ex. `https://quiz.example.com`). En production sans cette variable, seule la même origine est acceptée.                                                                                                                            |
+| `GEMINI_API_KEY`, `GEMINI_TEXT_API_KEY`, `GEMINI_IMAGE_API_KEY` | Optionnel — génération IA (texte / images).                                                                                                                                                                                                                                      |
+| `UNSPLASH_ACCESS_KEY`, `GIPHY_API_KEY`                          | Optionnel — recherche d'images et de GIF.                                                                                                                                                                                                                                        |
+
 ---
 
 ### `config/quizz/*.json` — Structure d'un quiz
@@ -130,15 +139,15 @@ Les quiz peuvent être créés via **l'éditeur intégré** dans le manager (rec
 }
 ```
 
-| Champ | Description |
-|---|---|
-| `subject` | Titre du quiz |
-| `question` | Texte de la question |
-| `answers` | Tableau de 2 à 4 réponses possibles |
-| `solutions` | Indices des bonnes réponses (base 0, plusieurs possibles) |
-| `media` | Optionnel — `type`: `image` / `video` / `audio`, `url`: lien du média |
-| `cooldown` | Délai avant affichage des résultats (3–15 s) |
-| `time` | Temps de réponse accordé (5–120 s) |
+| Champ       | Description                                                           |
+| ----------- | --------------------------------------------------------------------- |
+| `subject`   | Titre du quiz                                                         |
+| `question`  | Texte de la question                                                  |
+| `answers`   | Tableau de 2 à 4 réponses possibles                                   |
+| `solutions` | Indices des bonnes réponses (base 0, plusieurs possibles)             |
+| `media`     | Optionnel — `type`: `image` / `video` / `audio`, `url`: lien du média |
+| `cooldown`  | Délai avant affichage des résultats (3–15 s)                          |
+| `time`      | Temps de réponse accordé (5–120 s)                                    |
 
 ---
 
@@ -178,4 +187,4 @@ Pour signaler un bug ou proposer une fonctionnalité, [ouvre une issue](https://
 
 ---
 
-*Fork de [Rahoot](https://github.com/Ralex91/Rahoot) par Ralex91 — licence MIT*
+_Fork de [Rahoot](https://github.com/Ralex91/Rahoot) par Ralex91 — licence MIT_

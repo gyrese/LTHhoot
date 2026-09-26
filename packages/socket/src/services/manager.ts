@@ -2,12 +2,12 @@ import { EVENTS } from "@rahoot/common/constants"
 import type { Socket } from "@rahoot/common/types/game/socket"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
+import { getClientIp as resolveClientIp } from "@rahoot/socket/utils/client-ip"
 
 const getClientId = (socket: SocketContext["socket"]) =>
   socket.handshake.auth.clientId as string
 
-const getClientIp = (socket: SocketContext["socket"]) =>
-  socket.handshake.address || "unknown"
+const getClientIp = (socket: SocketContext["socket"]) => resolveClientIp(socket)
 
 // Clé de rate-limit : un appareil (clientId) sur un réseau (IP). Deux appareils
 // derrière la même IP publique ont donc des compteurs indépendants.
@@ -16,10 +16,27 @@ const getAuthKey = (socket: SocketContext["socket"]) =>
 
 // Session d'un client authentifié. Le rôle `admin` (mot de passe manager)
 // conserve tous les droits ; le rôle `guest` est confiné à sa propre
-// bibliothèque de quiz (cf. services/config, scoping `owner`).
+// bibliothèque de quiz (cf. services/config, scoping `owner`) ; le rôle
+// `remote` (PIN de télécommande) ne sert qu'à piloter une partie existante.
 export type ManagerSession =
   | { role: "admin" }
   | { role: "guest"; guestId: string }
+  | { role: "remote" }
+
+// Session donnant accès à une bibliothèque (quiz, médias) : tout sauf remote.
+export type LibrarySession = Exclude<ManagerSession, { role: "remote" }>
+
+// Longueur minimale du PIN de télécommande : en dessous, il est désactivé.
+export const MIN_REMOTE_PIN_LENGTH = 4
+
+// PIN de télécommande (variable d'environnement REMOTE_PIN), lu à chaque appel
+// pour rester testable. Désactivé (`null`) s'il est absent ou trop court : la
+// télécommande se connecte alors avec le mot de passe administrateur.
+export const getRemotePin = (): string | null => {
+  const pin = process.env.REMOTE_PIN?.trim()
+
+  return pin && pin.length >= MIN_REMOTE_PIN_LENGTH ? pin : null
+}
 
 // Rate-limiting des tentatives d'authentification manager. La clé combine l'IP
 // ET le clientId : en soirée, l'écran principal, la télécommande et les joueurs
@@ -54,7 +71,11 @@ class Manager {
   getMediaAccount(clientId: string | undefined) {
     const session = clientId ? this.loggedClients.get(clientId) : undefined
 
-    return session?.role === "admin" ? "admin" : session?.guestId
+    if (session?.role === "admin") {
+      return "admin"
+    }
+
+    return session?.role === "guest" ? session.guestId : undefined
   }
 
   isAdminAuthorized(clientId: string | undefined) {
@@ -64,8 +85,19 @@ class Manager {
     )
   }
 
+  // Accès HTTP (uploads, médias) : admin ou invité, JAMAIS la télécommande.
   isAuthorized(clientId: string | undefined) {
-    return Boolean(clientId) && this.loggedClients.has(clientId as string)
+    const role = clientId ? this.loggedClients.get(clientId)?.role : undefined
+
+    return role === "admin" || role === "guest"
+  }
+
+  // Pilotage d'une partie (MANAGER.RECONNECT depuis un autre appareil) : admin
+  // ou session télécommande.
+  canPilot(socket: Socket) {
+    const role = this.getSession(socket)?.role
+
+    return role === "admin" || role === "remote"
   }
 
   isRateLimited(socket: Socket): boolean {
@@ -140,6 +172,27 @@ class Manager {
     this.clearFailedAuth(socket)
   }
 
+  loginRemote(socket: Socket) {
+    this.loggedClients.set(getClientId(socket), { role: "remote" })
+    this.clearFailedAuth(socket)
+  }
+
+  // Révocation immédiate des sessions d'un invité supprimé : sans elle, son
+  // appareil restait authentifié (et pouvait continuer d'uploader) jusqu'au
+  // redémarrage du serveur.
+  revokeGuest(guestId: string): string[] {
+    const revoked: string[] = []
+
+    for (const [clientId, session] of this.loggedClients) {
+      if (session.role === "guest" && session.guestId === guestId) {
+        this.loggedClients.delete(clientId)
+        revoked.push(clientId)
+      }
+    }
+
+    return revoked
+  }
+
   // Une authentification réussie lève le verrou de l'appareil ET celui de son
   // IP : sans cela, un PIN mal saisi plusieurs fois continuait de bloquer les
   // autres appareils de la salle alors que l'hôte était déjà connecté.
@@ -170,14 +223,15 @@ class Manager {
 
   // Garde admin OU invité : la session est passée au handler pour scoper les
   // opérations (bibliothèque de quiz) sans jamais faire confiance au client.
+  // Une session télécommande n'a accès à aucune bibliothèque.
   withAnyAuth<T extends unknown[]>(
     socket: Socket,
-    handler: (_session: ManagerSession, ..._args: T) => void,
+    handler: (_session: LibrarySession, ..._args: T) => void,
   ) {
     return (..._args: T) => {
       const session = this.getSession(socket)
 
-      if (!session) {
+      if (!session || session.role === "remote") {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
 
         return
@@ -198,6 +252,18 @@ export const emitConfig = (socket: SocketContext["socket"]) => {
 
   if (!session) {
     socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+    return
+  }
+
+  // Télécommande : aucune donnée de bibliothèque. La config vide permet
+  // simplement à l'écran de connexion de savoir que le PIN a été accepté.
+  if (session.role === "remote") {
+    socket.emit(EVENTS.MANAGER.CONFIG, {
+      quizz: [],
+      results: [],
+      role: "remote",
+    })
 
     return
   }

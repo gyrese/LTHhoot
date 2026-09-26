@@ -34,6 +34,8 @@ import {
   downloadRemoteImage,
   MAX_IMAGE_BYTES,
 } from "@rahoot/socket/utils/media-security"
+import { AI_TIMEOUT_MS, withTimeout } from "@rahoot/socket/utils/timeout"
+import { isSameOrigin } from "@rahoot/socket/utils/same-origin"
 import { z } from "zod"
 
 // Schéma TOLÉRANT de la réponse Giphy : tous les champs sont optionnels et on
@@ -315,10 +317,13 @@ app.post(
       const genAI = new GoogleGenAI({ apiKey })
 
       try {
-        const response = await genAI.models.generateContent({
-          model: "gemini-2.5-flash-image",
-          contents: prompt,
-        })
+        const response = await withTimeout(
+          genAI.models.generateContent({
+            model: "gemini-2.5-flash-image",
+            contents: prompt,
+          }),
+          AI_TIMEOUT_MS,
+        )
 
         const part = response.candidates?.[0]?.content?.parts?.find(
           (p) => p.inlineData,
@@ -343,7 +348,9 @@ app.post(
       } catch (err) {
         console.error("Échec de la génération d'image par Gemini :", err)
         res.status(500).json({
-          error: `Échec de la génération d'image par IA: ${err instanceof Error ? err.message : String(err)}`,
+          // Le message brut de Gemini (quotas, clés, détails internes) reste
+          // dans les logs serveur, jamais renvoyé au client.
+          error: "Échec de la génération d'image par IA. Réessayez plus tard.",
         })
       }
     } finally {
@@ -601,17 +608,46 @@ app.get(
   },
 )
 
+// CORS du socket. Avec ALLOWED_ORIGIN : cette origine seule. Sans elle, en
+// développement : tout est permis (Vite sur un autre port). En production sans
+// ALLOWED_ORIGIN : même origine uniquement — l'app est servie par le nginx du
+// conteneur, qui relaie /ws avec l'en-tête Host d'origine.
+const allowedOrigin = process.env.ALLOWED_ORIGIN
+const isProduction = process.env.NODE_ENV === "production"
+
+const corsOrigin = (() => {
+  if (allowedOrigin) {
+    return allowedOrigin
+  }
+
+  // Refus CORS côté navigateur ; le contrôle même-origine est fait par
+  // allowRequest ci-dessous.
+  return isProduction ? false : "*"
+})()
+
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
+  // Requêtes sans en-tête Origin (clients non navigateur, même origine en
+  // polling selon les navigateurs) : acceptées. Avec Origin, en production sans
+  // ALLOWED_ORIGIN, l'hôte doit être celui de la requête.
+  allowRequest: (req, callback) => {
+    if (allowedOrigin || !isProduction || !req.headers.origin) {
+      callback(null, true)
+
+      return
+    }
+
+    callback(null, isSameOrigin(req.headers.origin, req.headers))
+  },
   // 5MB : les uploads d'images passent déjà par l'endpoint HTTP /upload (multer,
   // limite 20MB), ce buffer ne sert plus qu'aux échanges JSON classiques du socket.
   maxHttpBufferSize: 5 * 1024 * 1024,
   cors: {
-    origin: process.env.ALLOWED_ORIGIN ?? "*",
+    origin: corsOrigin,
     methods: ["GET", "POST"],
     // On n'active credentials qu'avec une origine explicite : "*" + credentials
     // est contradictoire (rejeté par les navigateurs) et inutilement permissif.
-    credentials: Boolean(process.env.ALLOWED_ORIGIN),
+    credentials: Boolean(allowedOrigin),
   },
   // Polling d'abord, puis montée automatique en WebSocket si le réseau et le
   // proxy le permettent. WebSocket est nettement plus stable que le long-polling

@@ -2,7 +2,7 @@ import { EVENTS } from "@rahoot/common/constants"
 import type {
   GameResult,
   GameUpdateQuestion,
-  Player,
+  PublicPlayer,
   Quizz,
   QuizzWithId,
   Question,
@@ -16,6 +16,16 @@ import type {
   PowerUpType,
 } from "@rahoot/common/types/powerup"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
+import type {
+  SoloAnswerAck,
+  SoloAnswerPayload,
+  SoloNextAck,
+  SoloPublicQuizz,
+  SoloStartAck,
+  SoloStartPayload,
+  SoloSubmitAck,
+  SoloSubmitResult,
+} from "@rahoot/common/types/solo"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
@@ -44,12 +54,16 @@ export type MessageGameId = {
 //  - closed    : fenêtre de réponse fermée (trop tard / pas encore ouverte)
 //  - no_player : socket non rattaché à un joueur de la partie
 //  - not_found : partie introuvable (expirée / supprimée)
+//  - frozen    : joueur gelé (power-up FREEZE) encore dans sa fenêtre de gel
+//  - invalid   : payload mal formé (rejeté par la validation serveur)
 export type AnswerAckStatus =
   | "ok"
   | "duplicate"
   | "closed"
   | "no_player"
   | "not_found"
+  | "frozen"
+  | "invalid"
 export type AnswerAck = { status: AnswerAckStatus }
 
 // Accusé de réception d'une réponse de duel de départage — même philosophie
@@ -60,6 +74,23 @@ export type AnswerAck = { status: AnswerAckStatus }
 //  - no_player : le socket n'est pas un duelliste de ce duel
 export type TieBreakAckStatus = "ok" | "duplicate" | "closed" | "no_player"
 export type TieBreakAck = { status: TieBreakAckStatus }
+
+// Accusé d'utilisation d'un power-up. `error` est une clé i18n
+// (errors:powerup.*) ; le client restaure l'objet dans l'inventaire si refus.
+export type PowerUpUseAck = { ok: true } | { ok: false; error: string }
+
+// Accusé d'achat à la boutique (`error` : clé i18n errors:shop.* / errors:*).
+export type BuyPowerUpAck = { success: boolean; error?: string }
+
+// Entrée de classement diffusée en mode soirée (jamais de clientId).
+export type EveningLeaderboardEntry = {
+  id: string
+  username: string
+  avatar?: string
+  // Cumul de la soirée
+  points: number
+  rank: number
+}
 
 export type QuizSaveAck =
   | { id: string; updatedAt: number; replayed?: boolean }
@@ -111,14 +142,13 @@ export interface ServerToClientEvents {
     submittedAnswer?: unknown
     players?: { id: string; username: string; avatar?: string }[]
   }) => void
-  [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
 
   // Manager events
   [EVENTS.MANAGER.SUCCESS_RECONNECT]: (_data: {
     gameId: string
     inviteCode?: string
     status: { name: Status; data: StatusDataMap[Status] }
-    players: Player[]
+    players: PublicPlayer[]
     currentQuestion: GameUpdateQuestion
     timer?: number
     endsAt?: number
@@ -137,11 +167,7 @@ export interface ServerToClientEvents {
     inviteCode: string
     salonImage?: string
   }) => void
-  [EVENTS.MANAGER.STATUS_UPDATE]: (_data: {
-    status: Status
-    data: StatusDataMap[Status]
-  }) => void
-  [EVENTS.MANAGER.NEW_PLAYER]: (_player: Player) => void
+  [EVENTS.MANAGER.NEW_PLAYER]: (_player: PublicPlayer) => void
   [EVENTS.MANAGER.REMOVE_PLAYER]: (_playerId: string) => void
   [EVENTS.MANAGER.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.MANAGER.PLAYER_KICKED]: (_playerId: string) => void
@@ -181,36 +207,20 @@ export interface ServerToClientEvents {
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
 
   // Async quiz events
-  [EVENTS.ASYNC_QUIZ.DATA]: (_quizz: any) => void
-  [EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS]: (_data: {
-    totalPoints: number
-    rank: number
-    totalPlayers: number
-    correctAnswersCount: number
-    totalQuestions: number
-  }) => void
+  [EVENTS.ASYNC_QUIZ.DATA]: (_quizz: SoloPublicQuizz) => void
+  [EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS]: (_data: SoloSubmitResult) => void
 
   // Evening events
   [EVENTS.EVENING.QUIZ_COMPLETE]: (_data: {
     quizIndex: number
     totalQuizzes: number
     subject: string
-    leaderboard: {
-      id: string
-      username: string
-      avatar?: string
-      points: number
-      rank: number
-    }[]
+    // `quizPoints` : points gagnés sur le quiz qui vient de se terminer (delta
+    // « +320 pts » de l'interstitiel) ; `points` reste le cumul de la soirée.
+    leaderboard: (EveningLeaderboardEntry & { quizPoints: number })[]
   }) => void
   [EVENTS.EVENING.COMPLETE]: (_data: {
-    leaderboard: {
-      id: string
-      username: string
-      avatar?: string
-      points: number
-      rank: number
-    }[]
+    leaderboard: EveningLeaderboardEntry[]
   }) => void
 
   // Power-up events
@@ -349,12 +359,9 @@ export interface ClientToServerEvents {
     }>,
     _ack: (_res: AnswerAck) => void,
   ) => void
-  [EVENTS.PLAYER.JOIN_TEAM]: (
-    _message: MessageWithoutStatus<{ teamName: string }>,
-  ) => void
   [EVENTS.PLAYER.BUY_POWER_UP]: (
     _message: MessageWithoutStatus<{ powerUpType: PowerUpType }>,
-    _ack: (_res: { success: boolean; error?: string }) => void,
+    _ack: (_res: BuyPowerUpAck) => void,
   ) => void
   [EVENTS.PLAYER.TIE_BREAK_ANSWER]: (
     _data: { answerId: number },
@@ -373,22 +380,27 @@ export interface ClientToServerEvents {
     username: string
   }) => void
 
-  // Async quiz actions
+  // Async quiz actions (solo public, chronométré côté serveur)
   [EVENTS.ASYNC_QUIZ.GET_PUBLIC]: (_quizzId: string) => void
-  [EVENTS.ASYNC_QUIZ.SUBMIT]: (_payload: {
-    quizzId: string
-    playerName: string
-    socialContact?: string
-    // Signaux anti-bot du formulaire public : honeypot + début de partie.
-    human?: { hp?: string; startedAt?: number | null }
-    answers: Array<{
-      questionIndex: number
-      answerId?: number | null
-      textAnswer?: string | null
-      numberAnswer?: number | null
-      timeMs?: number
-    }>
-  }) => void
+  [EVENTS.ASYNC_QUIZ.START]: (
+    _payload: SoloStartPayload,
+    _ack: (_res: SoloStartAck) => void,
+  ) => void
+  [EVENTS.ASYNC_QUIZ.NEXT]: (
+    _payload: { sessionId: string },
+    _ack: (_res: SoloNextAck) => void,
+  ) => void
+  [EVENTS.ASYNC_QUIZ.ANSWER]: (
+    _payload: { sessionId: string; questionIndex: number } & SoloAnswerPayload,
+    _ack: (_res: SoloAnswerAck) => void,
+  ) => void
+  // Finalise la session : le score est celui calculé par le serveur. Le
+  // résultat est renvoyé par l'ack ; sans ack, par ASYNC_QUIZ.SUBMIT_SUCCESS
+  // (ou GAME.ERROR_MESSAGE en cas de refus).
+  [EVENTS.ASYNC_QUIZ.SUBMIT]: (
+    _payload: { sessionId: string },
+    _ack?: (_res: SoloSubmitAck) => void,
+  ) => void
 
   // Evening actions
   [EVENTS.EVENING.START]: (_data: {
@@ -402,11 +414,15 @@ export interface ClientToServerEvents {
   [EVENTS.EVENING.NEXT]: (_data: { gameId: string }) => void
 
   // Power-up actions
-  [EVENTS.POWER_UP.USE]: (_data: {
-    gameId: string
-    powerUpId: string
-    targetIds?: string[]
-  }) => void
+  // L'ack est optionnel (anciens clients) : { ok: false, error } si refus.
+  [EVENTS.POWER_UP.USE]: (
+    _data: {
+      gameId?: string
+      powerUpId: string
+      targetIds?: string[]
+    },
+    _ack?: (_res: PowerUpUseAck) => void,
+  ) => void
   [EVENTS.POWER_UP.GET_INVENTORY]: () => void
 
   // Sonde de vivacité (watchdog client au retour de premier plan) : le serveur

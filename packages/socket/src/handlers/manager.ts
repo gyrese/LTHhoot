@@ -1,12 +1,29 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
-import manager, { emitConfig } from "@rahoot/socket/services/manager"
+import manager, {
+  emitConfig,
+  getRemotePin,
+} from "@rahoot/socket/services/manager"
 import { hashPassword, verifyPassword } from "@rahoot/socket/utils/password"
+import { timingSafeEqual } from "node:crypto"
 
-// PIN volontairement simple et codé en dur : l'app tourne sur le réseau local
-// pendant une soirée, la télécommande doit pouvoir se connecter sans friction.
-const REMOTE_PIN = "1234"
+// Comparaison à temps constant du PIN de télécommande (même précaution que
+// pour le mot de passe administrateur).
+const isRemotePin = (password: string): boolean => {
+  const pin = getRemotePin()
+
+  if (!pin) {
+    return false
+  }
+
+  const expected = Buffer.from(pin)
+  const received = Buffer.from(password)
+
+  return (
+    expected.length === received.length && timingSafeEqual(expected, received)
+  )
+}
 
 export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -79,6 +96,9 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
     manager.withAuth(socket, (id) => {
       try {
         Config.deleteGuest(id)
+        // Les appareils encore connectés avec ce compte perdent leur session
+        // sur-le-champ (et non au prochain redémarrage du serveur).
+        manager.revokeGuest(id)
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to delete guest:", error)
@@ -91,6 +111,15 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(EVENTS.MANAGER.AUTH, (password) => {
     try {
+      if (typeof password !== "string" || password.length > 256) {
+        socket.emit(
+          EVENTS.MANAGER.ERROR_MESSAGE,
+          "errors:manager.invalidPassword",
+        )
+
+        return
+      }
+
       if (manager.isRateLimited(socket)) {
         socket.emit(
           EVENTS.MANAGER.ERROR_MESSAGE,
@@ -119,18 +148,28 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
         Config.migratePasswordToHash(hashPassword(password))
       }
 
-      if (password !== REMOTE_PIN && !isConfigPassword) {
-        manager.registerFailedAuth(socket)
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "errors:manager.invalidPassword",
-        )
+      if (isConfigPassword) {
+        manager.login(socket)
+        emitConfig(socket)
 
         return
       }
 
-      manager.login(socket)
-      emitConfig(socket)
+      // PIN de télécommande (REMOTE_PIN, désactivé par défaut) : session
+      // limitée au pilotage d'une partie, sans accès aux quiz, résultats,
+      // invités ni médias.
+      if (isRemotePin(password)) {
+        manager.loginRemote(socket)
+        emitConfig(socket)
+
+        return
+      }
+
+      manager.registerFailedAuth(socket)
+      socket.emit(
+        EVENTS.MANAGER.ERROR_MESSAGE,
+        "errors:manager.invalidPassword",
+      )
     } catch (error) {
       console.error("Failed to read game config:", error)
       socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, "errors:failedToReadConfig")

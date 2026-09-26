@@ -1,10 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type {
-  GameResult,
-  GameResultPlayer,
-  PlayerAnswerRecord,
-} from "@rahoot/common/types/game"
-import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
+import type { GameResult, GameResultPlayer } from "@rahoot/common/types/game"
+import type { SoloSubmitResult } from "@rahoot/common/types/solo"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
 import {
   SOLO_RESULT_ID_PREFIX,
@@ -12,16 +8,144 @@ import {
 } from "@rahoot/common/utils/result-kind"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
+import { type SoloSession, SoloSessions } from "@rahoot/socket/services/solo"
+import { getClientIp } from "@rahoot/socket/utils/client-ip"
+import { RateLimiter } from "@rahoot/socket/utils/rate-limit"
+import { parsePayload, replyAck } from "@rahoot/socket/utils/validate"
+import { z } from "zod"
 
-// Durée plancher par question : sous ce seuil, personne n'a eu le temps de lire
-// l'énoncé — la soumission vient d'un script. Volontairement bas (un joueur
-// très rapide reste largement au-dessus) : on vise les bots, pas les pressés.
-const MIN_SOLO_DURATION_MS = 1000
+// Sessions solo en mémoire (cf. services/solo) : partagées par tous les
+// sockets, une session survit donc à une reconnexion du joueur.
+const sessions = new SoloSessions()
+
+// Rate-limit des parties publiques : par IP (généreux, un bar entier peut
+// sortir par la même IP publique) et par socket.
+const startLimitByIp = new RateLimiter(20, 10 * 60_000)
+const startLimitBySocket = new RateLimiter(5, 60_000)
+const submitLimitByIp = new RateLimiter(20, 10 * 60_000)
+
+const sessionId = z.string().regex(/^[0-9a-f]{32}$/u)
+
+const startSchema = z.object({
+  quizzId: z.string().min(1).max(200),
+  playerName: z.string().trim().min(1).max(30),
+  socialContact: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .transform((value) => value || undefined),
+  human: z.object({ hp: z.string().max(200).optional() }).optional(),
+})
+
+const answerSchema = z.object({
+  sessionId,
+  questionIndex: z.number().int().min(0),
+  answerId: z.number().int().min(0).max(1000).optional(),
+  textAnswer: z.string().max(500).optional(),
+  numberAnswer: z.number().optional(),
+  orderAnswer: z.array(z.number().int().min(0).max(1000)).max(100).optional(),
+})
+
+const sessionSchema = z.object({ sessionId })
+
+// Enregistre le score d'une session terminée dans le résultat solo du quiz
+// (meilleure tentative par pseudo) et renvoie le classement du joueur.
+const saveSoloResult = (session: SoloSession): SoloSubmitResult => {
+  const { quizz, playerName, socialContact } = session
+  const resultId = `${SOLO_RESULT_ID_PREFIX}${quizz.id}`
+  let gameResult: GameResult | null = null
+
+  try {
+    gameResult = Config.resultById(resultId)
+  } catch {
+    gameResult = {
+      id: resultId,
+      subject: `${SOLO_RESULT_SUBJECT_PREFIX}${quizzDisplayName(quizz)}`,
+      date: new Date().toISOString(),
+      players: [],
+      questions: quizz.questions.map((q) => ({
+        ...q,
+        playerAnswers: [],
+      })),
+      logs: [],
+    }
+  }
+
+  const playerKey = playerName.toLowerCase()
+  const existingPlayerIdx = gameResult.players.findIndex(
+    (p) => p.username.toLowerCase() === playerKey,
+  )
+
+  const newPlayerData: GameResultPlayer = {
+    username: playerName,
+    points: session.totalPoints,
+    rank: 1,
+    socialContact,
+  }
+
+  // Seule la meilleure tentative d'un joueur est conservée : le détail par
+  // question doit donc suivre le score retenu, pas la dernière soumission.
+  const isBestRun =
+    existingPlayerIdx < 0 ||
+    session.totalPoints > gameResult.players[existingPlayerIdx].points
+
+  if (existingPlayerIdx >= 0) {
+    if (isBestRun) {
+      gameResult.players[existingPlayerIdx] = newPlayerData
+    }
+  } else {
+    gameResult.players.push(newPlayerData)
+  }
+
+  if (isBestRun) {
+    // Trace par question, indexée comme le quiz : sans elle le rapport de
+    // résultat du manager n'a rien à afficher pour un joueur solo.
+    const answerRecords = SoloSessions.recordsByQuizzIndex(session)
+
+    gameResult.questions = gameResult.questions.map((q, index) => {
+      const others = (q.playerAnswers ?? []).filter(
+        (a) => a.playerName.trim().toLowerCase() !== playerKey,
+      )
+      const record = answerRecords[index]
+
+      return {
+        ...q,
+        playerAnswers: record ? [...others, record] : others,
+      }
+    })
+  }
+
+  gameResult.players.sort((a, b) => b.points - a.points)
+  gameResult.players.forEach((p, idx) => {
+    p.rank = idx + 1
+  })
+
+  Config.saveResult(gameResult)
+
+  const playerRank =
+    gameResult.players.find((p) => p.username.toLowerCase() === playerKey)
+      ?.rank || gameResult.players.length
+
+  return {
+    totalPoints: session.totalPoints,
+    rank: playerRank,
+    totalPlayers: gameResult.players.length,
+    correctAnswersCount: session.correctCount,
+    totalQuestions: session.questions.length,
+  }
+}
 
 export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
-  // Récupération publique du quiz pour le jeu solo (pas besoin d'auth manager)
-  socket.on(EVENTS.ASYNC_QUIZ.GET_PUBLIC, (quizzId: string) => {
+  // Récupération publique du quiz pour le jeu solo (pas besoin d'auth
+  // manager) : métadonnées uniquement. Les questions sont servies une à une,
+  // sans solution, par ASYNC_QUIZ.NEXT.
+  socket.on(EVENTS.ASYNC_QUIZ.GET_PUBLIC, (quizzId: unknown) => {
     try {
+      if (typeof quizzId !== "string" || quizzId.length > 200) {
+        throw new Error("Identifiant de quiz invalide")
+      }
+
       const quizz = Config.quizzById(quizzId)
 
       socket.emit(EVENTS.ASYNC_QUIZ.DATA, {
@@ -30,7 +154,8 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
         description: quizz.description,
         salonImage: quizz.salonImage,
         listingImage: quizz.listingImage,
-        questions: quizz.questions,
+        totalQuestions: quizz.questions.filter((q) => q.type !== "title")
+          .length,
       })
     } catch (error) {
       console.error("Failed to get public quizz:", error)
@@ -38,262 +163,162 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
     }
   })
 
-  // Soumission des réponses d'un joueur solo
-  socket.on(
-    EVENTS.ASYNC_QUIZ.SUBMIT,
-    (payload: {
-      quizzId: string
-      playerName: string
-      socialContact?: string
-      // Signaux anti-bot du formulaire public (cf. NotARobotCheck).
-      human?: { hp?: string; startedAt?: number | null }
-      answers: Array<{
-        questionIndex: number
-        answerId?: number | null
-        textAnswer?: string | null
-        numberAnswer?: number | null
-        timeMs?: number
-      }>
-    }) => {
-      try {
-        const { quizzId, playerName, socialContact, answers, human } = payload
-        const quizz = Config.quizzById(quizzId)
+  // Ouverture d'une session solo : pseudo validé, honeypot, rate-limit.
+  socket.on(EVENTS.ASYNC_QUIZ.START, (payload, ack) => {
+    const ip = getClientIp(socket)
 
-        if (!playerName || !quizz) {
-          socket.emit(
-            EVENTS.GAME.ERROR_MESSAGE,
-            "errors:quizz.invalidSubmission",
-          )
+    if (!startLimitByIp.hit(ip) || !startLimitBySocket.hit(socket.id)) {
+      replyAck(ack, { ok: false, error: "errors:quizz.tooManyAttempts" })
 
-          return
-        }
+      return
+    }
 
-        // Contrôle anti-bot : le honeypot n'est rempli que par un remplisseur
-        // automatique, et une partie humaine dure forcément plus que le seuil.
-        // Les scores publics alimentent un tirage au sort — on refuse en
-        // silence côté serveur (le client ne peut pas contourner le calcul).
-        const elapsedMs = human?.startedAt ? Date.now() - human.startedAt : null
-        const tooFast =
-          elapsedMs !== null &&
-          elapsedMs < MIN_SOLO_DURATION_MS * answers.length
+    const parsed = parsePayload(startSchema, payload)
 
-        if (human?.hp?.trim() || tooFast) {
-          console.warn(
-            `[ANTI-BOT] Soumission solo rejetée (quiz=${quizzId}, joueur=${playerName}, hp=${Boolean(human?.hp?.trim())}, elapsed=${elapsedMs}ms)`,
-          )
-          socket.emit(
-            EVENTS.GAME.ERROR_MESSAGE,
-            "errors:quizz.invalidSubmission",
-          )
+    if (!parsed) {
+      replyAck(ack, { ok: false, error: "errors:quizz.invalidSubmission" })
 
-          return
-        }
+      return
+    }
 
-        let totalScore = 0
-        let correctAnswersCount = 0
-        // Trace par question, indexée comme le quiz : sans elle le rapport de
-        // résultat du manager n'a rien à afficher pour un joueur solo.
-        const answerRecords: (PlayerAnswerRecord | undefined)[] = []
+    // Le honeypot n'est rempli que par un remplisseur automatique. On refuse
+    // sans détail (le client ne doit pas apprendre quel signal l'a trahi).
+    if (parsed.human?.hp?.trim()) {
+      console.warn(
+        `[ANTI-BOT] Session solo refusée (quiz=${parsed.quizzId}, joueur=${parsed.playerName}, honeypot)`,
+      )
+      replyAck(ack, { ok: false, error: "errors:quizz.invalidSubmission" })
 
-        // Calcul du score pour les réponses de ce joueur
-        quizz.questions.forEach((q: any, index: number) => {
-          const playerAns = answers.find((a) => a.questionIndex === index)
+      return
+    }
 
-          if (!playerAns) {
-            return
-          }
+    let quizz = null
 
-          let isCorrect = false
+    try {
+      quizz = Config.quizzById(parsed.quizzId)
+    } catch {
+      quizz = null
+    }
 
-          switch (q.type) {
-            case "mcq": {
-              const ansId = playerAns.answerId
+    if (!quizz) {
+      replyAck(ack, { ok: false, error: "errors:quizz.notFound" })
 
-              if (ansId !== undefined && ansId !== null) {
-                if (Array.isArray(q.solutions)) {
-                  isCorrect = q.solutions.includes(ansId)
-                } else if (typeof q.solution === "number") {
-                  isCorrect = q.solution === ansId
-                } else if (Array.isArray(q.answers)) {
-                  const item = q.answers[ansId]
+      return
+    }
 
-                  // eslint-disable-next-line max-depth
-                  if (typeof item === "object" && item !== null) {
-                    isCorrect = Boolean(item.correct)
-                  }
-                }
-              }
+    const session = sessions.start(quizz, {
+      playerName: parsed.playerName,
+      socialContact: parsed.socialContact,
+    })
 
-              break
-            }
+    if (!session) {
+      replyAck(ack, { ok: false, error: "errors:quizz.tooManyAttempts" })
 
-            case "true_false": {
-              const ansId = playerAns.answerId
+      return
+    }
 
-              if (ansId !== undefined && ansId !== null) {
-                if (typeof q.solution === "number") {
-                  isCorrect = q.solution === ansId
-                } else if (Array.isArray(q.answers)) {
-                  const item = q.answers[ansId]
+    replyAck(ack, {
+      ok: true,
+      sessionId: session.id,
+      totalQuestions: session.questions.length,
+    })
+  })
 
-                  if (typeof item === "object" && item !== null) {
-                    isCorrect = Boolean(item.correct)
-                  }
-                }
-              }
+  // Question suivante, horodatée par le serveur.
+  socket.on(EVENTS.ASYNC_QUIZ.NEXT, (payload, ack) => {
+    const parsed = parsePayload(sessionSchema, payload)
+    const session = parsed ? sessions.get(parsed.sessionId) : undefined
 
-              break
-            }
+    if (!session) {
+      replyAck(ack, { ok: false, error: "errors:quizz.sessionExpired" })
 
-            case "open": {
-              const text = playerAns.textAnswer
-                ? normalizeAnswer(playerAns.textAnswer)
-                : ""
+      return
+    }
 
-              if (text) {
-                if (Array.isArray(q.correctAnswers)) {
-                  isCorrect = q.correctAnswers.some(
-                    (ca: string) => normalizeAnswer(ca) === text,
-                  )
-                } else if (typeof q.answer === "string") {
-                  isCorrect = normalizeAnswer(q.answer) === text
-                }
-              }
+    replyAck(ack, SoloSessions.next(session))
+  })
 
-              break
-            }
+  // Réponse à la question servie : corrigée ici, correction renvoyée par ack.
+  socket.on(EVENTS.ASYNC_QUIZ.ANSWER, (payload, ack) => {
+    const parsed = parsePayload(answerSchema, payload)
+    const session = parsed ? sessions.get(parsed.sessionId) : undefined
 
-            case "date": {
-              if (typeof playerAns.numberAnswer === "number") {
-                const target = q.correctYear ?? q.solution
-                const tol = q.tolerance ?? 0
-                isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
-              }
+    if (!parsed || !session) {
+      replyAck(ack, { ok: false, error: "errors:quizz.sessionExpired" })
 
-              break
-            }
+      return
+    }
 
-            case "slider": {
-              if (typeof playerAns.numberAnswer === "number") {
-                const target = q.correctValue ?? q.solution
-                const tol = q.tolerance ?? 0
-                isCorrect = Math.abs(playerAns.numberAnswer - target) <= tol
-              }
+    const { questionIndex, answerId, textAnswer, numberAnswer, orderAnswer } =
+      parsed
 
-              break
-            }
+    replyAck(
+      ack,
+      SoloSessions.answer(session, questionIndex, {
+        answerId,
+        textAnswer,
+        numberAnswer,
+        orderAnswer,
+      }),
+    )
+  })
 
-            default:
-              break
-          }
-
-          let points = 0
-
-          if (isCorrect) {
-            correctAnswersCount += 1
-            const timeLimit = (q.time || 20) * 1000
-            const speedBonus = playerAns.timeMs
-              ? Math.max(
-                  0,
-                  Math.round(500 * (1 - playerAns.timeMs / timeLimit)),
-                )
-              : 0
-            points = 1000 + speedBonus
-            totalScore += points
-          }
-
-          answerRecords[index] = {
-            playerName: playerName.trim(),
-            answerId: playerAns.answerId ?? null,
-            textAnswer: playerAns.textAnswer ?? null,
-            numberAnswer: playerAns.numberAnswer ?? null,
-            points,
-            timeMs: playerAns.timeMs ?? null,
-          }
-        })
-
-        const resultId = `${SOLO_RESULT_ID_PREFIX}${quizzId}`
-        let gameResult: GameResult | null = null
-
-        try {
-          gameResult = Config.resultById(resultId)
-        } catch {
-          gameResult = {
-            id: resultId,
-            subject: `${SOLO_RESULT_SUBJECT_PREFIX}${quizzDisplayName(quizz)}`,
-            date: new Date().toISOString(),
-            players: [],
-            questions: quizz.questions.map((q) => ({
-              ...q,
-              playerAnswers: [],
-            })),
-            logs: [],
-          }
-        }
-
-        const existingPlayerIdx = gameResult.players.findIndex(
-          (p) => p.username.toLowerCase() === playerName.trim().toLowerCase(),
-        )
-
-        const newPlayerData: GameResultPlayer = {
-          username: playerName.trim(),
-          points: totalScore,
-          rank: 1,
-          socialContact: socialContact ? socialContact.trim() : undefined,
-        }
-
-        // Seule la meilleure tentative d'un joueur est conservée : le détail par
-        // question doit donc suivre le score retenu, pas la dernière soumission.
-        const isBestRun =
-          existingPlayerIdx < 0 ||
-          totalScore > gameResult.players[existingPlayerIdx].points
-
-        if (existingPlayerIdx >= 0) {
-          if (isBestRun) {
-            gameResult.players[existingPlayerIdx] = newPlayerData
-          }
-        } else {
-          gameResult.players.push(newPlayerData)
-        }
-
-        if (isBestRun) {
-          const playerKey = playerName.trim().toLowerCase()
-          gameResult.questions = gameResult.questions.map((q, index) => {
-            const others = (q.playerAnswers ?? []).filter(
-              (a) => a.playerName.trim().toLowerCase() !== playerKey,
-            )
-            const record = answerRecords[index]
-
-            return {
-              ...q,
-              playerAnswers: record ? [...others, record] : others,
-            }
-          })
-        }
-
-        gameResult.players.sort((a, b) => b.points - a.points)
-        gameResult.players.forEach((p, idx) => {
-          p.rank = idx + 1
-        })
-
-        Config.saveResult(gameResult)
-
-        const playerRank =
-          gameResult.players.find(
-            (p) => p.username.toLowerCase() === playerName.trim().toLowerCase(),
-          )?.rank || gameResult.players.length
-
-        socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS, {
-          totalPoints: totalScore,
-          rank: playerRank,
-          totalPlayers: gameResult.players.length,
-          correctAnswersCount,
-          totalQuestions: quizz.questions.length,
-        })
-      } catch (error) {
-        console.error("Async quizz submission error:", error)
-        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.submissionFailed")
+  // Finalisation : le score enregistré est celui calculé par le serveur.
+  socket.on(EVENTS.ASYNC_QUIZ.SUBMIT, (payload, ack) => {
+    // Réponse par ack ; à défaut (client sans callback), par événements.
+    const hasAck = typeof ack === "function"
+    const fail = (error: string) => {
+      if (hasAck) {
+        replyAck(ack, { ok: false, error })
+      } else {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, error)
       }
-    },
-  )
+    }
+
+    try {
+      if (!submitLimitByIp.hit(getClientIp(socket))) {
+        fail("errors:quizz.tooManyAttempts")
+
+        return
+      }
+
+      const parsed = parsePayload(sessionSchema, payload)
+      const session = parsed ? sessions.get(parsed.sessionId) : undefined
+
+      if (!session) {
+        fail("errors:quizz.sessionExpired")
+
+        return
+      }
+
+      if (!SoloSessions.isFinished(session)) {
+        fail("errors:quizz.invalidSubmission")
+
+        return
+      }
+
+      // Une session ne s'enregistre qu'une fois, même en cas d'échec.
+      sessions.delete(session.id)
+
+      if (SoloSessions.isTooFast(session)) {
+        console.warn(
+          `[ANTI-BOT] Soumission solo rejetée (quiz=${session.quizz.id}, joueur=${session.playerName}, réponses trop rapides)`,
+        )
+        fail("errors:quizz.invalidSubmission")
+
+        return
+      }
+
+      const result = saveSoloResult(session)
+
+      if (hasAck) {
+        replyAck(ack, { ok: true, ...result })
+      } else {
+        socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS, result)
+      }
+    } catch (error) {
+      console.error("Async quizz submission error:", error)
+      fail("errors:quizz.submissionFailed")
+    }
+  })
 }

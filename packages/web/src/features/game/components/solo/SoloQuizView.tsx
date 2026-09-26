@@ -1,6 +1,11 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { Question } from "@rahoot/common/types/game"
-import { normalizeAnswer } from "@rahoot/common/utils/normalize-answer"
+import type {
+  SoloAnswerPayload,
+  SoloPublicQuestion,
+  SoloPublicQuizz,
+  SoloSolution,
+  SoloSubmitResult,
+} from "@rahoot/common/types/solo"
 import { SOLO_DRAW_POOL_SIZE } from "@rahoot/common/utils/result-kind"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
@@ -39,15 +44,6 @@ import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import useSound from "use-sound"
 
-type PublicQuizz = {
-  id: string
-  subject: string
-  description?: string
-  salonImage?: string
-  listingImage?: string
-  questions: Question[]
-}
-
 type Props = {
   quizzId: string
 }
@@ -77,9 +73,37 @@ const progressColor = (progress: number): string => {
   return "#ef4444"
 }
 
+// Valeur de départ du curseur (milieu de l'intervalle affiché).
+const initialNumber = (question: SoloPublicQuestion | null): number => {
+  if (question?.type === "slider") {
+    return Math.round((question.min + question.max) / 2)
+  }
+
+  if (question?.type === "date") {
+    const qMin = question.minYear ?? 0
+    const qMax = question.maxYear ?? new Date().getFullYear()
+
+    return Math.round((qMin + qMax) / 2)
+  }
+
+  return 0
+}
+
+// Libellé d'une erreur serveur (clé i18n errors:*) pour la page publique.
+const SOLO_ERRORS: Record<string, string> = {
+  "errors:quizz.tooManyAttempts":
+    "Trop de parties lancées. Réessayez dans quelques minutes.",
+  "errors:quizz.sessionExpired": "Session expirée, relancez une partie.",
+  "errors:quizz.notFound": "Quiz introuvable.",
+  "errors:quizz.invalidSubmission": "Participation refusée.",
+}
+
+const soloErrorMessage = (error: string) =>
+  SOLO_ERRORS[error] ?? "Une erreur est survenue, réessayez."
+
 export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const { socket, isConnected } = useSocket()
-  const [quizz, setQuizz] = useState<PublicQuizz | null>(null)
+  const [quizz, setQuizz] = useState<SoloPublicQuizz | null>(null)
   const [step, setStep] = useState<"START" | "RULES" | "QUESTION" | "FINISHED">(
     "START",
   )
@@ -88,49 +112,44 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   const [playerName, setPlayerName] = useState("")
   const [socialContact, setSocialContact] = useState("")
-  // Anti-bot : case cochée + honeypot vide + délai minimum (vérifiés serveur).
+  // Anti-bot : case cochée + honeypot vide (vérifiés serveur) ; le délai de
+  // jeu est désormais mesuré par le serveur lui-même.
   const [isHumanChecked, setIsHumanChecked] = useState(false)
   const [honeypot, setHoneypot] = useState("")
-  const [startedAt, setStartedAt] = useState<number | null>(null)
 
+  // Session solo ouverte par le serveur (ASYNC_QUIZ.START) : les questions
+  // sont servies une à une, sans solution, et corrigées côté serveur.
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const [isStarting, setIsStarting] = useState(false)
+  const [currentQuestion, setCurrentQuestion] =
+    useState<SoloPublicQuestion | null>(null)
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(
     null,
   )
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
   const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean | null>(null)
+  // Correction renvoyée par le serveur après la réponse.
+  const [solution, setSolution] = useState<SoloSolution | null>(null)
 
   const [textInput, setTextInput] = useState("")
   const [numberInput, setNumberInput] = useState<number>(0)
 
-  const [answersRecords, setAnswersRecords] = useState<
-    Array<{
-      questionIndex: number
-      answerId?: number | null
-      textAnswer?: string | null
-      numberAnswer?: number | null
-      timeMs?: number
-    }>
-  >([])
-
-  const answersRecordsRef = useRef(answersRecords)
-  useEffect(() => {
-    answersRecordsRef.current = answersRecords
-  }, [answersRecords])
-
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
+  // Fin de la question en heure LOCALE : durée serveur (endsAt − servedAt)
+  // appliquée à l'instant de réception, insensible au décalage d'horloge.
+  const [questionEndTime, setQuestionEndTime] = useState<number>(0)
+  const [questionDurationMs, setQuestionDurationMs] = useState<number>(20_000)
   const [timeLeft, setTimeLeft] = useState<number>(20)
   const [progress, setProgress] = useState(100)
   const [userPoints, setUserPoints] = useState(0)
   const [lastPointsAdded, setLastPointsAdded] = useState(0)
+  // Verrou anti double-émission (réponse / question suivante en vol).
+  const pendingRef = useRef(false)
 
-  const [resultSummary, setResultSummary] = useState<{
-    totalPoints: number
-    rank: number
-    totalPlayers: number
-    correctAnswersCount: number
-    totalQuestions: number
-  } | null>(null)
+  const [resultSummary, setResultSummary] = useState<SoloSubmitResult | null>(
+    null,
+  )
 
   // Dimensions réelles de la fenêtre : `react-confetti` prend 300×200 par
   // défaut et déborde du flux (barre de défilement) si on ne les lui donne pas.
@@ -166,25 +185,34 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     toast.success("Lien du quiz copié dans le presse-papier !")
   }
 
-  const handlePlayAgain = () => {
-    setStep("START")
-    setCurrentQuestionIdx(0)
+  const resetQuestionState = () => {
     setSelectedAnswer(null)
     setHasSubmittedAnswer(false)
     setIsCorrectAnswer(null)
+    setSolution(null)
     setTextInput("")
+    setLastPointsAdded(0)
+  }
+
+  const handlePlayAgain = () => {
+    setStep("START")
+    setSessionId(null)
+    setCurrentQuestion(null)
+    setCurrentQuestionIdx(0)
+    resetQuestionState()
     setNumberInput(0)
     setUserPoints(0)
-    setLastPointsAdded(0)
     setResultSummary(null)
-    setAnswersRecords([])
-    answersRecordsRef.current = []
-    setStartedAt(null)
+    pendingRef.current = false
   }
 
   // Enchaînement automatique vers la question suivante après 2.2 secondes (animation fluide sans clic)
   useEffect(() => {
-    if (!hasSubmittedAnswer || step !== "QUESTION") {
+    if (
+      !hasSubmittedAnswer ||
+      isCorrectAnswer === null ||
+      step !== "QUESTION"
+    ) {
       return undefined
     }
 
@@ -193,7 +221,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     }, 2200)
 
     return () => clearTimeout(timer)
-  }, [hasSubmittedAnswer, step, currentQuestionIdx])
+  }, [hasSubmittedAnswer, isCorrectAnswer, step, currentQuestionIdx])
 
   // Décompte de l'écran de règles → démarrage automatique du quiz
   useEffect(() => {
@@ -202,7 +230,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     }
 
     if (rulesCountdown <= 0) {
-      launchFirstQuestion()
+      requestNextQuestion()
 
       return undefined
     }
@@ -213,13 +241,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   }, [step, rulesCountdown])
 
   // Événements socket
-  useEvent(EVENTS.ASYNC_QUIZ.DATA, (data: PublicQuizz) => {
+  useEvent(EVENTS.ASYNC_QUIZ.DATA, (data) => {
     setQuizz(data)
-  })
-
-  useEvent(EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS, (data) => {
-    setResultSummary(data)
-    setStep("FINISHED")
+    setTotalQuestions(data.totalQuestions)
   })
 
   useEffect(() => {
@@ -230,22 +254,18 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   // Timer question
   useEffect(() => {
-    if (step !== "QUESTION" || hasSubmittedAnswer) {
+    if (step !== "QUESTION" || hasSubmittedAnswer || !currentQuestion) {
       return undefined
     }
 
-    const initialTime = currentQuestion?.time || 20
-    const endTime = questionStartTime + initialTime * 1000
-
     const interval = setInterval(() => {
-      const now = Date.now()
-      const remainingMs = endTime - now
+      const remainingMs = questionEndTime - Date.now()
       const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000))
       setTimeLeft(remainingSec)
 
       const pct = Math.max(
         0,
-        Math.min(100, (remainingMs / (initialTime * 1000)) * 100),
+        Math.min(100, (remainingMs / questionDurationMs) * 100),
       )
       setProgress(pct)
 
@@ -256,63 +276,129 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     }, 50)
 
     return () => clearInterval(interval)
-  }, [step, currentQuestionIdx, hasSubmittedAnswer, questionStartTime])
+  }, [step, currentQuestionIdx, hasSubmittedAnswer, questionEndTime])
 
-  const currentQuestion = quizz?.questions[currentQuestionIdx]
+  // État d'un bouton après correction : vrai = bonne réponse, faux = le
+  // mauvais choix du joueur, indéfini = neutre (avant réponse, ou proposition
+  // non choisie).
+  const isSolutionIndex = (index: number) =>
+    Boolean(solution?.solutions?.includes(index))
 
-  // État d'un bouton vrai/faux après validation : vrai = bonne réponse,
-  // faux = le mauvais choix du joueur, indéfini = neutre (avant réponse, ou
-  // proposition non choisie).
   const answerState = (index: number): boolean | undefined => {
-    if (!hasSubmittedAnswer || !currentQuestion) {
+    if (!hasSubmittedAnswer || !solution) {
       return undefined
     }
 
-    if (checkIsAnswerCorrect(currentQuestion, index)) {
+    if (isSolutionIndex(index)) {
       return true
     }
 
     return selectedAnswer === index ? false : undefined
   }
 
-  // Synchronisation du champ numérique pour les questions curseur / date
-  useEffect(() => {
-    if (!currentQuestion) {
+  // Envoi de la réponse : la correction (juste/faux, points, solution) est
+  // calculée et renvoyée par le serveur. Une réponse vide = temps écoulé.
+  const submitAnswer = (payload: SoloAnswerPayload) => {
+    if (!socket || !sessionId || hasSubmittedAnswer || pendingRef.current) {
       return
     }
 
-    if (currentQuestion.type === "slider") {
-      const qMin = currentQuestion.min ?? 0
-      const qMax = currentQuestion.max ?? 100
-      setNumberInput(Math.round((qMin + qMax) / 2))
-    } else if (currentQuestion.type === "date") {
-      const curYear = new Date().getFullYear()
-      const qMin = currentQuestion.minYear ?? 0
-      const qMax = currentQuestion.maxYear ?? curYear
-      setNumberInput(Math.round((qMin + qMax) / 2))
-    }
-  }, [currentQuestionIdx, quizz])
+    pendingRef.current = true
+    setHasSubmittedAnswer(true)
+
+    socket.emit(
+      EVENTS.ASYNC_QUIZ.ANSWER,
+      { sessionId, questionIndex: currentQuestionIdx, ...payload },
+      (res) => {
+        pendingRef.current = false
+
+        if (!res.ok) {
+          toast.error(soloErrorMessage(res.error))
+          setIsCorrectAnswer(false)
+
+          return
+        }
+
+        setSolution(res.solution)
+        setIsCorrectAnswer(res.correct)
+        setLastPointsAdded(res.points)
+        setUserPoints(res.totalPoints)
+
+        if (res.correct) {
+          sfxCorrect()
+        } else {
+          sfxWrong()
+        }
+      },
+    )
+  }
 
   const handleTimeOut = () => {
     if (hasSubmittedAnswer) {
       return
     }
 
-    setHasSubmittedAnswer(true)
-    setIsCorrectAnswer(false)
-    sfxWrong()
-    const timeSpent = Date.now() - questionStartTime
+    submitAnswer({})
+  }
 
-    const record = {
-      questionIndex: currentQuestionIdx,
-      answerId: null,
-      numberAnswer: null,
-      textAnswer: null,
-      timeMs: timeSpent,
+  // Finalisation : le score enregistré est celui calculé par le serveur.
+  const submitSession = (id: string) => {
+    socket?.emit(EVENTS.ASYNC_QUIZ.SUBMIT, { sessionId: id }, (res) => {
+      if (!res.ok) {
+        toast.error(soloErrorMessage(res.error))
+        handlePlayAgain()
+
+        return
+      }
+
+      setResultSummary({
+        totalPoints: res.totalPoints,
+        rank: res.rank,
+        totalPlayers: res.totalPlayers,
+        correctAnswersCount: res.correctAnswersCount,
+        totalQuestions: res.totalQuestions,
+      })
+      setStep("FINISHED")
+    })
+  }
+
+  // Question suivante (ou fin de partie), servie et horodatée par le serveur.
+  const requestNextQuestion = (id = sessionId) => {
+    if (!socket || !id || pendingRef.current) {
+      return
     }
 
-    setAnswersRecords((prev) => [...prev, record])
-    answersRecordsRef.current = [...answersRecordsRef.current, record]
+    pendingRef.current = true
+
+    socket.emit(EVENTS.ASYNC_QUIZ.NEXT, { sessionId: id }, (res) => {
+      pendingRef.current = false
+
+      if (!res.ok) {
+        toast.error(soloErrorMessage(res.error))
+
+        return
+      }
+
+      if (res.done) {
+        submitSession(id)
+
+        return
+      }
+
+      const durationMs = Math.max(1000, res.endsAt - res.servedAt)
+
+      resetQuestionState()
+      setStep("QUESTION")
+      setCurrentQuestion(res.question)
+      setCurrentQuestionIdx(res.questionIndex)
+      setTotalQuestions(res.totalQuestions)
+      setNumberInput(initialNumber(res.question))
+      setQuestionDurationMs(durationMs)
+      setQuestionEndTime(Date.now() + durationMs)
+      setTimeLeft(Math.ceil(durationMs / 1000))
+      setProgress(100)
+      sfxShow()
+    })
   }
 
   const handleStart = (e: React.FormEvent) => {
@@ -330,97 +416,43 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       return
     }
 
-    setStartedAt(Date.now())
-
-    if (quizz?.description?.trim()) {
-      setRulesCountdown(RULES_SCREEN_SECONDS)
-      setStep("RULES")
-
+    if (!socket || !quizz || isStarting) {
       return
     }
 
-    launchFirstQuestion()
-  }
+    setIsStarting(true)
 
-  // Démarrage effectif du quiz : depuis le formulaire (pas de règles) ou à la
-  // fin du décompte de l'écran de règles.
-  const launchFirstQuestion = () => {
-    setStep("QUESTION")
-    setCurrentQuestionIdx(0)
-    setQuestionStartTime(Date.now())
-    const firstQ = quizz?.questions[0]
-    if (firstQ?.type === "slider") {
-      const qMin = firstQ.min ?? 0
-      const qMax = firstQ.max ?? 100
-      setNumberInput(Math.round((qMin + qMax) / 2))
-    } else if (firstQ?.type === "date") {
-      const curYear = new Date().getFullYear()
-      const qMin = firstQ.minYear ?? 0
-      const qMax = firstQ.maxYear ?? curYear
-      setNumberInput(Math.round((qMin + qMax) / 2))
-    }
-    const firstQTime = firstQ?.time || 20
-    setTimeLeft(firstQTime)
-    setProgress(100)
-    sfxShow()
-  }
+    socket.emit(
+      EVENTS.ASYNC_QUIZ.START,
+      {
+        quizzId: quizz.id,
+        playerName: playerName.trim(),
+        socialContact: socialContact.trim() || undefined,
+        human: { hp: honeypot },
+      },
+      (res) => {
+        setIsStarting(false)
 
-  const checkIsAnswerCorrect = (q: any, ansIdx: number): boolean => {
-    if (!q) {
-      return false
-    }
+        if (!res.ok) {
+          toast.error(soloErrorMessage(res.error))
 
-    if (q.type === "mcq" || !q.type) {
-      if (Array.isArray(q.solutions)) {
-        return q.solutions.includes(ansIdx)
-      }
+          return
+        }
 
-      if (typeof q.solution === "number") {
-        return q.solution === ansIdx
-      }
+        setSessionId(res.sessionId)
+        setTotalQuestions(res.totalQuestions)
+        setUserPoints(0)
 
-      if (Array.isArray(q.answers) && q.answers[ansIdx]) {
-        return typeof q.answers[ansIdx] === "object"
-          ? Boolean(q.answers[ansIdx].correct)
-          : false
-      }
-    }
+        if (quizz.description?.trim()) {
+          setRulesCountdown(RULES_SCREEN_SECONDS)
+          setStep("RULES")
 
-    if (q.type === "true_false") {
-      if (typeof q.solution === "number") {
-        return q.solution === ansIdx
-      }
+          return
+        }
 
-      if (Array.isArray(q.answers) && q.answers[ansIdx]) {
-        return typeof q.answers[ansIdx] === "object"
-          ? Boolean(q.answers[ansIdx].correct)
-          : false
-      }
-    }
-
-    return false
-  }
-
-  const checkIsNumberAnswerCorrect = (q: any, val: number): boolean => {
-    if (!q) {
-      return false
-    }
-
-    if (q.type === "slider") {
-      const target = q.correctValue ?? q.solution
-      const tol = q.tolerance ?? 0
-
-      return typeof target === "number" ? Math.abs(val - target) <= tol : false
-    }
-
-    if (q.type === "date") {
-      const target = q.correctYear ?? q.solution
-      const tol = q.tolerance ?? 0
-
-      return typeof target === "number" ? Math.abs(val - target) <= tol : false
-    }
-
-    return false
+        requestNextQuestion(res.sessionId)
+      },
+    )
   }
 
   const handleAnswerSelect = (ansIdx: number) => {
@@ -430,35 +462,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     sfxPop()
     setSelectedAnswer(ansIdx)
-    setHasSubmittedAnswer(true)
-
-    const timeSpent = Date.now() - questionStartTime
-    const correct = checkIsAnswerCorrect(currentQuestion, ansIdx)
-
-    setIsCorrectAnswer(correct)
-
-    if (correct) {
-      sfxCorrect()
-      const timeLimit = (currentQuestion.time || 20) * 1000
-      const speedBonus = Math.max(
-        0,
-        Math.round(500 * (1 - timeSpent / timeLimit)),
-      )
-      const totalGain = 1000 + speedBonus
-      setLastPointsAdded(totalGain)
-      setUserPoints((pts) => pts + totalGain)
-    } else {
-      sfxWrong()
-      setLastPointsAdded(0)
-    }
-
-    const record = {
-      questionIndex: currentQuestionIdx,
-      answerId: ansIdx,
-      timeMs: timeSpent,
-    }
-    setAnswersRecords((prev) => [...prev, record])
-    answersRecordsRef.current = [...answersRecordsRef.current, record]
+    submitAnswer({ answerId: ansIdx })
   }
 
   const handleNumberSubmit = (val: number) => {
@@ -468,126 +472,28 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
     sfxPop()
     setSelectedAnswer(val)
-    setHasSubmittedAnswer(true)
-
-    const timeSpent = Date.now() - questionStartTime
-    const correct = checkIsNumberAnswerCorrect(currentQuestion, val)
-
-    setIsCorrectAnswer(correct)
-
-    if (correct) {
-      sfxCorrect()
-      const timeLimit = (currentQuestion.time || 20) * 1000
-      const speedBonus = Math.max(
-        0,
-        Math.round(500 * (1 - timeSpent / timeLimit)),
-      )
-      const totalGain = 1000 + speedBonus
-      setLastPointsAdded(totalGain)
-      setUserPoints((pts) => pts + totalGain)
-    } else {
-      sfxWrong()
-      setLastPointsAdded(0)
-    }
-
-    const record = {
-      questionIndex: currentQuestionIdx,
-      numberAnswer: val,
-      timeMs: timeSpent,
-    }
-    setAnswersRecords((prev) => [...prev, record])
-    answersRecordsRef.current = [...answersRecordsRef.current, record]
+    submitAnswer({ numberAnswer: val })
   }
 
   const handleOpenTextSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (hasSubmittedAnswer || !currentQuestion) {
-      return
-    }
-
-    if (!textInput.trim()) {
+    if (hasSubmittedAnswer || !currentQuestion || !textInput.trim()) {
       return
     }
 
     sfxPop()
     setSelectedAnswer(textInput)
-    setHasSubmittedAnswer(true)
-
-    const timeSpent = Date.now() - questionStartTime
-    let correct = false
-    const text = normalizeAnswer(textInput)
-
-    if (currentQuestion.type === "open") {
-      if (Array.isArray(currentQuestion.correctAnswers)) {
-        correct = currentQuestion.correctAnswers.some(
-          (ca: string) => normalizeAnswer(ca) === text,
-        )
-      } else if (typeof (currentQuestion as any).answer === "string") {
-        correct = normalizeAnswer((currentQuestion as any).answer) === text
-      }
-    }
-
-    setIsCorrectAnswer(correct)
-
-    if (correct) {
-      sfxCorrect()
-      setLastPointsAdded(1000)
-      setUserPoints((pts) => pts + 1000)
-    } else {
-      sfxWrong()
-      setLastPointsAdded(0)
-    }
-
-    const record = {
-      questionIndex: currentQuestionIdx,
-      textAnswer: textInput,
-      timeMs: timeSpent,
-    }
-    setAnswersRecords((prev) => [...prev, record])
-    answersRecordsRef.current = [...answersRecordsRef.current, record]
+    submitAnswer({ textAnswer: textInput })
   }
 
   const handleNextQuestion = () => {
-    if (!quizz) {
+    if (!hasSubmittedAnswer || isCorrectAnswer === null) {
       return
     }
 
     setLastPointsAdded(0)
-
-    if (currentQuestionIdx + 1 < quizz.questions.length) {
-      const nextIdx = currentQuestionIdx + 1
-      setCurrentQuestionIdx(nextIdx)
-      setSelectedAnswer(null)
-      setHasSubmittedAnswer(false)
-      setIsCorrectAnswer(null)
-      setTextInput("")
-      const nextQ = quizz.questions[nextIdx]
-      if (nextQ?.type === "slider") {
-        const qMin = nextQ.min ?? 0
-        const qMax = nextQ.max ?? 100
-        setNumberInput(Math.round((qMin + qMax) / 2))
-      } else if (nextQ?.type === "date") {
-        const curYear = new Date().getFullYear()
-        const qMin = nextQ.minYear ?? 0
-        const qMax = nextQ.maxYear ?? curYear
-        setNumberInput(Math.round((qMin + qMax) / 2))
-      }
-      setQuestionStartTime(Date.now())
-
-      const nextQTime = quizz.questions[nextIdx]?.time || 20
-      setTimeLeft(nextQTime)
-      setProgress(100)
-      sfxShow()
-    } else if (socket) {
-      socket.emit(EVENTS.ASYNC_QUIZ.SUBMIT, {
-        quizzId: quizz.id,
-        playerName,
-        socialContact,
-        answers: answersRecordsRef.current,
-        human: { hp: honeypot, startedAt },
-      })
-    }
+    requestNextQuestion()
   }
 
   if (!quizz) {
@@ -668,9 +574,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       {/* Révélation d'image si activée */}
       {step === "QUESTION" && currentQuestion?.revelationEnabled && (
         <BackgroundRevealer
-          duration={
-            currentQuestion.revealDuration ?? currentQuestion.time ?? 20
-          }
+          duration={currentQuestion.revealDuration ?? currentQuestion.time}
           gridCols={currentQuestion.gridCols ?? 8}
           gridRows={currentQuestion.gridRows ?? 6}
           seedString={currentQuestion.question || bgImageForRevealer}
@@ -731,6 +635,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     type="text"
                     required
                     placeholder="Ex: QuizMaster99"
+                    maxLength={30}
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 font-semibold text-white placeholder-gray-400 shadow-inner backdrop-blur-md transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
@@ -747,6 +652,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   <input
                     type="text"
                     placeholder="Ex: @votre_insta / email@domaine.com"
+                    maxLength={100}
                     value={socialContact}
                     onChange={(e) => setSocialContact(e.target.value)}
                     className="w-full rounded-xl border border-white/20 bg-black/40 py-3.5 pr-4 pl-11 text-sm font-semibold text-white placeholder-gray-400 shadow-inner backdrop-blur-md transition-all focus:border-orange-500 focus:bg-black/60 focus:ring-2 focus:ring-orange-500/40 focus:outline-none"
@@ -767,7 +673,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
               <button
                 type="submit"
-                disabled={!isHumanChecked}
+                disabled={!isHumanChecked || isStarting}
                 className="group relative mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99] disabled:cursor-not-allowed disabled:border-white/10 disabled:from-slate-700 disabled:to-slate-700 disabled:text-gray-400 disabled:shadow-none disabled:active:scale-100"
               >
                 <span>Démarrer la partie</span>
@@ -826,7 +732,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           <div className="relative z-20 px-4 pt-6">
             <div className="mx-auto max-w-7xl rounded-2xl border border-white/10 bg-black/60 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
               <h2 className="text-xl font-extrabold text-white drop-shadow-md sm:text-2xl md:text-3xl">
-                {currentQuestion.question || (currentQuestion as any).title}
+                {currentQuestion.question}
               </h2>
             </div>
           </div>
@@ -844,45 +750,42 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
           {/* Answer Area (MCQ / TrueFalse / Open) */}
           <div className="relative z-20 mx-auto w-full max-w-7xl px-4 pb-4">
             {/* MCQ / QCM Questions */}
-            {(currentQuestion.type === "mcq" || !currentQuestion.type) &&
-              currentQuestion.answers && (
-                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {currentQuestion.answers.map((ans: any, idx: number) => {
-                    const Icon = ANSWERS_ICONS[idx % 4]
-                    const colorClass = ANSWERS_COLORS[idx % 4]
-                    const isSelected = selectedAnswer === idx
-                    const isCorrect = checkIsAnswerCorrect(currentQuestion, idx)
+            {currentQuestion.type === "mcq" && (
+              <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {currentQuestion.answers.map((ans, idx) => {
+                  const Icon = ANSWERS_ICONS[idx % 4]
+                  const colorClass = ANSWERS_COLORS[idx % 4]
+                  const isSelected = selectedAnswer === idx
+                  const isCorrect = isSolutionIndex(idx)
 
-                    const btnState = answerState(idx)
+                  const btnState = answerState(idx)
 
-                    return (
-                      <AnswerButton
-                        key={idx}
-                        index={idx}
-                        icon={Icon}
-                        correct={btnState}
-                        disabled={hasSubmittedAnswer}
-                        onClick={() => handleAnswerSelect(idx)}
-                        className={clsx(
-                          colorClass,
-                          "min-h-20 cursor-pointer text-lg font-bold text-white shadow-xl sm:min-h-24",
-                          hasSubmittedAnswer &&
-                            isCorrect &&
-                            "bg-green-600 ring-4 ring-green-400",
-                          hasSubmittedAnswer &&
-                            isSelected &&
-                            !isCorrect &&
-                            "opacity-50 grayscale",
-                        )}
-                      >
-                        {ans.title ||
-                          ans.text ||
-                          (typeof ans === "string" ? ans : "")}
-                      </AnswerButton>
-                    )
-                  })}
-                </div>
-              )}
+                  return (
+                    <AnswerButton
+                      key={idx}
+                      index={idx}
+                      icon={Icon}
+                      correct={btnState}
+                      disabled={hasSubmittedAnswer}
+                      onClick={() => handleAnswerSelect(idx)}
+                      className={clsx(
+                        colorClass,
+                        "min-h-20 cursor-pointer text-lg font-bold text-white shadow-xl sm:min-h-24",
+                        hasSubmittedAnswer &&
+                          isCorrect &&
+                          "bg-green-600 ring-4 ring-green-400",
+                        hasSubmittedAnswer &&
+                          isSelected &&
+                          !isCorrect &&
+                          "opacity-50 grayscale",
+                      )}
+                    >
+                      {ans}
+                    </AnswerButton>
+                  )
+                })}
+              </div>
+            )}
 
             {/* True / False Questions */}
             {currentQuestion.type === "true_false" && (
@@ -911,8 +814,58 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               </div>
             )}
 
+            {/* Séquence d'images : les images défilent, réponse libre */}
+            {currentQuestion.type === "image_sequence" && (
+              <div className="mx-auto mb-3 flex max-w-2xl gap-2 overflow-x-auto">
+                {currentQuestion.images.map((image) => (
+                  <img
+                    key={image}
+                    src={image}
+                    alt=""
+                    className="h-24 w-auto rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Grille : le joueur tape la case qu'il pense juste */}
+            {currentQuestion.type === "grid" && (
+              <div
+                className="mx-auto mb-3 grid max-w-2xl gap-2"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.max(1, currentQuestion.cellsPerRow)}, minmax(0, 1fr))`,
+                }}
+              >
+                {currentQuestion.cells.map((cell, idx) => (
+                  <button
+                    key={`${cell.image}-${idx}`}
+                    type="button"
+                    disabled={hasSubmittedAnswer}
+                    onClick={() => handleAnswerSelect(idx)}
+                    className={clsx(
+                      "relative min-h-[44px] cursor-pointer overflow-hidden rounded-xl border-2 border-white/20 bg-black/40",
+                      answerState(idx) === true && "ring-4 ring-green-400",
+                      answerState(idx) === false && "opacity-50 grayscale",
+                    )}
+                  >
+                    <img
+                      src={cell.image}
+                      alt={cell.label ?? ""}
+                      className="aspect-square w-full object-cover"
+                    />
+                    {cell.label && (
+                      <span className="absolute inset-x-0 bottom-0 bg-black/60 px-1 text-xs font-bold">
+                        {cell.label}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Open Question */}
-            {currentQuestion.type === "open" && (
+            {(currentQuestion.type === "open" ||
+              currentQuestion.type === "image_sequence") && (
               <form
                 onSubmit={handleOpenTextSubmit}
                 className="mx-auto mb-3 flex max-w-2xl gap-2"
@@ -935,16 +888,14 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 </button>
               </form>
             )}
-            {currentQuestion.type === "open" &&
+            {(currentQuestion.type === "open" ||
+              currentQuestion.type === "image_sequence") &&
               hasSubmittedAnswer &&
-              !isCorrectAnswer && (
+              isCorrectAnswer === false &&
+              solution?.correctAnswers && (
                 <div className="mx-auto mb-3 max-w-2xl rounded-xl border border-white/10 bg-black/60 p-2.5 text-center text-xs font-semibold text-emerald-400 sm:text-sm">
                   Réponse attendue :{" "}
-                  <strong>
-                    {Array.isArray(currentQuestion.correctAnswers)
-                      ? currentQuestion.correctAnswers.join(" ou ")
-                      : (currentQuestion as any).answer || ""}
-                  </strong>
+                  <strong>{solution.correctAnswers.join(" ou ")}</strong>
                 </div>
               )}
 
@@ -954,16 +905,15 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               (() => {
                 const isSlider = currentQuestion.type === "slider"
                 const min = isSlider
-                  ? (currentQuestion.min ?? 0)
+                  ? currentQuestion.min
                   : (currentQuestion.minYear ?? 0)
                 const max = isSlider
-                  ? (currentQuestion.max ?? 100)
+                  ? currentQuestion.max
                   : (currentQuestion.maxYear ?? new Date().getFullYear())
+                // Cible connue seulement après correction (renvoyée par le serveur).
                 const target = isSlider
-                  ? (currentQuestion.correctValue ??
-                    (currentQuestion as any).solution)
-                  : (currentQuestion.correctYear ??
-                    (currentQuestion as any).solution)
+                  ? solution?.correctValue
+                  : solution?.correctYear
                 const tol = currentQuestion.tolerance ?? 0
 
                 return (
@@ -1034,32 +984,34 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                       </button>
                     </div>
 
-                    {/* Révélation après soumission ou Bouton Valider avant */}
+                    {/* Révélation après correction ou Bouton Valider avant */}
                     {hasSubmittedAnswer ? (
-                      <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/60 p-3.5 text-center backdrop-blur-md">
-                        {isCorrectAnswer ? (
-                          <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-400 sm:text-base">
-                            <CheckCircle2 className="size-5" />
-                            <span>
-                              {target === numberInput
-                                ? `Valeur exacte (${target}) !`
-                                : `Dans la cible ! Cible : ${target} (±${tol})`}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1 text-xs sm:text-sm">
-                            {selectedAnswer !== null && (
-                              <span className="font-bold text-rose-400">
-                                Votre choix : {selectedAnswer}
+                      solution && (
+                        <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/60 p-3.5 text-center backdrop-blur-md">
+                          {isCorrectAnswer ? (
+                            <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-400 sm:text-base">
+                              <CheckCircle2 className="size-5" />
+                              <span>
+                                {target === numberInput
+                                  ? `Valeur exacte (${target}) !`
+                                  : `Dans la cible ! Cible : ${target} (±${tol})`}
                               </span>
-                            )}
-                            <span className="font-extrabold text-emerald-400">
-                              Réponse attendue : {target}{" "}
-                              {tol > 0 && `(Tolérance : ±${tol})`}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1 text-xs sm:text-sm">
+                              {selectedAnswer !== null && (
+                                <span className="font-bold text-rose-400">
+                                  Votre choix : {selectedAnswer}
+                                </span>
+                              )}
+                              <span className="font-extrabold text-emerald-400">
+                                Réponse attendue : {target}{" "}
+                                {tol > 0 && `(Tolérance : ±${tol})`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )
                     ) : (
                       <button
                         type="button"
@@ -1074,6 +1026,22 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 )
               })()}
 
+            {/* Types sans saisie solo pour l'instant : le temps s'écoule */}
+            {(currentQuestion.type === "puzzle" ||
+              currentQuestion.type === "drop_pin") &&
+              !hasSubmittedAnswer && (
+                <div className="mx-auto mb-3 max-w-2xl rounded-xl border border-white/10 bg-black/60 p-3 text-center text-sm font-semibold text-gray-300">
+                  Ce type de question n'est pas encore jouable en solo.
+                  <button
+                    type="button"
+                    onClick={() => submitAnswer({})}
+                    className="ml-3 min-h-[44px] cursor-pointer rounded-xl bg-white/10 px-4 font-bold text-white hover:bg-white/20"
+                  >
+                    Passer
+                  </button>
+                </div>
+              )}
+
             {/* HUD Footer (Timer, Score, Next Button, App Logo) */}
             <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/60 px-6 py-3 backdrop-blur-md">
               <div className="flex items-center gap-4">
@@ -1083,7 +1051,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   className="h-10 w-auto shrink-0 object-contain drop-shadow sm:h-12"
                 />
                 <span className="rounded-full border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs font-bold tracking-widest text-orange-400 uppercase">
-                  Question {currentQuestionIdx + 1} / {quizz.questions.length}
+                  Question {currentQuestionIdx + 1} / {totalQuestions}
                 </span>
                 <span className="text-sm font-black text-amber-400">
                   <AnimatedPoints
@@ -1109,13 +1077,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   </span>
                 </div>
 
-                {hasSubmittedAnswer && (
+                {hasSubmittedAnswer && isCorrectAnswer !== null && (
                   <button
                     onClick={handleNextQuestion}
                     className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-amber-600"
                   >
                     <span>
-                      {currentQuestionIdx + 1 < quizz.questions.length
+                      {currentQuestionIdx + 1 < totalQuestions
                         ? "Suivant"
                         : "Terminer"}
                     </span>

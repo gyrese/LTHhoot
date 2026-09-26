@@ -27,6 +27,12 @@ export type Player = {
   hasStreakShield?: boolean
 }
 
+// Joueur tel qu'il peut être diffusé à d'AUTRES appareils que le sien (podium,
+// classements, salle d'attente, télécommande…). Le `clientId` sert de jeton de
+// reconnexion et d'auth HTTP (`x-client-id`) : il ne quitte jamais le serveur.
+// L'identifiant public d'un joueur est son `id`.
+export type PublicPlayer = Omit<Player, "clientId">
+
 export type Answer = {
   playerId: string
   answerId?: number
@@ -292,6 +298,11 @@ export type QuizzMeta = {
   tags?: string[]
   salonImage?: string
   listingImage?: string
+  // Nombre de questions jouables (slides titre exclus) : badge des cartes et
+  // estimation de la durée d'une soirée.
+  questionCount: number
+  // Durée estimée d'une partie en secondes (cf. estimateQuizzDurationSec).
+  estimatedDurationSec?: number
 }
 
 export type GameUpdateQuestion = {

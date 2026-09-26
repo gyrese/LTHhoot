@@ -13,6 +13,8 @@ import {
 } from "@rahoot/common/types/round-event"
 import type {
   AnswerAckStatus,
+  BuyPowerUpAck,
+  PowerUpUseAck,
   Server,
   Socket,
 } from "@rahoot/common/types/game/socket"
@@ -25,7 +27,10 @@ import Config from "@rahoot/socket/services/config"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { GameLogger } from "@rahoot/socket/services/game/logger"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
-import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
+import {
+  isPowerUpType,
+  PowerUpManager,
+} from "@rahoot/socket/services/game/powerup-manager"
 import { RoundManager } from "@rahoot/socket/services/game/round-manager"
 import Registry from "@rahoot/socket/services/registry"
 import {
@@ -36,8 +41,9 @@ import {
 } from "@rahoot/socket/services/persistence"
 import {
   calculateAwards,
-  createInviteCode,
+  createUniqueInviteCode,
   resolvePodiumTheme,
+  toPublicPlayer,
 } from "@rahoot/socket/utils/game"
 import { v4 as uuid } from "uuid"
 
@@ -83,10 +89,16 @@ class Game {
   // Partie de test créée par un compte invité : seul le mode démo (solo) peut
   // la démarrer — START_GAME est refusé (cf. handlers/game).
   readonly demoOnly: boolean = false
-  // Accumulateur des résultats de chaque quiz d'une soirée — en mémoire
-  // uniquement (pas de persistance disque), sert au calcul des awards
-  // "Wrapped" au dernier quiz. Purgé/non pertinent hors mode soirée.
+  // Accumulateur des résultats de chaque quiz d'une soirée (persisté dans
+  // l'instantané de reprise), sert au calcul des awards "Wrapped" au dernier
+  // quiz. Non pertinent hors mode soirée.
   private eveningGameResults: GameResult[] = []
+  // Cumul de chaque joueur (par clientId) au début du quiz en cours de la
+  // soirée : sert à calculer les points gagnés sur CE quiz (delta affiché par
+  // l'interstitiel, résultats archivés par quiz).
+  private eveningQuizStartPoints = new Map<string, number>()
+  // Partie supprimée du registre : plus aucun timer ne doit tourner.
+  private disposed = false
 
   private readonly disconnectTimers: Map<
     string,
@@ -143,7 +155,11 @@ class Game {
 
     this.io = io
     this.gameId = restore?.gameId ?? uuid()
-    this.inviteCode = restore?.inviteCode ?? createInviteCode()
+    this.inviteCode =
+      restore?.inviteCode ??
+      createUniqueInviteCode((code) =>
+        Boolean(registry.getGameByInviteCode(code)),
+      )
     this.logger = new GameLogger()
     this._manager = {
       // En restauration : pas de socket, le manager se rebranchera par clientId.
@@ -209,7 +225,11 @@ class Game {
       quizz: checkpoint.quizz,
       resumeIndex: checkpoint.resumeIndex,
       questionsHistory: checkpoint.questionsHistory,
-      players: this.playerManager.getAll().map(playerToSnapshot),
+      players: this.playerManager
+        .getAll()
+        .map((p) =>
+          playerToSnapshot(p, this.powerUpManager.getPlayerPowerUps(p.id)),
+        ),
       eveningSession: this.eveningSession
         ? {
             quizIds: this.eveningSession.quizIds,
@@ -223,6 +243,8 @@ class Game {
       fastMode: this.fastMode,
       fastModeIntensity: this.fastModeIntensity,
       demoOnly: this.demoOnly,
+      eveningGameResults: this.eveningGameResults,
+      eveningQuizStartPoints: Object.fromEntries(this.eveningQuizStartPoints),
       savedAt: Date.now(),
     }
   }
@@ -258,9 +280,25 @@ class Game {
       game.round = game.createRoundManager(snapshot.quizz, true)
     }
 
-    // Joueurs : points/streak conservés, marqués déconnectés (id placeholder).
+    // Joueurs : points/streak/pièces conservés, marqués déconnectés (id
+    // placeholder = clientId, remappé à la reconnexion comme l'inventaire).
     const players = snapshot.players.map(snapshotToPlayer)
     game.playerManager.replace(players)
+
+    for (const saved of snapshot.players) {
+      game.powerUpManager.setPlayerPowerUps(
+        saved.clientId,
+        Array.isArray(saved.powerUps) ? saved.powerUps : [],
+      )
+    }
+
+    // Champs absents des anciens instantanés : valeurs neutres.
+    game.eveningGameResults = Array.isArray(snapshot.eveningGameResults)
+      ? snapshot.eveningGameResults
+      : []
+    game.eveningQuizStartPoints = new Map(
+      Object.entries(snapshot.eveningQuizStartPoints ?? {}),
+    )
 
     // Progression : on repart à la prochaine question non scorée.
     game.round.restoreCheckpoint({
@@ -339,6 +377,7 @@ class Game {
     const powerUpsEnabled = options?.powerUpsEnabled ?? true
 
     this.eveningSession = { quizIds, currentIndex: 0, powerUpsEnabled }
+    this.eveningQuizStartPoints = new Map()
     this.disabledPowerUps = options?.disabledPowerUps ?? []
     this.noSpeedMode = options?.noSpeedMode ?? false
     this.fastMode = options?.fastMode ?? false
@@ -360,13 +399,38 @@ class Game {
     )
   }
 
+  // Points gagnés sur le quiz en cours de la soirée : cumul actuel moins le
+  // cumul au début du quiz. Inclut les effets de power-ups (vol, bombe…), que
+  // le détail des réponses ne reflète pas.
+  private quizPointsOf(player: Player): number {
+    return (
+      player.points - (this.eveningQuizStartPoints.get(player.clientId) ?? 0)
+    )
+  }
+
   private handleEveningQuizFinished(result: GameResult, leaderboard: Player[]) {
     if (!this.eveningSession) {
       return
     }
 
-    Config.saveResult({ ...result, logs: this.logger.getAll() })
-    this.eveningGameResults.push(result)
+    // Le résultat archivé d'un quiz de soirée porte les points DE CE QUIZ (et
+    // le classement qui en découle), pas le cumul : sinon les statistiques par
+    // quiz sont faussées dès le deuxième quiz.
+    const quizResult: GameResult = {
+      ...result,
+      players: leaderboard
+        .map((player) => ({
+          username: player.username,
+          avatar: player.avatar,
+          points: this.quizPointsOf(player),
+          rank: 0,
+        }))
+        .sort((a, b) => b.points - a.points)
+        .map((player, index) => ({ ...player, rank: index + 1 })),
+    }
+
+    Config.saveResult({ ...quizResult, logs: this.logger.getAll() })
+    this.eveningGameResults.push(quizResult)
 
     // Bonus de pièces de fin de quiz (victoire + quiz sans faute)
     this.grantQuizEndCoins(result, leaderboard)
@@ -381,35 +445,7 @@ class Game {
       : result.subject
 
     if (isLastQuiz) {
-      // Thème du podium final de soirée : réglage du dernier quiz joué.
-      const data = {
-        subject: finishedName,
-        top: leaderboard.slice(0, 3),
-        totalPlayers: leaderboard.length,
-        awards: calculateAwards(this.eveningGameResults, leaderboard),
-        podiumTheme: resolvePodiumTheme(finishedQuizz?.podiumTheme),
-        // Fond du podium "neutre" : couverture du quiz, sinon image du salon.
-        coverImage: finishedQuizz?.listingImage || finishedQuizz?.salonImage,
-      }
-
-      this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
-        name: STATUS.FINISHED,
-        data,
-      })
-
-      leaderboard.forEach((player, index) => {
-        this.io.to(player.id).emit(EVENTS.GAME.STATUS, {
-          name: STATUS.FINISHED,
-          data: { ...data, rank: index + 1 },
-        })
-      })
-
-      this.io.to(this.gameId).emit(EVENTS.EVENING.COMPLETE, {
-        leaderboard: leaderboard.map((p, i) => ({ ...p, rank: i + 1 })),
-      })
-
-      registry.removeGame(this.gameId)
-      this.eveningSession = null
+      this.finishEvening(leaderboard, finishedName, finishedQuizz)
 
       return
     }
@@ -425,9 +461,60 @@ class Game {
         username: p.username,
         avatar: p.avatar,
         points: p.points,
+        quizPoints: this.quizPointsOf(p),
         rank: i + 1,
       })),
     })
+
+    // Référence du quiz suivant : le cumul de chacun à cet instant.
+    this.eveningQuizStartPoints = new Map(
+      leaderboard.map((p) => [p.clientId, p.points]),
+    )
+  }
+
+  // Podium final de la soirée (dernier quiz joué, ou plus aucun quiz jouable) :
+  // émis AVANT la suppression de la partie, qui fait quitter les rooms.
+  private finishEvening(
+    leaderboard: Player[],
+    subject: string,
+    lastQuizz?: Quizz,
+  ) {
+    // Thème du podium final de soirée : réglage du dernier quiz joué.
+    const data = {
+      subject,
+      top: leaderboard.slice(0, 3).map(toPublicPlayer),
+      totalPlayers: leaderboard.length,
+      awards: calculateAwards(this.eveningGameResults, leaderboard),
+      podiumTheme: resolvePodiumTheme(lastQuizz?.podiumTheme),
+      // Fond du podium "neutre" : couverture du quiz, sinon image du salon.
+      coverImage: lastQuizz?.listingImage || lastQuizz?.salonImage,
+    }
+
+    this.io.to(`manager-${this.gameId}`).emit(EVENTS.GAME.STATUS, {
+      name: STATUS.FINISHED,
+      data,
+    })
+
+    leaderboard.forEach((player, index) => {
+      this.io.to(player.id).emit(EVENTS.GAME.STATUS, {
+        name: STATUS.FINISHED,
+        data: { ...data, rank: index + 1 },
+      })
+    })
+
+    // Classement public : jamais de clientId (jeton de reconnexion).
+    this.io.to(this.gameId).emit(EVENTS.EVENING.COMPLETE, {
+      leaderboard: leaderboard.map((p, i) => ({
+        id: p.id,
+        username: p.username,
+        avatar: p.avatar,
+        points: p.points,
+        rank: i + 1,
+      })),
+    })
+
+    this.eveningSession = null
+    registry.removeGame(this.gameId)
   }
 
   startNextEveningQuiz() {
@@ -445,10 +532,41 @@ class Game {
       return
     }
 
-    const { quizIds, currentIndex } = this.eveningSession
-    const quizz = Config.findQuizzByAnyId(quizIds[currentIndex])
+    const { quizIds } = this.eveningSession
+    const playedIndex = this.eveningSession.currentIndex - 1
+    let quizz = Config.findQuizzByAnyId(
+      quizIds[this.eveningSession.currentIndex],
+    )
 
+    // Quiz suivant supprimé/invalide depuis le lancement : on prévient l'hôte
+    // et on passe au suivant, au lieu de bloquer la soirée en silence.
+    while (!quizz && this.eveningSession.currentIndex < quizIds.length) {
+      const missingId = quizIds[this.eveningSession.currentIndex]
+
+      this.logAndEmit("error", `Quiz introuvable, ignoré : ${missingId}`)
+      this.io
+        .to(`manager-${this.gameId}`)
+        .emit(EVENTS.GAME.ERROR_MESSAGE, "errors:evening.quizNotFound")
+      this.eveningSession.currentIndex += 1
+      quizz = Config.findQuizzByAnyId(
+        quizIds[this.eveningSession.currentIndex] ?? "",
+      )
+    }
+
+    // Plus aucun quiz jouable : la soirée se termine proprement sur le
+    // classement cumulé actuel.
     if (!quizz) {
+      const lastQuizz = Config.findQuizzByAnyId(quizIds[playedIndex] ?? "")
+      const leaderboard = [...this.playerManager.getAll()].sort(
+        (a, b) => b.points - a.points,
+      )
+
+      this.finishEvening(
+        leaderboard,
+        lastQuizz ? quizzDisplayName(lastQuizz) : "",
+        lastQuizz,
+      )
+
       return
     }
 
@@ -585,21 +703,30 @@ class Game {
       this.emitCoins(player)
     }
 
-    // Notify the player about all other connected players so their target list is fully synced
-    for (const p of this.playerManager.getAll()) {
-      if (p.id !== playerId) {
-        this.io.to(playerId).emit(EVENTS.GAME.NEW_PLAYER, {
-          id: p.id,
-          username: p.username,
-          avatar: p.avatar,
-        })
-      }
-    }
+    // Plus de rediffusion de la liste des joueurs ici : GET_INVENTORY est
+    // demandé à chaque changement de statut, et renvoyer un NEW_PLAYER par
+    // joueur faisait N² événements par phase. La liste des cibles est
+    // synchronisée une fois à l'inscription (cf. join) et à la reconnexion.
   }
 
-  handlePowerUpUsed(playerId: string, powerUpId: string, targetIds?: string[]) {
+  // Phases où un power-up peut être joué : partie en cours, hors duel de
+  // départage (le duel ne doit pas pouvoir être faussé par un vol/une bombe),
+  // hors salle d'attente et podium.
+  private get canUsePowerUps(): boolean {
+    return this.round.isStarted() && !this.round.isTieBreakActive()
+  }
+
+  handlePowerUpUsed(
+    playerId: string,
+    powerUpId: string,
+    targetIds?: string[],
+  ): PowerUpUseAck {
     if (!this.powerUpsActive) {
-      return
+      return { ok: false, error: "errors:shop.disabled" }
+    }
+
+    if (!this.canUsePowerUps) {
+      return { ok: false, error: "errors:powerup.wrongPhase" }
     }
 
     const players = this.playerManager.getAll()
@@ -610,12 +737,8 @@ class Game {
       targetIds,
     )
 
-    if (!result.success) {
-      return
-    }
-
-    if (!result.type) {
-      return
+    if (!result.success || !result.type) {
+      return { ok: false, error: result.error ?? "errors:powerup.notFound" }
     }
 
     if (result.blockedBy) {
@@ -624,7 +747,7 @@ class Game {
         defenderId: result.blockedBy,
       })
 
-      return
+      return { ok: true }
     }
 
     const activatorPlayer = players.find((p) => p.id === playerId)
@@ -647,10 +770,12 @@ class Game {
           // Informer le manager des nouvelles valeurs de score pour rafraîchissement temps réel
           this.io
             .to(`manager-${this.gameId}`)
-            .emit(EVENTS.MANAGER.NEW_PLAYER, updated)
+            .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(updated))
         }
       }
     }
+
+    return { ok: true }
   }
 
   get manager() {
@@ -711,8 +836,45 @@ class Game {
   // ── Player actions ───────────────────────────────────────────────────────────
 
   join(socket: Socket, username: string, avatar?: string) {
-    this.playerManager.join(socket, username, avatar)
-    this.logAndEmit("info", `${username} a rejoint la partie`)
+    const joined = this.playerManager.join(socket, username, avatar)
+
+    if (joined.status === "error") {
+      return
+    }
+
+    if (joined.status === "rejoined") {
+      this.remapPlayer(joined.oldId, socket.id)
+    }
+
+    this.logAndEmit(
+      "info",
+      joined.status === "rejoined"
+        ? `${joined.player.username} s'est ré-inscrit (points conservés)`
+        : `${joined.player.username} a rejoint la partie`,
+    )
+
+    // Liste des autres joueurs, envoyée UNE fois au nouvel arrivant (cibles
+    // des power-ups) : il n'a pas reçu les NEW_PLAYER des inscrits précédents.
+    for (const p of this.playerManager.getAll()) {
+      if (p.id !== socket.id) {
+        socket.emit(EVENTS.GAME.NEW_PLAYER, {
+          id: p.id,
+          username: p.username,
+          avatar: p.avatar,
+        })
+      }
+    }
+
+    // Arrivée en cours de partie : sans statut, le téléphone restait figé sur
+    // l'écran d'inscription jusqu'à la question suivante.
+    if (this.started) {
+      socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
+      this.sendStatus(socket.id, STATUS.WAIT, {
+        text: this.round.isQuestionInProgress()
+          ? "game:waitingForAnswers"
+          : "game:waitingForPlayers",
+      })
+    }
 
     // Préchargement anticipé des médias du quiz dans le cache du client
     const mediaUrls = this.round.getMediaUrls()
@@ -722,17 +884,42 @@ class Game {
     }
 
     // Boutique activée : on crédite le solde de pièces de départ (le joueur
-    // achète ses power-ups au lieu d'en recevoir aléatoirement).
+    // achète ses power-ups au lieu d'en recevoir aléatoirement). Une
+    // ré-inscription garde son solde.
     if (this.powerUpsActive) {
-      const player = this.playerManager.findById(socket.id)
+      const { player } = joined
 
-      if (player) {
+      if (joined.status === "joined") {
         player.goldCoins = SHOP.STARTING_COINS
-        this.emitCoins(player)
-        this.io
-          .to(`manager-${this.gameId}`)
-          .emit(EVENTS.MANAGER.NEW_PLAYER, player)
       }
+
+      this.emitCoins(player)
+      this.io
+        .to(`manager-${this.gameId}`)
+        .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
+    }
+  }
+
+  // Bascule tout l'état indexé par id socket d'un joueur vers son nouveau
+  // socket (reconnexion ou ré-inscription du même clientId).
+  private remapPlayer(oldId: string, newId: string) {
+    const timer = this.disconnectTimers.get(oldId)
+
+    if (timer) {
+      clearTimeout(timer)
+      this.disconnectTimers.delete(oldId)
+    }
+
+    // Réponse en cours (sinon non créditée au scoring) et inventaire / effets
+    // de power-ups (sinon perdus au moindre blip réseau).
+    this.round.remapPlayerAnswer(oldId, newId)
+    this.powerUpManager.remap(oldId, newId)
+
+    const status = this.playerStatus.get(oldId)
+
+    if (status) {
+      this.playerStatus.delete(oldId)
+      this.playerStatus.set(newId, status)
     }
   }
 
@@ -744,12 +931,15 @@ class Game {
   }
 
   // Achat d'un power-up à la boutique (contre des pièces d'or).
-  handleBuyPowerUp(
-    playerId: string,
-    type: PowerUpType,
-  ): { success: boolean; error?: string } {
+  handleBuyPowerUp(playerId: string, type: PowerUpType): BuyPowerUpAck {
     if (!this.powerUpsActive) {
       return { success: false, error: "errors:shop.disabled" }
+    }
+
+    // Type hors catalogue (client modifié) : refus explicite au lieu d'une
+    // exception au calcul du prix, qui laissait l'ack sans réponse.
+    if (!isPowerUpType(type)) {
+      return { success: false, error: "errors:shop.unknownItem" }
     }
 
     if (this.disabledPowerUps.includes(type)) {
@@ -772,7 +962,9 @@ class Game {
     // nouveau solde ; le manager voit le solde à jour sur l'objet joueur.
     this.io.to(playerId).emit(EVENTS.POWER_UP.EARNED, result.powerUp)
     this.emitCoins(player)
-    this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
 
     return { success: true }
   }
@@ -837,7 +1029,7 @@ class Game {
       endsAt: endsAt > 0 ? endsAt : undefined,
       startedAt: startedAt > 0 ? startedAt : undefined,
       totalAnswered: this.round.getAnswersCount(),
-      players: this.playerManager.getAll(),
+      players: this.playerManager.getAll().map(toPublicPlayer),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
     })
@@ -897,7 +1089,7 @@ class Game {
       endsAt: endsAt > 0 ? endsAt : undefined,
       startedAt: startedAt > 0 ? startedAt : undefined,
       totalAnswered: this.round.getAnswersCount(),
-      players: this.playerManager.getAll(),
+      players: this.playerManager.getAll().map(toPublicPlayer),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
     })
@@ -1299,7 +1491,42 @@ class Game {
     this.io
       .to(this.gameId)
       .emit(EVENTS.GAME.RESET, "game:sessionClosedByManager")
+    // RemoveGame appelle dispose() : cooldown, timers et rooms sont libérés.
     registry.removeGame(this.gameId)
+  }
+
+  // Vrai si la partie a encore une raison d'exister quand son hôte en crée une
+  // autre : des joueurs inscrits, ou une soirée déjà entamée (entre deux quiz,
+  // `started` est faux mais la soirée continue).
+  get isWorthKeeping(): boolean {
+    return (
+      this.playerManager.count() > 0 ||
+      Boolean(this.eveningSession && this.eveningSession.currentIndex > 0)
+    )
+  }
+
+  // Libère TOUT ce qui fait vivre la partie en mémoire. Appelé par
+  // Registry.removeGame (unique point de suppression) : sans cela, le cooldown
+  // et les timers de déconnexion d'une partie supprimée continuaient de
+  // tourner (et de retenir la partie via leurs closures). Idempotent.
+  dispose() {
+    if (this.disposed) {
+      return
+    }
+
+    this.disposed = true
+    this.round.stop()
+    this.cooldown.abort()
+    this.cancelManagerReset()
+
+    for (const timer of this.disconnectTimers.values()) {
+      clearTimeout(timer)
+    }
+
+    this.disconnectTimers.clear()
+    // Plus aucun appareil ne doit recevoir les émissions de cette partie.
+    this.io.in(this.gameId).socketsLeave(this.gameId)
+    this.io.in(`manager-${this.gameId}`).socketsLeave(`manager-${this.gameId}`)
   }
 }
 

@@ -100,6 +100,10 @@ export const POWER_UPS_BY_RARITY: Record<PowerUpRarity, PowerUpType[]> = {
     .map((m) => m.type),
 }
 
+// Durée du gel (FREEZE) au début de la fenêtre de réponse : le joueur gelé ne
+// peut pas répondre avant. Appliquée par le serveur, affichée par le client.
+export const FREEZE_DURATION_MS = 3000
+
 export interface PowerUp {
   id: string
   type: PowerUpType

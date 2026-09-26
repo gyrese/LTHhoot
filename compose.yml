@@ -9,6 +9,10 @@ services:
       - GEMINI_IMAGE_API_KEY=${GEMINI_IMAGE_API_KEY}
       - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY}
       - GIPHY_API_KEY=${GIPHY_API_KEY}
+      # PIN de télécommande (≥ 4 caractères) — vide = désactivé
+      - REMOTE_PIN=${REMOTE_PIN:-}
+      # Origine autorisée du socket — vide = même origine uniquement
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
     networks:
       - nginx-proxy-network
     volumes:

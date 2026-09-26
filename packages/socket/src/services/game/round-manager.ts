@@ -19,7 +19,7 @@ import {
   STATUS,
   type StatusDataMap,
 } from "@rahoot/common/types/game/status"
-import { SHOP, type PowerUp } from "@rahoot/common/types/powerup"
+import { FREEZE_DURATION_MS, SHOP } from "@rahoot/common/types/powerup"
 import {
   ROUND_EVENT_TYPE,
   type RoundEventType,
@@ -47,6 +47,7 @@ import {
   detectTopTie,
   resolvePodiumTheme,
   answerPoints,
+  toPublicPlayer,
 } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
@@ -78,7 +79,6 @@ export interface RoundManagerOptions {
   // au milieu d'une soirée où le classement cumulé peut encore bouger.
   isFinalQuiz?: () => boolean
   powerUpManager?: PowerUpManager
-  onPowerUpEarned?: (_playerId: string, _powerUp: PowerUp) => void
   onCoinsEarned?: (_playerId: string, _coins: number) => void
   // Mode sans rapidité : toute bonne réponse vaut le barème plein, quel que
   // soit le temps mis pour répondre.
@@ -118,6 +118,14 @@ export class RoundManager {
   private pendingOpenCorrectAnswers: string[] = []
   private demoMode = false
 
+  // Joueurs (par clientId, stable) présents à l'ouverture de la fenêtre de
+  // réponse. Un joueur arrivé en cours de question n'a pas reçu la question :
+  // il ne peut pas y répondre et ne compte pas dans le seuil de fin anticipée.
+  private eligibleClientIds = new Set<string>()
+  // Fin de la fenêtre de gel (power-up FREEZE) par clientId : appliquée côté
+  // serveur, un client modifié ne peut pas répondre avant la fin du gel.
+  private frozenUntil = new Map<string, number>()
+
   // Événement armé par l'animateur depuis la télécommande, en attente de la
   // prochaine manche. `currentRoundEvent` est celui consommé par la manche en
   // cours — séparés pour que l'animateur puisse déjà armer la manche d'après
@@ -153,6 +161,17 @@ export class RoundManager {
 
   isTieBreakActive(): boolean {
     return this.tieBreakInProgress
+  }
+
+  // Arrêt définitif (partie supprimée) : toutes les boucles asynchrones en
+  // cours (newQuestion, résultats, mode rapide) testent `started` après chaque
+  // attente et s'interrompent d'elles-mêmes.
+  stop(): void {
+    this.started = false
+    this.acceptingAnswers = false
+    this.playersAnswers = []
+    this.eligibleClientIds.clear()
+    this.frozenUntil.clear()
   }
 
   setDemoMode(enabled: boolean) {
@@ -587,11 +606,23 @@ export class RoundManager {
       // Consommés ici (pas à la réponse) : l'effet s'applique à CETTE question
       // qu'elle soit répondue ou non — sinon un joueur qui ne répond jamais
       // reste gelé/mélangé indéfiniment aux questions suivantes.
+      this.eligibleClientIds = new Set(
+        this.opts.players.getAll().map((p) => p.clientId),
+      )
+      this.frozenUntil.clear()
+
       for (const player of this.opts.players.getAll()) {
         const isFrozen =
           this.opts.powerUpManager?.consumeFrozen(player.id) ?? false
         const isScrambled =
           this.opts.powerUpManager?.consumeScrambled(player.id) ?? false
+
+        if (isFrozen) {
+          this.frozenUntil.set(
+            player.clientId,
+            this.startTime + FREEZE_DURATION_MS,
+          )
+        }
 
         this.opts.send(player.id, STATUS.SELECT_ANSWER, {
           ...selectAnswerBase,
@@ -1028,6 +1059,12 @@ export class RoundManager {
       return "no_player"
     }
 
+    // Arrivé après l'ouverture de la fenêtre : la question ne lui a jamais été
+    // envoyée, une réponse ne peut venir que d'un client modifié.
+    if (!this.eligibleClientIds.has(player.clientId)) {
+      return "closed"
+    }
+
     // Idempotence : un renvoi de la même réponse (retry réseau côté client) ne
     // doit pas être recompté, mais doit confirmer le succès au client pour qu'il
     // arrête de réessayer.
@@ -1037,7 +1074,13 @@ export class RoundManager {
 
     // Gel/mélange déjà consommés à la diffusion de la question (newQuestion),
     // pas ici — l'effet ne doit s'appliquer qu'à cette question, que le joueur
-    // réponde ou non.
+    // réponde ou non. Le gel est en revanche VÉRIFIÉ ici : pendant sa fenêtre,
+    // la réponse est refusée (le client, lui, grise simplement ses boutons).
+    const frozenUntil = this.frozenUntil.get(player.clientId)
+
+    if (frozenUntil !== undefined && Date.now() < frozenUntil) {
+      return "frozen"
+    }
 
     const answer: Answer = {
       playerId: player.id,
@@ -1091,7 +1134,15 @@ export class RoundManager {
     // On compare au nombre de joueurs CONNECTÉS : un joueur déconnecté pendant
     // la partie reste dans la liste (pour reconnexion) mais ne répondra jamais,
     // sinon la manche ne se termine jamais en avance et tourne le timer complet.
-    if (this.playersAnswers.length >= this.opts.players.countConnected()) {
+    // Seuls les joueurs présents à l'ouverture de la question comptent : un
+    // arrivant tardif ne peut pas répondre et bloquerait la fin anticipée.
+    const expectedAnswers = this.opts.players
+      .getAll()
+      .filter(
+        (p) => p.connected && this.eligibleClientIds.has(p.clientId),
+      ).length
+
+    if (this.playersAnswers.length >= expectedAnswers) {
       this.opts.cooldown.abort()
     }
 
@@ -1232,10 +1283,11 @@ export class RoundManager {
       })
       .sort((a, b) => b.roundPoints - a.roundPoints)
 
+    // La room manager inclut la télécommande : jamais de clientId diffusé.
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_LEADERBOARD, {
-      oldLeaderboard: oldLeaderboard.slice(0, 5),
-      leaderboard: this.leaderboard.slice(0, 5),
-      roundLeaderboard: roundLeaderboard.slice(0, 5),
+      oldLeaderboard: oldLeaderboard.slice(0, 5).map(toPublicPlayer),
+      leaderboard: this.leaderboard.slice(0, 5).map(toPublicPlayer),
+      roundLeaderboard: roundLeaderboard.slice(0, 5).map(toPublicPlayer),
       totalPlayers: this.leaderboard.length,
       background: question?.background,
       backgroundOpacity: question?.backgroundOpacity,
@@ -1253,7 +1305,8 @@ export class RoundManager {
     gameResult: GameResult,
     leaderboard: Player[],
   ): void {
-    const top = leaderboard.slice(0, 3)
+    // Podium diffusé à tous les écrans : sans clientId (jeton de reconnexion).
+    const top = leaderboard.slice(0, 3).map(toPublicPlayer)
 
     // Mode soirée : déléguer sans émettre STATUS.FINISHED — Game.
     // handleEveningQuizFinished() décide lui-même s'il s'agit du dernier quiz.
@@ -1262,8 +1315,6 @@ export class RoundManager {
 
       return
     }
-
-    this.opts.onGameFinished(gameResult)
 
     const base = {
       subject: quizzDisplayName(this.opts.quizz),
@@ -1283,6 +1334,11 @@ export class RoundManager {
         rank: index + 1,
       })
     })
+
+    // Après les émissions : la fin de partie supprime la partie du registre
+    // (dispose → les sockets quittent les rooms), le podium doit donc déjà
+    // être parti vers l'écran principal et la télécommande.
+    this.opts.onGameFinished(gameResult)
   }
 
   // ── Duel de départage ────────────────────────────────────────────────────

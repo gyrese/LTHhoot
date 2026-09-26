@@ -9,6 +9,7 @@ import type {
   GameResult,
   Player,
   PodiumThemeId,
+  PublicPlayer,
   PodiumThemeSetting,
   Question,
 } from "@rahoot/common/types/game"
@@ -18,6 +19,7 @@ import { isSameAnswer } from "@rahoot/common/utils/normalize-answer"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
 import { nanoid } from "nanoid"
+import { randomInt } from "node:crypto"
 
 export const withGame = (
   gameId: string | undefined,
@@ -81,12 +83,45 @@ export const createInviteCode = (length = 6) => {
   const characters = "0123456789"
   const charactersLength = characters.length
 
+  // Générateur cryptographique : un code prévisible faciliterait l'accès à une
+  // partie sans y être invité.
   for (let i = 0; i < length; i += 1) {
-    const randomIndex = Math.floor(Math.random() * charactersLength)
-    result += characters.charAt(randomIndex)
+    result += characters.charAt(randomInt(charactersLength))
   }
 
   return result
+}
+
+// Tirage d'un code d'invitation qui ne collisionne avec AUCUNE partie en cours
+// (sinon PLAYER.JOIN enverrait les joueurs dans la mauvaise partie). 10⁶ codes
+// pour quelques parties simultanées : la boucle ne tourne en pratique qu'une
+// fois ; la borne n'est qu'un garde-fou.
+export const createUniqueInviteCode = (
+  isTaken: (_code: string) => boolean,
+  length = 6,
+): string => {
+  const MAX_ATTEMPTS = 100
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const code = createInviteCode(length)
+
+    if (!isTaken(code)) {
+      return code
+    }
+  }
+
+  throw new Error("Impossible de générer un code d'invitation unique")
+}
+
+// Version diffusable d'un joueur : le `clientId` sert de jeton de reconnexion
+// et d'auth HTTP, il ne doit jamais partir vers un autre appareil.
+export const toPublicPlayer = <T extends Player>(
+  player: T,
+): Omit<T, "clientId"> & PublicPlayer => {
+  // eslint-disable-next-line no-unused-vars
+  const { clientId, ...rest } = player
+
+  return rest
 }
 
 export const normalizeFilename = (subject: string) => {

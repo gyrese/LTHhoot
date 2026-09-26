@@ -23,12 +23,10 @@ export const EVENTS = {
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",
-    UPDATE_LEADERBOARD: "player:updateLeaderboard",
     JOIN: "player:join",
     LOGIN: "player:login",
     RECONNECT: "player:reconnect",
     SELECTED_ANSWER: "player:selectedAnswer",
-    JOIN_TEAM: "player:joinTeam",
     BUY_POWER_UP: "player:buyPowerUp",
     TIE_BREAK_ANSWER: "player:tieBreakAnswer",
   },
@@ -38,7 +36,6 @@ export const EVENTS = {
     GET_LOGS: "manager:getLogs",
     CONFIG: "manager:config",
     GAME_CREATED: "manager:gameCreated",
-    STATUS_UPDATE: "manager:statusUpdate",
     NEW_PLAYER: "manager:newPlayer",
     REMOVE_PLAYER: "manager:removePlayer",
     ERROR_MESSAGE: "manager:errorMessage",
@@ -101,12 +98,14 @@ export const EVENTS = {
   ASYNC_QUIZ: {
     GET_PUBLIC: "asyncQuizz:getPublic",
     DATA: "asyncQuizz:data",
+    // Session solo chronométrée côté serveur : START ouvre la session, NEXT
+    // sert la question suivante (horodatée), ANSWER la corrige, SUBMIT
+    // enregistre le score calculé par le serveur.
+    START: "asyncQuizz:start",
+    NEXT: "asyncQuizz:next",
+    ANSWER: "asyncQuizz:answer",
     SUBMIT: "asyncQuizz:submit",
     SUBMIT_SUCCESS: "asyncQuizz:submitSuccess",
-  },
-  DRAW: {
-    PICK_WINNER: "draw:pickWinner",
-    SAVE_WINNER: "draw:saveWinner",
   },
   EVENING: {
     START: "evening:start",

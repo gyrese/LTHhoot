@@ -75,3 +75,30 @@ export const resolveRoundDuration = (
 // Durée de manche d'une question, telle que calculable sans le navigateur.
 export const getQuestionRoundDuration = (question: Question): number =>
   resolveRoundDuration(question.time, getStaticMediaDuration(question))
+
+// Temps fixes du flux live (cf. RoundManager) : intro + décompte de départ,
+// écran « Prêt ? » avant chaque question, et une marge forfaitaire pour les
+// écrans de résultats / classement, dont la durée dépend des clics de l'hôte.
+const START_SECONDS = 6
+const PREPARED_SECONDS = 4
+const RESULTS_ESTIMATE_SECONDS = 8
+
+// Nombre de questions réellement jouées (les slides titre ne sont pas scorés).
+export const countPlayableQuestions = (questions: Question[]): number =>
+  questions.filter((q) => q.type !== "title").length
+
+// Durée estimée d'une partie (secondes), en mode normal : sert à afficher
+// l'estimation d'une soirée. Volontairement simple — le mode rapide et les
+// extensions vidéo sans borne de fin ne sont pas pris en compte.
+export const estimateQuizzDurationSec = (questions: Question[]): number =>
+  questions.reduce(
+    (total, question) =>
+      question.type === "title"
+        ? total + question.cooldown
+        : total +
+          PREPARED_SECONDS +
+          question.cooldown +
+          getQuestionRoundDuration(question) +
+          RESULTS_ESTIMATE_SECONDS,
+    questions.length > 0 ? START_SECONDS : 0,
+  )

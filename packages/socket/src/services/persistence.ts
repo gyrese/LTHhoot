@@ -1,5 +1,11 @@
 import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
-import type { Player, Quizz, QuestionResult } from "@rahoot/common/types/game"
+import type {
+  GameResult,
+  Player,
+  Quizz,
+  QuestionResult,
+} from "@rahoot/common/types/game"
+import type { PowerUp } from "@rahoot/common/types/powerup"
 import { writeFileAtomic } from "@rahoot/socket/utils/atomic-write"
 import { logHandlerError } from "@rahoot/socket/utils/safe-handler"
 import { existsSync, readFileSync } from "fs"
@@ -17,8 +23,10 @@ import { resolve } from "path"
 //    C'est l'index de la prochaine question NON scorée. À la reprise, l'hôte
 //    relance via le bouton « Démarrer » habituel : la partie repart à cette
 //    question avec les scores cumulés intacts.
-//  - Les inventaires de power-ups (indexés par socket id volatil) ne sont pas
-//    restaurés.
+//  - Pièces d'or et inventaires de power-ups sont persistés par joueur (clé
+//    stable : clientId) ; les effets actifs, liés à une manche, ne le sont pas.
+//  - Migration tolérante : tout champ ajouté après la v1 est OPTIONNEL et
+//    retombe sur une valeur neutre quand il manque (anciens instantanés).
 
 export const SNAPSHOT_VERSION = 1
 
@@ -28,6 +36,9 @@ export interface PlayerSnapshot {
   avatar?: string
   points: number
   streak: number
+  // Absents des instantanés antérieurs à la persistance de la boutique.
+  goldCoins?: number
+  powerUps?: PowerUp[]
 }
 
 export interface GameSnapshot {
@@ -54,15 +65,24 @@ export interface GameSnapshot {
   fastMode?: boolean
   fastModeIntensity?: FastModeIntensity
   demoOnly?: boolean
+  // Mode soirée : résultats des quiz déjà joués (awards de fin de soirée) et
+  // cumul de chaque joueur (clientId → points) au début du quiz en cours.
+  eveningGameResults?: GameResult[]
+  eveningQuizStartPoints?: Record<string, number>
   savedAt: number
 }
 
-export const playerToSnapshot = (p: Player): PlayerSnapshot => ({
+export const playerToSnapshot = (
+  p: Player,
+  powerUps: PowerUp[] = [],
+): PlayerSnapshot => ({
   clientId: p.clientId,
   username: p.username,
   avatar: p.avatar,
   points: p.points,
   streak: p.streak,
+  goldCoins: p.goldCoins,
+  powerUps,
 })
 
 // Reconstruit un Player en mémoire à partir d'un snapshot. `id` est initialisé à
@@ -76,6 +96,7 @@ export const snapshotToPlayer = (s: PlayerSnapshot): Player => ({
   avatar: s.avatar,
   points: s.points,
   streak: s.streak,
+  ...(typeof s.goldCoins === "number" ? { goldCoins: s.goldCoins } : {}),
 })
 
 class Persistence {

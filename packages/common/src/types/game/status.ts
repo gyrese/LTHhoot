@@ -3,8 +3,8 @@ import type {
   Award,
   DropPinZone,
   GridCell,
-  Player,
   PodiumThemeId,
+  PublicPlayer,
   QuestionMedia,
   QuestionType,
   SlideBackground,
@@ -118,7 +118,7 @@ export type CommonStatusDataMap = {
   WAIT: { text: string }
   FINISHED: {
     subject: string
-    top: Player[]
+    top: PublicPlayer[]
     rank?: number
     totalPlayers?: number
     awards?: Award[]
@@ -177,9 +177,9 @@ type ManagerExtraStatus = {
     answerReveal?: AnswerReveal
   }
   SHOW_LEADERBOARD: {
-    oldLeaderboard: Player[]
-    leaderboard: Player[]
-    roundLeaderboard: (Player & { roundPoints: number })[]
+    oldLeaderboard: PublicPlayer[]
+    leaderboard: PublicPlayer[]
+    roundLeaderboard: (PublicPlayer & { roundPoints: number })[]
     totalPlayers: number
     background?: SlideBackground
     backgroundOpacity?: number

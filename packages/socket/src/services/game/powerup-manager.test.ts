@@ -1,6 +1,9 @@
 import type { Player } from "@rahoot/common/types/game"
 import { POWER_UP_TYPE } from "@rahoot/common/types/powerup"
-import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
+import {
+  isPowerUpType,
+  PowerUpManager,
+} from "@rahoot/socket/services/game/powerup-manager"
 import { beforeEach, describe, expect, it } from "vitest"
 
 const buildPlayer = (overrides: Partial<Player>): Player => ({
@@ -217,6 +220,62 @@ describe("PowerUpManager", () => {
       expect(res.success).toBe(false)
       // La cible ne perd rien.
       expect(target.points).toBe(300)
+    })
+  })
+
+  describe("usePowerUp — contrôles de ciblage", () => {
+    it("refuse l'auto-ciblage sans consommer l'objet", () => {
+      const a = buildPlayer({ id: "a", points: 500 })
+      const b = buildPlayer({ id: "b", points: 300 })
+      const id = buy(mgr, a, POWER_UP_TYPE.BOMB)
+
+      const res = mgr.usePowerUp([a, b], "a", id, ["a"])
+
+      expect(res).toMatchObject({
+        success: false,
+        error: "errors:powerup.selfTarget",
+      })
+      expect(a.points).toBe(500)
+      expect(mgr.getPlayerPowerUps("a")).toHaveLength(1)
+    })
+
+    it("refuse deux fois la même cible pour un power-up à deux cibles", () => {
+      const a = buildPlayer({ id: "a" })
+      const b = buildPlayer({ id: "b", points: 300 })
+      const c = buildPlayer({ id: "c", points: 300 })
+      const id = buy(mgr, a, POWER_UP_TYPE.SNIPER)
+
+      const res = mgr.usePowerUp([a, b, c], "a", id, ["b", "b"])
+
+      expect(res.error).toBe("errors:powerup.invalidTarget")
+      expect(b.points).toBe(300)
+    })
+
+    it("refuse un vol sans adversaire et conserve l'objet", () => {
+      const a = buildPlayer({ id: "a" })
+      const id = buy(mgr, a, POWER_UP_TYPE.STEAL_POINTS)
+
+      const res = mgr.usePowerUp([a], "a", id)
+
+      expect(res.error).toBe("errors:powerup.noTarget")
+      expect(mgr.getPlayerPowerUps("a")).toHaveLength(1)
+    })
+
+    it("renvoie une clé i18n pour un objet absent de l'inventaire", () => {
+      const a = buildPlayer({ id: "a" })
+
+      expect(mgr.usePowerUp([a], "a", "inconnu").error).toBe(
+        "errors:powerup.notFound",
+      )
+    })
+  })
+
+  describe("isPowerUpType", () => {
+    it("n'accepte que les types du catalogue", () => {
+      expect(isPowerUpType(POWER_UP_TYPE.SHIELD)).toBe(true)
+      expect(isPowerUpType("HACK")).toBe(false)
+      expect(isPowerUpType("toString")).toBe(false)
+      expect(isPowerUpType(42)).toBe(false)
     })
   })
 

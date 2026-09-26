@@ -61,8 +61,16 @@ class Registry {
     )
   }
 
-  getGameByManagerSocketId(socketId: string): Game | undefined {
-    return this.games.find((g) => g.manager.id === socketId)
+  // TOUTES les parties pilotées par ce socket : un même écran peut en avoir
+  // créé plusieurs (tests depuis l'éditeur, relances). Ne traiter que la
+  // première laissait les autres sans nettoyage à la déconnexion.
+  getGamesByManagerSocketId(socketId: string): Game[] {
+    return this.games.filter((g) => g.manager.id === socketId)
+  }
+
+  // Parties créées par un même appareil hôte (clientId stable).
+  getGamesByManagerClientId(clientId: string): Game[] {
+    return this.games.filter((g) => g.manager.clientId === clientId)
   }
 
   getGameByPlayerSocketId(socketId: string): Game | undefined {
@@ -98,6 +106,9 @@ class Registry {
 
   removeGame(gameId: string): boolean {
     const initialLength = this.games.length
+
+    // Point de suppression unique : la partie libère ses timers et ses rooms.
+    this.games.find((g) => g.gameId === gameId)?.dispose()
     this.games = this.games.filter((g) => g.gameId !== gameId)
     this.emptyGames = this.emptyGames.filter((g) => g.game.gameId !== gameId)
 
@@ -141,6 +152,10 @@ class Registry {
 
     const removed = this.emptyGames.filter((g) => !stillEmpty.includes(g))
     const removedGameIds = removed.map((r) => r.game.gameId)
+
+    for (const { game } of removed) {
+      game.dispose()
+    }
 
     this.games = this.games.filter((g) => !removedGameIds.includes(g.gameId))
     this.emptyGames = stillEmpty
@@ -233,6 +248,11 @@ class Registry {
   cleanup(): void {
     this.stopCleanupTask()
     this.stopPersistTask()
+
+    for (const game of this.games) {
+      game.dispose()
+    }
+
     this.games = []
     this.emptyGames = []
     console.log("Registry cleaned up")

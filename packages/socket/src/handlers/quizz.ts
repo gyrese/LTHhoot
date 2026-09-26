@@ -8,18 +8,18 @@ import type { SocketContext } from "@rahoot/socket/handlers/types"
 import Config from "@rahoot/socket/services/config"
 import manager, {
   emitConfig,
-  type ManagerSession,
+  type LibrarySession,
 } from "@rahoot/socket/services/manager"
 import { AIService } from "@rahoot/socket/services/ai"
 
 // Bibliothèque ciblée par une session : celle de l'invité connecté, ou celle
 // de l'admin. Le scoping vient TOUJOURS de la session serveur, jamais du client.
-const ownerFor = (session: ManagerSession) =>
+const ownerFor = (session: LibrarySession) =>
   session.role === "guest" ? session.guestId : undefined
 
 // Lecture : l'admin peut résoudre un id préfixé `guest:` (dossier Invités,
 // export, lancement) vers la bibliothèque du compte correspondant.
-const readScope = (session: ManagerSession, id: string) => {
+const readScope = (session: LibrarySession, id: string) => {
   if (session.role === "admin") {
     const parsed = parseGuestQuizId(id)
 
@@ -32,7 +32,7 @@ const readScope = (session: ManagerSession, id: string) => {
 }
 
 // Écriture : les quiz invités sont en lecture seule pour l'admin (v1).
-const isReadonlyForSession = (session: ManagerSession, id: string) =>
+const isReadonlyForSession = (session: LibrarySession, id: string) =>
   session.role === "admin" && isGuestQuizId(id)
 
 const aiRequests = new Map<string, { count: number; resetAt: number }>()
@@ -40,7 +40,7 @@ const activeAIAccounts = new Set<string>()
 
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   const withAIAuth = <T extends unknown[]>(
-    handler: (_session: ManagerSession, ..._args: T) => Promise<void>,
+    handler: (_session: LibrarySession, ..._args: T) => Promise<void>,
   ) =>
     manager.withAnyAuth(socket, async (session, ...args: T) => {
       const account = session.role === "admin" ? "admin" : session.guestId

@@ -2,6 +2,14 @@ import { EVENTS } from "@rahoot/common/constants"
 import type { Player } from "@rahoot/common/types/game"
 import type { Server, Socket } from "@rahoot/common/types/game/socket"
 import { usernameValidator } from "@rahoot/common/validators/auth"
+import { toPublicPlayer } from "@rahoot/socket/utils/game"
+
+export type JoinResult =
+  | { status: "joined"; player: Player }
+  // Ré-inscription du même clientId : `oldId` est l'ancien id socket, à
+  // remapper (réponses en cours, power-ups, statut par joueur).
+  | { status: "rejoined"; player: Player; oldId: string }
+  | { status: "error" }
 
 export class PlayerManager {
   private readonly io: Server
@@ -13,13 +21,55 @@ export class PlayerManager {
     this.gameId = gameId
   }
 
-  join(socket: Socket, username: string, avatar?: string): void {
-    const existingPlayer = this.findByClientId(socket.handshake.auth.clientId)
+  // Inscription d'un joueur. Le pseudo est validé AVANT toute modification :
+  // un pseudo refusé ne doit jamais coûter sa place (ni ses points) à un joueur
+  // déjà inscrit. Un même clientId qui se ré-inscrit récupère SON joueur
+  // (points, série, pièces) sous son nouveau socket au lieu d'être recréé à 0.
+  join(socket: Socket, username: string, avatar?: string): JoinResult {
+    const trimmedUsername = username.trim()
+    const result = usernameValidator.safeParse(trimmedUsername)
+
+    if (result.error) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, result.error.issues[0].message)
+
+      return { status: "error" }
+    }
+
+    const { clientId } = socket.handshake.auth
+    const existingPlayer = this.findByClientId(clientId)
+
+    // Unicité (insensible à la casse) : de nombreux endroits matchent les
+    // joueurs par username plutôt que par id (résultats, power-ups, mode
+    // soirée) — un doublon casserait ce matching. Le joueur du même clientId
+    // est exclu de la comparaison : se ré-inscrire avec son propre pseudo est
+    // légitime.
+    const isDuplicate = this.players.some(
+      (p) =>
+        p !== existingPlayer &&
+        p.username.trim().toLowerCase() === trimmedUsername.toLowerCase(),
+    )
+
+    if (isDuplicate) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:auth.usernameTaken")
+
+      return { status: "error" }
+    }
+
+    socket.join(this.gameId)
 
     if (existingPlayer) {
       console.log(`[TAKEOVER] Login takeover for ${existingPlayer.username}`)
 
-      const oldSocket = this.io.sockets.sockets.get(existingPlayer.id)
+      const oldId = existingPlayer.id
+
+      // L'id est basculé AVANT de couper l'ancien socket : son « disconnect »
+      // ne retrouve alors plus de joueur et n'arme aucun retrait différé.
+      existingPlayer.id = socket.id
+      existingPlayer.username = trimmedUsername
+      existingPlayer.avatar = avatar
+      existingPlayer.connected = true
+
+      const oldSocket = this.io.sockets.sockets.get(oldId)
 
       if (oldSocket && oldSocket.id !== socket.id) {
         // Même clientId qui se ré-inscrit : on coupe l'ancien socket orphelin
@@ -27,46 +77,21 @@ export class PlayerManager {
         oldSocket.disconnect(true)
       }
 
-      // Signaler la suppression de l'ancien joueur au manager avant de le retirer
+      // Les listes des autres écrans sont indexées par id socket : on retire
+      // l'ancienne entrée avant d'annoncer la nouvelle.
       this.io
         .to(`manager-${this.gameId}`)
-        .emit(EVENTS.MANAGER.REMOVE_PLAYER, existingPlayer.id)
-      this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, existingPlayer.id)
+        .emit(EVENTS.MANAGER.REMOVE_PLAYER, oldId)
+      this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, oldId)
+      this.announce(existingPlayer)
+      socket.emit(EVENTS.GAME.SUCCESS_JOIN, this.gameId)
 
-      this.players = this.players.filter(
-        (p) => p.clientId !== socket.handshake.auth.clientId,
-      )
+      return { status: "rejoined", player: existingPlayer, oldId }
     }
-
-    const trimmedUsername = username.trim()
-    const result = usernameValidator.safeParse(trimmedUsername)
-
-    if (result.error) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, result.error.issues[0].message)
-
-      return
-    }
-
-    // Unicité (insensible à la casse) : de nombreux endroits matchent les
-    // joueurs par username plutôt que par id (résultats, power-ups, mode
-    // soirée) — un doublon casserait ce matching. Vérifié APRÈS le retrait de
-    // l'éventuel ancien joueur du même clientId ci-dessus, sinon un joueur qui
-    // se reconnecte avec son propre pseudo se rejetterait lui-même.
-    const isDuplicate = this.players.some(
-      (p) => p.username.trim().toLowerCase() === trimmedUsername.toLowerCase(),
-    )
-
-    if (isDuplicate) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:auth.usernameTaken")
-
-      return
-    }
-
-    socket.join(this.gameId)
 
     const player: Player = {
       id: socket.id,
-      clientId: socket.handshake.auth.clientId,
+      clientId,
       connected: true,
       username: trimmedUsername,
       avatar,
@@ -75,14 +100,24 @@ export class PlayerManager {
     }
 
     this.players.push(player)
-    this.io.to(`manager-${this.gameId}`).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+    this.announce(player)
+    socket.emit(EVENTS.GAME.SUCCESS_JOIN, this.gameId)
+
+    return { status: "joined", player }
+  }
+
+  // Annonce d'un joueur à la partie : jamais de clientId diffusé (la room
+  // manager inclut la télécommande).
+  private announce(player: Player): void {
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
     this.io.to(this.gameId).emit(EVENTS.GAME.NEW_PLAYER, {
       id: player.id,
       username: player.username,
       avatar: player.avatar,
     })
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
-    socket.emit(EVENTS.GAME.SUCCESS_JOIN, this.gameId)
   }
 
   kick(socket: Socket, playerId: string): boolean {
