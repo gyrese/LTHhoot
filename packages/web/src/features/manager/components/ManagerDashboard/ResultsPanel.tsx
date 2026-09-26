@@ -13,8 +13,15 @@ import {
 import ResultModal from "@rahoot/web/features/manager/components/ResultModal"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import clsx from "clsx"
-import { Search, Trash2, ChevronLeft, ChevronRight, Dices } from "lucide-react"
-import React, { useCallback, useState, useMemo } from "react"
+import {
+  Search,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Dices,
+  Loader2,
+} from "lucide-react"
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -33,6 +40,10 @@ const formatDate = (iso: string) => {
 // ouvert aux soumissions et se conclut par un tirage au sort.
 type Tab = "party" | "solo"
 
+// Filet de sécurité du chargement d'un résultat : sans réponse du serveur, la
+// ligne cliquée cesse d'afficher son indicateur au bout de ce délai.
+const LOAD_TIMEOUT_MS = 15000
+
 const ResultsPanel = () => {
   const { socket } = useSocket()
   const { results } = useConfig()
@@ -43,6 +54,12 @@ const ResultsPanel = () => {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const itemsPerPage = 10
+  // Résultat demandé au serveur (indicateur de chargement sur sa ligne).
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Suppression en attente : succès constaté quand le résultat disparaît de
+  // la config renvoyée par le serveur (pas d'accusé de réception).
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const [partyResults, soloResults] = useMemo(() => {
     const solo: GameResultMeta[] = []
@@ -69,11 +86,45 @@ const ResultsPanel = () => {
   }, [partyResults, soloResults, tab, search])
 
   const totalPages = Math.ceil(filteredResults.length / itemsPerPage)
+  // Page recalée quand le nombre de pages diminue (suppression du dernier
+  // résultat d'une page) : plus de page vide « 3 / 2 ».
+  const currentPage = Math.min(page, Math.max(totalPages, 1))
   const paginatedResults = useMemo(() => {
-    const start = (page - 1) * itemsPerPage
+    const start = (currentPage - 1) * itemsPerPage
 
     return filteredResults.slice(start, start + itemsPerPage)
-  }, [filteredResults, page])
+  }, [filteredResults, currentPage])
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage)
+    }
+  }, [page, currentPage])
+
+  useEffect(() => {
+    if (pendingDelete && !results.some((r) => r.id === pendingDelete)) {
+      toast.success(t("manager:result.deleted"))
+      setPendingDelete(null)
+    }
+  }, [results])
+
+  const stopLoading = () => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current)
+      loadTimeoutRef.current = null
+    }
+
+    setLoadingId(null)
+  }
+
+  useEffect(
+    () => () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current)
+      }
+    },
+    [],
+  )
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
@@ -87,24 +138,43 @@ const ResultsPanel = () => {
 
   useEvent(
     EVENTS.RESULTS.DATA,
-    useCallback((data) => setSelectedResult(data), []),
+    useCallback((data) => {
+      stopLoading()
+      setSelectedResult(data)
+    }, []),
   )
 
-  const handleOpen = (id: string) => () => {
-    setOpenDraw(false)
+  // Erreur de lecture / suppression : le toast est affiché par le dashboard
+  // (écouteur GAME.ERROR_MESSAGE), ici on libère seulement les indicateurs.
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+    stopLoading()
+    setPendingDelete(null)
+  })
+
+  const requestResult = (id: string, draw: boolean) => {
+    if (loadingId) {
+      return
+    }
+
+    setOpenDraw(draw)
+    setLoadingId(id)
+    loadTimeoutRef.current = setTimeout(() => {
+      loadTimeoutRef.current = null
+      setLoadingId(null)
+      toast.error(t("manager:result.loadTimeout"))
+    }, LOAD_TIMEOUT_MS)
     socket?.emit(EVENTS.RESULTS.GET, id)
   }
+
+  const handleOpen = (id: string) => () => requestResult(id, false)
 
   // Raccourci « Tirage » : on charge le résultat complet et la modale s'ouvre
   // directement sur le tirage (le détail des questions n'intéresse pas ici).
-  const handleOpenDraw = (id: string) => () => {
-    setOpenDraw(true)
-    socket?.emit(EVENTS.RESULTS.GET, id)
-  }
+  const handleOpenDraw = (id: string) => () => requestResult(id, true)
 
   const handleDelete = (id: string) => () => {
+    setPendingDelete(id)
     socket?.emit(EVENTS.RESULTS.DELETE, id)
-    toast.success(t("manager:result.deleted"))
   }
 
   const emptyLabel = search
@@ -125,24 +195,30 @@ const ResultsPanel = () => {
   ]
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md">
-      <div className="flex shrink-0 items-center justify-between gap-3">
-        <div className="flex items-center gap-1 rounded-lg border border-white/5 bg-white/5 p-1">
+    <div className="flex h-full flex-col gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur-md sm:p-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div
+          role="tablist"
+          className="flex items-center gap-1 rounded-lg border border-white/5 bg-white/5 p-1"
+        >
           {tabs.map(({ id, label, count }) => (
             <button
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
               key={id}
               onClick={handleTabChange(id)}
               className={clsx(
-                "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                "flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-11",
                 tab === id
-                  ? "bg-primary text-white"
-                  : "text-white/60 hover:text-white",
+                  ? "bg-orange-500 text-white"
+                  : "text-white/70 hover:text-white",
               )}
             >
               <span>{label}</span>
               <span
                 className={clsx(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                  "rounded-full px-1.5 py-0.5 text-[11px] font-bold",
                   tab === id ? "bg-black/20" : "bg-white/10",
                 )}
               >
@@ -151,64 +227,93 @@ const ResultsPanel = () => {
             </button>
           ))}
         </div>
-        <div className="relative w-48">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-white/40" />
+        <div className="relative w-full sm:w-48">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-white/60" />
           <input
             type="text"
             placeholder={t("manager:quizz.search")}
+            aria-label={t("manager:result.search")}
             value={search}
             onChange={handleSearchChange}
-            className="focus:ring-primary/50 w-full rounded-lg border border-white/5 bg-white/5 py-1.5 pr-3 pl-8 text-xs text-white transition-all placeholder:text-white/30 focus:bg-white/10 focus:ring-1 focus:outline-none"
+            className="min-h-9 w-full rounded-lg border border-white/5 bg-white/5 py-1.5 pr-3 pl-8 text-xs text-white transition-all placeholder:text-white/50 focus:bg-white/10 focus:ring-2 focus:ring-orange-400/60 focus:outline-none"
           />
         </div>
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-        {paginatedResults.map((r) => (
-          <div
-            key={r.id}
-            className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 transition-colors hover:bg-white/15"
-          >
-            <button
-              className="min-w-0 flex-1 text-left"
-              onClick={handleOpen(r.id)}
+        {paginatedResults.map((r) => {
+          const isLoading = loadingId === r.id
+          const isDeleting = pendingDelete === r.id
+          const name = resultDisplaySubject(r.subject)
+
+          return (
+            <div
+              key={r.id}
+              aria-busy={isLoading || isDeleting}
+              className={clsx(
+                "flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 transition-colors hover:bg-white/15",
+                isDeleting && "opacity-50",
+              )}
             >
-              <p className="truncate text-sm font-semibold text-white">
-                {resultDisplaySubject(r.subject)}
-              </p>
-              <p className="text-[10px] text-white/50">
-                {formatDate(r.date)} ·{" "}
-                {t("manager:result.playerCount", { count: r.playerCount })}
-              </p>
-            </button>
-            {tab === "solo" && (
               <button
-                onClick={handleOpenDraw(r.id)}
-                title={`Tirage au sort parmi les ${SOLO_DRAW_POOL_SIZE} premiers`}
-                className="ml-2 flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/20 px-2 py-1 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/30"
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none disabled:cursor-wait"
+                onClick={handleOpen(r.id)}
+                disabled={Boolean(loadingId) || isDeleting}
               >
-                <Dices className="size-3.5" />
-                <span>Tirage</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-white">
+                    {name}
+                  </span>
+                  <span className="block text-xs text-white/60">
+                    {formatDate(r.date)} ·{" "}
+                    {t("manager:result.playerCount", { count: r.playerCount })}
+                  </span>
+                </span>
+                {isLoading && (
+                  <Loader2
+                    className="size-4 shrink-0 animate-spin text-orange-300"
+                    aria-label={t("common:loading")}
+                  />
+                )}
               </button>
-            )}
-            <AlertDialog
-              trigger={
-                <button className="ml-2 shrink-0 cursor-pointer rounded-lg p-2 transition-colors hover:bg-red-500/20">
-                  <Trash2 className="size-4 text-red-400" />
+              {tab === "solo" && (
+                <button
+                  type="button"
+                  onClick={handleOpenDraw(r.id)}
+                  disabled={Boolean(loadingId) || isDeleting}
+                  title={t("manager:result.drawHint", {
+                    count: SOLO_DRAW_POOL_SIZE,
+                  })}
+                  className="ml-2 flex min-h-9 shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/20 px-2 py-1 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/30 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60 [@media(hover:none)]:min-h-11"
+                >
+                  <Dices className="size-3.5" />
+                  <span>{t("manager:result.draw")}</span>
                 </button>
-              }
-              title={t("manager:result.delete")}
-              description={t("manager:result.deleteConfirm", {
-                name: resultDisplaySubject(r.subject),
-              })}
-              confirmLabel={t("common:delete")}
-              onConfirm={handleDelete(r.id)}
-            />
-          </div>
-        ))}
+              )}
+              <AlertDialog
+                trigger={
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    aria-label={t("manager:result.deleteNamed", { name })}
+                    title={t("manager:result.delete")}
+                    className="ml-2 flex min-h-9 min-w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-red-500/20 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
+                  >
+                    <Trash2 className="size-4 text-red-400" />
+                  </button>
+                }
+                title={t("manager:result.delete")}
+                description={t("manager:result.deleteConfirm", { name })}
+                confirmLabel={t("common:delete")}
+                onConfirm={handleDelete(r.id)}
+              />
+            </div>
+          )
+        })}
         {filteredResults.length === 0 && (
           <div className="flex h-full items-center justify-center">
-            <p className="py-10 text-center text-sm text-white/40 italic">
+            <p className="py-10 text-center text-sm text-white/60 italic">
               {emptyLabel}
             </p>
           </div>
@@ -217,24 +322,28 @@ const ResultsPanel = () => {
 
       {totalPages > 1 && (
         <div className="flex shrink-0 items-center justify-between border-t border-white/5 pt-3">
-          <p className="text-[10px] text-white/40">
-            {filteredResults.length} résultats
+          <p className="text-xs text-white/60">
+            {t("manager:result.count", { count: filteredResults.length })}
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-lg bg-white/5 p-1.5 text-white/60 transition-all hover:bg-white/10 disabled:opacity-20"
+              type="button"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              aria-label={t("manager:result.previousPage")}
+              className="flex min-h-9 min-w-9 items-center justify-center rounded-lg bg-white/5 text-white/70 transition-all hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none disabled:opacity-30 [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="min-w-[3rem] text-center text-[11px] font-bold text-white/80">
-              {page} / {totalPages}
+            <span className="min-w-[3rem] text-center text-xs font-bold text-white/80">
+              {currentPage} / {totalPages}
             </span>
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="rounded-lg bg-white/5 p-1.5 text-white/60 transition-all hover:bg-white/10 disabled:opacity-20"
+              type="button"
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              aria-label={t("manager:result.nextPage")}
+              className="flex min-h-9 min-w-9 items-center justify-center rounded-lg bg-white/5 text-white/70 transition-all hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none disabled:opacity-30 [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
             >
               <ChevronRight className="size-4" />
             </button>

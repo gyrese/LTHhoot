@@ -41,7 +41,21 @@
     "imported": "Quizz importé avec succès",
     "exporting": "Exportation en cours...",
     "powerUps": "Power-ups",
-    "powerUpsToggle": "Activer ou désactiver les power-ups pour ce quiz"
+    "powerUpsToggle": "Activer ou désactiver les power-ups pour ce quiz",
+    "clearSearch": "Effacer la recherche",
+    "deleteNamed": "Supprimer « {{name}} »",
+    "export": "Exporter",
+    "exportNamed": "Exporter « {{name}} »",
+    "exportAs": {
+      "json": "Fichier JSON",
+      "pptx": "PowerPoint (.pptx)"
+    },
+    "exportFailed": "L'exportation a échoué",
+    "importShort": "Importer",
+    "importing": "Importation en cours…",
+    "importTimeout": "Le serveur n'a pas confirmé l'importation. Vérifiez la connexion puis réessayez.",
+    "invalidJson": "Fichier JSON invalide",
+    "selectInEvening": "{{name}} — n° {{order}} de la soirée"
   },
   "evening": {
     "enable": "Activer le mode soirée",
@@ -50,7 +64,8 @@
     "selectTwo": "Sélectionne au moins 2 quiz…",
     "start": "Démarrer la soirée",
     "powerUps": "Power-ups",
-    "powerUpsToggle": "Activer ou désactiver les power-ups pour cette soirée"
+    "powerUpsToggle": "Activer ou désactiver les power-ups pour cette soirée",
+    "remove": "Retirer « {{name}} » de la soirée"
   },
   "guest": {
     "modalTitle": "Comptes invités",
@@ -63,7 +78,10 @@
     "empty": "Aucun compte invité pour le moment",
     "delete": "Supprimer le compte",
     "deleteConfirm": "Supprimer le compte « {{name}} » ? Sa bibliothèque de quiz sera aussi supprimée.",
-    "testQuizz": "Tester le quiz"
+    "testQuizz": "Tester le quiz",
+    "created": "Compte « {{name}} » créé",
+    "deleted": "Compte invité supprimé",
+    "deleteNamed": "Supprimer le compte « {{name}} »"
   },
   "result": {
     "delete": "Supprimer le résultat",
@@ -89,7 +107,41 @@
     "exportCSV": "Exporter en CSV",
     "tabParty": "Parties",
     "tabSolo": "Solo réseaux",
-    "noneSolo": "Aucun quiz solo joué pour l'instant, partagez un lien solo pour collecter des scores"
+    "noneSolo": "Aucun quiz solo joué pour l'instant, partagez un lien solo pour collecter des scores",
+    "count_one": "{{count}} résultat",
+    "count_other": "{{count}} résultats",
+    "search": "Rechercher un résultat",
+    "deleteNamed": "Supprimer le résultat « {{name}} »",
+    "deleteParticipation": "Supprimer définitivement cette participation",
+    "deleteParticipationNamed": "Supprimer la participation de {{name}}",
+    "participationDeleted": "Participation de {{name}} supprimée",
+    "draw": "Tirage",
+    "drawHint": "Tirage au sort parmi les {{count}} premiers",
+    "drawTop": "Tirage Top {{count}}",
+    "true": "Vrai",
+    "false": "Faux",
+    "loadTimeout": "Le résultat n'a pas pu être chargé. Réessayez.",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "previousQuestion": "Question précédente",
+    "nextQuestion": "Question suivante",
+    "questionOf": "Question {{current}} sur {{total}}",
+    "noAnswers": "Aucune réponse enregistrée pour cette question.",
+    "tabs": {
+      "ranking": "Classement",
+      "questions": "Questions",
+      "logs": "Journal système"
+    },
+    "logs": {
+      "none": "Aucun journal disponible pour cette partie.",
+      "time": "Heure",
+      "level": "Niveau",
+      "message": "Message"
+    },
+    "ranking": {
+      "none": "Aucun participant enregistré pour ce quiz.",
+      "contact": "Contact"
+    }
   },
   "tabs": {
     "play": "Jouer",
@@ -101,7 +153,23 @@
     "all": "Tous",
     "newFolderPlaceholder": "Nom du dossier",
     "deleteFolder": "Supprimer le dossier",
-    "newFolder": "Nouveau dossier"
+    "newFolder": "Nouveau dossier",
+    "label": "Bibliothèque",
+    "open": "Ouvrir la bibliothèque",
+    "close": "Fermer la bibliothèque",
+    "tags": "Tags",
+    "newSubfolder": "Nouveau sous-dossier",
+    "newSubfolderPlaceholder": "Nom du sous-dossier",
+    "rename": "Renommer le dossier",
+    "createConfirm": "Créer le dossier",
+    "expand": "Déplier « {{name}} »",
+    "collapse": "Replier « {{name}} »",
+    "deleteFolderConfirm": "Supprimer le dossier « {{name}} » et ses sous-dossiers ? Les quiz qu'il contient ({{count}}) seront replacés dans « Tous ».",
+    "errors": {
+      "empty": "Le nom du dossier ne peut pas être vide.",
+      "slash": "Le nom du dossier ne peut pas contenir « / ».",
+      "exists": "Un dossier « {{name}} » existe déjà à cet endroit."
+    }
   },
   "launch": {
     "title": "Lancer la partie",
@@ -122,6 +190,84 @@
     },
     "custom": "Partie personnalisée",
     "customHint": "Choisir le rythme, le score et les bonus avant de lancer",
-    "noSpeedShort": "1000 points par bonne réponse, peu importe le temps"
+    "noSpeedShort": "1000 points par bonne réponse, peu importe le temps",
+    "timeout": "Le serveur ne répond pas. Réessayez de lancer la partie."
+  },
+  "actions": {
+    "close": "Fermer",
+    "edit": "Modifier",
+    "editNamed": "Modifier « {{name}} »"
+  },
+  "connection": {
+    "lost": "Connexion perdue",
+    "lostHint": "Connexion au serveur perdue, reconnexion en cours… Le lancement d'une partie est suspendu."
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Réessayez."
+  },
+  "editor": {
+    "notFound": "Quiz introuvable ou erreur de chargement.",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "powerups": {
+    "modalTitle": "Configuration des power-ups",
+    "enableTitle": "Activer les power-ups",
+    "enableDesc": "Permet aux joueurs d'acheter des power-ups à la boutique.",
+    "selectAll": "Tout cocher",
+    "selectNone": "Tout décocher",
+    "save": "Enregistrer"
+  },
+  "share": {
+    "title": "Diffuser sur les réseaux",
+    "titleNamed": "Diffuser « {{name}} » sur les réseaux",
+    "selectedQuiz": "Quiz sélectionné",
+    "internalTitle": "Titre interne : {{subject}}",
+    "publicName": "Nom affiché aux joueurs",
+    "publicNameHint": "Laissez vide pour afficher le titre du quiz.",
+    "rules": "Règles du quiz",
+    "rulesPlaceholder": "Ex : 10 questions, 20 s par question. Le plus rapide marque le plus de points !",
+    "rulesHint": "Affichées 3 secondes avant la première question. Vide = écran passé.",
+    "save": "Enregistrer",
+    "saved": "Informations publiques enregistrées !",
+    "link": "Lien public de réponse (mode solo)",
+    "copy": "Copier",
+    "copied": "Copié",
+    "linkCopied": "Lien copié dans le presse-papier !",
+    "copyFailed": "Copie impossible : copiez le texte manuellement.",
+    "downloadQr": "Télécharger le QR code",
+    "postTitle": "Post prêt à publier",
+    "copyPost": "Copier le texte d'annonce",
+    "postCopied": "Texte d'annonce copié pour vos réseaux !",
+    "post": "🚀 Quiz de la semaine : « {{name}} » !\nTestez vos connaissances et tentez de remporter le tirage au sort parmi les {{count}} meilleurs scores en fin de semaine ! 🏆\n\n👉 Jouez gratuitement ici : {{url}}"
+  },
+  "draw": {
+    "title": "Tirage au sort · Top {{count}}",
+    "subtitle": "Quiz solo · {{name}}",
+    "finalists": "Finalistes ({{current}}/{{count}})",
+    "equalChance": "Chaque finaliste a une chance égale d'être tiré au sort",
+    "deleteQuestion": "Supprimer sa participation ?",
+    "points": "{{points}} pts",
+    "poolHint": "Seuls les {{count}} premiers participent au tirage — supprimer une participation fait remonter le suivant.",
+    "winnerTitle": "Vainqueur du tirage au sort",
+    "contact": "Contact : {{contact}}",
+    "generatingPoster": "Génération de l'affiche…",
+    "downloadPoster": "Télécharger le visuel officiel (affiche)",
+    "downloadSquare": "Format carte carrée (1080×1080)",
+    "spinning": "Tirage en cours…",
+    "start": "Lancer le tirage au sort",
+    "noCandidates": "Aucun participant disponible pour le tirage.",
+    "winnerIs": "Le gagnant est {{name}} ! 🎉",
+    "posterDownloaded": "Visuel de victoire officiel téléchargé (PNG) !",
+    "squareDownloaded": "Visuel réseaux de victoire téléchargé (PNG 1080×1080) !",
+    "visualFailed": "Erreur lors de la génération du visuel.",
+    "announcementCopied": "Texte d'annonce du gagnant copié pour vos réseaux !",
+    "announcement": "🎉 ANNONCE DU GAGNANT DU QUIZ !\nFélicitations à {{name}}{{contact}} qui remporte le tirage au sort de la semaine sur le quiz « {{quiz}} » avec {{points}} pts !\n\nMerci à tous les participants du Top {{count}} ! 🚀",
+    "visual": {
+      "badge": "GAGNANT DU TIRAGE AU SORT",
+      "quiz": "Quiz : {{name}}",
+      "finalScore": "SCORE FINAL",
+      "points": "{{points}} PTS",
+      "thanks": "Bravo à tous les participants !"
+    }
   }
 }

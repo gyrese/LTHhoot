@@ -168,9 +168,12 @@ const QuizzEditorHeader = () => {
         <div className="flex min-w-0 basis-full items-center gap-3 md:flex-1 md:basis-auto">
           <button
             type="button"
-            onClick={() => navigate({ to: "/manager" })}
+            // Retour au dashboard, pas à `/manager` : cette page est l'écran
+            // du code admin, qui bloquait les sessions invitées.
+            onClick={() => navigate({ to: "/manager/config" })}
             className="focus-ring shrink-0 rounded-lg transition-transform active:scale-95"
-            title={t("common:backToManager", "Retour au manager")}
+            title={t("manager:editor.backToDashboard")}
+            aria-label={t("manager:editor.backToDashboard")}
           >
             <Logo className="h-8 shrink-0" />
           </button>

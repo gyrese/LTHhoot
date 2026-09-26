@@ -38,7 +38,24 @@
     "search": "Search quizzes...",
     "startGame": "Start game",
     "powerUps": "Power-ups",
-    "powerUpsToggle": "Enable or disable power-ups for this quiz"
+    "powerUpsToggle": "Enable or disable power-ups for this quiz",
+    "exported": "Quizz exported successfully",
+    "imported": "Quizz imported successfully",
+    "exporting": "Exporting...",
+    "clearSearch": "Clear search",
+    "deleteNamed": "Delete “{{name}}”",
+    "export": "Export",
+    "exportNamed": "Export “{{name}}”",
+    "exportAs": {
+      "json": "JSON file",
+      "pptx": "PowerPoint (.pptx)"
+    },
+    "exportFailed": "Export failed",
+    "importShort": "Import",
+    "importing": "Importing…",
+    "importTimeout": "The server did not confirm the import. Check your connection and try again.",
+    "invalidJson": "Invalid JSON file",
+    "selectInEvening": "{{name}} — #{{order}} in the party"
   },
   "result": {
     "delete": "Delete result",
@@ -64,7 +81,41 @@
     "exportCSV": "Export as CSV",
     "tabParty": "Live games",
     "tabSolo": "Solo (social)",
-    "noneSolo": "No solo quiz played yet, share a solo link to collect scores"
+    "noneSolo": "No solo quiz played yet, share a solo link to collect scores",
+    "count_one": "{{count}} result",
+    "count_other": "{{count}} results",
+    "search": "Search results",
+    "deleteNamed": "Delete result “{{name}}”",
+    "deleteParticipation": "Permanently delete this entry",
+    "deleteParticipationNamed": "Delete {{name}}'s entry",
+    "participationDeleted": "{{name}}'s entry deleted",
+    "draw": "Draw",
+    "drawHint": "Prize draw among the top {{count}}",
+    "drawTop": "Top {{count}} draw",
+    "true": "True",
+    "false": "False",
+    "loadTimeout": "The result could not be loaded. Please try again.",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "previousQuestion": "Previous question",
+    "nextQuestion": "Next question",
+    "questionOf": "Question {{current}} of {{total}}",
+    "noAnswers": "No answers recorded for this question.",
+    "tabs": {
+      "ranking": "Ranking",
+      "questions": "Questions",
+      "logs": "System log"
+    },
+    "logs": {
+      "none": "No log available for this game.",
+      "time": "Time",
+      "level": "Level",
+      "message": "Message"
+    },
+    "ranking": {
+      "none": "No participants recorded for this quiz.",
+      "contact": "Contact"
+    }
   },
   "tabs": {
     "play": "Play",
@@ -76,7 +127,23 @@
     "all": "All",
     "newFolderPlaceholder": "Folder name",
     "deleteFolder": "Delete folder",
-    "newFolder": "New folder"
+    "newFolder": "New folder",
+    "label": "Library",
+    "open": "Open library",
+    "close": "Close library",
+    "tags": "Tags",
+    "newSubfolder": "New subfolder",
+    "newSubfolderPlaceholder": "Subfolder name",
+    "rename": "Rename folder",
+    "createConfirm": "Create folder",
+    "expand": "Expand “{{name}}”",
+    "collapse": "Collapse “{{name}}”",
+    "deleteFolderConfirm": "Delete the folder “{{name}}” and its subfolders? Its quizzes ({{count}}) will be moved back to “All”.",
+    "errors": {
+      "empty": "The folder name cannot be empty.",
+      "slash": "The folder name cannot contain “/”.",
+      "exists": "A folder “{{name}}” already exists here."
+    }
   },
   "guest": {
     "modalTitle": "Guest accounts",
@@ -89,7 +156,10 @@
     "empty": "No guest accounts yet",
     "delete": "Delete account",
     "deleteConfirm": "Delete account “{{name}}”? Their quiz library will also be deleted.",
-    "testQuizz": "Test the quiz"
+    "testQuizz": "Test the quiz",
+    "created": "Account “{{name}}” created",
+    "deleted": "Guest account deleted",
+    "deleteNamed": "Delete account “{{name}}”"
   },
   "launch": {
     "title": "Start the game",
@@ -110,6 +180,94 @@
     },
     "custom": "Custom game",
     "customHint": "Pick the pace, scoring and bonuses before starting",
-    "noSpeedShort": "1000 points per correct answer, whatever the time"
+    "noSpeedShort": "1000 points per correct answer, whatever the time",
+    "timeout": "The server is not responding. Please try starting the game again."
+  },
+  "actions": {
+    "close": "Close",
+    "edit": "Edit",
+    "editNamed": "Edit “{{name}}”"
+  },
+  "connection": {
+    "lost": "Connection lost",
+    "lostHint": "Connection to the server lost, reconnecting… Starting a game is paused."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  },
+  "editor": {
+    "notFound": "Quiz not found or failed to load.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "evening": {
+    "enable": "Enable party mode",
+    "disable": "Disable party mode",
+    "mode": "Party mode",
+    "selectTwo": "Select at least 2 quizzes…",
+    "start": "Start the party",
+    "powerUps": "Power-ups",
+    "powerUpsToggle": "Configure power-ups for the party",
+    "remove": "Remove “{{name}}” from the party"
+  },
+  "powerups": {
+    "modalTitle": "Power-up settings",
+    "enableTitle": "Enable power-ups",
+    "enableDesc": "Lets players buy power-ups in the shop.",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "save": "Save"
+  },
+  "share": {
+    "title": "Share on social media",
+    "titleNamed": "Share “{{name}}” on social media",
+    "selectedQuiz": "Selected quiz",
+    "internalTitle": "Internal title: {{subject}}",
+    "publicName": "Name shown to players",
+    "publicNameHint": "Leave empty to show the quiz title.",
+    "rules": "Quiz rules",
+    "rulesPlaceholder": "E.g. 10 questions, 20 s per question. The fastest scores the most points!",
+    "rulesHint": "Shown for 3 seconds before the first question. Empty = screen skipped.",
+    "save": "Save",
+    "saved": "Public information saved!",
+    "link": "Public answer link (solo mode)",
+    "copy": "Copy",
+    "copied": "Copied",
+    "linkCopied": "Link copied to clipboard!",
+    "copyFailed": "Could not copy: please copy the text manually.",
+    "downloadQr": "Download QR code",
+    "postTitle": "Ready-to-publish post",
+    "copyPost": "Copy announcement text",
+    "postCopied": "Announcement text copied for your social media!",
+    "post": "🚀 Quiz of the week: “{{name}}”!\nTest your knowledge and try to win the prize draw among the top {{count}} scores at the end of the week! 🏆\n\n👉 Play for free here: {{url}}"
+  },
+  "draw": {
+    "title": "Prize draw · Top {{count}}",
+    "subtitle": "Solo quiz · {{name}}",
+    "finalists": "Finalists ({{current}}/{{count}})",
+    "equalChance": "Each finalist has an equal chance of being drawn",
+    "deleteQuestion": "Delete this entry?",
+    "points": "{{points}} pts",
+    "poolHint": "Only the top {{count}} take part in the draw — deleting an entry moves the next one up.",
+    "winnerTitle": "Prize draw winner",
+    "contact": "Contact: {{contact}}",
+    "generatingPoster": "Generating poster…",
+    "downloadPoster": "Download the official visual (poster)",
+    "downloadSquare": "Square card format (1080×1080)",
+    "spinning": "Drawing…",
+    "start": "Start the prize draw",
+    "noCandidates": "No participants available for the draw.",
+    "winnerIs": "The winner is {{name}}! 🎉",
+    "posterDownloaded": "Official winner visual downloaded (PNG)!",
+    "squareDownloaded": "Social winner visual downloaded (PNG 1080×1080)!",
+    "visualFailed": "Error while generating the visual.",
+    "announcementCopied": "Winner announcement copied for your social media!",
+    "announcement": "🎉 QUIZ WINNER ANNOUNCEMENT!\nCongratulations to {{name}}{{contact}} who wins this week's prize draw on the quiz “{{quiz}}” with {{points}} pts!\n\nThanks to all Top {{count}} participants! 🚀",
+    "visual": {
+      "badge": "PRIZE DRAW WINNER",
+      "quiz": "Quiz: {{name}}",
+      "finalScore": "FINAL SCORE",
+      "points": "{{points}} PTS",
+      "thanks": "Well done to all participants!"
+    }
   }
 }

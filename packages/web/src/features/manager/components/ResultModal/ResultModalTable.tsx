@@ -15,7 +15,7 @@ const ResultModalTable = () => {
     <table className="w-full text-sm">
       {/* Se cale sous la barre de navigation des questions (h-11) */}
       <thead className="sticky top-11 z-10 shadow-sm">
-        <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase">
+        <tr className="border-b border-white/10 bg-slate-900 text-left text-xs font-semibold tracking-wide text-white/60 uppercase">
           <th className="px-5 py-2.5">{t("manager:result.table.player")}</th>
           <th className="px-4 py-2.5">{t("manager:result.table.answered")}</th>
           <th className="px-4 py-2.5">
@@ -26,7 +26,7 @@ const ResultModalTable = () => {
           </th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-100">
+      <tbody className="divide-y divide-white/5">
         {questionResult.playerAnswers.map((pa, i) => {
           const isCorrect = pa.points > 0
           const hasMcqAnswer =
@@ -41,7 +41,7 @@ const ResultModalTable = () => {
               : null
 
           return (
-            <tr key={i} className="hover:bg-gray-50">
+            <tr key={i} className="hover:bg-white/5">
               <td className="px-5 py-2.5 font-medium">{pa.playerName}</td>
               <td className="px-4 py-2.5">
                 {(() => {
@@ -63,7 +63,7 @@ const ResultModalTable = () => {
 
                   if (pa.textAnswer !== null && pa.textAnswer !== undefined) {
                     return (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-xs text-white/80">
                         {pa.textAnswer}
                       </span>
                     )
@@ -74,7 +74,7 @@ const ResultModalTable = () => {
                     pa.numberAnswer !== undefined
                   ) {
                     return (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-xs text-white/80">
                         {pa.numberAnswer}
                       </span>
                     )
@@ -82,13 +82,15 @@ const ResultModalTable = () => {
 
                   if (pa.answerId !== null && pa.answerId !== undefined) {
                     return (
-                      <span className="text-xs text-gray-700">
-                        {pa.answerId === 1 ? "Vrai" : "Faux"}
+                      <span className="text-xs text-white/80">
+                        {pa.answerId === 1
+                          ? t("manager:result.true")
+                          : t("manager:result.false")}
                       </span>
                     )
                   }
 
-                  return <span className="text-xs text-gray-400">—</span>
+                  return <span className="text-xs text-white/60">—</span>
                 })()}
               </td>
               <td className="px-4 py-2.5">
@@ -104,7 +106,7 @@ const ResultModalTable = () => {
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-right font-semibold text-gray-700">
+              <td className="px-4 py-2.5 text-right font-semibold text-white/80">
                 {getPlayerPoints(pa.playerName)}
               </td>
             </tr>

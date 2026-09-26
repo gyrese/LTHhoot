@@ -55,14 +55,9 @@ const ManagerConfigPage = () => {
     },
   )
 
-  if (!isConnected) {
-    return (
-      <Background>
-        <Loader className="h-23" />
-      </Background>
-    )
-  }
-
+  // Loader uniquement au premier chargement : une coupure réseau une fois la
+  // config reçue ne démonte plus le dashboard (sélection, soirée en cours de
+  // composition…) — il affiche un indicateur « connexion perdue » discret.
   if (!config) {
     return (
       <Background>

@@ -36,8 +36,10 @@ function RouteComponent() {
 
   if (!isConnected || !config) {
     return (
-      <div className="flex h-svh items-center justify-center bg-gray-50">
-        <Loader className="text-background max-h-23" />
+      // Fond sombre, dans la continuité du dashboard : plus de flash clair
+      // entre le dashboard et l'éditeur.
+      <div className="flex h-svh items-center justify-center bg-slate-950">
+        <Loader className="max-h-23 text-orange-400" />
       </div>
     )
   }

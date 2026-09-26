@@ -36,7 +36,26 @@
     "pleaseCreate": "Bitte erstelle zuerst ein Quiz",
     "pleaseSelect": "Bitte wähle ein Quiz aus",
     "search": "Quizze suchen...",
-    "startGame": "Spiel starten"
+    "startGame": "Spiel starten",
+    "exported": "Quiz erfolgreich exportiert",
+    "imported": "Quiz erfolgreich importiert",
+    "exporting": "Export läuft…",
+    "powerUps": "Power-ups",
+    "clearSearch": "Suche löschen",
+    "deleteNamed": "„{{name}}“ löschen",
+    "export": "Exportieren",
+    "exportNamed": "„{{name}}“ exportieren",
+    "exportAs": {
+      "json": "JSON-Datei",
+      "pptx": "PowerPoint (.pptx)"
+    },
+    "exportFailed": "Export fehlgeschlagen",
+    "importShort": "Importieren",
+    "importing": "Import läuft…",
+    "importTimeout": "Der Server hat den Import nicht bestätigt. Prüfe die Verbindung und versuche es erneut.",
+    "invalidJson": "Ungültige JSON-Datei",
+    "selectInEvening": "{{name}} — Nr. {{order}} der Party",
+    "powerUpsToggle": "Power-ups für dieses Quiz aktivieren oder deaktivieren"
   },
   "result": {
     "delete": "Ergebnis löschen",
@@ -62,7 +81,41 @@
     "exportCSV": "Als CSV exportieren",
     "tabParty": "Partien",
     "tabSolo": "Solo (Social)",
-    "noneSolo": "Noch kein Solo-Quiz gespielt, teile einen Solo-Link, um Punktzahlen zu sammeln"
+    "noneSolo": "Noch kein Solo-Quiz gespielt, teile einen Solo-Link, um Punktzahlen zu sammeln",
+    "count_one": "{{count}} Ergebnis",
+    "count_other": "{{count}} Ergebnisse",
+    "search": "Ergebnisse durchsuchen",
+    "deleteNamed": "Ergebnis „{{name}}“ löschen",
+    "deleteParticipation": "Diese Teilnahme endgültig löschen",
+    "deleteParticipationNamed": "Teilnahme von {{name}} löschen",
+    "participationDeleted": "Teilnahme von {{name}} gelöscht",
+    "draw": "Verlosung",
+    "drawHint": "Verlosung unter den ersten {{count}}",
+    "drawTop": "Verlosung Top {{count}}",
+    "true": "Wahr",
+    "false": "Falsch",
+    "loadTimeout": "Das Ergebnis konnte nicht geladen werden. Bitte erneut versuchen.",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "previousQuestion": "Vorherige Frage",
+    "nextQuestion": "Nächste Frage",
+    "questionOf": "Frage {{current}} von {{total}}",
+    "noAnswers": "Für diese Frage wurden keine Antworten erfasst.",
+    "tabs": {
+      "ranking": "Rangliste",
+      "questions": "Fragen",
+      "logs": "Systemprotokoll"
+    },
+    "logs": {
+      "none": "Für dieses Spiel ist kein Protokoll verfügbar.",
+      "time": "Uhrzeit",
+      "level": "Stufe",
+      "message": "Meldung"
+    },
+    "ranking": {
+      "none": "Für dieses Quiz wurden keine Teilnehmer erfasst.",
+      "contact": "Kontakt"
+    }
   },
   "tabs": {
     "play": "Spielen",
@@ -74,7 +127,23 @@
     "all": "Alle",
     "newFolderPlaceholder": "Ordnername",
     "deleteFolder": "Ordner löschen",
-    "newFolder": "Neuer Ordner"
+    "newFolder": "Neuer Ordner",
+    "label": "Bibliothek",
+    "open": "Bibliothek öffnen",
+    "close": "Bibliothek schließen",
+    "tags": "Tags",
+    "newSubfolder": "Neuer Unterordner",
+    "newSubfolderPlaceholder": "Name des Unterordners",
+    "rename": "Ordner umbenennen",
+    "createConfirm": "Ordner erstellen",
+    "expand": "„{{name}}“ aufklappen",
+    "collapse": "„{{name}}“ zuklappen",
+    "deleteFolderConfirm": "Ordner „{{name}}“ und seine Unterordner löschen? Die enthaltenen Quiz ({{count}}) werden nach „Alle“ verschoben.",
+    "errors": {
+      "empty": "Der Ordnername darf nicht leer sein.",
+      "slash": "Der Ordnername darf kein „/“ enthalten.",
+      "exists": "Ein Ordner „{{name}}“ existiert hier bereits."
+    }
   },
   "guest": {
     "modalTitle": "Gast-Konten",
@@ -87,7 +156,10 @@
     "empty": "Noch keine Gast-Konten",
     "delete": "Konto löschen",
     "deleteConfirm": "Konto „{{name}}“ löschen? Seine Quiz-Bibliothek wird ebenfalls gelöscht.",
-    "testQuizz": "Quiz testen"
+    "testQuizz": "Quiz testen",
+    "created": "Konto „{{name}}“ erstellt",
+    "deleted": "Gastkonto gelöscht",
+    "deleteNamed": "Konto „{{name}}“ löschen"
   },
   "launch": {
     "title": "Spiel starten",
@@ -108,6 +180,94 @@
     },
     "custom": "Eigene Partie",
     "customHint": "Tempo, Punkte und Boni vor dem Start wählen",
-    "noSpeedShort": "1000 Punkte pro richtiger Antwort, unabhängig von der Zeit"
+    "noSpeedShort": "1000 Punkte pro richtiger Antwort, unabhängig von der Zeit",
+    "timeout": "Der Server antwortet nicht. Bitte versuche erneut, das Spiel zu starten."
+  },
+  "actions": {
+    "close": "Schließen",
+    "edit": "Bearbeiten",
+    "editNamed": "„{{name}}“ bearbeiten"
+  },
+  "connection": {
+    "lost": "Verbindung verloren",
+    "lostHint": "Verbindung zum Server verloren, Neuverbindung läuft… Das Starten eines Spiels ist pausiert."
+  },
+  "errors": {
+    "generic": "Ein Fehler ist aufgetreten. Bitte erneut versuchen."
+  },
+  "editor": {
+    "notFound": "Quiz nicht gefunden oder Ladefehler.",
+    "backToDashboard": "Zurück zum Dashboard"
+  },
+  "evening": {
+    "enable": "Partymodus aktivieren",
+    "disable": "Partymodus deaktivieren",
+    "mode": "Partymodus",
+    "selectTwo": "Wähle mindestens 2 Quiz aus…",
+    "start": "Party starten",
+    "powerUps": "Power-ups",
+    "powerUpsToggle": "Power-ups der Party konfigurieren",
+    "remove": "„{{name}}“ aus der Party entfernen"
+  },
+  "powerups": {
+    "modalTitle": "Power-up-Einstellungen",
+    "enableTitle": "Power-ups aktivieren",
+    "enableDesc": "Erlaubt den Spielern, Power-ups im Shop zu kaufen.",
+    "selectAll": "Alle auswählen",
+    "selectNone": "Keine auswählen",
+    "save": "Speichern"
+  },
+  "share": {
+    "title": "In sozialen Netzwerken teilen",
+    "titleNamed": "„{{name}}“ in sozialen Netzwerken teilen",
+    "selectedQuiz": "Ausgewähltes Quiz",
+    "internalTitle": "Interner Titel: {{subject}}",
+    "publicName": "Für Spieler angezeigter Name",
+    "publicNameHint": "Leer lassen, um den Quiztitel anzuzeigen.",
+    "rules": "Quizregeln",
+    "rulesPlaceholder": "Z. B. 10 Fragen, 20 s pro Frage. Wer am schnellsten ist, holt die meisten Punkte!",
+    "rulesHint": "Werden 3 Sekunden vor der ersten Frage angezeigt. Leer = Bildschirm übersprungen.",
+    "save": "Speichern",
+    "saved": "Öffentliche Informationen gespeichert!",
+    "link": "Öffentlicher Antwortlink (Solomodus)",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "linkCopied": "Link in die Zwischenablage kopiert!",
+    "copyFailed": "Kopieren nicht möglich: Bitte den Text manuell kopieren.",
+    "downloadQr": "QR-Code herunterladen",
+    "postTitle": "Fertiger Beitrag",
+    "copyPost": "Ankündigungstext kopieren",
+    "postCopied": "Ankündigungstext für deine sozialen Netzwerke kopiert!",
+    "post": "🚀 Quiz der Woche: „{{name}}“!\nTeste dein Wissen und gewinne vielleicht die Verlosung unter den {{count}} besten Ergebnissen am Ende der Woche! 🏆\n\n👉 Hier kostenlos spielen: {{url}}"
+  },
+  "draw": {
+    "title": "Verlosung · Top {{count}}",
+    "subtitle": "Solo-Quiz · {{name}}",
+    "finalists": "Finalisten ({{current}}/{{count}})",
+    "equalChance": "Jeder Finalist hat die gleiche Gewinnchance",
+    "deleteQuestion": "Teilnahme löschen?",
+    "points": "{{points}} Pkt.",
+    "poolHint": "Nur die ersten {{count}} nehmen an der Verlosung teil — wird eine Teilnahme gelöscht, rückt der Nächste nach.",
+    "winnerTitle": "Gewinner der Verlosung",
+    "contact": "Kontakt: {{contact}}",
+    "generatingPoster": "Plakat wird erstellt…",
+    "downloadPoster": "Offizielles Siegerbild (Plakat) herunterladen",
+    "downloadSquare": "Quadratisches Format (1080×1080)",
+    "spinning": "Verlosung läuft…",
+    "start": "Verlosung starten",
+    "noCandidates": "Keine Teilnehmer für die Verlosung verfügbar.",
+    "winnerIs": "Der Gewinner ist {{name}}! 🎉",
+    "posterDownloaded": "Offizielles Siegerbild heruntergeladen (PNG)!",
+    "squareDownloaded": "Siegerbild für soziale Netzwerke heruntergeladen (PNG 1080×1080)!",
+    "visualFailed": "Fehler beim Erstellen des Bildes.",
+    "announcementCopied": "Gewinner-Ankündigung für deine sozialen Netzwerke kopiert!",
+    "announcement": "🎉 QUIZ-GEWINNER!\nHerzlichen Glückwunsch an {{name}}{{contact}}, der die Verlosung der Woche beim Quiz „{{quiz}}“ mit {{points}} Pkt. gewinnt!\n\nDanke an alle Teilnehmer der Top {{count}}! 🚀",
+    "visual": {
+      "badge": "GEWINNER DER VERLOSUNG",
+      "quiz": "Quiz: {{name}}",
+      "finalScore": "ENDPUNKTZAHL",
+      "points": "{{points}} PKT.",
+      "thanks": "Bravo an alle Teilnehmer!"
+    }
   }
 }

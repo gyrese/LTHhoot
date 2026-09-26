@@ -42,16 +42,18 @@ const FastModeToggle = ({
         type="button"
         onClick={onToggle}
         aria-pressed={fastMode}
+        aria-label={t("manager:fastMode.label")}
         className={clsx(
-          "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none",
+          "flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-colors select-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none",
           fastMode
             ? "bg-orange-500/20 text-orange-200 ring-1 ring-orange-500/40 hover:bg-orange-500/30"
-            : "bg-white/5 text-white/40 ring-1 ring-white/10 hover:bg-white/10",
+            : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10",
         )}
         title={t("manager:fastMode.hint")}
       >
         <Zap className="size-3.5" />
-        <span>{t("manager:fastMode.label")}</span>
+        {/* Libellé masqué sur très petit écran (footer soirée replié). */}
+        <span className="hidden sm:inline">{t("manager:fastMode.label")}</span>
       </button>
 
       {fastMode && (
@@ -67,10 +69,10 @@ const FastModeToggle = ({
               onClick={() => onIntensityChange(value)}
               aria-pressed={intensity === value}
               className={clsx(
-                "cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors select-none",
+                "cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors select-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-10",
                 intensity === value
                   ? "bg-orange-500/30 text-orange-100"
-                  : "text-white/40 hover:bg-white/10 hover:text-white/70",
+                  : "text-white/60 hover:bg-white/10 hover:text-white/80",
               )}
               title={t(`manager:fastMode.intensity.${key}.hint`)}
             >

@@ -26,19 +26,19 @@ const ResultModalHeader = () => {
   const isSolo = isSoloResult(result)
 
   return (
-    <div className="flex shrink-0 items-start gap-3 border-b border-gray-200 px-5 py-3">
+    <div className="flex shrink-0 items-start gap-3 border-b border-white/10 px-5 py-3">
       <div className="min-w-0 flex-1">
-        <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+        <h2 className="flex items-center gap-2 text-base font-bold text-white">
           {isSolo && (
-            <span className="shrink-0 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-orange-600 uppercase">
-              Solo réseaux
+            <span className="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[11px] font-bold tracking-wide text-orange-300 uppercase">
+              {t("manager:result.tabSolo")}
             </span>
           )}
           <span className="truncate">
             {resultDisplaySubject(result.subject)}
           </span>
         </h2>
-        <p className="mt-0.5 flex items-center gap-3 text-xs text-gray-400">
+        <p className="mt-0.5 flex items-center gap-3 text-xs text-white/60">
           <span className="flex items-center gap-1">
             <CalendarDays className="size-3.5" />
             {formatDate(result.date)}
@@ -52,27 +52,34 @@ const ResultModalHeader = () => {
 
       <div className="flex shrink-0 items-center gap-1">
         <button
+          type="button"
           onClick={() => downloadGameResultCSV(result)}
           title={t("manager:result.exportCSV")}
-          className="hover:text-primary cursor-pointer rounded p-1.5 text-gray-500 transition-colors hover:bg-gray-100"
+          aria-label={t("manager:result.exportCSV")}
+          className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-orange-400 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
         >
           <Download className="size-5" />
         </button>
         {isSolo && (
           <button
+            type="button"
             onClick={() =>
               window.dispatchEvent(new CustomEvent("openSoloDraw"))
             }
-            title={`Tirage au sort parmi les ${SOLO_DRAW_POOL_SIZE} premiers`}
-            className="ml-1 flex cursor-pointer items-center gap-1 rounded bg-amber-500 px-2.5 py-1.5 text-xs font-bold text-slate-950 shadow-sm transition-colors hover:bg-amber-400"
+            title={t("manager:result.drawHint", { count: SOLO_DRAW_POOL_SIZE })}
+            className="ml-1 flex min-h-11 cursor-pointer items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-bold text-slate-950 shadow-sm transition-colors hover:bg-amber-400 focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:outline-none"
           >
             <Dices className="size-4" />
-            <span>Tirage Top {SOLO_DRAW_POOL_SIZE}</span>
+            <span>
+              {t("manager:result.drawTop", { count: SOLO_DRAW_POOL_SIZE })}
+            </span>
           </button>
         )}
         <button
+          type="button"
           onClick={onClose}
-          className="ml-1 cursor-pointer rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label={t("manager:actions.close")}
+          className="ml-1 flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
         >
           <X className="size-5" />
         </button>
