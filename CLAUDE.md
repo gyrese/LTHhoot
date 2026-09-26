@@ -48,7 +48,7 @@ Remplacer la Card modale centrée (`max-w-md`) par un dashboard plein écran en 
 - Barre blanche du haut (compteur question) coupait l'image → transformée en overlay `absolute` glassmorphism
 - Barre blanche joueur en bas → overlay `absolute` glassmorphism
 - `h-full` sur enfants flex sans hauteur fixe du parent → section passe à `h-dvh`
-- `slideBg` (image marron) comme fond par défaut → remplacé par dégradé bleu nuit
+- `slideBg` (image marron) comme fond par défaut → remplacé par `/bg-salon.png` (le dégradé bleu nuit prévu n'a pas été retenu)
 - `CSSProperties` non importé dans `Question.tsx` → corrigé
 - `elements?: SlideElement[]` présent dans les données SHOW_QUESTION / SELECT_ANSWER mais jamais rendu → à faire
 
@@ -59,9 +59,9 @@ Remplacer la Card modale centrée (`max-w-md`) par un dashboard plein écran en 
 4. `features/game/components/states/Responses.tsx` — layout flex ✅
 
 ### À faire
-5. `features/game/components/states/Question.tsx` — rendu des `elements` (SlideCanvas read-only) 🔲
-6. `features/game/components/states/Answers.tsx` — rendu des `elements` (SlideCanvas read-only) 🔲
-7. Vérifier `Start.tsx`, `Podium.tsx`, `PlayerFinished.tsx` — cohérence visuelle 🔲
+5. `features/game/components/states/Question.tsx` — rendu des `elements` (SlideCanvas read-only, chargé à la demande) pour tous les types ✅
+6. `features/game/components/states/Answers.tsx` — rendu des `elements` (SlideCanvas read-only) ✅
+7. Vérifier `Start.tsx`, `Podium.tsx`, `PlayerFinished.tsx` — cohérence visuelle 🟡 (PlayerFinished suit `podiumTheme` et la finale de soirée ; reste à harmoniser Start)
 
 ---
 
@@ -162,6 +162,8 @@ EVENING_COMPLETE       → { finalCumulativeScores: Record<string,number>, podiu
 
 ### Objectif
 Permettre aux joueurs de gagner des power-ups en jeu (combo, dernière place) et de les utiliser stratégiquement pour modifier les scores.
+
+> ⚠️ **État réel (sept. 2026)** : le produit est passé à une **boutique à pièces d'or** avec 17 types et des raretés (`packages/common/src/types/powerup.ts`, `ShopDrawer.tsx`). Les règles de gain automatique ci-dessous ne sont plus implémentées (code supprimé). FREEZE bloque la saisie 3 s (`FREEZE_DURATION_MS`), vérifié côté serveur. Les types vivent dans `packages/common`, pas `packages/socket/src/types`.
 
 ### Catalogue des power-ups
 
