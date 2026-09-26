@@ -303,7 +303,9 @@ const DashboardSidebar = ({
     const isEditing = editingFolder === node.path
     const isCreatingSub = creatingIn === node.path
     const count = countInFolder(node.path)
-    const indent = depth * 12
+    // 8px par niveau (et non 12) : au-delà de deux niveaux, l'indentation
+    // mangeait la largeur du nom, qui se retrouvait tronqué dès ~10 caractères.
+    const indent = depth * 8
     // Dossier virtuel « Invités » : classement automatique par compte, aucune
     // action possible (ni drop, ni renommage, ni suppression, ni sous-dossier).
     const isGuest = isGuestFolder(node.path)
@@ -319,7 +321,7 @@ const DashboardSidebar = ({
     return (
       <div key={node.path}>
         <div
-          className="group flex items-center gap-0.5"
+          className="group relative flex items-center gap-0.5"
           style={{ paddingLeft: indent }}
         >
           {/* Chevron expand/collapse */}
@@ -371,7 +373,11 @@ const DashboardSidebar = ({
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 {folderIcon}
-                <span className="truncate">{node.label}</span>
+                {/* `title` : un nom long reste tronqué à l'affichage, mais
+                    redevient lisible en entier au survol. */}
+                <span className="truncate" title={node.label}>
+                  {node.label}
+                </span>
               </span>
               <span className="shrink-0 rounded-full bg-white/10 px-1.5 text-xs">
                 {count}
@@ -379,9 +385,12 @@ const DashboardSidebar = ({
             </button>
           )}
 
-          {/* Actions au hover */}
+          {/* Actions au hover — en overlay (absolute) et non dans le flux : en
+              flux, ces 3 boutons réservaient ~60px en permanence, même
+              invisibles, ce qui tronquait le nom du dossier en pure perte. Le
+              dégradé les détache du texte qui passe dessous. */}
           {!isEditing && !isGuest && (
-            <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-l-lg bg-gradient-to-l from-black/80 from-60% to-transparent pl-5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
               <button
                 onClick={() => startCreate(node.path)}
                 className="rounded p-0.5 text-white/30 hover:text-orange-400"
@@ -451,7 +460,7 @@ const DashboardSidebar = ({
   }
 
   return (
-    <aside className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur-md">
+    <aside className="flex w-64 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur-md 2xl:w-72">
       {/* Navigation */}
       <div className="flex flex-col gap-1">
         <button

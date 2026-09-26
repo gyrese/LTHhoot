@@ -94,9 +94,9 @@ describe("buildGenerationPrompt", () => {
     const fun = buildGenerationPrompt({ ...baseParams, tone: "fun" })
     const epic = buildGenerationPrompt({ ...baseParams, tone: "epic" })
 
-    expect(fun).toContain("cool, fun, dynamic")
+    expect(fun).toContain("pub-quiz host")
     expect(epic).toContain("epic, dramatic")
-    expect(epic).not.toContain("cool, fun, dynamic")
+    expect(epic).not.toContain("pub-quiz host")
   })
 
   it("retombe sur le ton par défaut si le registre est inconnu", () => {
@@ -105,7 +105,7 @@ describe("buildGenerationPrompt", () => {
       tone: "n-importe-quoi",
     })
 
-    expect(prompt).toContain("cool, fun, dynamic")
+    expect(prompt).toContain("pub-quiz host")
   })
 
   it("impose la durée choisie, ou la laisse libre en mode auto", () => {
@@ -132,6 +132,13 @@ describe("buildGenerationPrompt", () => {
 
     expect(withExplanations).toContain(`"answerReveal": { "enabled": true`)
     expect(without).toContain(`Do NOT include an "answerReveal" field`)
+  })
+
+  it("impose les règles de rédaction et une recherche d'image par question", () => {
+    const prompt = buildGenerationPrompt(baseParams)
+
+    expect(prompt).toContain("NATIVE speaker")
+    expect(prompt).toContain(`"imageQuery"`)
   })
 
   it("force la langue demandée et n'ajoute les consignes que si elles existent", () => {

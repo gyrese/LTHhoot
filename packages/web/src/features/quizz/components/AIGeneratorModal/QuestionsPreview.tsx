@@ -137,6 +137,15 @@ const QuestionsPreview = ({
                   {isSelected && <Check className="size-3" strokeWidth={3} />}
                 </span>
 
+                {question.background?.type === "image" && (
+                  <img
+                    src={question.background.value}
+                    alt=""
+                    loading="lazy"
+                    className="border-border size-14 shrink-0 rounded-md border object-cover"
+                  />
+                )}
+
                 <span className="min-w-0 flex-1">
                   <span className="mb-1.5 flex flex-wrap items-center gap-1.5">
                     <span className="bg-border/40 text-ink-muted rounded px-1.5 py-0.5 text-[10px] font-semibold">

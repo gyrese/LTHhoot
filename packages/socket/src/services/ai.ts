@@ -2,6 +2,15 @@ import { GoogleGenAI } from "@google/genai"
 import { questionValidator } from "@rahoot/common/validators/quizz"
 import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
 import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
+import {
+  isUnsplashConfigured,
+  searchUnsplash,
+} from "@rahoot/socket/services/unsplash"
+
+// Surchargeable par variable d'env pour tester un modèle plus capable
+// sans redéployer de code. 3.8-flash : nettement meilleur que 2.5-flash sur la
+// justesse des faits et l'intérêt des questions, pour une latence similaire.
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash"
 
 export class AIService {
   private static genAI: GoogleGenAI | null = null
@@ -54,7 +63,52 @@ export class AIService {
   }
 
   /**
-   * Generates quiz questions using Gemini 2.5 Flash.
+   * Illustre chaque question avec une photo Unsplash en fond de slide, à partir
+   * des mots-clés proposés par le modèle. Best-effort : sans clé Unsplash, ou si
+   * une recherche échoue / ne renvoie rien, la question reste sans image.
+   */
+  private static async attachImages(
+    questions: Question[],
+    imageQueries: (string | undefined)[],
+  ): Promise<Question[]> {
+    if (!isUnsplashConfigured()) {
+      return questions
+    }
+
+    const usedUrls = new Set<string>()
+    const candidates = await Promise.all(
+      imageQueries.map(async (query) => {
+        if (!query) {
+          return []
+        }
+
+        try {
+          return await searchUnsplash(query, { perPage: 5, landscape: true })
+        } catch (error) {
+          console.warn(`Unsplash search failed for "${query}":`, error)
+
+          return []
+        }
+      }),
+    )
+
+    return questions.map((question, index) => {
+      // Premier résultat pas encore utilisé : deux questions proches ne
+      // partagent pas la même photo.
+      const photo = candidates[index].find(({ url }) => !usedUrls.has(url))
+
+      if (!photo) {
+        return question
+      }
+
+      usedUrls.add(photo.url)
+
+      return { ...question, background: { type: "image", value: photo.url } }
+    })
+  }
+
+  /**
+   * Génère des questions de quiz via Gemini, illustrées par Unsplash.
    */
   public static async generateQuestions(params: {
     prompt: string
@@ -81,7 +135,7 @@ export class AIService {
 
     try {
       const response = await client.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: TEXT_MODEL,
         contents: systemInstruction,
         config: {
           responseMimeType: "application/json",
@@ -110,7 +164,21 @@ export class AIService {
 
       // Validate each question using the common Zod validator
       const validatedQuestions: Question[] = []
+      // Le validateur Zod retire les clés inconnues : on garde l'imageQuery
+      // de côté, alignée sur les questions retenues.
+      const imageQueries: (string | undefined)[] = []
       for (const rawQuestion of rawQuestions) {
+        // Le modèle glisse parfois un type non demandé : on l'écarte plutôt
+        // que d'imposer à l'auteur une question qu'il n'a pas choisie.
+        const rawType = (rawQuestion as { type?: unknown } | null)?.type
+
+        if (
+          typeof rawType !== "string" ||
+          !params.questionTypes.includes(rawType)
+        ) {
+          continue
+        }
+
         // Run Zod validator
         const parseResult = questionValidator.safeParse(
           this.normalizeTimings(rawQuestion, params.time),
@@ -118,6 +186,13 @@ export class AIService {
 
         if (parseResult.success) {
           validatedQuestions.push(parseResult.data as Question)
+          const imageQuery = (rawQuestion as { imageQuery?: unknown })
+            ?.imageQuery
+          imageQueries.push(
+            typeof imageQuery === "string" && imageQuery.trim()
+              ? imageQuery.trim()
+              : undefined,
+          )
         } else {
           console.warn(
             "AI generated an invalid question object:",
@@ -135,7 +210,7 @@ export class AIService {
       }
 
       return {
-        questions: validatedQuestions,
+        questions: await this.attachImages(validatedQuestions, imageQueries),
         description: typeof description === "string" ? description.trim() : "",
       }
     } catch (error) {
@@ -150,7 +225,7 @@ export class AIService {
   public static async rephraseQuestion(currentText: string): Promise<string> {
     const client = this.getClient()
 
-    const systemInstruction = `You are a fun, cool quiz question writer. Reformulate the following quiz question, keeping the exact same meaning and the same language, but with a fresher, more engaging phrasing.
+    const systemInstruction = `You are a professional quiz author and a native speaker of the question's language. Rewrite the following quiz question so it reads naturally, like on a TV quiz show: same meaning, same language, same answer, shorter or equally short. No "Lequel des éléments suivants", no "Selon vous", no forced jokes or preambles.
 
 Question to reformulate: "${currentText}"
 
@@ -158,7 +233,7 @@ Output MUST be a valid JSON object: { "rephrased": "the reformulated question te
 
     try {
       const response = await client.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: TEXT_MODEL,
         contents: systemInstruction,
         config: {
           responseMimeType: "application/json",
@@ -205,7 +280,7 @@ Output MUST be a valid JSON object: { "wrongAnswers": ["wrong 1", "wrong 2", "wr
 
     try {
       const response = await client.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: TEXT_MODEL,
         contents: systemInstruction,
         config: {
           responseMimeType: "application/json",
@@ -258,7 +333,7 @@ Output MUST be a valid JSON object: { "explanation": "the explanation text" }`
 
     try {
       const response = await client.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: TEXT_MODEL,
         contents: systemInstruction,
         config: {
           responseMimeType: "application/json",
