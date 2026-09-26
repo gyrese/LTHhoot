@@ -12,12 +12,7 @@ import AlertDialog from "@rahoot/web/components/AlertDialog"
 import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import LazySlidePreview from "@rahoot/web/features/quizz/components/LazySlidePreview"
 import clsx from "clsx"
-import {
-  Presentation,
-  Trash2,
-  Copy,
-  AlertTriangle,
-} from "lucide-react"
+import { Presentation, Trash2, Copy, AlertTriangle } from "lucide-react"
 import { type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
