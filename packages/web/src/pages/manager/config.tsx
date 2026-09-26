@@ -30,6 +30,14 @@ const ManagerConfigPage = () => {
   }, [isConnected, config, socket])
 
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
+    // Session télécommande (PIN) : pas de dashboard, la page de connexion
+    // affiche le lien vers la télécommande.
+    if (data.role === "remote") {
+      navigate({ to: "/manager" })
+
+      return
+    }
+
     setConfig(data)
   })
 

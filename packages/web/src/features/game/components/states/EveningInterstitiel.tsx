@@ -20,6 +20,8 @@ type LeaderboardEntry = {
   username: string
   avatar?: string
   points: number
+  // Points gagnés sur le quiz qui vient de se terminer (delta « +320 pts »).
+  quizPoints?: number
   rank: number
 }
 
@@ -48,6 +50,28 @@ const rankMedal = (rank: number) => {
   }
 
   return `#${rank}`
+}
+
+// Delta du quiz qui vient de se terminer, à côté du cumul de la soirée.
+const QuizPointsDelta = ({ points }: { points?: number }) => {
+  const { t } = useTranslation()
+
+  if (!points) {
+    return null
+  }
+
+  return (
+    <span
+      className={clsx(
+        "text-xs font-bold tabular-nums",
+        points > 0 ? "text-green-400" : "text-red-400",
+      )}
+    >
+      {t("game:evening.quizPoints", {
+        points: `${points > 0 ? "+" : ""}${points.toLocaleString()}`,
+      })}
+    </span>
+  )
 }
 
 const EveningInterstitiel = ({
@@ -241,6 +265,7 @@ const EveningInterstitiel = ({
                         </span>
                       )}
                     </p>
+                    <QuizPointsDelta points={entry.quizPoints} />
                     <span
                       className={clsx(
                         "text-sm font-black tabular-nums",
@@ -276,6 +301,7 @@ const EveningInterstitiel = ({
                   <p className="flex-1 truncate text-sm font-bold text-orange-300">
                     {myEntry.username}
                   </p>
+                  <QuizPointsDelta points={myEntry.quizPoints} />
                   <span className="text-sm font-black text-white tabular-nums">
                     {myEntry.points.toLocaleString()}
                   </span>

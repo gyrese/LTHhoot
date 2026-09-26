@@ -136,7 +136,9 @@
     "waitingHost": "Warten auf das nächste Quiz…",
     "continue": "Weiter",
     "winner": "Sieger des Abends!",
-    "finale": "Großes Finale des Abends"
+    "finale": "Großes Finale des Abends",
+    "quizPoints": "{{points}} Pkt.",
+    "progressShort": "Quiz {{current}}/{{total}}"
   },
   "shop": {
     "open": "Shop öffnen",
@@ -159,7 +161,8 @@
   "a11y": {
     "answerOption": "Antwort {{number}} ({{shape}}): {{text}}",
     "timeLeft_one": "Noch {{count}} Sekunde",
-    "timeLeft_other": "Noch {{count}} Sekunden"
+    "timeLeft_other": "Noch {{count}} Sekunden",
+    "timeLeft_many": "Noch {{count}} Sekunden"
   },
   "podium": {
     "finalRanking": "Und jetzt die Endwertung...",
@@ -173,13 +176,17 @@
     "chooseTarget_one": "Wähle ein Ziel",
     "chooseTarget_other": "Wähle {{count}} Ziele",
     "noTarget_one": "Gerade kein Gegner als Ziel verfügbar.",
-    "noTarget_other": "Für dieses Power-up brauchst du mindestens {{count}} Gegner als Ziel."
+    "noTarget_other": "Für dieses Power-up brauchst du mindestens {{count}} Gegner als Ziel.",
+    "chooseTarget_many": "Wähle {{count}} Ziele",
+    "noTarget_many": "Für dieses Power-up brauchst du mindestens {{count}} Gegner als Ziel."
   },
   "powerupToast": {
     "someone": "Ein Spieler",
     "on": "Auf {{names}}",
     "mirroredOn": "Zurückgeworfen auf {{names}}",
-    "self": "Persönlicher Effekt"
+    "self": "Persönlicher Effekt",
+    "attackBlocked": "Dein Angriff wurde von einem Schild geblockt",
+    "shieldProtected": "Dein Schild hat dich beschützt"
   },
   "powerupBar": {
     "new": "NEU!",
@@ -261,5 +268,58 @@
     }
   },
   "playersConnected_one": "{{count}} Spieler verbunden",
-  "playersConnected_other": "{{count}} Spieler verbunden"
+  "playersConnected_other": "{{count}} Spieler verbunden",
+  "answerFrozen": "Du bist eingefroren ❄ — antworte, sobald es vorbei ist",
+  "answerInvalid": "Antwort abgelehnt — versuche es erneut",
+  "answerRejected": "Zu spät: Antwort nicht gewertet",
+  "solo": {
+    "error": "Ein Fehler ist aufgetreten, bitte versuche es erneut.",
+    "shareText": "Ich habe {{points}} Punkte im Quiz „{{subject}}“ erzielt! Versuch dein Glück:",
+    "linkCopied": "Quiz-Link in die Zwischenablage kopiert!",
+    "enterPseudo": "Bitte gib einen Spielernamen ein",
+    "confirmHuman": "Bitte bestätige, dass du kein Roboter bist",
+    "notARobot": "Ich bin kein Roboter",
+    "loading": "Quiz wird geladen...",
+    "pseudoLabel": "Dein Spielername *",
+    "pseudoPlaceholder": "z. B. QuizMaster99",
+    "contactLabel": "Social-Media-Name / E-Mail (optional)",
+    "contactPlaceholder": "z. B. @dein_insta / email@domain.de",
+    "contactHint": "Erforderlich, um deinen Preis zu erhalten, falls du bei der Verlosung gewinnst!",
+    "start": "Spiel starten",
+    "rulesTitle": "Spielregeln",
+    "startingSoon": "Das Quiz beginnt gleich…",
+    "answerPlaceholder": "Gib hier deine Antwort ein...",
+    "submit": "Bestätigen",
+    "expectedAnswerLabel": "Erwartete Antwort:",
+    "or": "oder",
+    "slider": "Schieberegler",
+    "year": "Jahr",
+    "tolerance": "Toleranz: ±{{value}}",
+    "decrease": "Verringern",
+    "increase": "Erhöhen",
+    "exactValue": "Genauer Wert ({{value}})!",
+    "inTarget": "Im Ziel! Ziel: {{value}} (±{{tolerance}})",
+    "yourChoice": "Deine Wahl: {{value}}",
+    "expectedValue": "Erwartete Antwort: {{value}}",
+    "submitAnswer": "Antwort bestätigen",
+    "notPlayable": "Dieser Fragetyp ist solo noch nicht spielbar.",
+    "skip": "Überspringen",
+    "questionCounter": "Frage {{current}} / {{total}}",
+    "next": "Weiter",
+    "finish": "Beenden",
+    "correct": "RICHTIG!",
+    "wrong": "FALSCHE ANTWORT!",
+    "autoNext": "Es geht automatisch weiter...",
+    "nextSoon": "Nächste in 2 s...",
+    "finished": "Spiel beendet!",
+    "congrats": "Bravo <name>{{name}}</name>! Deine Antworten wurden gespeichert.",
+    "finalScore": "Endpunktzahl",
+    "provisionalRank": "Vorläufiger Rang",
+    "correctAnswers": "Richtige Antworten",
+    "drawTitle": "Verlosung der Woche",
+    "drawText": "Die Verlosung findet am Ende der Woche unter den <top>Top {{count}} der besten Ergebnisse</top> statt. Wenn du ausgewählt wirst, kontaktiert dich der Administrator direkt, um dir deinen Preis zu übergeben, und das offizielle Gewinnerbild wird in unseren Netzwerken veröffentlicht!",
+    "share": "Freunde herausfordern / Quiz teilen",
+    "playAgain": "Noch einmal spielen"
+  },
+  "playersConnected_many": "{{count}} Spieler verbunden"
 }

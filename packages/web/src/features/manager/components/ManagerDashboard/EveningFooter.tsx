@@ -1,5 +1,9 @@
 import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
 import type { QuizzMeta } from "@rahoot/common/types/game"
+import {
+  formatQuizzStats,
+  sumQuizzStats,
+} from "@rahoot/web/features/manager/utils/quizzStats"
 import FastModeToggle from "./FastModeToggle"
 import { Loader2, Play, X, PartyPopper, Sparkles, TimerOff } from "lucide-react"
 import clsx from "clsx"
@@ -44,9 +48,9 @@ const EveningFooter = ({
   const { t } = useTranslation()
   const canStart = eveningQuizIds.length >= 2 && !isStarting && isConnected
 
-  const totalQuestions = quizzList
-    .filter((q) => eveningQuizIds.includes(q.id))
-    .reduce((acc, _q) => acc, 0)
+  const eveningStats = sumQuizzStats(
+    quizzList.filter((q) => eveningQuizIds.includes(q.id)),
+  )
 
   return (
     // Deux lignes sous ~1100 px (sélection, puis réglages + lancement) : sur
@@ -108,8 +112,10 @@ const EveningFooter = ({
 
       {/* Infos + CTA */}
       <div className="flex flex-wrap items-center justify-end gap-2 min-[1100px]:shrink-0 min-[1100px]:flex-nowrap min-[1100px]:gap-3">
-        {totalQuestions > 0 && (
-          <p className="text-xs text-white/60">{eveningQuizIds.length} quiz</p>
+        {eveningStats.questionCount > 0 && (
+          <p className="text-xs whitespace-nowrap text-white/60 tabular-nums">
+            {formatQuizzStats(t, eveningStats)}
+          </p>
         )}
 
         {/* Mode sans rapidité */}

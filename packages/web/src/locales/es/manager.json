@@ -55,7 +55,11 @@
     "importTimeout": "El servidor no ha confirmado la importación. Comprueba la conexión e inténtalo de nuevo.",
     "invalidJson": "Archivo JSON no válido",
     "selectInEvening": "{{name}} — n.º {{order}} de la fiesta",
-    "powerUpsToggle": "Activar o desactivar los power-ups para este quiz"
+    "powerUpsToggle": "Activar o desactivar los power-ups para este quiz",
+    "estimatedDuration": "~{{minutes}} min",
+    "questionCount_one": "{{count}} pregunta",
+    "questionCount_many": "{{count}} preguntas",
+    "questionCount_other": "{{count}} preguntas"
   },
   "result": {
     "delete": "Eliminar resultado",
@@ -269,5 +273,11 @@
       "points": "{{points}} PTS",
       "thanks": "¡Bravo a todos los participantes!"
     }
+  },
+  "remoteOnly": {
+    "title": "Este código es solo para el mando a distancia",
+    "hint": "Permite controlar una partida en curso, no acceder al panel.",
+    "open": "Abrir el mando a distancia",
+    "useAnotherCode": "Usar otra contraseña"
   }
 }

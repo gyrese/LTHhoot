@@ -1,5 +1,6 @@
 import { Check, ShieldCheck } from "lucide-react"
 import React, { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type Props = {
   checked: boolean
@@ -21,6 +22,7 @@ const NotARobotCheck: React.FC<Props> = ({
   honeypot,
   onHoneypotChange,
 }) => {
+  const { t } = useTranslation()
   const [verifying, setVerifying] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -84,7 +86,7 @@ const NotARobotCheck: React.FC<Props> = ({
         </span>
 
         <span className="flex-1 text-sm font-semibold text-white">
-          Je ne suis pas un robot
+          {t("game:solo.notARobot")}
         </span>
 
         <ShieldCheck

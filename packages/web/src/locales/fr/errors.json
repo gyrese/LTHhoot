@@ -14,7 +14,9 @@
     "noPlayersConnected": "Aucun joueur connecté",
     "noQuestions": "Le quizz ne contient aucune question",
     "notFound": "Partie introuvable",
-    "playerAlreadyConnected": "Ce joueur est déjà connecté"
+    "playerAlreadyConnected": "Ce joueur est déjà connecté",
+    "invalidPayload": "Requête invalide",
+    "tooManyAttempts": "Trop de tentatives. Réessayez dans un instant."
   },
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",
@@ -34,7 +36,8 @@
     "inventoryFull": "Inventaire plein (3 maximum)",
     "disabled": "La boutique n'est pas active pour cette partie",
     "itemDisabled": "Ce power-up a été désactivé pour cette partie",
-    "failed": "L'achat a échoué. Réessaie."
+    "failed": "L'achat a échoué. Réessaie.",
+    "unknownItem": "Article inconnu"
   },
   "quizz": {
     "answerEmpty": "Une réponse ne peut pas être vide",
@@ -52,6 +55,31 @@
     "tooFewCorrectAnswers": "Au moins une réponse correcte est requise",
     "tooFewImages": "Au moins une image est requise",
     "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses",
-    "exportFailed": "L'exportation a échoué"
+    "exportFailed": "L'exportation a échoué",
+    "aiGenerationFailed": "La génération par IA a échoué. Réessayez.",
+    "tooManyAttempts": "Trop de parties lancées. Réessayez dans quelques minutes.",
+    "invalidSubmission": "Participation refusée.",
+    "sessionExpired": "Session expirée, relancez une partie.",
+    "questionInProgress": "Une question est déjà en cours",
+    "questionNotServed": "Cette question n'a pas encore été posée",
+    "alreadyAnswered": "Tu as déjà répondu à cette question",
+    "submissionFailed": "L'enregistrement de ta participation a échoué. Réessaie."
+  },
+  "failedToReadConfig": "Impossible de lire la configuration",
+  "powerup": {
+    "notFound": "Ce power-up n'est plus dans ton inventaire",
+    "selfTarget": "Tu ne peux pas te cibler toi-même",
+    "invalidTarget": "Cible invalide",
+    "noTarget": "Aucune cible disponible pour ce power-up",
+    "wrongPhase": "Impossible d'utiliser un power-up maintenant",
+    "failed": "Le power-up n'a pas pu être utilisé. Réessaie."
+  },
+  "evening": {
+    "quizNotFound": "Un des quiz de la soirée est introuvable",
+    "notEnoughQuizzes": "Sélectionne au moins 2 quiz pour une soirée"
+  },
+  "results": {
+    "fetchFailed": "Impossible de charger les résultats",
+    "deleteFailed": "La suppression des résultats a échoué"
   }
 }

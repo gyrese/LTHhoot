@@ -16,6 +16,8 @@ export type EveningInterlude = {
     id: string
     username: string
     points: number
+    // Points gagnés sur le quiz qui vient de se terminer (« +320 pts »).
+    quizPoints: number
     rank: number
   }[]
 } | null

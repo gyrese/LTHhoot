@@ -49,7 +49,7 @@ const HEADER_ICON_BUTTON =
   "flex min-h-11 min-w-11 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
 
 const ManagerDashboard = ({ data }: Props) => {
-  const { reset } = useManagerStore()
+  const { reset, setEveningProgress } = useManagerStore()
   const { socket, isConnected } = useSocket()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -167,6 +167,7 @@ const ManagerDashboard = ({ data }: Props) => {
 
     setLaunchModalOpen(false)
     beginStarting()
+    setEveningProgress(null)
 
     socket?.emit(EVENTS.GAME.CREATE, {
       quizId: selectedQuizz,
@@ -200,6 +201,7 @@ const ManagerDashboard = ({ data }: Props) => {
     }
 
     beginStarting()
+    setEveningProgress({ current: 1, total: eveningQuizIds.length })
     socket?.emit(EVENTS.EVENING.START, {
       quizIds: eveningQuizIds,
       powerUpsEnabled,

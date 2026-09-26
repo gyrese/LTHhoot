@@ -1,4 +1,4 @@
-import type { Player } from "@rahoot/common/types/game"
+import type { PublicPlayer } from "@rahoot/common/types/game"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
 import {
@@ -225,7 +225,7 @@ export function GamePanel({
   eveningInterlude: EveningInterlude
   status: GameStatus
   answerCount: number
-  players: Player[]
+  players: PublicPlayer[]
   onValidateOpenAnswer: (_text: string) => void
   onInvalidateOpenAnswer: (_text: string) => void
   onPauseGame: () => void
@@ -571,7 +571,7 @@ function RoomPanel({
   isEveningMode,
 }: {
   data: Record<string, unknown>
-  players: Player[]
+  players: PublicPlayer[]
   onPauseGame: () => void
   onOpenEventDrawer: () => void
   isEveningMode: boolean
@@ -816,7 +816,7 @@ function SelectAnswerPanel({
 }: {
   data: Record<string, unknown>
   answerCount: number
-  players: Player[]
+  players: PublicPlayer[]
   timer: number | null
   maxTime: number
 }) {
@@ -1425,7 +1425,7 @@ export function PlayersPanel({
   answerCount,
   setKickTargetId,
 }: {
-  players: Player[]
+  players: PublicPlayer[]
   statusName: Status | undefined
   answerCount: number
   setKickTargetId: (_id: string | null) => void

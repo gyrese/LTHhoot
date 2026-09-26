@@ -55,7 +55,11 @@
     "importing": "Importation en cours…",
     "importTimeout": "Le serveur n'a pas confirmé l'importation. Vérifiez la connexion puis réessayez.",
     "invalidJson": "Fichier JSON invalide",
-    "selectInEvening": "{{name}} — n° {{order}} de la soirée"
+    "selectInEvening": "{{name}} — n° {{order}} de la soirée",
+    "estimatedDuration": "~{{minutes}} min",
+    "questionCount_one": "{{count}} question",
+    "questionCount_many": "{{count}} questions",
+    "questionCount_other": "{{count}} questions"
   },
   "evening": {
     "enable": "Activer le mode soirée",
@@ -269,5 +273,11 @@
       "points": "{{points}} PTS",
       "thanks": "Bravo à tous les participants !"
     }
+  },
+  "remoteOnly": {
+    "title": "Ce code est réservé à la télécommande",
+    "hint": "Il permet de piloter une partie en cours, pas d'accéder au tableau de bord.",
+    "open": "Ouvrir la télécommande",
+    "useAnotherCode": "Utiliser un autre mot de passe"
   }
 }

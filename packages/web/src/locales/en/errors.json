@@ -13,7 +13,10 @@
     "noPlayersConnected": "No players connected",
     "notFound": "Game not found",
     "playerAlreadyConnected": "Player already connected",
-    "demoOnly": "This test game can only be started in demo mode"
+    "demoOnly": "This test game can only be started in demo mode",
+    "noQuestions": "The quiz has no questions",
+    "invalidPayload": "Invalid request",
+    "tooManyAttempts": "Too many attempts. Try again in a moment."
   },
   "manager": {
     "failedToReadConfig": "Failed to read game config",
@@ -33,7 +36,8 @@
     "inventoryFull": "Inventory full (3 max)",
     "disabled": "The shop is not enabled for this game",
     "itemDisabled": "This power-up is disabled for this game",
-    "failed": "Purchase failed. Try again."
+    "failed": "Purchase failed. Try again.",
+    "unknownItem": "Unknown item"
   },
   "quizz": {
     "answerEmpty": "An answer cannot be empty",
@@ -50,6 +54,32 @@
     "tooFewCorrectAnswers": "At least one correct answer is required",
     "tooFewImages": "At least one image is required",
     "tooManyAnswers": "A question cannot have more than 4 answers",
-    "guestReadonly": "Guest quizzes are read-only here"
+    "guestReadonly": "Guest quizzes are read-only here",
+    "exportFailed": "Export failed",
+    "aiGenerationFailed": "AI generation failed. Try again.",
+    "tooManyAttempts": "Too many games started. Try again in a few minutes.",
+    "invalidSubmission": "Submission rejected.",
+    "sessionExpired": "Session expired, start a new game.",
+    "questionInProgress": "A question is already in progress",
+    "questionNotServed": "This question has not been served yet",
+    "alreadyAnswered": "You have already answered this question",
+    "submissionFailed": "Saving your participation failed. Try again."
+  },
+  "failedToReadConfig": "Unable to read the configuration",
+  "powerup": {
+    "notFound": "This power-up is no longer in your inventory",
+    "selfTarget": "You can't target yourself",
+    "invalidTarget": "Invalid target",
+    "noTarget": "No target available for this power-up",
+    "wrongPhase": "You can't use a power-up right now",
+    "failed": "The power-up could not be used. Try again."
+  },
+  "evening": {
+    "quizNotFound": "One of the evening's quizzes could not be found",
+    "notEnoughQuizzes": "Select at least 2 quizzes for an evening"
+  },
+  "results": {
+    "fetchFailed": "Unable to load the results",
+    "deleteFailed": "Deleting the results failed"
   }
 }

@@ -59,6 +59,18 @@ export function EveningPanel({
               <span className="flex-1 truncate text-sm font-semibold text-white">
                 {player.username}
               </span>
+              {player.quizPoints !== 0 && (
+                <span
+                  className={clsx(
+                    "text-xs font-bold tabular-nums",
+                    player.quizPoints > 0 ? "text-green-400" : "text-red-400",
+                  )}
+                >
+                  {t("game:evening.quizPoints", {
+                    points: `${player.quizPoints > 0 ? "+" : ""}${player.quizPoints.toLocaleString()}`,
+                  })}
+                </span>
+              )}
               <span className="text-sm font-bold text-white tabular-nums">
                 {player.points.toLocaleString()}
               </span>

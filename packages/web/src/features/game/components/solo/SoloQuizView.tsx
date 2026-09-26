@@ -40,6 +40,7 @@ import {
 } from "lucide-react"
 import useScreenSize from "@rahoot/web/hooks/useScreenSize"
 import React, { useEffect, useRef, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import Confetti from "react-confetti"
 import toast from "react-hot-toast"
 import useSound from "use-sound"
@@ -89,20 +90,14 @@ const initialNumber = (question: SoloPublicQuestion | null): number => {
   return 0
 }
 
-// Libellé d'une erreur serveur (clé i18n errors:*) pour la page publique.
-const SOLO_ERRORS: Record<string, string> = {
-  "errors:quizz.tooManyAttempts":
-    "Trop de parties lancées. Réessayez dans quelques minutes.",
-  "errors:quizz.sessionExpired": "Session expirée, relancez une partie.",
-  "errors:quizz.notFound": "Quiz introuvable.",
-  "errors:quizz.invalidSubmission": "Participation refusée.",
-}
-
-const soloErrorMessage = (error: string) =>
-  SOLO_ERRORS[error] ?? "Une erreur est survenue, réessayez."
-
 export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const { socket, isConnected } = useSocket()
+  const { t } = useTranslation()
+
+  // Libellé d'une erreur serveur (clé i18n errors:*) pour la page publique ;
+  // une clé inconnue retombe sur un message générique.
+  const soloErrorMessage = (error: string) =>
+    t(error, { defaultValue: t("game:solo.error") })
   const [quizz, setQuizz] = useState<SoloPublicQuizz | null>(null)
   const [step, setStep] = useState<"START" | "RULES" | "QUESTION" | "FINISHED">(
     "START",
@@ -165,7 +160,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       return
     }
 
-    const shareText = `J'ai obtenu ${resultSummary.totalPoints.toLocaleString()} pts sur le quiz "${quizz.subject}" ! Viens tenter ta chance :`
+    const shareText = t("game:solo.shareText", {
+      points: resultSummary.totalPoints.toLocaleString(),
+      subject: quizz.subject,
+    })
     const shareUrl = window.location.href
 
     if (navigator.share) {
@@ -182,7 +180,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     }
 
     navigator.clipboard.writeText(shareUrl)
-    toast.success("Lien du quiz copié dans le presse-papier !")
+    toast.success(t("game:solo.linkCopied"))
   }
 
   const resetQuestionState = () => {
@@ -405,13 +403,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     e.preventDefault()
 
     if (!playerName.trim()) {
-      toast.error("Veuillez entrer un pseudo")
+      toast.error(t("game:solo.enterPseudo"))
 
       return
     }
 
     if (!isHumanChecked) {
-      toast.error("Merci de confirmer que vous n'êtes pas un robot")
+      toast.error(t("game:solo.confirmHuman"))
 
       return
     }
@@ -502,7 +500,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
         <div className="flex flex-col items-center gap-3">
           <div className="size-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
           <p className="text-lg font-medium text-gray-400">
-            Chargement du quiz...
+            {t("game:solo.loading")}
           </p>
         </div>
       </div>
@@ -627,14 +625,14 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             >
               <div>
                 <label className="mb-1.5 block text-xs font-extrabold tracking-wider text-gray-200 uppercase">
-                  Votre Pseudo *
+                  {t("game:solo.pseudoLabel")}
                 </label>
                 <div className="relative">
                   <User className="absolute top-3.5 left-3.5 size-5 text-gray-400" />
                   <input
                     type="text"
                     required
-                    placeholder="Ex: QuizMaster99"
+                    placeholder={t("game:solo.pseudoPlaceholder")}
                     maxLength={30}
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
@@ -645,13 +643,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
               <div>
                 <label className="mb-1.5 block text-xs font-extrabold tracking-wider text-gray-200 uppercase">
-                  Identifiant Réseau / Email (Optionnel)
+                  {t("game:solo.contactLabel")}
                 </label>
                 <div className="relative">
                   <AtSign className="absolute top-3.5 left-3.5 size-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Ex: @votre_insta / email@domaine.com"
+                    placeholder={t("game:solo.contactPlaceholder")}
                     maxLength={100}
                     value={socialContact}
                     onChange={(e) => setSocialContact(e.target.value)}
@@ -659,8 +657,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   />
                 </div>
                 <p className="mt-1.5 text-left text-[11px] font-medium text-gray-300">
-                  Requis si vous gagnez le tirage au sort pour réclamer votre
-                  lot !
+                  {t("game:solo.contactHint")}
                 </p>
               </div>
 
@@ -676,7 +673,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 disabled={!isHumanChecked || isStarting}
                 className="group relative mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99] disabled:cursor-not-allowed disabled:border-white/10 disabled:from-slate-700 disabled:to-slate-700 disabled:text-gray-400 disabled:shadow-none disabled:active:scale-100"
               >
-                <span>Démarrer la partie</span>
+                <span>{t("game:solo.start")}</span>
                 <ArrowRight className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
               </button>
             </form>
@@ -695,7 +692,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             />
 
             <span className="mb-3 rounded-full border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs font-bold tracking-widest text-orange-300 uppercase">
-              Règles du jeu
+              {t("game:solo.rulesTitle")}
             </span>
 
             <p className="text-base leading-relaxed font-medium whitespace-pre-line text-white">
@@ -707,7 +704,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 {rulesCountdown}
               </span>
               <span className="text-xs text-gray-400">
-                Le quiz démarre dans un instant…
+                {t("game:solo.startingSoon")}
               </span>
             </div>
           </div>
@@ -798,7 +795,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   correct={answerState(0)}
                   className="min-h-24 cursor-pointer bg-red-600 text-xl font-black text-white shadow-xl"
                 >
-                  Faux
+                  {t("game:false")}
                 </AnswerButton>
 
                 <AnswerButton
@@ -809,7 +806,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   correct={answerState(1)}
                   className="min-h-24 cursor-pointer bg-blue-600 text-xl font-black text-white shadow-xl"
                 >
-                  Vrai
+                  {t("game:true")}
                 </AnswerButton>
               </div>
             )}
@@ -873,7 +870,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 <input
                   type="text"
                   disabled={hasSubmittedAnswer}
-                  placeholder="Tapez votre réponse ici..."
+                  placeholder={t("game:solo.answerPlaceholder")}
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   className="flex-1 rounded-2xl border border-white/20 bg-black/70 px-5 py-4 text-lg font-bold text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:outline-none"
@@ -883,7 +880,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   disabled={hasSubmittedAnswer || !textInput.trim()}
                   className="flex cursor-pointer items-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg hover:bg-orange-600 disabled:opacity-50"
                 >
-                  <span>Valider</span>
+                  <span>{t("game:solo.submit")}</span>
                   <Send className="size-5" />
                 </button>
               </form>
@@ -894,8 +891,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               isCorrectAnswer === false &&
               solution?.correctAnswers && (
                 <div className="mx-auto mb-3 max-w-2xl rounded-xl border border-white/10 bg-black/60 p-2.5 text-center text-xs font-semibold text-emerald-400 sm:text-sm">
-                  Réponse attendue :{" "}
-                  <strong>{solution.correctAnswers.join(" ou ")}</strong>
+                  {t("game:solo.expectedAnswerLabel")}{" "}
+                  <strong>
+                    {solution.correctAnswers.join(` ${t("game:solo.or")} `)}
+                  </strong>
                 </div>
               )}
 
@@ -920,11 +919,11 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   <div className="mx-auto mb-3 w-full max-w-2xl rounded-3xl border border-white/20 bg-black/70 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-xs font-black tracking-wider text-orange-400 uppercase">
-                        {isSlider ? "Curseur" : "Année"}
+                        {isSlider ? t("game:solo.slider") : t("game:solo.year")}
                       </span>
                       {tol > 0 && (
                         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
-                          Tolérance : ±{tol}
+                          {t("game:solo.tolerance", { value: tol })}
                         </span>
                       )}
                     </div>
@@ -947,7 +946,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                           setNumberInput((prev) => Math.max(min, prev - 1))
                         }
                         className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-                        aria-label="Diminuer"
+                        aria-label={t("game:solo.decrease")}
                       >
                         <Minus className="size-5" />
                       </button>
@@ -978,7 +977,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                           setNumberInput((prev) => Math.min(max, prev + 1))
                         }
                         className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-md transition-all hover:bg-white/20 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-                        aria-label="Augmenter"
+                        aria-label={t("game:solo.increase")}
                       >
                         <Plus className="size-5" />
                       </button>
@@ -993,20 +992,28 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                               <CheckCircle2 className="size-5" />
                               <span>
                                 {target === numberInput
-                                  ? `Valeur exacte (${target}) !`
-                                  : `Dans la cible ! Cible : ${target} (±${tol})`}
+                                  ? t("game:solo.exactValue", { value: target })
+                                  : t("game:solo.inTarget", {
+                                      value: target,
+                                      tolerance: tol,
+                                    })}
                               </span>
                             </div>
                           ) : (
                             <div className="flex flex-col gap-1 text-xs sm:text-sm">
                               {selectedAnswer !== null && (
                                 <span className="font-bold text-rose-400">
-                                  Votre choix : {selectedAnswer}
+                                  {t("game:solo.yourChoice", {
+                                    value: selectedAnswer,
+                                  })}
                                 </span>
                               )}
                               <span className="font-extrabold text-emerald-400">
-                                Réponse attendue : {target}{" "}
-                                {tol > 0 && `(Tolérance : ±${tol})`}
+                                {t("game:solo.expectedValue", {
+                                  value: target,
+                                })}{" "}
+                                {tol > 0 &&
+                                  `(${t("game:solo.tolerance", { value: tol })})`}
                               </span>
                             </div>
                           )}
@@ -1018,7 +1025,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                         onClick={() => handleNumberSubmit(numberInput)}
                         className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
                       >
-                        <span>Valider ma réponse</span>
+                        <span>{t("game:solo.submitAnswer")}</span>
                         <Send className="size-5 transition-transform duration-200 group-hover:translate-x-1" />
                       </button>
                     )}
@@ -1031,13 +1038,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               currentQuestion.type === "drop_pin") &&
               !hasSubmittedAnswer && (
                 <div className="mx-auto mb-3 max-w-2xl rounded-xl border border-white/10 bg-black/60 p-3 text-center text-sm font-semibold text-gray-300">
-                  Ce type de question n'est pas encore jouable en solo.
+                  {t("game:solo.notPlayable")}
                   <button
                     type="button"
                     onClick={() => submitAnswer({})}
                     className="ml-3 min-h-[44px] cursor-pointer rounded-xl bg-white/10 px-4 font-bold text-white hover:bg-white/20"
                   >
-                    Passer
+                    {t("game:solo.skip")}
                   </button>
                 </div>
               )}
@@ -1051,7 +1058,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   className="h-10 w-auto shrink-0 object-contain drop-shadow sm:h-12"
                 />
                 <span className="rounded-full border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs font-bold tracking-widest text-orange-400 uppercase">
-                  Question {currentQuestionIdx + 1} / {totalQuestions}
+                  {t("game:solo.questionCounter", {
+                    current: currentQuestionIdx + 1,
+                    total: totalQuestions,
+                  })}
                 </span>
                 <span className="text-sm font-black text-amber-400">
                   <AnimatedPoints
@@ -1084,8 +1094,8 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   >
                     <span>
                       {currentQuestionIdx + 1 < totalQuestions
-                        ? "Suivant"
-                        : "Terminer"}
+                        ? t("game:solo.next")
+                        : t("game:solo.finish")}
                     </span>
                     <ArrowRight className="size-4" />
                   </button>
@@ -1132,13 +1142,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                       )}
                     >
                       {isCorrectAnswer
-                        ? "BONNE RÉPONSE !"
-                        : "MAUVAISE RÉPONSE !"}
+                        ? t("game:solo.correct")
+                        : t("game:solo.wrong")}
                     </h4>
                     <p className="text-xs font-medium text-gray-300">
                       {isCorrectAnswer
-                        ? "Passage automatique à la suite..."
-                        : "Suivante dans 2s..."}
+                        ? t("game:solo.autoNext")
+                        : t("game:solo.nextSoon")}
                     </p>
                   </div>
                 </div>
@@ -1187,19 +1197,23 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 className="font-black text-white"
                 style={{ fontSize: "clamp(1.35rem, 5vw, 1.875rem)" }}
               >
-                Partie Terminée !
+                {t("game:solo.finished")}
               </h2>
               <p className="mb-4 text-sm text-gray-300">
-                Bravo{" "}
-                <span className="font-bold text-orange-400">{playerName}</span>{" "}
-                ! Vos réponses ont bien été enregistrées.
+                <Trans
+                  i18nKey="game:solo.congrats"
+                  values={{ name: playerName }}
+                  components={{
+                    name: <span className="font-bold text-orange-400" />,
+                  }}
+                />
               </p>
 
               {/* Tableau de bord des résultats */}
               <div className="mb-5 grid w-full grid-cols-2 gap-3">
                 <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-slate-900/80 p-4 shadow-inner">
                   <span className="text-[11px] font-extrabold tracking-wider text-gray-400 uppercase">
-                    Score Final
+                    {t("game:solo.finalScore")}
                   </span>
                   <span className="mt-1 text-2xl font-black text-amber-400 sm:text-3xl">
                     {resultSummary.totalPoints.toLocaleString()}{" "}
@@ -1211,7 +1225,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
                 <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-slate-900/80 p-4 shadow-inner">
                   <span className="text-[11px] font-extrabold tracking-wider text-gray-400 uppercase">
-                    Rang Provisoire
+                    {t("game:solo.provisionalRank")}
                   </span>
                   <span className="mt-1 text-2xl font-black text-orange-400 sm:text-3xl">
                     #{resultSummary.rank}
@@ -1224,7 +1238,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
                 <div className="col-span-2 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
                   <span className="text-xs font-semibold text-gray-300">
-                    Bonnes réponses
+                    {t("game:solo.correctAnswers")}
                   </span>
                   <span className="text-sm font-extrabold text-emerald-400">
                     {resultSummary.correctAnswersCount} /{" "}
@@ -1246,17 +1260,15 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     <Trophy className="size-4" />
                   </div>
                   <h4 className="text-xs font-black tracking-wider text-orange-300 uppercase">
-                    Tirage au sort de la semaine
+                    {t("game:solo.drawTitle")}
                   </h4>
                 </div>
                 <p className="text-xs leading-relaxed text-gray-200">
-                  Le tirage au sort aura lieu en fin de semaine parmi le{" "}
-                  <strong className="text-amber-300">
-                    Top {SOLO_DRAW_POOL_SIZE} des meilleurs scores
-                  </strong>
-                  . Si vous êtes sélectionné(e), l'administrateur vous
-                  contactera directement pour vous remettre votre lot et le
-                  visuel officiel du gagnant sera publié sur nos réseaux !
+                  <Trans
+                    i18nKey="game:solo.drawText"
+                    values={{ count: SOLO_DRAW_POOL_SIZE }}
+                    components={{ top: <strong className="text-amber-300" /> }}
+                  />
                 </p>
               </div>
 
@@ -1267,7 +1279,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
                 >
                   <Share2 className="size-5 transition-transform group-hover:scale-110" />
-                  <span>Défier des amis / Partager le quiz</span>
+                  <span>{t("game:solo.share")}</span>
                 </button>
 
                 <button
@@ -1275,7 +1287,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                   className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-800/90 py-3 text-sm font-bold text-white transition-all hover:bg-slate-700 active:scale-[0.99]"
                 >
                   <RotateCcw className="size-4 text-gray-300" />
-                  <span>Rejouer une partie</span>
+                  <span>{t("game:solo.playAgain")}</span>
                 </button>
               </div>
             </div>

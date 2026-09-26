@@ -4,6 +4,7 @@ import {
 } from "@rahoot/common/types/fast-mode"
 import type { QuizzMeta } from "@rahoot/common/types/game"
 import Modal from "@rahoot/web/components/Modal"
+import { formatQuizzStats } from "@rahoot/web/features/manager/utils/quizzStats"
 import clsx from "clsx"
 import {
   Loader2,
@@ -117,6 +118,11 @@ const LaunchModal = ({
           <h2 className="text-2xl leading-tight font-black text-white drop-shadow-lg">
             {quizz?.publicName || quizz?.subject}
           </h2>
+          {quizz && quizz.questionCount > 0 && (
+            <p className="text-xs font-semibold text-white/70 tabular-nums">
+              {formatQuizzStats(t, quizz)}
+            </p>
+          )}
           {quizz?.description && (
             <p className="line-clamp-2 text-sm text-white/60">
               {quizz.description}

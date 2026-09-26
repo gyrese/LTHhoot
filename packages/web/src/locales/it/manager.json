@@ -55,7 +55,11 @@
     "importTimeout": "Il server non ha confermato l'importazione. Controlla la connessione e riprova.",
     "invalidJson": "File JSON non valido",
     "selectInEvening": "{{name}} — n. {{order}} della festa",
-    "powerUpsToggle": "Attiva o disattiva i power-up per questo quiz"
+    "powerUpsToggle": "Attiva o disattiva i power-up per questo quiz",
+    "estimatedDuration": "~{{minutes}} min",
+    "questionCount_one": "{{count}} domanda",
+    "questionCount_many": "{{count}} domande",
+    "questionCount_other": "{{count}} domande"
   },
   "result": {
     "delete": "Elimina risultato",
@@ -269,5 +273,11 @@
       "points": "{{points}} PT",
       "thanks": "Bravi tutti i partecipanti!"
     }
+  },
+  "remoteOnly": {
+    "title": "Questo codice è riservato al telecomando",
+    "hint": "Permette di pilotare una partita in corso, non di accedere alla dashboard.",
+    "open": "Apri il telecomando",
+    "useAnotherCode": "Usa un'altra password"
   }
 }

@@ -13,7 +13,10 @@
     "noPlayersConnected": "Keine Spieler verbunden",
     "notFound": "Spiel nicht gefunden",
     "playerAlreadyConnected": "Spieler bereits verbunden",
-    "demoOnly": "Dieses Testspiel kann nur im Demo-Modus gestartet werden"
+    "demoOnly": "Dieses Testspiel kann nur im Demo-Modus gestartet werden",
+    "noQuestions": "Das Quiz enthält keine Fragen",
+    "invalidPayload": "Ungültige Anfrage",
+    "tooManyAttempts": "Zu viele Versuche. Versuche es gleich noch einmal."
   },
   "manager": {
     "failedToReadConfig": "Spielkonfiguration konnte nicht gelesen werden",
@@ -42,6 +45,41 @@
     "tooFewCorrectAnswers": "Mindestens eine richtige Antwort ist erforderlich",
     "tooFewImages": "Mindestens ein Bild ist erforderlich",
     "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben",
-    "guestReadonly": "Gast-Quizze sind hier schreibgeschützt"
+    "guestReadonly": "Gast-Quizze sind hier schreibgeschützt",
+    "conflict": "Dieses Quiz wurde seit deinem letzten Öffnen an anderer Stelle geändert",
+    "exportFailed": "Export fehlgeschlagen",
+    "aiGenerationFailed": "Die KI-Generierung ist fehlgeschlagen. Versuche es erneut.",
+    "tooManyAttempts": "Zu viele gestartete Spiele. Versuche es in ein paar Minuten erneut.",
+    "invalidSubmission": "Teilnahme abgelehnt.",
+    "sessionExpired": "Sitzung abgelaufen, starte ein neues Spiel.",
+    "questionInProgress": "Eine Frage läuft bereits",
+    "questionNotServed": "Diese Frage wurde noch nicht gestellt",
+    "alreadyAnswered": "Du hast diese Frage bereits beantwortet",
+    "submissionFailed": "Deine Teilnahme konnte nicht gespeichert werden. Versuche es erneut."
+  },
+  "failedToReadConfig": "Konfiguration konnte nicht gelesen werden",
+  "powerup": {
+    "notFound": "Dieses Power-up ist nicht mehr in deinem Inventar",
+    "selfTarget": "Du kannst dich nicht selbst anvisieren",
+    "invalidTarget": "Ungültiges Ziel",
+    "noTarget": "Kein Ziel für dieses Power-up verfügbar",
+    "wrongPhase": "Du kannst gerade kein Power-up einsetzen",
+    "failed": "Das Power-up konnte nicht eingesetzt werden. Versuche es erneut."
+  },
+  "shop": {
+    "notEnoughCoins": "Nicht genug Münzen",
+    "inventoryFull": "Inventar voll (max. 3)",
+    "disabled": "Der Shop ist für dieses Spiel nicht aktiv",
+    "itemDisabled": "Dieses Power-up wurde für dieses Spiel deaktiviert",
+    "failed": "Kauf fehlgeschlagen. Versuche es erneut.",
+    "unknownItem": "Unbekannter Artikel"
+  },
+  "evening": {
+    "quizNotFound": "Eines der Quizze des Abends wurde nicht gefunden",
+    "notEnoughQuizzes": "Wähle mindestens 2 Quizze für einen Abend aus"
+  },
+  "results": {
+    "fetchFailed": "Ergebnisse konnten nicht geladen werden",
+    "deleteFailed": "Löschen der Ergebnisse fehlgeschlagen"
   }
 }

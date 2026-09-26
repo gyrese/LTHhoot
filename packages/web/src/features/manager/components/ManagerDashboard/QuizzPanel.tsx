@@ -9,7 +9,9 @@ import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { useNavigate } from "@tanstack/react-router"
 import {
   Check,
+  Clock,
   Download,
+  ListOrdered,
   Loader2,
   Plus,
   Search,
@@ -32,6 +34,10 @@ import {
   isGuestFolder,
 } from "@rahoot/web/features/manager/utils/folders"
 import { translateServerError } from "@rahoot/web/features/manager/utils/errors"
+import {
+  formatEstimatedDuration,
+  formatQuizzStats,
+} from "@rahoot/web/features/manager/utils/quizzStats"
 import { isGuestQuizId } from "@rahoot/common/utils/guest"
 import toast from "react-hot-toast"
 import clsx from "clsx"
@@ -57,6 +63,10 @@ const IMPORT_ACK_TIMEOUT_MS = 15000
 // Actions d'une carte : 28 px à la souris, 44 px sur écran tactile.
 const CARD_ACTION =
   "flex items-center justify-center rounded-lg bg-black/60 p-1.5 backdrop-blur-sm hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
+
+// Pastilles de statistiques en bas des cartes (questions, durée estimée).
+const CARD_STAT =
+  "flex items-center gap-1 rounded-full bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-sm tabular-nums"
 
 const QuizzPanel = ({
   search,
@@ -430,6 +440,7 @@ const QuizzPanel = ({
               // ni déplaçable.
               const isReadonly = isGuestQuizId(q.id)
               const isDeleting = pendingDelete === q.id
+              const hasOrderBadge = isSelected && eveningMode
 
               return (
                 <div
@@ -462,6 +473,23 @@ const QuizzPanel = ({
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                   <div className="pointer-events-none absolute right-0 bottom-0 left-0 p-3">
+                    {/* Nombre de questions + durée estimée (discret, glass) */}
+                    <div
+                      className="mb-1.5 flex flex-wrap gap-1"
+                      title={formatQuizzStats(t, q)}
+                    >
+                      <span className={CARD_STAT}>
+                        <ListOrdered className="size-3" aria-hidden="true" />
+                        {q.questionCount}
+                      </span>
+                      {q.estimatedDurationSec ? (
+                        <span className={CARD_STAT}>
+                          <Clock className="size-3" aria-hidden="true" />
+                          {formatEstimatedDuration(t, q.estimatedDurationSec)}
+                        </span>
+                      ) : null}
+                      <span className="sr-only">{formatQuizzStats(t, q)}</span>
+                    </div>
                     <p className="line-clamp-2 text-sm leading-tight font-bold text-white drop-shadow-md">
                       {q.subject}
                     </p>
@@ -502,8 +530,10 @@ const QuizzPanel = ({
                     </div>
                   )}
 
-                  {isSelected && eveningMode && (
-                    <div className="pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white shadow-md">
+                  {/* Badge d'ordre de la soirée en haut à gauche (plan) : les
+                      actions se décalent alors vers la droite. */}
+                  {hasOrderBadge && (
+                    <div className="pointer-events-none absolute top-2 left-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white shadow-md">
                       {eveningOrder}
                     </div>
                   )}
@@ -519,7 +549,11 @@ const QuizzPanel = ({
                   <div
                     ref={exportMenuFor === q.id ? exportMenuRef : undefined}
                     className={clsx(
-                      "absolute top-2 right-10 left-2 flex flex-wrap gap-1 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
+                      "absolute top-2 flex flex-wrap gap-1",
+                      hasOrderBadge
+                        ? "right-2 left-10 justify-end"
+                        : "right-10 left-2",
+                      "transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
                       exportMenuFor === q.id ? "opacity-100" : "opacity-0",
                     )}
                   >
@@ -571,7 +605,11 @@ const QuizzPanel = ({
                       {exportMenuFor === q.id && (
                         <div
                           role="menu"
-                          className="absolute top-full left-0 z-20 mt-1 flex w-36 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/85 py-1 shadow-xl backdrop-blur-md"
+                          className={clsx(
+                            "absolute top-full z-20 mt-1 flex w-36",
+                            hasOrderBadge ? "right-0" : "left-0",
+                            "flex-col overflow-hidden rounded-xl border border-white/10 bg-black/85 py-1 shadow-xl backdrop-blur-md",
+                          )}
                         >
                           {(["json", "pptx"] as const).map((type) => (
                             <button

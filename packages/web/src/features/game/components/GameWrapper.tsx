@@ -13,7 +13,10 @@ import {
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
-import { useManagerStore } from "@rahoot/web/features/game/stores/manager"
+import {
+  type EveningProgress,
+  useManagerStore,
+} from "@rahoot/web/features/game/stores/manager"
 import { useQuestionStore } from "@rahoot/web/features/game/stores/question"
 import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { useYoutubeDuration } from "@rahoot/web/features/game/hooks/useYoutubeDuration"
@@ -55,6 +58,7 @@ type EveningLeaderboardEntry = {
   username: string
   avatar?: string
   points: number
+  quizPoints?: number
   rank: number
 }
 
@@ -97,6 +101,9 @@ const INVENTORY_REFRESH_PHASES = new Set<Status | undefined>([
   STATUS.SHOW_ROOM,
   STATUS.SHOW_START,
 ])
+
+// Délai max d'attente de l'accusé d'utilisation d'un power-up.
+const POWER_UP_ACK_TIMEOUT = 4000
 
 // Durée d'affichage du badge « NOUVEAU ! » sur un power-up fraîchement obtenu.
 const NEW_POWER_UP_BADGE_MS = 2000
@@ -182,11 +189,45 @@ const PlayerBar = ({
   )
 }
 
+// Barre « Quiz 1/3 » en haut de l'écran principal pendant une soirée.
+const EveningProgressBar = ({ progress }: { progress: EveningProgress }) => {
+  const { t } = useTranslation()
+  const ratio = Math.min(1, progress.current / Math.max(1, progress.total))
+
+  return (
+    <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-30 flex w-56 -translate-x-1/2 flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
+      <span className="text-center text-sm font-bold text-white tabular-nums">
+        {t("game:evening.progressShort", {
+          current: progress.current,
+          total: progress.total,
+        })}
+      </span>
+      <div
+        className="h-1.5 w-full rounded-full bg-orange-500/30"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={progress.total}
+        aria-valuenow={progress.current}
+      >
+        <div
+          className="h-full rounded-full bg-orange-500 transition-all duration-500"
+          style={{ width: `${ratio * 100}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
   const { isConnected, socket } = useSocket()
   const { muted, toggleMuted } = useSoundStore()
   const { player, gameId: playerGameId, updatePoints } = usePlayerStore()
-  const { gameId: managerGameId, inviteCode } = useManagerStore()
+  const {
+    gameId: managerGameId,
+    inviteCode,
+    eveningProgress,
+    setEveningProgress,
+  } = useManagerStore()
   const { questionStates, setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
   const [isDisabled, setIsDisabled] = useState(false)
@@ -255,6 +296,14 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     }
 
     setEveningData({ gameId: activeGameId, ...data })
+
+    // Écran principal : la barre « Quiz x/y » passe au quiz suivant.
+    if (manager) {
+      setEveningProgress({
+        current: Math.min(data.quizIndex + 2, data.totalQuizzes),
+        total: data.totalQuizzes,
+      })
+    }
   })
 
   // Fin de soirée : le podium FINISHED qui suit doit s'afficher en mode « soirée ».
@@ -394,6 +443,23 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
     }
   })
 
+  // Attaque stoppée par un SHIELD. Le serveur prévient l'attaquant ; si le
+  // défenseur reçoit aussi l'event (defenderId = son socket), il voit que son
+  // bouclier a servi.
+  useEvent(EVENTS.POWER_UP.BLOCKED, ({ defenderId }) => {
+    if (manager) {
+      return
+    }
+
+    if (defenderId === socket?.id) {
+      toast.success(t("game:powerupToast.shieldProtected"), { icon: "🛡️" })
+
+      return
+    }
+
+    toast(t("game:powerupToast.attackBlocked"), { icon: "🛡️" })
+  })
+
   useEvent(EVENTS.GAME.NEW_PLAYER, (newPlayer) => {
     if (player && newPlayer.username === player.username) {
       return
@@ -531,13 +597,62 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
       return
     }
 
-    socket?.emit(EVENTS.POWER_UP.USE, {
-      gameId: playerGameId,
-      powerUpId: drawerPowerUp.id,
-      targetIds,
-    })
-    setPowerUps((prev) => prev.filter((p) => p.id !== drawerPowerUp.id))
+    if (!socket) {
+      return
+    }
+
+    const used = drawerPowerUp
+    const usedIndex = powerUps.findIndex((p) => p.id === used.id)
+
+    // Retrait optimiste : l'objet disparaît tout de suite de la barre et n'y
+    // revient que si le serveur refuse (ack { ok: false }).
+    setPowerUps((prev) => prev.filter((p) => p.id !== used.id))
     setDrawerPowerUp(null)
+
+    // Ack optionnel dans le contrat (anciens clients) : `socket.timeout()` ne
+    // sait pas le typer, d'où ce délai de garde manuel.
+    let settled = false
+    const guard = setTimeout(() => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      // Sans accusé, on ignore si l'objet a été consommé : on resynchronise
+      // l'inventaire avec le serveur plutôt que de deviner.
+      socket.emit(EVENTS.POWER_UP.GET_INVENTORY)
+      toast.error(t("errors:powerup.failed"))
+    }, POWER_UP_ACK_TIMEOUT)
+
+    socket.emit(
+      EVENTS.POWER_UP.USE,
+      { gameId: playerGameId, powerUpId: used.id, targetIds },
+      (res) => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        clearTimeout(guard)
+
+        if (res.ok) {
+          return
+        }
+
+        setPowerUps((prev) => {
+          if (prev.some((p) => p.id === used.id)) {
+            return prev
+          }
+
+          const restored = [...prev]
+          const at = usedIndex < 0 ? restored.length : usedIndex
+          restored.splice(Math.min(at, restored.length), 0, used)
+
+          return restored
+        })
+        toast.error(t(res.error || "errors:powerup.failed"))
+      },
+    )
   }
 
   const handleBuyPowerUp = (type: PowerUpType) => {
@@ -660,6 +775,11 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                   </div>
                 )}
               </div>
+
+              {/* Progression de la soirée (écran principal) */}
+              {manager && eveningProgress && !eveningData && (
+                <EveningProgressBar progress={eveningProgress} />
+              )}
 
               {/* Contenu principal. Fondu enchaîné : sortie et entrée se
                   chevauchent (mode par défaut, pas "wait") — sinon l'ancien

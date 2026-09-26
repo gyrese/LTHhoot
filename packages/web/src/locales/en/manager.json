@@ -55,7 +55,11 @@
     "importing": "Importing…",
     "importTimeout": "The server did not confirm the import. Check your connection and try again.",
     "invalidJson": "Invalid JSON file",
-    "selectInEvening": "{{name}} — #{{order}} in the party"
+    "selectInEvening": "{{name}} — #{{order}} in the party",
+    "estimatedDuration": "~{{minutes}} min",
+    "questionCount_one": "{{count}} question",
+    "questionCount_many": "{{count}} questions",
+    "questionCount_other": "{{count}} questions"
   },
   "result": {
     "delete": "Delete result",
@@ -269,5 +273,11 @@
       "points": "{{points}} PTS",
       "thanks": "Well done to all participants!"
     }
+  },
+  "remoteOnly": {
+    "title": "This code is for the remote control only",
+    "hint": "It lets you control a running game, not access the dashboard.",
+    "open": "Open the remote control",
+    "useAnotherCode": "Use another password"
   }
 }

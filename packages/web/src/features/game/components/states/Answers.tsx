@@ -1,6 +1,8 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import type { SlideElement } from "@rahoot/common/types/game"
+import type { AnswerAckStatus } from "@rahoot/common/types/game/socket"
+import { FREEZE_DURATION_MS } from "@rahoot/common/types/powerup"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import {
@@ -33,7 +35,7 @@ import {
 import { fadeUp, MOTION_SPRING } from "@rahoot/web/features/game/utils/motion"
 import { ROUND_EVENT_META } from "@rahoot/web/features/game/utils/roundEventMeta"
 import clsx from "clsx"
-import { Check, Loader2 } from "lucide-react"
+import { Check, Loader2, X } from "lucide-react"
 import { motion } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -49,8 +51,29 @@ const TIMER_RADIUS = 44
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * TIMER_RADIUS
 // Secondes restantes annoncées aux lecteurs d'écran.
 const ANNOUNCED_SECONDS = [10, 5]
-// Durée du gel appliqué aux adversaires (cf. power-up FREEZE).
-const FREEZE_DURATION_MS = 3000
+// Délai minimal avant de rouvrir la saisie quand le serveur répond « frozen »
+// alors que le gel local est déjà levé (horloges légèrement décalées).
+const MIN_FREEZE_RETRY_MS = 300
+
+// Messages affichés quand la saisie est rouverte après un envoi non comptabilisé.
+const RETRY_MESSAGE_KEYS = {
+  failed: "game:answerSendFailed",
+  frozen: "game:answerFrozen",
+  invalid: "game:answerInvalid",
+} as const
+
+const getRetryMessageKey = (state: string) =>
+  Object.hasOwn(RETRY_MESSAGE_KEYS, state)
+    ? RETRY_MESSAGE_KEYS[state as keyof typeof RETRY_MESSAGE_KEYS]
+    : null
+
+// Statuts d'ack qui clôturent la question côté client sans comptabiliser la
+// réponse (trop tard, partie ou joueur introuvable).
+const REJECTED_ACK_STATUSES = new Set<AnswerAckStatus>([
+  "closed",
+  "not_found",
+  "no_player",
+])
 
 type Props = {
   data: CommonStatusDataMap["SELECT_ANSWER"]
@@ -88,7 +111,7 @@ const Answers = ({
     images,
     imageInterval,
     endsAt,
-    startedAt: _startedAt,
+    startedAt,
   },
   // eslint-disable-next-line complexity
 }: Props) => {
@@ -98,8 +121,12 @@ const Answers = ({
   const [answered, setAnswered] = useState(() => hasAnswered)
   // Cycle visuel d'envoi piloté par l'ack serveur (cf. sendAnswer) : on
   // n'affiche « Réponse envoyée ! » qu'à la confirmation, pas à l'émission.
+  //  - failed   : aucun ack après les retries → saisie rouverte
+  //  - frozen   : refus serveur pendant le gel FREEZE → saisie rouverte après le gel
+  //  - invalid  : payload refusé par la validation serveur → saisie rouverte
+  //  - rejected : fenêtre fermée / partie ou joueur introuvable → saisie close
   const [sendState, setSendState] = useState<
-    "idle" | "sending" | "sent" | "failed"
+    "idle" | "sending" | "sent" | "failed" | "frozen" | "invalid" | "rejected"
   >(() => (hasAnswered ? "sent" : "idle"))
 
   useEffect(() => {
@@ -128,6 +155,16 @@ const Answers = ({
   const slideAudioRef = useRef<HTMLAudioElement>(null)
 
   const [isFreezeBlocked, setIsFreezeBlocked] = useState(false)
+  const freezeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (freezeRetryTimerRef.current) {
+        clearTimeout(freezeRetryTimerRef.current)
+      }
+    },
+    [],
+  )
   const [shuffledIndices, setShuffledIndices] = useState<number[] | undefined>(
     undefined,
   )
@@ -236,7 +273,7 @@ const Answers = ({
       .emit(
         EVENTS.PLAYER.SELECTED_ANSWER,
         { gameId, data: payload },
-        (err, _res) => {
+        (err, res) => {
           if (err) {
             // Pas d'accusé reçu (réseau coupé ou serveur indisponible).
             if (attempt < MAX_ANSWER_RETRIES) {
@@ -253,14 +290,66 @@ const Answers = ({
             return
           }
 
-          // Accusé reçu : ok / duplicate / closed / no_player / not_found.
-          // Tous sont terminaux côté client (plus de retry). On garde « répondu ».
           sendingRef.current = false
-          setSendState("sent")
-          vibrate(HAPTIC_PATTERNS.ANSWER_CONFIRMED)
+          handleAck(res?.status)
         },
       )
   }
+
+  // Gel serveur encore actif : on rebloque la saisie jusqu'à la fin de la
+  // fenêtre de gel (début de la manche + FREEZE_DURATION_MS, heure serveur).
+  const blockUntilFreezeEnds = () => {
+    const remaining =
+      startedAt && startedAt > 0
+        ? startedAt + FREEZE_DURATION_MS - getServerTime()
+        : FREEZE_DURATION_MS
+    const delay = Math.min(
+      FREEZE_DURATION_MS,
+      Math.max(MIN_FREEZE_RETRY_MS, remaining),
+    )
+
+    if (freezeRetryTimerRef.current) {
+      clearTimeout(freezeRetryTimerRef.current)
+    }
+
+    setIsFreezeBlocked(true)
+    freezeRetryTimerRef.current = setTimeout(() => {
+      setIsFreezeBlocked(false)
+      freezeRetryTimerRef.current = null
+    }, delay)
+  }
+
+  // Accusé reçu : seuls ok / duplicate confirment la réponse. Les autres
+  // statuts sont terminaux (plus de retry) mais ne doivent jamais afficher
+  // « Réponse envoyée ».
+  const handleAck = (status: AnswerAckStatus | undefined) => {
+    if (status === "ok" || status === "duplicate") {
+      setSendState("sent")
+      vibrate(HAPTIC_PATTERNS.ANSWER_CONFIRMED)
+
+      return
+    }
+
+    if (status === "frozen") {
+      setAnswered(false)
+      setSendState("frozen")
+      blockUntilFreezeEnds()
+
+      return
+    }
+
+    if (status && REJECTED_ACK_STATUSES.has(status)) {
+      setSendState("rejected")
+
+      return
+    }
+
+    // « invalid » (ou ack illisible) : on rouvre la saisie pour un nouvel essai.
+    setAnswered(false)
+    setSendState("invalid")
+  }
+
+  const retryMessageKey = getRetryMessageKey(sendState)
 
   const emit = (payload: {
     answerId?: number
@@ -655,10 +744,17 @@ const Answers = ({
           </div>
         )}
 
-        {isPlayer && sendState === "failed" && (
-          <div className="mx-auto mb-3 w-full max-w-7xl px-2">
-            <div className="rounded-xl border border-red-400/40 bg-red-600/30 px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur-sm">
-              {t("game:answerSendFailed")}
+        {isPlayer && !answered && retryMessageKey && (
+          <div className="mx-auto mb-3 w-full max-w-7xl px-2" role="alert">
+            <div
+              className={clsx(
+                "rounded-xl border px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur-sm",
+                sendState === "frozen"
+                  ? "border-cyan-300/40 bg-cyan-600/30"
+                  : "border-red-400/40 bg-red-600/30",
+              )}
+            >
+              {t(retryMessageKey)}
             </div>
           </div>
         )}
@@ -748,7 +844,15 @@ const Answers = ({
               animate="visible"
               className="flex items-center gap-3 rounded-xl bg-black/40 px-6 py-3 text-lg font-bold text-white"
             >
-              {sendState === "sent" ? (
+              {sendState === "rejected" && (
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-red-500">
+                  <X
+                    className="size-4 stroke-4 text-white"
+                    aria-hidden="true"
+                  />
+                </span>
+              )}
+              {sendState === "sent" && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -757,15 +861,18 @@ const Answers = ({
                 >
                   <Check className="size-4 stroke-4 text-white" />
                 </motion.span>
-              ) : (
+              )}
+              {sendState !== "sent" && sendState !== "rejected" && (
                 <Loader2
                   className="size-5 shrink-0 animate-spin text-white/70"
                   aria-hidden="true"
                 />
               )}
-              {sendState === "sent"
-                ? t("game:answerSent")
-                : t("game:answerSending")}
+              {sendState === "sent" && t("game:answerSent")}
+              {sendState === "rejected" && t("game:answerRejected")}
+              {sendState !== "sent" &&
+                sendState !== "rejected" &&
+                t("game:answerSending")}
             </motion.div>
           </div>
         )}

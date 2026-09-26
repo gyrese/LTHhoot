@@ -84,6 +84,11 @@ const ManagerGamePage = () => {
     })
     setQuestionStates(data.currentQuestion)
 
+    // Hors soirée, une progression mémorisée (partie précédente) est caduque.
+    if (!data.isEveningMode) {
+      useManagerStore.getState().setEveningProgress(null)
+    }
+
     if (data.timer && data.timer > 0) {
       useQuestionStore.getState().setCooldown(data.timer)
     }

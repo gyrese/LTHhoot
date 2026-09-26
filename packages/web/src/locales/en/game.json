@@ -144,7 +144,9 @@
     "waitingHost": "Waiting for the next quiz…",
     "continue": "Continue",
     "winner": "Winner of the evening!",
-    "finale": "Grand finale of the evening"
+    "finale": "Grand finale of the evening",
+    "quizPoints": "{{points}} pts",
+    "progressShort": "Quiz {{current}}/{{total}}"
   },
   "sound": {
     "mute": "Mute sound",
@@ -159,7 +161,8 @@
   "a11y": {
     "answerOption": "Answer {{number}} ({{shape}}): {{text}}",
     "timeLeft_one": "{{count}} second left",
-    "timeLeft_other": "{{count}} seconds left"
+    "timeLeft_other": "{{count}} seconds left",
+    "timeLeft_many": "{{count}} seconds left"
   },
   "podium": {
     "finalRanking": "And now, the final ranking...",
@@ -173,13 +176,17 @@
     "chooseTarget_one": "Choose a target",
     "chooseTarget_other": "Choose {{count}} targets",
     "noTarget_one": "No opponent to target right now.",
-    "noTarget_other": "You need at least {{count}} opponents to target to use this power-up."
+    "noTarget_other": "You need at least {{count}} opponents to target to use this power-up.",
+    "chooseTarget_many": "Choose {{count}} targets",
+    "noTarget_many": "You need at least {{count}} opponents to target to use this power-up."
   },
   "powerupToast": {
     "someone": "A player",
     "on": "On {{names}}",
     "mirroredOn": "Reflected onto {{names}}",
-    "self": "Personal effect"
+    "self": "Personal effect",
+    "attackBlocked": "Your attack was blocked by a shield",
+    "shieldProtected": "Your shield protected you"
   },
   "powerupBar": {
     "new": "NEW!",
@@ -261,5 +268,58 @@
     }
   },
   "playersConnected_one": "{{count}} player connected",
-  "playersConnected_other": "{{count}} players connected"
+  "playersConnected_other": "{{count}} players connected",
+  "answerFrozen": "You're frozen ❄ — answer as soon as it wears off",
+  "answerInvalid": "Answer rejected — try again",
+  "answerRejected": "Too late: answer not counted",
+  "solo": {
+    "error": "Something went wrong, please try again.",
+    "shareText": "I scored {{points}} pts on the quiz \"{{subject}}\"! Come and try your luck:",
+    "linkCopied": "Quiz link copied to the clipboard!",
+    "enterPseudo": "Please enter a nickname",
+    "confirmHuman": "Please confirm you are not a robot",
+    "notARobot": "I'm not a robot",
+    "loading": "Loading quiz...",
+    "pseudoLabel": "Your nickname *",
+    "pseudoPlaceholder": "e.g. QuizMaster99",
+    "contactLabel": "Social handle / email (optional)",
+    "contactPlaceholder": "e.g. @your_insta / email@domain.com",
+    "contactHint": "Required to claim your prize if you win the draw!",
+    "start": "Start the game",
+    "rulesTitle": "Game rules",
+    "startingSoon": "The quiz starts in a moment…",
+    "answerPlaceholder": "Type your answer here...",
+    "submit": "Submit",
+    "expectedAnswerLabel": "Expected answer:",
+    "or": "or",
+    "slider": "Slider",
+    "year": "Year",
+    "tolerance": "Tolerance: ±{{value}}",
+    "decrease": "Decrease",
+    "increase": "Increase",
+    "exactValue": "Exact value ({{value}})!",
+    "inTarget": "On target! Target: {{value}} (±{{tolerance}})",
+    "yourChoice": "Your choice: {{value}}",
+    "expectedValue": "Expected answer: {{value}}",
+    "submitAnswer": "Submit my answer",
+    "notPlayable": "This question type can't be played solo yet.",
+    "skip": "Skip",
+    "questionCounter": "Question {{current}} / {{total}}",
+    "next": "Next",
+    "finish": "Finish",
+    "correct": "CORRECT!",
+    "wrong": "WRONG ANSWER!",
+    "autoNext": "Moving on automatically...",
+    "nextSoon": "Next in 2s...",
+    "finished": "Game over!",
+    "congrats": "Well done <name>{{name}}</name>! Your answers have been saved.",
+    "finalScore": "Final score",
+    "provisionalRank": "Provisional rank",
+    "correctAnswers": "Correct answers",
+    "drawTitle": "Weekly prize draw",
+    "drawText": "The draw will take place at the end of the week among the <top>top {{count}} scores</top>. If you are selected, the administrator will contact you directly to hand over your prize, and the official winner visual will be posted on our social networks!",
+    "share": "Challenge friends / Share the quiz",
+    "playAgain": "Play again"
+  },
+  "playersConnected_many": "{{count}} players connected"
 }

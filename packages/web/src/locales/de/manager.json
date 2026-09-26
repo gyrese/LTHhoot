@@ -55,7 +55,11 @@
     "importTimeout": "Der Server hat den Import nicht bestätigt. Prüfe die Verbindung und versuche es erneut.",
     "invalidJson": "Ungültige JSON-Datei",
     "selectInEvening": "{{name}} — Nr. {{order}} der Party",
-    "powerUpsToggle": "Power-ups für dieses Quiz aktivieren oder deaktivieren"
+    "powerUpsToggle": "Power-ups für dieses Quiz aktivieren oder deaktivieren",
+    "estimatedDuration": "~{{minutes}} Min.",
+    "questionCount_one": "{{count}} Frage",
+    "questionCount_many": "{{count}} Fragen",
+    "questionCount_other": "{{count}} Fragen"
   },
   "result": {
     "delete": "Ergebnis löschen",
@@ -269,5 +273,11 @@
       "points": "{{points}} PKT.",
       "thanks": "Bravo an alle Teilnehmer!"
     }
+  },
+  "remoteOnly": {
+    "title": "Dieser Code ist nur für die Fernbedienung",
+    "hint": "Damit steuerst du ein laufendes Spiel, aber du erhältst keinen Zugriff auf das Dashboard.",
+    "open": "Fernbedienung öffnen",
+    "useAnotherCode": "Anderes Passwort verwenden"
   }
 }

@@ -1,5 +1,5 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { Player } from "@rahoot/common/types/game"
+import type { PublicPlayer } from "@rahoot/common/types/game"
 import { STATUS } from "@rahoot/common/types/game/status"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
 import { RoundEventDrawer } from "@rahoot/web/features/game/components/remote/RemoteControl.events"
@@ -11,6 +11,7 @@ import {
   MANAGER_SKIP_EVENTS,
   isKeyOf,
 } from "@rahoot/web/features/game/utils/constants"
+import { translateServerError } from "@rahoot/web/features/manager/utils/errors"
 import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useNavigate } from "@tanstack/react-router"
@@ -47,7 +48,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const authTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [status, setStatus] = useState<GameStatus>(null)
-  const [players, setPlayers] = useState<Player[]>([])
+  const [players, setPlayers] = useState<PublicPlayer[]>([])
   const [questionStates, setQuestionStates] = useState<QuestionStates>(null)
   const [answerCount, setAnswerCount] = useState(0)
   const [inviteCode, setInviteCode] = useState("")
@@ -186,12 +187,15 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         quizIndex,
         totalQuizzes,
         subject,
-        leaderboard: leaderboard.map(({ id, username, points, rank }) => ({
-          id,
-          username,
-          points,
-          rank,
-        })),
+        leaderboard: leaderboard.map(
+          ({ id, username, points, quizPoints, rank }) => ({
+            id,
+            username,
+            points,
+            quizPoints,
+            rank,
+          }),
+        ),
       })
       setActionPending(false)
     },
@@ -243,7 +247,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       return
     }
 
-    toast.error(message)
+    toast.error(translateServerError(t, message))
     navigate({ to: "/remote" })
   })
 
