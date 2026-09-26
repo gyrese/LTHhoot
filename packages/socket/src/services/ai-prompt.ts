@@ -5,27 +5,51 @@ import {
 } from "@rahoot/common/utils/difficulty"
 
 // Catalogue des registres de ton proposés dans la modale de génération.
-// Chaque instruction est bilingue : la variante FR cadre nettement mieux le
-// registre quand le quiz est produit en français (cas majoritaire).
+// Volontairement sobres : les consignes « witty / humour » poussaient le modèle
+// vers des tournures forcées et des calembours laborieux. Le ton colore la
+// formulation, il ne doit jamais la rendre plus longue ni moins claire.
 const TONE_INSTRUCTIONS: Record<string, string> = {
-  fun: `Adopt a cool, fun, dynamic and lighthearted tone. Use modern, entertaining phrasing and avoid dry, pedantic or academic wording. Add subtle humor or a witty spin where appropriate.
-(En français : ton cool, sympa et dynamique. Évite les formulations scolaires, austères ou poussiéreuses. Tournures modernes, engageantes et parfois amusantes.)`,
+  fun: `Friendly, relaxed and lively, like a good pub-quiz host. Short, natural sentences. Humor only when it comes naturally — no forced puns, no "Accrochez-vous !", no exclamation overload, no emojis.`,
 
-  neutral: `Adopt a neutral, factual and precise tone. Phrase questions plainly and directly, with no humor, no dramatization and no rhetorical flourish. Clarity above all.
-(En français : ton neutre, factuel et précis. Formulations sobres et directes, sans humour ni effet de style.)`,
+  neutral: `Neutral, factual and precise. Phrase questions plainly and directly, with no humor, no dramatization and no rhetorical flourish. Clarity above all.`,
 
-  educational: `Adopt a warm, pedagogical tone, like a teacher who wants players to actually learn something. Give just enough context in the question for it to be instructive on its own, without giving the answer away.
-(En français : ton pédagogique et bienveillant. Apporte un petit contexte instructif dans la question, sans jamais divulguer la réponse.)`,
+  educational: `Warm and pedagogical, like a teacher who wants players to actually learn something. Give just enough context in the question for it to be instructive on its own, without giving the answer away.`,
 
-  snarky: `Adopt a cheeky, snarky, slightly provocative tone, teasing the player without ever being insulting. Sharp, punchy phrasing with a hint of irony.
-(En français : ton piquant, taquin et légèrement provocateur. Chambre le joueur sans jamais être insultant. Formulations courtes, incisives, un brin ironiques.)`,
+  snarky: `Cheeky and slightly provocative, teasing the player without ever being insulting. Sharp, punchy phrasing with a hint of irony — at most one short teasing clause per question.`,
 
-  epic: `Adopt an epic, dramatic, grandiloquent tone, like a movie trailer voice-over. Solemn phrasing and high stakes, while staying perfectly readable.
-(En français : ton épique et dramatique, façon bande-annonce de film. Formulations solennelles et enjeux dramatisés, tout en restant lisible.)`,
+  epic: `An epic, dramatic, grandiloquent tone, like a movie trailer voice-over. Solemn phrasing and high stakes, while staying short and perfectly readable.`,
 
-  absurd: `Adopt an absurd, offbeat, deadpan-surreal tone in the PHRASING of the questions. The framing may be delightfully weird, but the facts, options and answers must remain strictly accurate and verifiable.
-(En français : ton absurde et décalé dans la FORMULATION uniquement. Les faits, les options et les réponses restent rigoureusement exacts et vérifiables.)`,
+  absurd: `Absurd, offbeat, deadpan-surreal in the PHRASING only. The framing may be delightfully weird, but the facts, options and answers must remain strictly accurate and verifiable.`,
 }
+
+// Règles de rédaction : c'est ce qui manquait le plus. Sans elles, le modèle
+// écrit comme une traduction de l'anglais (« Lequel des éléments suivants… »)
+// et privilégie la trivia scolaire sans intérêt.
+const WRITING_RULES = `Writing quality — this matters more than anything else:
+- Write like a professional quiz author who is a NATIVE speaker of the output language (TV quiz show, pub quiz). Idiomatic, natural sentences — never a word-for-word translation from English.
+- One clear question per item, ideally under 100 characters, ending with "?". For "true_false", write a plain affirmative statement (no "?", no "Vrai ou faux :").
+- Each question has exactly ONE indisputable answer that a reliable source confirms. No opinions, no vague superlatives ("le meilleur", "le plus célèbre"), no facts that may have changed recently.
+- Forbidden phrasings: "Which of the following…", "Lequel des éléments suivants…", "Parmi les propositions suivantes…", "Selon vous…", "Saviez-vous que…", "Pouvez-vous…", double negations, rhetorical preambles before the actual question.
+- Only use facts you are highly confident about. Be especially wary of absolute claims ("le seul", "jamais", "toujours", "le premier") and popular myths: if in doubt, choose another fact.
+- Never leak the answer in the question (no shared rare word, no obvious hint).
+- Pick facts players ENJOY discovering — surprising, concrete, memorable — over dry textbook trivia. A good question makes the room react, yet stays fair.
+- MCQ options: same category, same format, similar length, short (1 to 5 words). No "Toutes ces réponses" / "Aucune", no joke option. Vary the position of the correct answer across questions.
+- Open answers: expect one short answer (1 to 3 words); list the usual spellings and variants in "correctAnswers".
+- Slider / date: choose a quantity people can reasonably estimate; min/max frame the answer without centering on it; tolerance around 5 to 10 % of the range.
+- Puzzle: exactly 4 items with an objective order (chronology, size, distance…); state the ordering criterion explicitly in the question.
+- True/false: mix true and false statements; false ones must be credible, never absurd.
+
+Examples (French):
+BAD:  "Lequel des éléments suivants est la capitale de l'Australie ?"
+GOOD: "Quelle est la capitale de l'Australie ?"
+BAD:  "Selon vous, quel animal est réputé pour être le plus rapide sur la terre ferme ?"
+GOOD: "Quel est l'animal terrestre le plus rapide ?"
+BAD:  "Accrochez-vous : quelle planète, véritable reine aux anneaux, ferait des ronds dans l'eau ?"
+GOOD: "Quelle planète du Système solaire flotterait sur l'eau ?"
+
+Before answering, silently review every question against these rules and rewrite any that breaks one.`
+
+const IMAGE_RULES = `Every question MUST also carry an "imageQuery" field: 2 to 4 ENGLISH keywords for a stock-photo search (Unsplash) that illustrates the question with a concrete, photographable subject (e.g. "cheetah running savanna", "saturn rings space"). The picture must NEVER show or give away the correct answer: illustrate the context, not the solution (for "Quelle est la capitale de l'Australie ?" use "australia outback kangaroo", not "canberra").`
 
 const DEFAULT_TONE = "fun"
 
@@ -101,7 +125,9 @@ Only generate questions of the following types: ${params.questionTypes.join(", "
 
 ${language}
 
-Tone and style — this is important:
+${WRITING_RULES}
+
+Tone:
 ${tone}
 Whatever the tone, the CONTENT stays serious: accurate facts, plausible wrong options, valid scientific, historical or cultural background. Never invent facts to serve the tone.
 
@@ -113,6 +139,8 @@ ${buildExplanationsSection(params.withExplanations)}
 ${extra ? `\nAdditional instructions from the quiz author (follow them closely):\n${extra}\n` : ``}
 Avoid near-duplicate questions: each one must cover a distinct angle of the topic.
 
+${IMAGE_RULES}
+
 The output MUST be a valid JSON object shaped like:
 { "description": "...", "questions": [ ... ] }
 
@@ -123,6 +151,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "mcq",
      "difficulty": "easy",
      "question": "The question text",
+     "imageQuery": "english keywords",
      "answers": ["Option A", "Option B", "Option C", "Option D"], // Between 2 and 4 strings. Must not be empty.
      "solutions": [0], // Array of correct answer index/indices (0-indexed)
      "cooldown": 5,
@@ -134,6 +163,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "true_false",
      "difficulty": "easy",
      "question": "The statement text",
+     "imageQuery": "english keywords",
      "solution": 0, // 0 for False, 1 for True
      "cooldown": 5,
      "time": 20
@@ -144,6 +174,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "open",
      "difficulty": "medium",
      "question": "The question text",
+     "imageQuery": "english keywords",
      "correctAnswers": ["answer1", "answer2"], // Array of acceptable short string answers (lowercase preferred)
      "cooldown": 5,
      "time": 20
@@ -154,6 +185,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "slider",
      "difficulty": "medium",
      "question": "The question requesting a numerical value",
+     "imageQuery": "english keywords",
      "correctValue": 42, // The correct number
      "min": 0, // Minimum boundary
      "max": 100, // Maximum boundary
@@ -167,6 +199,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "date",
      "difficulty": "hard",
      "question": "The question asking for a year",
+     "imageQuery": "english keywords",
      "correctYear": 1789, // The correct year (negative for BCE)
      "tolerance": 5, // Allowed margin of error in years
      "minYear": 1700, // Optional
@@ -180,6 +213,7 @@ Every object inside "questions" must strictly conform to one of the following sc
      "type": "puzzle",
      "difficulty": "hard",
      "question": "The question text instructing to order elements",
+     "imageQuery": "english keywords",
      "items": ["Item 1 (First)", "Item 2 (Second)", "Item 3 (Third)", "Item 4 (Fourth)"], // Elements in their CORRECT final order
      "cooldown": 5,
      "time": 20
