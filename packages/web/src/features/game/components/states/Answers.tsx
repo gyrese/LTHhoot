@@ -4,7 +4,7 @@ import type { SlideElement } from "@rahoot/common/types/game"
 import type { AnswerAckStatus } from "@rahoot/common/types/game/socket"
 import { FREEZE_DURATION_MS } from "@rahoot/common/types/powerup"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
-import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
+import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
 import {
   DateAnswer,
   McqAnswers,

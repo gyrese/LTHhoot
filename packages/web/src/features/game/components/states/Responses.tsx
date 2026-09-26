@@ -11,7 +11,7 @@ import {
 } from "@rahoot/common/utils/drop-pin"
 import GridBoard from "@rahoot/web/features/game/components/GridBoard"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
-import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
+import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import {
   ANSWERS_COLORS,

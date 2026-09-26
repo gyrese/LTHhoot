@@ -10,7 +10,7 @@ import { SOLO_DRAW_POOL_SIZE } from "@rahoot/common/utils/result-kind"
 import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
-import SlideCanvas from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
+import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
 import NotARobotCheck from "@rahoot/web/features/game/components/solo/NotARobotCheck"
 import {

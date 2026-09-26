@@ -742,7 +742,8 @@ class Game {
     }
 
     if (result.blockedBy) {
-      this.io.to(playerId).emit(EVENTS.POWER_UP.BLOCKED, {
+      // L'attaquant et le défenseur sont tous deux prévenus du blocage
+      this.io.to([playerId, result.blockedBy]).emit(EVENTS.POWER_UP.BLOCKED, {
         powerUpType: result.type,
         defenderId: result.blockedBy,
       })
