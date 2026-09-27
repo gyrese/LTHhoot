@@ -719,7 +719,9 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
             <>
               {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
               <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3 z-30 flex items-start justify-between gap-2">
-                {questionStates && (
+                {/* Pas de compteur sur l'écran salon : aucune question n'est
+                    en cours et il passerait sous « Fermer la session ». */}
+                {questionStates && !isRoomScreen && (
                   <div
                     className={clsx(
                       "pointer-events-auto rounded-xl bg-black/50 font-bold text-white backdrop-blur-sm",
