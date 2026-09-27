@@ -18,6 +18,12 @@ import {
   DropPinAnswer,
 } from "@rahoot/web/features/game/components/states/AnswerInputs"
 import GridBoard from "@rahoot/web/features/game/components/GridBoard"
+import { QuestionLayoutOverlay } from "@rahoot/web/features/game/components/QuestionLayoutView"
+import {
+  fontFamilyCss,
+  layoutAnswerLabels,
+  resolveQuestionFont,
+} from "@rahoot/web/features/game/utils/question-layout"
 import ImageSequenceReveal from "@rahoot/web/features/game/components/states/ImageSequenceReveal"
 import type { GridCell } from "@rahoot/common/types/game"
 import { useTranslation } from "react-i18next"
@@ -46,7 +52,7 @@ const PreviewPresenterView = ({
   hideYoutube = true,
 }: Props) => {
   const { t } = useTranslation()
-  const { salonImage: quizSalonImage } = useQuizzEditor()
+  const { salonImage: quizSalonImage, fontFamily: quizzFont } = useQuizzEditor()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
 
@@ -112,6 +118,17 @@ const PreviewPresenterView = ({
     images?: string[]
     imageInterval?: number
   }
+
+  // Mise en page libre + police, rendues comme sur l'écran hôte.
+  const font = resolveQuestionFont(question, { fontFamily: quizzFont })
+  const { layout } = question
+  const answerLabels = layoutAnswerLabels(type, answers, [
+    t("game:false"),
+    t("game:true"),
+  ])
+
+  const hasTitleBox = Boolean(layout?.title)
+  const hasAnswerBoxes = Boolean(layout?.answers && answerLabels)
 
   let bgStyle: CSSProperties = {
     backgroundImage: `url(${quizSalonImage || slideBg})`,
@@ -195,11 +212,24 @@ const PreviewPresenterView = ({
           />
         )}
 
-        {/* Titre de la question */}
+        {/* Titre / réponses positionnés (même repère 1920×1080 que l'hôte) */}
         {type !== "title" && (
+          <QuestionLayoutOverlay
+            layout={layout}
+            title={title}
+            answerLabels={answerLabels}
+            fontFamily={font}
+          />
+        )}
+
+        {/* Titre de la question */}
+        {type !== "title" && !hasTitleBox && (
           <div className="relative z-10 px-4 pt-4">
             <div className="mx-auto max-w-7xl rounded-2xl border border-white/10 bg-black/50 px-6 py-4 shadow-2xl backdrop-blur-md">
-              <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+              <h2
+                className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl"
+                style={{ fontFamily: fontFamilyCss(font) }}
+              >
                 {title}
               </h2>
             </div>
@@ -250,10 +280,24 @@ const PreviewPresenterView = ({
             </div>
 
             <div className="w-full">
-              {type === "mcq" && answers && (
-                <McqAnswers answers={answers} onAnswer={() => undefined} />
+              {/* Cases positionnées : grille gardée invisible (même place
+                  du HUD que sur l'écran hôte). */}
+              {answerLabels && (
+                <div
+                  className={clsx(hasAnswerBoxes && "invisible")}
+                  aria-hidden={hasAnswerBoxes || undefined}
+                >
+                  {type === "mcq" ? (
+                    <McqAnswers
+                      answers={answerLabels}
+                      onAnswer={() => undefined}
+                      fontFamily={font}
+                    />
+                  ) : (
+                    <TrueFalseAnswers fontFamily={font} />
+                  )}
+                </div>
               )}
-              {type === "true_false" && <TrueFalseAnswers />}
               {type === "open" && <OpenAnswerPlaceholder />}
               {type === "image_sequence" && <OpenAnswerPlaceholder />}
               {type === "date" && (

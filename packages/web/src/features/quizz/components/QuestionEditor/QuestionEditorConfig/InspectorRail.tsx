@@ -37,14 +37,20 @@ const ITEMS: RailItem[] = [
 ]
 
 const InspectorRail = () => {
-  const { activeInspectorPanel, setActiveInspectorPanel, selectedId } =
-    useQuizzEditor()
+  const {
+    activeInspectorPanel,
+    setActiveInspectorPanel,
+    selectedId,
+    selectedLayoutKey,
+  } = useQuizzEditor()
 
   return (
     <div className="border-border bg-surface flex w-11 shrink-0 flex-col gap-1 border-l p-1.5">
       {ITEMS.map((item) => {
         const isActive = activeInspectorPanel === item.panel
-        const showBadge = item.panel === "element" && Boolean(selectedId)
+        const showBadge =
+          item.panel === "element" &&
+          (Boolean(selectedId) || selectedLayoutKey !== undefined)
 
         return (
           <button

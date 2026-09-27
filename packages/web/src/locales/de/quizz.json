@@ -66,7 +66,28 @@
     "aiRephrase": "Mit KI umformulieren",
     "aiSuggestWrongAnswers": "Falsche Antworten mit KI generieren",
     "aiGenerateExplanation": "Mit KI generieren",
-    "aiGenerateExplanationTooltip": "Automatisch eine Erklärung aus Frage und Antwort generieren"
+    "aiGenerateExplanationTooltip": "Automatisch eine Erklärung aus Frage und Antwort generieren",
+    "layout": {
+      "titleBox": "Fragetitel",
+      "answerBox": "Antwort {{number}}",
+      "hint": "Box ziehen zum Verschieben, an einem Griff ziehen zum Ändern der Größe, Doppelklick zum Bearbeiten des Textes.",
+      "text": "Text",
+      "fill": "Hintergrund",
+      "textColor": "Textfarbe",
+      "fontSize": "Textgröße",
+      "auto": "Auto",
+      "default": "Standard",
+      "font": "Schriftart der Frage",
+      "fontQuizDefault": "Quiz-Schriftart ({{font}})",
+      "interfaceFont": "Oberfläche",
+      "geometry": "Position und Größe",
+      "x": "X",
+      "y": "Y",
+      "width": "Breite",
+      "height": "Höhe",
+      "reset": "Layout zurücksetzen",
+      "resetHint": "Titel und Antworten erhalten wieder ihre Standardposition und ihren Standardstil."
+    }
   },
   "testDrive": "Testen",
   "testDriveNeedsSave": "Speichere das Quiz, bevor du es testest",
@@ -180,7 +201,10 @@
       "heros": "Superhelden",
       "disney": "Disney",
       "harrypotter": "Harry Potter"
-    }
+    },
+    "questionFontLabel": "Schriftart der Fragen",
+    "questionFontHint": "Schriftart von Titel und Antworten auf dem Präsentationsbildschirm. Jede Frage kann sie überschreiben.",
+    "questionFontDefault": "Schriftart der Oberfläche"
   },
   "titleQuizzPlaceholder": "Quiz-Titel...",
   "tolerance": "Toleranz",

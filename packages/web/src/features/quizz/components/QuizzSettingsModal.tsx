@@ -3,6 +3,8 @@ import { PODIUM_THEMES } from "@rahoot/common/constants"
 import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { PODIUM_THEME_TOKENS } from "@rahoot/web/features/game/components/states/podium/themes"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { fontFamilyCss } from "@rahoot/web/features/game/utils/question-layout"
+import { AVAILABLE_FONTS } from "@rahoot/web/features/quizz/utils/fonts"
 import { X, Upload, Sparkles, Dices, Trophy } from "lucide-react"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
@@ -31,6 +33,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
   const [localPodiumTheme, setLocalPodiumTheme] = useState<PodiumThemeSetting>(
     ctx.podiumTheme ?? "neutre",
   )
+  const [localFontFamily, setLocalFontFamily] = useState(ctx.fontFamily ?? "")
   const [tagInput, setTagInput] = useState("")
   const [uploading, setUploading] = useState(false)
   const [uploadingSalon, setUploadingSalon] = useState(false)
@@ -56,6 +59,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     setLocalImage(ctx.listingImage)
     setLocalSalonImage(ctx.salonImage)
     setLocalPodiumTheme(ctx.podiumTheme ?? "neutre")
+    setLocalFontFamily(ctx.fontFamily ?? "")
     // Volontairement piloté par la seule ouverture : re-synchroniser à chaque
     // changement du contexte écraserait la saisie en cours.
   }, [open])
@@ -82,6 +86,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     ctx.setPodiumTheme(
       localPodiumTheme === "neutre" ? undefined : localPodiumTheme,
     )
+    ctx.setFontFamily(localFontFamily || undefined)
     onClose()
   }
 
@@ -94,6 +99,7 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
     setLocalImage(ctx.listingImage)
     setLocalSalonImage(ctx.salonImage)
     setLocalPodiumTheme(ctx.podiumTheme ?? "neutre")
+    setLocalFontFamily(ctx.fontFamily ?? "")
     onClose()
   }
 
@@ -526,6 +532,46 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Police des questions (titre + réponses, écran de présentation) */}
+              <div>
+                <label
+                  htmlFor="quizz-question-font"
+                  className="text-ink mb-1 block text-sm font-bold"
+                >
+                  {t("quizz:settings.questionFontLabel")}
+                </label>
+                <p className="text-ink-subtle mb-3 text-xs">
+                  {t("quizz:settings.questionFontHint")}
+                </p>
+                <select
+                  id="quizz-question-font"
+                  value={localFontFamily}
+                  onChange={(e) => setLocalFontFamily(e.target.value)}
+                  className="border-border text-ink focus:border-primary focus:ring-primary/30 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+                  style={{ fontFamily: fontFamilyCss(localFontFamily) }}
+                >
+                  <option value="">
+                    {t("quizz:settings.questionFontDefault")}
+                  </option>
+                  {AVAILABLE_FONTS.map((font) => (
+                    <option
+                      key={font}
+                      value={font}
+                      style={{ fontFamily: font }}
+                    >
+                      {font}
+                    </option>
+                  ))}
+                </select>
+                {/* Aperçu dans la police choisie */}
+                <div
+                  className="mt-2 truncate rounded-lg bg-black/80 px-4 py-3 text-center text-xl font-bold text-white"
+                  style={{ fontFamily: fontFamilyCss(localFontFamily) }}
+                >
+                  {localSubject || "Aa Bb Cc 123"}
                 </div>
               </div>
 

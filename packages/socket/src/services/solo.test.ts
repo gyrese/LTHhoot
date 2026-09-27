@@ -85,6 +85,43 @@ describe("solo — questions publiques", () => {
     }
   })
 
+  it("transmet la mise en page et la police résolue, sans solution", () => {
+    const layout = {
+      title: { x: 0, y: 0, width: 800, height: 100 },
+      answers: [{ x: 0, y: 900, width: 400, height: 100, fill: "#123456" }],
+    }
+    const question = {
+      ...base,
+      type: "mcq",
+      answers: ["a", "b"],
+      solutions: [1],
+      layout,
+    } as Question
+
+    const fromQuizz = toSoloPublicQuestion(question, undefined, "Roboto")
+    expect(fromQuizz).toMatchObject({ layout, fontFamily: "Roboto" })
+    expect(fromQuizz).not.toHaveProperty("solutions")
+
+    const own = toSoloPublicQuestion(
+      { ...question, fontFamily: "Lobster" },
+      undefined,
+      "Roboto",
+    )
+    expect(own?.fontFamily).toBe("Lobster")
+  })
+
+  it("sert la police du quiz dans la question suivante", () => {
+    const sessions = new SoloSessions()
+    const session = sessions.start(
+      { ...quizz, fontFamily: "Poppins" },
+      { playerName: "Léa" },
+      0,
+    )!
+    const next = SoloSessions.next(session, 1000)
+
+    expect(next.ok && !next.done && next.question.fontFamily).toBe("Poppins")
+  })
+
   it("exclut les slides titre", () => {
     const sessions = new SoloSessions()
     const session = sessions.start(quizz, { playerName: "Léa" }, 0)!

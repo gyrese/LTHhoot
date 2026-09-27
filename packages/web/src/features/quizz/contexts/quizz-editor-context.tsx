@@ -6,6 +6,7 @@ import type {
   GridCell,
   PodiumThemeSetting,
   Question,
+  QuestionLayout,
   QuestionMedia,
   QuestionType,
   QuizzWithId,
@@ -18,6 +19,7 @@ import {
   DEFAULT_GRID_CELLS,
 } from "@rahoot/web/features/quizz/utils/grid"
 import { generateId } from "@rahoot/web/features/quizz/utils/id"
+import type { LayoutBoxKey } from "@rahoot/web/features/game/utils/question-layout"
 import {
   createContext,
   useCallback,
@@ -78,6 +80,8 @@ export type QuestionUpdate = {
   gridRows?: number
   revelationStyle?: string
   pointsMultiplier?: number
+  layout?: QuestionLayout | undefined
+  fontFamily?: string | undefined
   id?: string
 }
 
@@ -91,6 +95,7 @@ type QuizzEditorContextType = {
   salonImage?: string
   listingImage?: string
   podiumTheme?: PodiumThemeSetting
+  fontFamily?: string
   setSubject: (_subject: string) => void
   setPublicName: (_publicName: string) => void
   setDescription: (_description: string) => void
@@ -99,6 +104,7 @@ type QuizzEditorContextType = {
   setSalonImage: (_salonImage?: string) => void
   setListingImage: (_listingImage?: string) => void
   setPodiumTheme: (_podiumTheme?: PodiumThemeSetting) => void
+  setFontFamily: (_fontFamily?: string) => void
   questions: QuestionWithId[]
   currentIndex: number
   currentQuestion: QuestionWithId
@@ -112,6 +118,10 @@ type QuizzEditorContextType = {
   changeQuestionType: (_index: number, _type: QuestionType) => void
   selectedId: string | undefined
   setSelectedId: (_id: string | undefined) => void
+  // Boîte de mise en page sélectionnée (titre ou case de réponse), exclusive
+  // avec la sélection d'un élément du canvas.
+  selectedLayoutKey: LayoutBoxKey | undefined
+  setSelectedLayoutKey: (_key: LayoutBoxKey | undefined) => void
   selectedQuestionIds: string[]
   setSelectedQuestionIds: (_ids: string[]) => void
   selectSlide: (_index: number, _ctrlKey: boolean, _shiftKey: boolean) => void
@@ -275,6 +285,9 @@ export const QuizzEditorProvider = ({
   const [podiumTheme, setPodiumTheme] = useState<
     PodiumThemeSetting | undefined
   >(initialData?.podiumTheme)
+  const [fontFamily, setFontFamily] = useState<string | undefined>(
+    initialData?.fontFamily,
+  )
   const [questions, setQuestions] = useState<QuestionWithId[]>(
     initialData
       ? initialData.questions.map(toQuestionWithId)
@@ -284,7 +297,25 @@ export const QuizzEditorProvider = ({
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(
     () => [questions[0]?.id || ""],
   )
-  const [selectedId, setSelectedId] = useState<string | undefined>()
+  const [selectedId, setSelectedIdState] = useState<string | undefined>()
+  const [selectedLayoutKey, setSelectedLayoutKeyState] = useState<
+    LayoutBoxKey | undefined
+  >()
+
+  // Sélection exclusive : un élément du canvas OU une boîte de mise en page.
+  const setSelectedId = (id: string | undefined) => {
+    setSelectedIdState(id)
+    setSelectedLayoutKeyState(undefined)
+  }
+
+  const setSelectedLayoutKey = (key: LayoutBoxKey | undefined) => {
+    setSelectedLayoutKeyState(key)
+
+    if (key !== undefined) {
+      setSelectedIdState(undefined)
+      setActiveInspectorPanel("element")
+    }
+  }
   const [quizzId, setQuizzId] = useState<string | null>(initialData?.id ?? null)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -374,6 +405,10 @@ export const QuizzEditorProvider = ({
     setPodiumTheme(val)
     markDirty()
   }
+  const wrappedSetFontFamily = (val?: string) => {
+    setFontFamily(val)
+    markDirty()
+  }
 
   const handleSetCurrentIndex = (index: number) => {
     setCurrentIndex(index)
@@ -429,6 +464,7 @@ export const QuizzEditorProvider = ({
     salonImage?: string
     listingImage?: string
     podiumTheme?: PodiumThemeSetting
+    fontFamily?: string
     currentIndex: number
     selectedQuestionIds: string[]
   }
@@ -465,6 +501,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       podiumTheme,
+      fontFamily,
       ...historySelectionRef.current,
     }),
     [
@@ -477,6 +514,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       podiumTheme,
+      fontFamily,
     ],
   )
 
@@ -536,6 +574,7 @@ export const QuizzEditorProvider = ({
     salonImage,
     listingImage,
     podiumTheme,
+    fontFamily,
     takeSnapshot,
   ])
 
@@ -550,6 +589,7 @@ export const QuizzEditorProvider = ({
     setSalonImage(s.salonImage)
     setListingImage(s.listingImage)
     setPodiumTheme(s.podiumTheme)
+    setFontFamily(s.fontFamily)
     setCurrentIndex(
       s.questions.length === 0
         ? 0
@@ -790,9 +830,13 @@ export const QuizzEditorProvider = ({
           gridCols: q.gridCols,
           gridRows: q.gridRows,
           revelationStyle: q.revelationStyle,
+          // Le titre garde sa place ; les cases de réponse dépendent du type.
+          layout: q.layout?.title ? { title: q.layout.title } : undefined,
+          fontFamily: q.fontFamily,
         }
       }),
     )
+    setSelectedLayoutKeyState(undefined)
     markDirty()
   }
 
@@ -822,6 +866,7 @@ export const QuizzEditorProvider = ({
         salonImage,
         listingImage,
         podiumTheme,
+        fontFamily,
         questions,
         updatedAt: options?.force ? undefined : updatedAt,
       })
@@ -914,6 +959,7 @@ export const QuizzEditorProvider = ({
       salonImage,
       listingImage,
       podiumTheme,
+      fontFamily,
       questions,
       quizzId,
       updatedAt,
@@ -997,6 +1043,10 @@ export const QuizzEditorProvider = ({
         setPodiumTheme(pendingRestore.podiumTheme)
       }
 
+      if (pendingRestore.fontFamily !== undefined) {
+        setFontFamily(pendingRestore.fontFamily)
+      }
+
       if (pendingRestore.questions !== undefined) {
         setQuestions(pendingRestore.questions.map(toQuestionWithId))
       }
@@ -1050,6 +1100,7 @@ export const QuizzEditorProvider = ({
           salonImage,
           listingImage,
           podiumTheme,
+          fontFamily,
           questions: questions.map(({ id: _id, ...q }) => q),
         }),
       )
@@ -1072,6 +1123,7 @@ export const QuizzEditorProvider = ({
     salonImage,
     listingImage,
     podiumTheme,
+    fontFamily,
     questions,
   ])
 
@@ -1102,6 +1154,11 @@ export const QuizzEditorProvider = ({
       document.removeEventListener("visibilitychange", flush)
     }
   }, [])
+
+  // Élément du canvas ou boîte de mise en page sélectionné(e) : les flèches
+  // déplacent la sélection au lieu de changer de slide.
+  const hasCanvasSelection =
+    Boolean(selectedId) || selectedLayoutKey !== undefined
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1167,7 +1224,7 @@ export const QuizzEditorProvider = ({
       // Ignoré si un élément du canvas est sélectionné : les flèches doivent
       // alors déplacer l'élément (géré localement dans SlideEditor), pas
       // changer de slide.
-      if (selectedId) {
+      if (hasCanvasSelection) {
         return
       }
 
@@ -1208,7 +1265,7 @@ export const QuizzEditorProvider = ({
     questions.length,
     reorderQuestions,
     handleSetCurrentIndex,
-    selectedId,
+    hasCanvasSelection,
   ])
 
   return (
@@ -1223,6 +1280,7 @@ export const QuizzEditorProvider = ({
         salonImage,
         listingImage,
         podiumTheme,
+        fontFamily,
         setSubject: wrappedSetSubject,
         setPublicName: wrappedSetPublicName,
         setDescription: wrappedSetDescription,
@@ -1231,6 +1289,7 @@ export const QuizzEditorProvider = ({
         setSalonImage: wrappedSetSalonImage,
         setListingImage: wrappedSetListingImage,
         setPodiumTheme: wrappedSetPodiumTheme,
+        setFontFamily: wrappedSetFontFamily,
         questions,
         currentIndex,
         currentQuestion,
@@ -1245,6 +1304,8 @@ export const QuizzEditorProvider = ({
         changeQuestionType,
         selectedId,
         setSelectedId,
+        selectedLayoutKey,
+        setSelectedLayoutKey,
         selectedQuestionIds,
         setSelectedQuestionIds,
         selectSlide,

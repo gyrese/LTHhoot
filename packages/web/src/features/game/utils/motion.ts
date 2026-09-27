@@ -58,3 +58,34 @@ export const stateTransition = () => ({
     transition: { duration: MOTION_DUR.fast },
   },
 })
+
+// ─── Apparition des réponses sur l'écran hôte ─────────────────────────────────
+
+/** Écart entre l'arrivée de deux cases de réponse (secondes). */
+export const ANSWER_ENTRANCE_STAGGER = 0.4
+
+/**
+ * « Glissé + rebond » : chaque case monte depuis le bas avec un léger
+ * dépassement (spring peu amorti), l'une après l'autre. Purement décoratif —
+ * le chrono et les téléphones ne sont pas retardés. `reduceMotion` : aucune
+ * animation (apparition immédiate de toutes les cases).
+ */
+export const answerEntrance = (index: number, reduceMotion: boolean) =>
+  reduceMotion
+    ? { initial: false as const }
+    : {
+        initial: { opacity: 0, y: 140 },
+        animate: { opacity: 1, y: 0 },
+        transition: {
+          y: {
+            type: "spring" as const,
+            stiffness: 320,
+            damping: 16,
+            delay: index * ANSWER_ENTRANCE_STAGGER,
+          },
+          opacity: {
+            duration: MOTION_DUR.fast,
+            delay: index * ANSWER_ENTRANCE_STAGGER,
+          },
+        },
+      }

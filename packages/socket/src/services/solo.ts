@@ -11,6 +11,7 @@ import type {
   SoloPublicQuestion,
   SoloSolution,
 } from "@rahoot/common/types/solo"
+import { resolveQuestionFont } from "@rahoot/common/utils/question-layout"
 import { checkAnswer } from "@rahoot/socket/utils/game"
 import { randomBytes, randomInt } from "node:crypto"
 
@@ -89,9 +90,12 @@ const shuffledOrder = (length: number): number[] => {
 }
 
 // Question telle qu'envoyée au joueur : aucun champ de solution.
+// `quizzFont` : police par défaut du quiz, appliquée si la question n'en
+// définit pas.
 export const toSoloPublicQuestion = (
   question: Question,
   order?: number[],
+  quizzFont?: string,
 ): SoloPublicQuestion | null => {
   const base = {
     question: question.question,
@@ -99,6 +103,8 @@ export const toSoloPublicQuestion = (
     background: question.background,
     backgroundOpacity: question.backgroundOpacity,
     elements: question.elements,
+    layout: question.layout,
+    fontFamily: resolveQuestionFont(question, { fontFamily: quizzFont }),
     audio: question.audio,
     time: question.time || DEFAULT_QUESTION_TIME,
     revelationEnabled: question.revelationEnabled,
@@ -335,7 +341,11 @@ export class SoloSessions {
       return { ok: true, done: true }
     }
 
-    const question = toSoloPublicQuestion(entry.question, entry.order)
+    const question = toSoloPublicQuestion(
+      entry.question,
+      entry.order,
+      session.quizz.fontFamily,
+    )
 
     if (!question) {
       return { ok: false, error: "errors:quizz.notFound" }

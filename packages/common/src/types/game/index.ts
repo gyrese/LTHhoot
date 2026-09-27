@@ -137,6 +137,30 @@ export type QuestionType =
   | "grid"
   | "title"
 
+// ─── Mise en page libre des questions ─────────────────────────────────────────
+
+// Boîte positionnée sur la diapositive, en pixels du repère logique 1920×1080
+// (le même que les `elements`). Couleurs et taille de texte optionnelles : à
+// défaut, le rendu reprend le style historique (fond glass du titre, couleurs
+// Kahoot des réponses, taille adaptée à la longueur du texte).
+export type QuestionLayoutBox = {
+  x: number
+  y: number
+  width: number
+  height: number
+  fill?: string
+  textColor?: string
+  fontSize?: number
+}
+
+// Boîte ABSENTE = mise en page historique (titre en haut, réponses en grille
+// en bas). `answers` est aligné sur l'index d'origine des réponses (QCM) ou
+// sur 0 = Faux / 1 = Vrai (vrai-faux). Aucune solution n'y figure.
+export type QuestionLayout = {
+  title?: QuestionLayoutBox
+  answers?: QuestionLayoutBox[]
+}
+
 // Niveau d'exigence d'une question. Renseigné par la génération IA (qui peut
 // mélanger plusieurs niveaux dans un même lot) ; optionnel ailleurs.
 export type QuestionDifficulty = "easy" | "medium" | "hard" | "expert"
@@ -165,6 +189,10 @@ type BaseQuestion = {
   revelationStyle?: string
   // Multiplicateur de points (par ex. 2 pour doubler les points de la question)
   pointsMultiplier?: number
+  // Position / style du titre et des cases de réponse (écran hôte + aperçu).
+  layout?: QuestionLayout
+  // Police du titre et des réponses ; à défaut, celle du quiz.
+  fontFamily?: string
 }
 
 export type McqQuestion = BaseQuestion & {
@@ -283,6 +311,9 @@ export type Quizz = {
   salonImage?: string
   listingImage?: string
   podiumTheme?: PodiumThemeSetting
+  // Police par défaut du texte des questions (titre + réponses), surchargeable
+  // par question.
+  fontFamily?: string
   questions: Question[]
   updatedAt?: number
 }

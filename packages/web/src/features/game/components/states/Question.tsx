@@ -5,6 +5,8 @@ import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import { SFX } from "@rahoot/web/features/game/utils/constants"
 import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
+import { QuestionLayoutOverlay } from "@rahoot/web/features/game/components/QuestionLayoutView"
+import { fontFamilyCss } from "@rahoot/web/features/game/utils/question-layout"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
 import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
 import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
@@ -31,6 +33,8 @@ const Question = ({
     background,
     backgroundOpacity,
     elements,
+    layout,
+    fontFamily,
     cooldown,
     pinImage,
     revelationEnabled,
@@ -50,6 +54,11 @@ const Question = ({
 
   const { isHost } = useGameConfig()
   const { getServerTime } = useSocket()
+
+  // Mise en page libre et police : écran hôte uniquement, les téléphones des
+  // joueurs gardent leur affichage habituel.
+  const titleBox = isHost ? layout?.title : undefined
+  const titleFont = isHost ? fontFamily : undefined
 
   // Temps déjà écoulé de la phase, calculé sur l'horloge serveur : après une
   // reconnexion (ou un montage tardif), la barre de progression et la
@@ -130,10 +139,24 @@ const Question = ({
         </div>
       )}
 
+      {/* Titre positionné librement (mise en page de l'éditeur) : même repère
+          1920×1080 que les éléments de la slide. */}
       {type !== "title" && (
+        <QuestionLayoutOverlay
+          layout={titleBox && { title: titleBox }}
+          title={question}
+          answerLabels={null}
+          fontFamily={titleFont}
+        />
+      )}
+
+      {type !== "title" && !titleBox && (
         <div id="question-container" className="relative z-10 px-4 pt-4">
           <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-            <h2 className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+            <h2
+              className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl"
+              style={{ fontFamily: fontFamilyCss(titleFont) }}
+            >
               {question}
             </h2>
           </div>

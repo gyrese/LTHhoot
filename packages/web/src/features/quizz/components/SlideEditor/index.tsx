@@ -2,10 +2,10 @@ import {
   type SlideElement,
   type SlideBackground,
 } from "@rahoot/common/types/game"
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { generateElementId } from "@rahoot/web/features/quizz/utils/id"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import SlideCanvas from "./SlideCanvas"
+import SlideCanvas, { type SlideView } from "./SlideCanvas"
 import SlideContextMenu, { type ContextMenuAction } from "./SlideContextMenu"
 
 type SlideEditorProps = {
@@ -13,6 +13,7 @@ type SlideEditorProps = {
   onChange: (_elements: SlideElement[]) => void
   background?: SlideBackground
   backgroundOpacity?: number
+  renderOverlay?: (_view: SlideView) => ReactNode
 }
 
 const SlideEditor = ({
@@ -20,6 +21,7 @@ const SlideEditor = ({
   onChange,
   background,
   backgroundOpacity,
+  renderOverlay,
 }: SlideEditorProps) => {
   const { updateQuestion, currentIndex, selectedId, setSelectedId } =
     useQuizzEditor()
@@ -391,6 +393,7 @@ const SlideEditor = ({
           onSelectMultiple={setSelectedIds}
           background={background}
           backgroundOpacity={backgroundOpacity}
+          renderOverlay={renderOverlay}
           onContextMenuEvent={(e) => {
             setContextMenu({ x: e.clientX, y: e.clientY, show: true })
           }}

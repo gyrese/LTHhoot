@@ -3,7 +3,7 @@ import {
   type SlideBackground,
 } from "@rahoot/common/types/game"
 import slideBg from "@rahoot/web/assets/slide-bg.png"
-import React, { useRef, useState, useEffect } from "react"
+import React, { useRef, useState, useEffect, type ReactNode } from "react"
 import {
   createImageElement,
   createTextElement,
@@ -40,7 +40,13 @@ type SlideCanvasProps = {
   backgroundOpacity?: number
   onContextMenuEvent?: (_e: MouseEvent, _isElement: boolean) => void
   hideYoutube?: boolean
+  // Calque HTML dessiné au-dessus du canvas, dans le même repère que les
+  // éléments (zoom et panoramique compris) : `scale` convertit le repère
+  // 1920×1080 en pixels écran, (x, y) est l'origine de la slide.
+  renderOverlay?: (_view: SlideView) => ReactNode
 }
+
+export type SlideView = { scale: number; x: number; y: number }
 
 const CANVAS_W = 1920
 const CANVAS_H = 1080
@@ -87,6 +93,7 @@ const SlideCanvas = ({
   backgroundOpacity,
   onContextMenuEvent,
   hideYoutube = false,
+  renderOverlay,
 }: SlideCanvasProps) => {
   const stageRef = useRef<Konva.Stage>(null)
   const layerRef = useRef<Konva.Layer>(null)
@@ -1258,6 +1265,8 @@ const SlideCanvas = ({
               }}
             />
           )}
+
+          {renderOverlay?.({ scale, x: stagePos.x, y: stagePos.y })}
 
           {/* Indicateur de zoom + réinitialisation */}
           {!readOnly && (

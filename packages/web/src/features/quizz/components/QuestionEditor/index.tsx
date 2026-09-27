@@ -1,4 +1,4 @@
-import QuestionEditorAnswers from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorAnswers"
+import QuestionEditorAnswersToolbar from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorAnswersToolbar"
 import QuestionEditorConfig from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig"
 import QuestionEditorDate from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorDate"
 import QuestionEditorDropPin from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorDropPin"
@@ -7,9 +7,9 @@ import QuestionEditorImageSequence from "@rahoot/web/features/quizz/components/Q
 import QuestionEditorOpen from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorOpen"
 import QuestionEditorPuzzle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorPuzzle"
 import QuestionEditorSlider from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorSlider"
-import QuestionEditorTitle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTitle"
-import QuestionEditorTrueFalse from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorTrueFalse"
+import QuestionLayoutEditor from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionLayoutEditor"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { hasLayoutAnswers } from "@rahoot/web/features/game/utils/question-layout"
 
 import SlideEditor from "@rahoot/web/features/quizz/components/SlideEditor"
 
@@ -21,11 +21,10 @@ const QuestionAnswerEditor = () => {
   }
 
   switch (currentQuestion.type) {
+    // QCM et vrai-faux : les cases sont éditées sur la diapositive
+    // (QuestionLayoutEditor) ; le QCM garde ici sa barre d'outils.
     case "mcq":
-      return <QuestionEditorAnswers />
-
-    case "true_false":
-      return <QuestionEditorTrueFalse />
+      return <QuestionEditorAnswersToolbar />
 
     case "open":
       return <QuestionEditorOpen />
@@ -73,21 +72,26 @@ const QuestionEditor = ({
             onChange={(elements) => updateQuestion(currentIndex, { elements })}
             background={currentQuestion.background}
             backgroundOpacity={currentQuestion.backgroundOpacity}
+            renderOverlay={(view) => <QuestionLayoutEditor view={view} />}
           />
         </div>
 
+        {/* Titre (tous types) et cases QCM / vrai-faux : boîtes positionnées sur
+            la slide. Les autres types gardent leur éditeur de réponses en bas ;
+            la barre d'outils du QCM se loge dans le coin haut-gauche. */}
         <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
-          {currentQuestion.type !== "title" && (
-            <div className="pointer-events-auto">
-              <QuestionEditorTitle />
-            </div>
-          )}
-          <div className="pointer-events-none flex flex-1 flex-col"></div>
-          {currentQuestion.type !== "title" && (
-            <div className="pointer-events-auto">
+          {currentQuestion.type === "mcq" && (
+            <div className="pointer-events-auto self-start">
               <QuestionAnswerEditor />
             </div>
           )}
+          <div className="pointer-events-none flex flex-1 flex-col"></div>
+          {currentQuestion.type !== "title" &&
+            !hasLayoutAnswers(currentQuestion.type) && (
+              <div className="pointer-events-auto">
+                <QuestionAnswerEditor />
+              </div>
+            )}
         </div>
       </main>
       {showInspector && <QuestionEditorConfig />}

@@ -66,7 +66,28 @@
     "aiRephrase": "Reformuler par IA",
     "aiSuggestWrongAnswers": "Générer les mauvaises réponses par IA",
     "aiGenerateExplanation": "Générer par IA",
-    "aiGenerateExplanationTooltip": "Générer une explication automatique d'après la question et la réponse"
+    "aiGenerateExplanationTooltip": "Générer une explication automatique d'après la question et la réponse",
+    "layout": {
+      "titleBox": "Titre de la question",
+      "answerBox": "Réponse {{number}}",
+      "hint": "Glissez la boîte pour la déplacer, tirez une poignée pour la redimensionner, double-cliquez pour modifier le texte.",
+      "text": "Texte",
+      "fill": "Fond",
+      "textColor": "Couleur du texte",
+      "fontSize": "Taille du texte",
+      "auto": "Auto",
+      "default": "Par défaut",
+      "font": "Police de la question",
+      "fontQuizDefault": "Police du quiz ({{font}})",
+      "interfaceFont": "interface",
+      "geometry": "Position et taille",
+      "x": "X",
+      "y": "Y",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "reset": "Réinitialiser la mise en page",
+      "resetHint": "Le titre et les réponses reprennent leur place et leur style par défaut."
+    }
   },
   "testDrive": "Tester",
   "testDriveNeedsSave": "Sauvegardez le quiz avant de le tester",
@@ -181,7 +202,10 @@
       "heros": "Super-héros",
       "disney": "Disney",
       "harrypotter": "Harry Potter"
-    }
+    },
+    "questionFontLabel": "Police des questions",
+    "questionFontHint": "Police du titre et des réponses sur l'écran de présentation. Chaque question peut la remplacer.",
+    "questionFontDefault": "Police de l'interface"
   },
   "titleQuizzPlaceholder": "Titre du quizz...",
   "tolerance": "Tolérance",

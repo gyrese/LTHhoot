@@ -5,6 +5,7 @@ import type {
   GridCell,
   PodiumThemeId,
   PublicPlayer,
+  QuestionLayout,
   QuestionMedia,
   QuestionType,
   SlideBackground,
@@ -52,6 +53,9 @@ export type CommonStatusDataMap = {
     background?: SlideBackground
     backgroundOpacity?: number
     elements?: SlideElement[]
+    // Mise en page libre + police (question, ou à défaut celle du quiz).
+    layout?: QuestionLayout
+    fontFamily?: string
     audio?: string
     cooldown: number
     pinImage?: string
@@ -73,6 +77,8 @@ export type CommonStatusDataMap = {
     background?: SlideBackground
     backgroundOpacity?: number
     elements?: SlideElement[]
+    layout?: QuestionLayout
+    fontFamily?: string
     audio?: string
     time: number
     totalPlayer: number

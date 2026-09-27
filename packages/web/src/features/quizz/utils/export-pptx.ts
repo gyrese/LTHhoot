@@ -17,7 +17,9 @@ import type {
   TextElement,
   ImageElement,
   ShapeElement,
+  QuestionLayoutBox,
 } from "@rahoot/common/types/game"
+import { resolveQuestionFont } from "@rahoot/common/utils/question-layout"
 
 // ─── Dimensions LAYOUT_WIDE (13.33" × 7.5") ──────────────────────────────────
 
@@ -96,6 +98,15 @@ const cx = (x: number) => (x / CANVAS_W) * SLIDE_W
 const cy = (y: number) => (y / CANVAS_H) * SLIDE_H
 const cw = (w: number) => (w / CANVAS_W) * SLIDE_W
 const ch = (h: number) => (h / CANVAS_H) * SLIDE_H
+
+// Mise en page libre (repère 1920×1080) → pouces / points de la diapo PPTX.
+const boxRect = (box: QuestionLayoutBox) => ({
+  x: cx(box.x),
+  y: cy(box.y),
+  w: cw(box.width),
+  h: ch(box.height),
+})
+const pxToPt = (px: number) => Math.round((px / CANVAS_W) * SLIDE_W * 72)
 
 // ─── Fond de slide ────────────────────────────────────────────────────────────
 
@@ -258,6 +269,7 @@ const addQuestionSlide = async (
   question: Question,
   index: number,
   total: number,
+  font?: string,
 ): Promise<void> => {
   const slide = prs.addSlide()
   await applyBackground(slide, question.background, question.backgroundOpacity)
@@ -296,6 +308,7 @@ const addQuestionSlide = async (
       w: hasMedia ? SLIDE_W / 2 - 0.8 : SLIDE_W - 1,
       h: hasMedia ? SLIDE_H - 1.5 : 1.6,
       fontSize: 32,
+      fontFace: font,
       bold: true,
       color: "FFFFFF",
       align: hasMedia ? "left" : "center",
@@ -313,6 +326,7 @@ const addAnswersSlide = async (
   question: Question,
   index: number,
   total: number,
+  font?: string,
 ): Promise<void> => {
   const slide = prs.addSlide()
   await applyBackground(slide, question.background, question.backgroundOpacity)
@@ -320,14 +334,32 @@ const addAnswersSlide = async (
 
   addBadge(slide, question, index, total)
 
-  // Question (petite en haut)
-  if (question.question) {
+  // Question : à sa place libre si l'auteur l'a positionnée, sinon petite
+  // en haut.
+  const titleBox = question.layout?.title
+
+  if (question.question && titleBox) {
+    const fill = titleBox.fill ? cssColorToHex(titleBox.fill) : null
+
+    slide.addText(question.question, {
+      ...boxRect(titleBox),
+      fontSize: pxToPt(titleBox.fontSize ?? 36),
+      fontFace: font,
+      bold: true,
+      color: cssColorToHex(titleBox.textColor ?? "") ?? "FFFFFF",
+      fill: { color: fill ?? "000000", transparency: fill ? 0 : 50 },
+      align: "center",
+      valign: "middle",
+      wrap: true,
+    })
+  } else if (question.question) {
     slide.addText(question.question, {
       x: 0.5,
       y: 0.85,
       w: SLIDE_W - 1,
       h: 0.9,
       fontSize: 20,
+      fontFace: font,
       bold: true,
       color: "FFFFFF",
       wrap: true,
@@ -340,12 +372,12 @@ const addAnswersSlide = async (
 
   switch (question.type) {
     case "mcq":
-      await addMcqAnswers(slide, question, contentY, contentH)
+      await addMcqAnswers(slide, question, contentY, contentH, font)
 
       break
 
     case "true_false":
-      addTrueFalseAnswers(slide, question, contentY, contentH)
+      addTrueFalseAnswers(slide, question, contentY, contentH, font)
 
       break
 
@@ -391,6 +423,7 @@ const addMcqAnswers = async (
   q: McqQuestion,
   y: number,
   h: number,
+  font?: string,
 ) => {
   const cols = Math.min(q.answers.length, 2)
   const rows = Math.ceil(q.answers.length / cols)
@@ -400,16 +433,24 @@ const addMcqAnswers = async (
   q.answers.forEach((answer, i) => {
     const col = i % cols
     const row = Math.floor(i / cols)
-    const x = 0.4 + col * (boxW + 0.25)
-    const boxY = y + row * (boxH + 0.2)
-    const color = ANSWER_COLORS[i] ?? "555555"
+    // Case positionnée librement dans l'éditeur : mêmes place et couleurs.
+    const layoutBox = q.layout?.answers?.[i]
+    const rect = layoutBox
+      ? boxRect(layoutBox)
+      : {
+          x: 0.4 + col * (boxW + 0.25),
+          y: y + row * (boxH + 0.2),
+          w: boxW,
+          h: boxH,
+        }
+    const { x, y: boxY } = rect
+    const color =
+      cssColorToHex(layoutBox?.fill ?? "") ?? ANSWER_COLORS[i] ?? "555555"
+    const textColor = cssColorToHex(layoutBox?.textColor ?? "") ?? "FFFFFF"
     const isCorrect = q.solutions.includes(i)
 
     slide.addShape("roundRect", {
-      x,
-      y: boxY,
-      w: boxW,
-      h: boxH,
+      ...rect,
       fill: { color },
       line: isCorrect ? { color: "FFFFFF", width: 3 } : { width: 0 },
       rectRadius: 0.15,
@@ -417,7 +458,7 @@ const addMcqAnswers = async (
 
     if (isCorrect) {
       slide.addText("✓", {
-        x: x + boxW - 0.7,
+        x: x + rect.w - 0.7,
         y: boxY + 0.05,
         w: 0.6,
         h: 0.5,
@@ -431,10 +472,11 @@ const addMcqAnswers = async (
     slide.addText(`${ANSWER_SHAPES[i]}  ${answer}`, {
       x: x + 0.2,
       y: boxY,
-      w: boxW - 0.9,
-      h: boxH,
-      fontSize: 18,
-      color: "FFFFFF",
+      w: rect.w - 0.9,
+      h: rect.h,
+      fontSize: layoutBox?.fontSize ? pxToPt(layoutBox.fontSize) : 18,
+      fontFace: font,
+      color: textColor,
       bold: true,
       wrap: true,
       valign: "middle",
@@ -447,20 +489,35 @@ const addTrueFalseAnswers = (
   q: TrueFalseQuestion,
   y: number,
   h: number,
+  font?: string,
 ) => {
+  // `layoutIndex` : index dans `layout.answers` (0 = Faux, 1 = Vrai).
   const options = [
-    { label: "▲  Vrai", color: "26890c", correct: q.solution === 1 },
-    { label: "●  Faux", color: "e21b3c", correct: q.solution === 0 },
+    {
+      label: "▲  Vrai",
+      color: "26890c",
+      correct: q.solution === 1,
+      layoutIndex: 1,
+    },
+    {
+      label: "●  Faux",
+      color: "e21b3c",
+      correct: q.solution === 0,
+      layoutIndex: 0,
+    },
   ]
-  const boxW = (SLIDE_W - 0.8) / 2 - 0.2
+  const defaultW = (SLIDE_W - 0.8) / 2 - 0.2
 
-  options.forEach(({ label, color, correct }, i) => {
-    const x = 0.4 + i * (boxW + 0.2)
+  options.forEach(({ label, color: defaultColor, correct, layoutIndex }, i) => {
+    const layoutBox = q.layout?.answers?.[layoutIndex]
+    const rect = layoutBox
+      ? boxRect(layoutBox)
+      : { x: 0.4 + i * (defaultW + 0.2), y, w: defaultW, h }
+    const { x } = rect
+    const boxW = rect.w
+    const color = cssColorToHex(layoutBox?.fill ?? "") ?? defaultColor
     slide.addShape("roundRect", {
-      x,
-      y,
-      w: boxW,
-      h,
+      ...rect,
       fill: { color },
       line: correct ? { color: "FFFFFF", width: 3 } : { width: 0 },
       rectRadius: 0.2,
@@ -469,7 +526,7 @@ const addTrueFalseAnswers = (
     if (correct) {
       slide.addText("✓", {
         x: x + boxW - 0.7,
-        y: y + 0.1,
+        y: rect.y + 0.1,
         w: 0.6,
         h: 0.5,
         fontSize: 20,
@@ -480,12 +537,10 @@ const addTrueFalseAnswers = (
     }
 
     slide.addText(label, {
-      x,
-      y,
-      w: boxW,
-      h,
-      fontSize: 28,
-      color: "FFFFFF",
+      ...rect,
+      fontSize: layoutBox?.fontSize ? pxToPt(layoutBox.fontSize) : 28,
+      fontFace: font,
+      color: cssColorToHex(layoutBox?.textColor ?? "") ?? "FFFFFF",
       bold: true,
       align: "center",
       valign: "middle",
@@ -933,6 +988,7 @@ export const exportQuizzToPptx = async (quizz: Quizz): Promise<void> => {
           w: SLIDE_W - 2,
           h: 2,
           fontSize: 44,
+          fontFace: resolveQuestionFont(q, quizz),
           bold: true,
           color: "FFFFFF",
           align: "center",
@@ -943,10 +999,12 @@ export const exportQuizzToPptx = async (quizz: Quizz): Promise<void> => {
 
       addBadge(slide, q, index, total)
     } else {
+      // Police de la question, sinon celle du quiz (titre + réponses).
+      const font = resolveQuestionFont(q, quizz)
       // Slide 1 : question seule
-      await addQuestionSlide(prs, q, index, total)
-      // Slide 2 : réponses
-      await addAnswersSlide(prs, q, index, total)
+      await addQuestionSlide(prs, q, index, total, font)
+      // Slide 2 : réponses (titre et cases à leur place libre si définie)
+      await addAnswersSlide(prs, q, index, total, font)
     }
   }
 

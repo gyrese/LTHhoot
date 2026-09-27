@@ -7,25 +7,56 @@ import {
   isDarkTextAnswer,
 } from "@rahoot/web/features/game/utils/constants"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
-import { useState, type FormEvent } from "react"
+import { answerEntrance } from "@rahoot/web/features/game/utils/motion"
+import { fontFamilyCss } from "@rahoot/web/features/game/utils/question-layout"
+import { motion, useReducedMotion } from "motion/react"
+import { useState, type FormEvent, type ReactNode } from "react"
+
+// Case de la grille des réponses. `hostEntrance` : apparition « glissé +
+// rebond » l'une après l'autre (écran hôte), selon la position d'affichage.
+const AnswerSlot = ({
+  hostEntrance,
+  position,
+  children,
+}: {
+  hostEntrance?: boolean
+  position: number
+  children: ReactNode
+}) => {
+  const reduceMotion = useReducedMotion() ?? false
+
+  if (!hostEntrance) {
+    return children
+  }
+
+  return (
+    <motion.div className="flex" {...answerEntrance(position, reduceMotion)}>
+      {children}
+    </motion.div>
+  )
+}
 
 export const McqAnswers = ({
   answers,
   onAnswer,
   iconOnly,
   shuffledIndices,
+  fontFamily,
+  hostEntrance,
 }: {
   answers: string[]
   onAnswer: (_key: number) => void
   iconOnly?: boolean
   shuffledIndices?: number[]
+  fontFamily?: string
+  hostEntrance?: boolean
 }) => {
   const { t } = useTranslation()
   const displayIndices = shuffledIndices ?? answers.map((_, i) => i)
 
   return (
     <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2">
-      {displayIndices.map((origIndex) => {
+      {displayIndices.map((origIndex, position) => {
         const answer = answers[origIndex]
 
         if (answer === undefined) {
@@ -33,32 +64,40 @@ export const McqAnswers = ({
         }
 
         return (
-          <AnswerButton
+          <AnswerSlot
             key={origIndex}
-            index={origIndex}
-            className={clsx(
-              ANSWERS_COLORS[origIndex],
-              /* Surface tactile minimum 64px en mode icône seule */
-              iconOnly && "min-h-16",
-            )}
-            icon={ANSWERS_ICONS[origIndex]}
-            iconOnly={iconOnly}
-            darkText={isDarkTextAnswer(origIndex)}
-            // En mode icône seule, le bouton n'a pas de texte visible : son nom
-            // accessible reprend la forme, le numéro et l'intitulé.
-            aria-label={
-              iconOnly
-                ? t("game:a11y.answerOption", {
-                    shape: t(ANSWERS_SHAPE_KEYS[origIndex] ?? ""),
-                    number: origIndex + 1,
-                    text: answer,
-                  })
-                : undefined
-            }
-            onClick={() => onAnswer(origIndex)}
+            hostEntrance={hostEntrance}
+            position={position}
           >
-            {answer}
-          </AnswerButton>
+            <AnswerButton
+              index={origIndex}
+              noEntrance={hostEntrance}
+              style={{ fontFamily: fontFamilyCss(fontFamily) }}
+              className={clsx(
+                ANSWERS_COLORS[origIndex],
+                hostEntrance && "w-full",
+                /* Surface tactile minimum 64px en mode icône seule */
+                iconOnly && "min-h-16",
+              )}
+              icon={ANSWERS_ICONS[origIndex]}
+              iconOnly={iconOnly}
+              darkText={isDarkTextAnswer(origIndex)}
+              // En mode icône seule, le bouton n'a pas de texte visible : son nom
+              // accessible reprend la forme, le numéro et l'intitulé.
+              aria-label={
+                iconOnly
+                  ? t("game:a11y.answerOption", {
+                      shape: t(ANSWERS_SHAPE_KEYS[origIndex] ?? ""),
+                      number: origIndex + 1,
+                      text: answer,
+                    })
+                  : undefined
+              }
+              onClick={() => onAnswer(origIndex)}
+            >
+              {answer}
+            </AnswerButton>
+          </AnswerSlot>
         )
       })}
     </div>
@@ -68,42 +107,41 @@ export const McqAnswers = ({
 export const TrueFalseAnswers = ({
   onAnswer,
   shuffledIndices,
+  fontFamily,
+  hostEntrance,
 }: {
   onAnswer?: (_key: number) => void
   shuffledIndices?: number[]
+  fontFamily?: string
+  hostEntrance?: boolean
 }) => {
   const { t } = useTranslation()
   const displayIndices = shuffledIndices ?? [0, 1]
 
   return (
     <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 px-2">
-      {displayIndices.map((origIndex) => {
-        if (origIndex === 0) {
-          return (
-            <AnswerButton
-              key={0}
-              index={0}
-              className="bg-red-500"
-              icon={ANSWERS_ICONS[0]}
-              onClick={() => onAnswer?.(0)}
-            >
-              {t("game:false")}
-            </AnswerButton>
-          )
-        }
-
-        return (
+      {displayIndices.map((origIndex, position) => (
+        // 0 = Faux (rouge), 1 = Vrai (bleu).
+        <AnswerSlot
+          key={origIndex}
+          hostEntrance={hostEntrance}
+          position={position}
+        >
           <AnswerButton
-            key={1}
-            index={1}
-            className="bg-blue-500"
-            icon={ANSWERS_ICONS[1]}
-            onClick={() => onAnswer?.(1)}
+            index={origIndex}
+            noEntrance={hostEntrance}
+            style={{ fontFamily: fontFamilyCss(fontFamily) }}
+            className={clsx(
+              origIndex === 0 ? "bg-red-500" : "bg-blue-500",
+              hostEntrance && "w-full",
+            )}
+            icon={ANSWERS_ICONS[origIndex]}
+            onClick={() => onAnswer?.(origIndex)}
           >
-            {t("game:true")}
+            {origIndex === 0 ? t("game:false") : t("game:true")}
           </AnswerButton>
-        )
-      })}
+        </AnswerSlot>
+      ))}
     </div>
   )
 }

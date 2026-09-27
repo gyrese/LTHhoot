@@ -1,5 +1,6 @@
 import ConfigField from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField"
 import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigNumberInput"
+import LayoutBoxPanel from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/panels/LayoutBoxPanel"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import {
   Clock,
@@ -22,12 +23,18 @@ const ElementPanel = () => {
     updateQuestion,
     selectedId,
     setSelectedId,
+    selectedLayoutKey,
   } = useQuizzEditor()
   const { t } = useTranslation()
 
   const selectedElement = currentQuestion?.elements?.find(
     (el) => el.id === selectedId,
   )
+
+  // Titre ou case de réponse sélectionné sur la slide.
+  if (currentQuestion && selectedLayoutKey !== undefined) {
+    return <LayoutBoxPanel boxKey={selectedLayoutKey} />
+  }
 
   if (!currentQuestion || !selectedElement) {
     return (

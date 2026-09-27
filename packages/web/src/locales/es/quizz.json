@@ -66,7 +66,28 @@
     "aiRephrase": "Reformular con IA",
     "aiSuggestWrongAnswers": "Generar respuestas incorrectas con IA",
     "aiGenerateExplanation": "Generar con IA",
-    "aiGenerateExplanationTooltip": "Generar una explicación automática a partir de la pregunta y la respuesta"
+    "aiGenerateExplanationTooltip": "Generar una explicación automática a partir de la pregunta y la respuesta",
+    "layout": {
+      "titleBox": "Título de la pregunta",
+      "answerBox": "Respuesta {{number}}",
+      "hint": "Arrastra el cuadro para moverlo, tira de un tirador para redimensionarlo y haz doble clic para editar el texto.",
+      "text": "Texto",
+      "fill": "Fondo",
+      "textColor": "Color del texto",
+      "fontSize": "Tamaño del texto",
+      "auto": "Auto",
+      "default": "Por defecto",
+      "font": "Fuente de la pregunta",
+      "fontQuizDefault": "Fuente del quiz ({{font}})",
+      "interfaceFont": "interfaz",
+      "geometry": "Posición y tamaño",
+      "x": "X",
+      "y": "Y",
+      "width": "Ancho",
+      "height": "Alto",
+      "reset": "Restablecer el diseño",
+      "resetHint": "El título y las respuestas vuelven a su posición y estilo por defecto."
+    }
   },
   "testDrive": "Probar",
   "testDriveNeedsSave": "Guarda el cuestionario antes de probarlo",
@@ -180,7 +201,10 @@
       "heros": "Superhéroes",
       "disney": "Disney",
       "harrypotter": "Harry Potter"
-    }
+    },
+    "questionFontLabel": "Fuente de las preguntas",
+    "questionFontHint": "Fuente del título y de las respuestas en la pantalla de presentación. Cada pregunta puede cambiarla.",
+    "questionFontDefault": "Fuente de la interfaz"
   },
   "titleQuizzPlaceholder": "Título del cuestionario...",
   "tolerance": "Tolerancia",

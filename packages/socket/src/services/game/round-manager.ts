@@ -36,6 +36,7 @@ import {
   resolveRoundDuration,
 } from "@rahoot/common/utils/round-duration"
 import { quizzDisplayName } from "@rahoot/common/utils/quizz-name"
+import { resolveQuestionFont } from "@rahoot/common/utils/question-layout"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
@@ -322,6 +323,15 @@ export class RoundManager {
     void this.newQuestion()
   }
 
+  // Mise en page libre + police résolue (question > quiz) : envoyées telles
+  // quelles à l'hôte comme aux joueurs, elles ne contiennent aucune solution.
+  private questionDisplay(question: Question) {
+    return {
+      layout: question.layout,
+      fontFamily: resolveQuestionFont(question, this.opts.quizz),
+    }
+  }
+
   async newQuestion(): Promise<void> {
     if (this.questionInProgress) {
       return
@@ -348,6 +358,7 @@ export class RoundManager {
           background: question.background,
           backgroundOpacity: question.backgroundOpacity,
           elements: question.elements,
+          ...this.questionDisplay(question),
           audio: question.audio,
           cooldown: question.cooldown,
           pinImage: undefined,
@@ -454,6 +465,7 @@ export class RoundManager {
         background: question.background,
         backgroundOpacity: question.backgroundOpacity,
         elements: question.elements,
+        ...this.questionDisplay(question),
         audio: question.audio,
         cooldown: question.cooldown,
         startedAt: questionNow,
@@ -480,6 +492,7 @@ export class RoundManager {
         background: question.background,
         backgroundOpacity: question.backgroundOpacity,
         elements: question.elements,
+        ...this.questionDisplay(question),
         audio: question.audio,
         cooldown: question.cooldown,
         startedAt: questionNow,
@@ -543,6 +556,7 @@ export class RoundManager {
         background: question.background,
         backgroundOpacity: question.backgroundOpacity,
         elements: question.elements,
+        ...this.questionDisplay(question),
         audio: question.audio,
         time: this.roundDuration,
         startedAt: this.startTime,

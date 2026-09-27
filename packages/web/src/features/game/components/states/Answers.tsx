@@ -5,6 +5,11 @@ import type { AnswerAckStatus } from "@rahoot/common/types/game/socket"
 import { FREEZE_DURATION_MS } from "@rahoot/common/types/powerup"
 import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
+import { QuestionLayoutOverlay } from "@rahoot/web/features/game/components/QuestionLayoutView"
+import {
+  fontFamilyCss,
+  layoutAnswerLabels,
+} from "@rahoot/web/features/game/utils/question-layout"
 import {
   DateAnswer,
   McqAnswers,
@@ -89,6 +94,8 @@ const Answers = ({
     background,
     backgroundOpacity,
     elements,
+    layout,
+    fontFamily,
     audio,
     time,
     totalPlayer,
@@ -482,6 +489,18 @@ const Answers = ({
     }
   })
 
+  // Mise en page libre et police : écran hôte uniquement (les téléphones des
+  // joueurs gardent leur affichage habituel).
+  const hostFont = isHost ? fontFamily : undefined
+  const hostLayout = isHost ? layout : undefined
+  const answerLabels = layoutAnswerLabels(type, answers, [
+    t("game:false"),
+    t("game:true"),
+  ])
+
+  const hasTitleBox = Boolean(hostLayout?.title)
+  const hasAnswerBoxes = Boolean(hostLayout?.answers && answerLabels)
+
   // Types dont les propositions occupent la zone centrale de l'écran hôte.
   const hostVisual =
     !isPlayer &&
@@ -557,6 +576,19 @@ const Answers = ({
         </div>
       )}
 
+      {/* Titre / réponses positionnés librement (mise en page de l'éditeur),
+          dans le même repère 1920×1080 que les éléments. Sous le HUD : le
+          chrono et le compteur restent toujours lisibles. */}
+      {type !== "title" && (
+        <QuestionLayoutOverlay
+          layout={hostLayout}
+          title={question}
+          answerLabels={answerLabels}
+          fontFamily={hostFont}
+          animated
+        />
+      )}
+
       {type === "image_sequence" && images && images.length > 0 && (
         <ImageSequenceReveal
           images={images}
@@ -599,10 +631,13 @@ const Answers = ({
         </div>
       )}
 
-      {type !== "title" && (
+      {type !== "title" && !hasTitleBox && (
         <div id="question-container" className="relative z-10 px-4 pt-4">
           <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-            <h2 className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+            <h2
+              className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl"
+              style={{ fontFamily: fontFamilyCss(hostFont) }}
+            >
               {question}
             </h2>
           </div>
@@ -759,10 +794,32 @@ const Answers = ({
           </div>
         )}
 
-        {!isPlayer && type === "mcq" && answers && (
-          <McqAnswers answers={answers} onAnswer={() => undefined} />
+        {/* Écran hôte : les cases arrivent l'une après l'autre (« glissé +
+            rebond »). Purement visuel : chrono et téléphones déjà actifs.
+            Cases positionnées librement : la grille habituelle reste en place
+            mais invisible, pour que le HUD garde sa position au-dessus. */}
+        {!isPlayer && answerLabels && (
+          <div
+            className={clsx(hasAnswerBoxes && "invisible")}
+            aria-hidden={hasAnswerBoxes || undefined}
+          >
+            {type === "mcq" ? (
+              <McqAnswers
+                key={question}
+                answers={answerLabels}
+                onAnswer={() => undefined}
+                fontFamily={hostFont}
+                hostEntrance={!hasAnswerBoxes}
+              />
+            ) : (
+              <TrueFalseAnswers
+                key={question}
+                fontFamily={hostFont}
+                hostEntrance={!hasAnswerBoxes}
+              />
+            )}
+          </div>
         )}
-        {!isPlayer && type === "true_false" && <TrueFalseAnswers />}
         {!isPlayer && type === "open" && <OpenAnswerPlaceholder />}
         {!isPlayer && type === "image_sequence" && <OpenAnswerPlaceholder />}
         {isPlayer && !answered && type === "mcq" && answers && (

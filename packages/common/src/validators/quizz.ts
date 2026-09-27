@@ -3,6 +3,11 @@ import {
   PODIUM_THEME_NEUTRAL,
   PODIUM_THEMES,
 } from "@rahoot/common/constants"
+import {
+  MAX_MCQ_ANSWERS,
+  SLIDE_HEIGHT,
+  SLIDE_WIDTH,
+} from "@rahoot/common/utils/question-layout"
 import { z } from "zod"
 
 export const questionMediaValidator = z.object({
@@ -82,6 +87,39 @@ export const answerRevealValidator = z.object({
   text: z.string().optional(),
 })
 
+// Boîte de mise en page libre (repère 1920×1080). Bornes larges : une boîte
+// peut déborder de la diapositive, mais pas au point de devenir aberrante.
+const layoutColorValidator = z.string().trim().min(1).max(64)
+
+export const questionLayoutBoxValidator = z.object({
+  x: z
+    .number()
+    .min(-SLIDE_WIDTH)
+    .max(SLIDE_WIDTH * 2),
+  y: z
+    .number()
+    .min(-SLIDE_WIDTH)
+    .max(SLIDE_WIDTH * 2),
+  width: z
+    .number()
+    .positive()
+    .max(SLIDE_WIDTH * 2),
+  height: z
+    .number()
+    .positive()
+    .max(SLIDE_HEIGHT * 2),
+  fill: layoutColorValidator.optional(),
+  textColor: layoutColorValidator.optional(),
+  fontSize: z.number().min(8).max(300).optional(),
+})
+
+export const questionLayoutValidator = z.object({
+  title: questionLayoutBoxValidator.optional(),
+  answers: z.array(questionLayoutBoxValidator).max(MAX_MCQ_ANSWERS).optional(),
+})
+
+const fontFamilyValidator = z.string().trim().min(1).max(100)
+
 const difficultyValidator = z.enum(["easy", "medium", "hard", "expert"])
 
 const baseQuestionValidator = z.object({
@@ -107,6 +145,8 @@ const baseQuestionValidator = z.object({
   gridRows: z.number().int().min(2).max(30).optional(),
   revelationStyle: z.string().optional(),
   pointsMultiplier: z.number().min(0.1).max(10).optional(),
+  layout: questionLayoutValidator.optional(),
+  fontFamily: fontFamilyValidator.optional(),
 })
 
 const mcqValidator = baseQuestionValidator.extend({
@@ -223,6 +263,10 @@ const titleValidator = z.object({
   gridRows: z.number().int().min(2).max(30).optional(),
   revelationStyle: z.string().optional(),
   pointsMultiplier: z.number().min(0.1).max(10).optional(),
+  // Slide titre : pas de titre ni de réponses affichés, mais la police et la
+  // mise en page sont conservées (changement de type aller-retour).
+  layout: questionLayoutValidator.optional(),
+  fontFamily: fontFamilyValidator.optional(),
 })
 
 const legacyMcqValidator = baseQuestionValidator
@@ -337,6 +381,7 @@ export const quizzValidator = z.object({
     .enum(["random", PODIUM_THEME_NEUTRAL, ...PODIUM_THEMES])
     .optional()
     .catch(undefined),
+  fontFamily: fontFamilyValidator.optional(),
   questions: z.array(questionValidator).min(1, "errors:quizz.noQuestions"),
   updatedAt: z.number().optional(),
 })

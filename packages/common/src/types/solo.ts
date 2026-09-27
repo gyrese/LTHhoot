@@ -1,6 +1,7 @@
 import type {
   DropPinZone,
   GridCell,
+  QuestionLayout,
   QuestionMedia,
   SlideBackground,
   SlideElement,
@@ -28,6 +29,10 @@ type SoloQuestionBase = {
   background?: SlideBackground
   backgroundOpacity?: number
   elements?: SlideElement[]
+  // Mise en page libre (géométrie + couleurs, aucune solution) et police
+  // résolue (question, sinon quiz).
+  layout?: QuestionLayout
+  fontFamily?: string
   audio?: string
   // Temps de réponse accordé, en secondes.
   time: number
