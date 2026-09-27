@@ -2,6 +2,8 @@ import type {
   AnswerReveal,
   DropPinZone,
   GridCell,
+  QuestionLayout,
+  QuestionLayoutBox,
   SlideElement,
 } from "@rahoot/common/types/game"
 import {
@@ -23,6 +25,7 @@ import {
 import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 import { calculatePercentages } from "@rahoot/web/features/game/utils/score"
 import clsx from "clsx"
+import { fontFamilyCss } from "@rahoot/web/features/game/utils/question-layout"
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { useGameConfig } from "@rahoot/web/features/game/components/GameWrapper"
@@ -249,23 +252,31 @@ const DistributionBar = ({
   colorClass,
   height,
   count,
+  box,
 }: {
   index: number
   colorClass?: string
   height?: string
   count: number
+  // Couleurs personnalisées de la réponse (mise en page de la question).
+  box?: QuestionLayoutBox
 }) => {
   const { t } = useTranslation()
   const Icon = ANSWERS_ICONS[index]
-  const dark = isDarkTextAnswer(index)
+  const dark = !box?.fill && !box?.textColor && isDarkTextAnswer(index)
+  const textColor = box?.textColor ?? (dark ? "#0f172a" : undefined)
 
   return (
     <div
       className={clsx(
         "anim-bar-grow flex min-h-14 origin-bottom flex-col items-center justify-end self-end overflow-hidden rounded-md",
-        colorClass,
+        !box?.fill && colorClass,
       )}
-      style={{ height, animationDelay: `${index * 0.1}s` }}
+      style={{
+        height,
+        animationDelay: `${index * 0.1}s`,
+        backgroundColor: box?.fill,
+      }}
       role="img"
       aria-label={`${t(ANSWERS_SHAPE_KEYS[index] ?? "")} : ${count}`}
     >
@@ -274,12 +285,10 @@ const DistributionBar = ({
           "flex w-full items-center justify-center gap-2 bg-black/10 py-1 text-center text-2xl font-black md:text-3xl",
           dark ? "text-slate-900" : "text-white drop-shadow-md",
         )}
+        style={{ color: box?.textColor }}
       >
         {Icon && (
-          <Icon
-            className="size-5 shrink-0 md:size-6"
-            fill={dark ? "#0f172a" : undefined}
-          />
+          <Icon className="size-5 shrink-0 md:size-6" fill={textColor} />
         )}
         {count}
       </span>
@@ -293,45 +302,61 @@ const McqResult = ({
   solutions,
   percentages,
   revealed,
+  layout,
+  fontFamily,
 }: {
   answers: string[]
   responses: Record<number, number>
   solutions: number[]
   percentages: Record<string, string>
   revealed: boolean
-}) => (
-  <>
-    <div
-      className="mt-8 grid h-40 w-full max-w-3xl gap-4 px-2 md:h-56"
-      style={{ gridTemplateColumns: `repeat(${answers.length}, 1fr)` }}
-    >
-      {answers.map((_, key) => (
-        <DistributionBar
-          key={key}
-          index={key}
-          colorClass={ANSWERS_COLORS[key]}
-          height={percentages[key]}
-          count={responses[key] || 0}
-        />
-      ))}
-    </div>
+  layout?: QuestionLayout
+  fontFamily?: string
+}) => {
+  const boxes = layout?.answers
 
-    <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 rounded-full px-2 text-lg font-bold text-white md:text-xl">
-      {answers.map((answer, key) => (
-        <AnswerButton
-          key={key}
-          index={key}
-          className={clsx(ANSWERS_COLORS[key])}
-          icon={ANSWERS_ICONS[key]}
-          darkText={isDarkTextAnswer(key)}
-          correct={revealed ? solutions.includes(key) : undefined}
-        >
-          {answer}
-        </AnswerButton>
-      ))}
-    </div>
-  </>
-)
+  return (
+    <>
+      <div
+        className="mt-8 grid h-40 w-full max-w-3xl gap-4 px-2 md:h-56"
+        style={{ gridTemplateColumns: `repeat(${answers.length}, 1fr)` }}
+      >
+        {answers.map((_, key) => (
+          <DistributionBar
+            key={key}
+            index={key}
+            colorClass={ANSWERS_COLORS[key]}
+            height={percentages[key]}
+            count={responses[key] || 0}
+            box={boxes?.[key]}
+          />
+        ))}
+      </div>
+
+      <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 rounded-full px-2 text-lg font-bold text-white md:text-xl">
+        {answers.map((answer, key) => (
+          <AnswerButton
+            key={key}
+            index={key}
+            className={clsx(!boxes?.[key]?.fill && ANSWERS_COLORS[key])}
+            fillColor={boxes?.[key]?.fill}
+            textColor={boxes?.[key]?.textColor}
+            style={{ fontFamily: fontFamilyCss(fontFamily) }}
+            icon={ANSWERS_ICONS[key]}
+            darkText={
+              !boxes?.[key]?.fill &&
+              !boxes?.[key]?.textColor &&
+              isDarkTextAnswer(key)
+            }
+            correct={revealed ? solutions.includes(key) : undefined}
+          >
+            {answer}
+          </AnswerButton>
+        ))}
+      </div>
+    </>
+  )
+}
 
 // ── True / False ─────────────────────────────────────────────────────────────
 
@@ -340,14 +365,19 @@ const TrueFalseResult = ({
   solutions,
   percentages,
   revealed,
+  layout,
+  fontFamily,
 }: {
   responses: Record<number, number>
   solutions: number[]
   percentages: Record<string, string>
   revealed: boolean
+  layout?: QuestionLayout
+  fontFamily?: string
 }) => {
   const { t } = useTranslation()
   const labels = [t("game:false"), t("game:true")]
+  const boxes = layout?.answers
   const colors = ["bg-red-500", "bg-blue-500"]
 
   return (
@@ -360,6 +390,7 @@ const TrueFalseResult = ({
             colorClass={colors[key]}
             height={percentages[key]}
             count={responses[key] || 0}
+            box={boxes?.[key]}
           />
         ))}
       </div>
@@ -369,7 +400,10 @@ const TrueFalseResult = ({
           <AnswerButton
             key={key}
             index={key}
-            className={clsx(colors[key])}
+            className={clsx(!boxes?.[key]?.fill && colors[key])}
+            fillColor={boxes?.[key]?.fill}
+            textColor={boxes?.[key]?.textColor}
+            style={{ fontFamily: fontFamilyCss(fontFamily) }}
             icon={ANSWERS_ICONS[key]}
             correct={revealed ? solutions.includes(key) : undefined}
           >
@@ -649,6 +683,8 @@ const Responses = ({
     background,
     backgroundOpacity,
     elements,
+    layout,
+    fontFamily,
     answerReveal,
   },
 }: Props) => {
@@ -729,7 +765,10 @@ const Responses = ({
       {type !== "title" && (
         <div id="question-container" className="relative z-10 px-4 pt-4">
           <div className="mx-auto max-w-7xl rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-            <h2 className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+            <h2
+              className="anim-show text-center text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl"
+              style={{ fontFamily: fontFamilyCss(fontFamily) }}
+            >
               {question}
             </h2>
           </div>
@@ -757,6 +796,8 @@ const Responses = ({
               solutions={solutions}
               percentages={percentages}
               revealed={revealed}
+              layout={layout}
+              fontFamily={fontFamily}
             />
           )}
 
@@ -766,6 +807,8 @@ const Responses = ({
               solutions={solutions}
               percentages={percentages}
               revealed={revealed}
+              layout={layout}
+              fontFamily={fontFamily}
             />
           )}
 

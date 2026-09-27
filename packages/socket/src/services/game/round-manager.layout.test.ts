@@ -113,6 +113,22 @@ describe("RoundManager — mise en page libre et police", () => {
     expect(toPlayer.data).not.toHaveProperty("solutions")
   })
 
+  it("transmet aussi layout et police à l'écran des résultats (SHOW_RESPONSES)", async () => {
+    const { round, emitted } = setup(
+      { layout, fontFamily: "Lobster" },
+      "Roboto",
+    )
+
+    void round.start(managerSocket)
+    // Fenêtre de réponse (20 s) écoulée sans réponse → écran des résultats.
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 22_000)
+
+    const [responses] = payloadsOf(emitted, "SHOW_RESPONSES")
+    expect(responses?.target).toBe("manager")
+    expect(responses?.data.layout).toEqual(layout)
+    expect(responses?.data.fontFamily).toBe("Lobster")
+  })
+
   it("se replie sur la police du quiz, sans layout pour un quiz historique", async () => {
     const { round, emitted } = setup({}, "Roboto")
 

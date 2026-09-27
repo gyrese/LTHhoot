@@ -179,6 +179,8 @@ type ManagerExtraStatus = {
     background?: SlideBackground
     backgroundOpacity?: number
     elements?: SlideElement[]
+    layout?: QuestionLayout
+    fontFamily?: string
     audio?: string
     answerReveal?: AnswerReveal
   }

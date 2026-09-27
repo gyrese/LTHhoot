@@ -927,6 +927,8 @@ export class RoundManager {
       background: question.background,
       backgroundOpacity: question.backgroundOpacity,
       elements: question.elements,
+      // Mêmes couleurs et police que pendant la question (barres et cases).
+      ...this.questionDisplay(question),
       audio: question.audio,
       answerReveal: question.answerReveal,
     }
