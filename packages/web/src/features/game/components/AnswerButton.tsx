@@ -33,6 +33,10 @@ type Props = PropsWithChildren &
     darkText?: boolean
     // Pas d'animation d'entrée propre : le parent anime déjà l'apparition.
     noEntrance?: boolean
+    // Couleurs personnalisées dans l'éditeur (mise en page de la question) :
+    // remplacent la couleur de la case et celle du texte / de la forme.
+    fillColor?: string
+    textColor?: string
   }
 
 const AnswerButton = ({
@@ -44,13 +48,17 @@ const AnswerButton = ({
   index,
   darkText,
   noEntrance,
+  fillColor,
+  textColor,
   style,
   ...otherProps
 }: Props) => {
   const CorrectIcon = correct ? Check : X
+  const contentColor = textColor ?? (darkText ? DARK_TEXT_COLOR : undefined)
 
   const animStyle: CSSProperties = {
     ...style,
+    backgroundColor: fillColor,
     animationDelay:
       index !== undefined && !noEntrance ? `${index * 0.08}s` : undefined,
   }
@@ -71,7 +79,7 @@ const AnswerButton = ({
     >
       <Icon
         className={clsx("shrink-0", iconOnly ? "h-10 w-10" : "h-6 w-6")}
-        fill={darkText ? DARK_TEXT_COLOR : undefined}
+        fill={contentColor}
       />
       {!iconOnly && (
         <p
@@ -82,9 +90,10 @@ const AnswerButton = ({
               ? childrenSizeClass(children)
               : "text-3xl md:text-4xl",
           )}
-          style={
-            darkText ? undefined : { textShadow: "0 2px 4px rgba(0,0,0,0.3)" }
-          }
+          style={{
+            color: textColor,
+            textShadow: darkText ? undefined : "0 2px 4px rgba(0,0,0,0.3)",
+          }}
         >
           {children}
         </p>
@@ -95,6 +104,7 @@ const AnswerButton = ({
             "size-8 shrink-0 stroke-6 drop-shadow-md",
             darkText ? "text-slate-900" : "text-white",
           )}
+          style={{ color: textColor }}
           aria-hidden="true"
         />
       )}

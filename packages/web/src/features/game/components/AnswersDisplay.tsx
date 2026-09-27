@@ -9,6 +9,7 @@ import {
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import { answerEntrance } from "@rahoot/web/features/game/utils/motion"
 import { fontFamilyCss } from "@rahoot/web/features/game/utils/question-layout"
+import type { QuestionLayoutBox } from "@rahoot/common/types/game"
 import { motion, useReducedMotion } from "motion/react"
 import { useState, type FormEvent, type ReactNode } from "react"
 
@@ -43,6 +44,7 @@ export const McqAnswers = ({
   shuffledIndices,
   fontFamily,
   hostEntrance,
+  answerBoxes,
 }: {
   answers: string[]
   onAnswer: (_key: number) => void
@@ -50,6 +52,9 @@ export const McqAnswers = ({
   shuffledIndices?: number[]
   fontFamily?: string
   hostEntrance?: boolean
+  // Boîtes de la mise en page (index d'origine) : leurs couleurs sont reprises
+  // pour que chaque case ait la même couleur sur l'hôte et le téléphone.
+  answerBoxes?: QuestionLayoutBox[]
 }) => {
   const { t } = useTranslation()
   const displayIndices = shuffledIndices ?? answers.map((_, i) => i)
@@ -63,6 +68,8 @@ export const McqAnswers = ({
           return null
         }
 
+        const box = answerBoxes?.[origIndex]
+
         return (
           <AnswerSlot
             key={origIndex}
@@ -73,15 +80,19 @@ export const McqAnswers = ({
               index={origIndex}
               noEntrance={hostEntrance}
               style={{ fontFamily: fontFamilyCss(fontFamily) }}
+              fillColor={box?.fill}
+              textColor={box?.textColor}
               className={clsx(
-                ANSWERS_COLORS[origIndex],
+                !box?.fill && ANSWERS_COLORS[origIndex],
                 hostEntrance && "w-full",
                 /* Surface tactile minimum 64px en mode icône seule */
                 iconOnly && "min-h-16",
               )}
               icon={ANSWERS_ICONS[origIndex]}
               iconOnly={iconOnly}
-              darkText={isDarkTextAnswer(origIndex)}
+              darkText={
+                !box?.fill && !box?.textColor && isDarkTextAnswer(origIndex)
+              }
               // En mode icône seule, le bouton n'a pas de texte visible : son nom
               // accessible reprend la forme, le numéro et l'intitulé.
               aria-label={
@@ -109,11 +120,13 @@ export const TrueFalseAnswers = ({
   shuffledIndices,
   fontFamily,
   hostEntrance,
+  answerBoxes,
 }: {
   onAnswer?: (_key: number) => void
   shuffledIndices?: number[]
   fontFamily?: string
   hostEntrance?: boolean
+  answerBoxes?: QuestionLayoutBox[]
 }) => {
   const { t } = useTranslation()
   const displayIndices = shuffledIndices ?? [0, 1]
@@ -131,8 +144,11 @@ export const TrueFalseAnswers = ({
             index={origIndex}
             noEntrance={hostEntrance}
             style={{ fontFamily: fontFamilyCss(fontFamily) }}
+            fillColor={answerBoxes?.[origIndex]?.fill}
+            textColor={answerBoxes?.[origIndex]?.textColor}
             className={clsx(
-              origIndex === 0 ? "bg-red-500" : "bg-blue-500",
+              !answerBoxes?.[origIndex]?.fill &&
+                (origIndex === 0 ? "bg-red-500" : "bg-blue-500"),
               hostEntrance && "w-full",
             )}
             icon={ANSWERS_ICONS[origIndex]}

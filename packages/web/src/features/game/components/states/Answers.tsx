@@ -829,6 +829,7 @@ const Answers = ({
             iconOnly
             onAnswer={(k) => emit({ answerId: k })}
             shuffledIndices={shuffledIndices}
+            answerBoxes={layout?.answers}
           />
         )}
         {isPlayer && !answered && type === "true_false" && (
@@ -836,6 +837,7 @@ const Answers = ({
             key={question}
             onAnswer={(k) => emit({ answerId: k })}
             shuffledIndices={shuffledIndices}
+            answerBoxes={layout?.answers}
           />
         )}
         {isPlayer && !answered && type === "open" && (
