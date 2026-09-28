@@ -5,6 +5,7 @@ import type {
 } from "@rahoot/common/types/game"
 import {
   AnswerBoxView,
+  FitGroup,
   TitleBoxView,
 } from "@rahoot/web/features/game/components/QuestionLayoutView"
 import {
@@ -487,7 +488,11 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
         onStartEdit={() => startEdit("title")}
         onCommit={(box) => commitBox("title", box)}
       >
-        <TitleBoxView box={titleBox} fontFamily={font}>
+        <TitleBoxView
+          box={titleBox}
+          fontFamily={font}
+          fitKey={q.question || t("quizz:question.placeholder")}
+        >
           {editingKey === "title" ? (
             <InlineTextInput
               value={q.question}
@@ -535,67 +540,71 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
         )}
       </EditableBox>
 
-      {Array.from({ length: answerCount }, (_, index) => {
-        const box = layout.answers![index]!
-        const text = answerText(index)
-        const correct = isCorrect(index)
+      <FitGroup>
+        {Array.from({ length: answerCount }, (_, index) => {
+          const box = layout.answers![index]!
+          const text = answerText(index)
+          const correct = isCorrect(index)
 
-        return (
-          <EditableBox
-            key={index}
-            box={box}
-            scale={view.scale}
-            label={t("quizz:question.layout.answerBox", { number: index + 1 })}
-            selected={selectedLayoutKey === index}
-            editing={editingKey === index}
-            onSelect={() => setSelectedLayoutKey(index)}
-            onStartEdit={() => startEdit(index)}
-            onCommit={(next) => commitBox(index, next)}
-          >
-            <AnswerBoxView
-              index={index}
+          return (
+            <EditableBox
+              key={index}
               box={box}
-              text={text || t("quizz:addAnswerPlaceholder")}
-              fontFamily={font}
-              trailing={
-                <button
-                  type="button"
-                  onPointerDown={stopGesture}
-                  onClick={() => toggleCorrect(index)}
-                  aria-pressed={correct}
-                  title={t("quizz:markCorrect", "Marquer comme correcte")}
-                  className={clsx(
-                    "flex shrink-0 items-center justify-center rounded-full border-current transition-colors",
-                    correct ? "bg-white text-green-600" : "bg-transparent",
-                  )}
-                  style={{
-                    // Jamais plus haute que la case (boîte très aplatie).
-                    width: Math.min(controlPx, box.height * 0.7),
-                    height: Math.min(controlPx, box.height * 0.7),
-                    borderWidth: 2 / view.scale,
-                    borderColor: correct ? "#ffffff" : undefined,
-                  }}
-                >
-                  {correct && <Check className="size-2/3" strokeWidth={3} />}
-                </button>
-              }
+              scale={view.scale}
+              label={t("quizz:question.layout.answerBox", {
+                number: index + 1,
+              })}
+              selected={selectedLayoutKey === index}
+              editing={editingKey === index}
+              onSelect={() => setSelectedLayoutKey(index)}
+              onStartEdit={() => startEdit(index)}
+              onCommit={(next) => commitBox(index, next)}
             >
-              {editingKey === index ? (
-                <InlineTextInput
-                  value={text}
-                  placeholder={t("quizz:addAnswerPlaceholder")}
-                  onChange={(value) => updateAnswerText(index, value)}
-                  onDone={() => setEditingKey(undefined)}
-                />
-              ) : (
-                <span className={clsx(!text && "italic opacity-60")}>
-                  {text || t("quizz:addAnswerPlaceholder")}
-                </span>
-              )}
-            </AnswerBoxView>
-          </EditableBox>
-        )
-      })}
+              <AnswerBoxView
+                index={index}
+                box={box}
+                text={text || t("quizz:addAnswerPlaceholder")}
+                fontFamily={font}
+                trailing={
+                  <button
+                    type="button"
+                    onPointerDown={stopGesture}
+                    onClick={() => toggleCorrect(index)}
+                    aria-pressed={correct}
+                    title={t("quizz:markCorrect", "Marquer comme correcte")}
+                    className={clsx(
+                      "flex shrink-0 items-center justify-center rounded-full border-current transition-colors",
+                      correct ? "bg-white text-green-600" : "bg-transparent",
+                    )}
+                    style={{
+                      // Jamais plus haute que la case (boîte très aplatie).
+                      width: Math.min(controlPx, box.height * 0.7),
+                      height: Math.min(controlPx, box.height * 0.7),
+                      borderWidth: 2 / view.scale,
+                      borderColor: correct ? "#ffffff" : undefined,
+                    }}
+                  >
+                    {correct && <Check className="size-2/3" strokeWidth={3} />}
+                  </button>
+                }
+              >
+                {editingKey === index ? (
+                  <InlineTextInput
+                    value={text}
+                    placeholder={t("quizz:addAnswerPlaceholder")}
+                    onChange={(value) => updateAnswerText(index, value)}
+                    onDone={() => setEditingKey(undefined)}
+                  />
+                ) : (
+                  <span className={clsx(!text && "italic opacity-60")}>
+                    {text || t("quizz:addAnswerPlaceholder")}
+                  </span>
+                )}
+              </AnswerBoxView>
+            </EditableBox>
+          )
+        })}
+      </FitGroup>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { QuestionLayoutOverlay } from "@rahoot/web/features/game/components/Ques
 import {
   fontFamilyCss,
   defaultAnswerBoxes,
+  defaultTitleBox,
   layoutAnswerLabels,
 } from "@rahoot/web/features/game/utils/question-layout"
 import {
@@ -497,12 +498,14 @@ const Answers = ({
     t("game:false"),
     t("game:true"),
   ])
-  // Sans mise en page personnalisée, les cases QCM / Vrai-Faux prennent les
-  // boîtes par défaut de l'éditeur : mêmes proportions que dans l'éditeur,
-  // quelle que soit la taille de l'écran (et non plus toute la largeur).
+  // Sans mise en page personnalisée, le titre et les cases QCM / Vrai-Faux
+  // prennent les boîtes par défaut de l'éditeur : mêmes proportions que dans
+  // l'éditeur, quelle que soit la taille de l'écran (et non plus toute la
+  // largeur).
   const hostLayout = isHost
     ? {
         ...layout,
+        title: layout?.title ?? (answerLabels ? defaultTitleBox() : undefined),
         answers:
           layout?.answers ??
           (answerLabels ? defaultAnswerBoxes(answerLabels.length) : undefined),
