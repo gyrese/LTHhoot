@@ -27,12 +27,22 @@ const inSlide = ({ x, y, width, height }: ReturnType<typeof defaultTitleBox>) =>
   x >= 0 && y >= 0 && x + width <= SLIDE_WIDTH && y + height <= SLIDE_HEIGHT
 
 describe("boîtes par défaut", () => {
-  it("place le titre centré en haut, dans la slide", () => {
+  it("place le titre centré en haut, sous le HUD, presque pleine largeur", () => {
     const title = defaultTitleBox()
 
-    expect(title.y).toBeLessThan(100)
+    // Sous le compteur de question / boutons du haut de l'écran hôte.
+    expect(title.y).toBeGreaterThanOrEqual(80)
+    expect(title.y).toBeLessThan(160)
     expect(title.x + title.width / 2).toBe(SLIDE_WIDTH / 2)
+    expect(title.width).toBeGreaterThan(SLIDE_WIDTH * 0.9)
     expect(inSlide(title)).toBe(true)
+  })
+
+  it("étale les réponses sur presque toute la largeur", () => {
+    const [left, right] = defaultAnswerBoxes(2)
+
+    expect(left!.x).toBeLessThan(SLIDE_WIDTH * 0.05)
+    expect(right!.x + right!.width).toBeGreaterThan(SLIDE_WIDTH * 0.95)
   })
 
   it("reproduit la grille 2 colonnes collée en bas", () => {

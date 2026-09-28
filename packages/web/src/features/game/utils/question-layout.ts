@@ -11,17 +11,21 @@ import {
 
 // ─── Mise en page libre du titre et des réponses ──────────────────────────────
 // Toutes les boîtes sont exprimées dans le repère logique 1920×1080 des
-// diapositives. Les boîtes par défaut reproduisent au mieux la mise en page
-// historique de l'écran hôte (titre glass en haut sur `max-w-7xl`, réponses en
-// grille 2 colonnes collée en bas) vue sur un écran 1920×1080 : c'est ce que
-// l'éditeur affiche tant que l'auteur n'a rien déplacé.
+// diapositives. Par défaut, titre et réponses occupent presque toute la
+// largeur (comme la mise en page historique vue sur un écran d'ordinateur) :
+// c'est ce que l'éditeur affiche tant que l'auteur n'a rien déplacé, et ce que
+// l'écran hôte reproduit à l'identique.
 
 export { resolveQuestionFont, SLIDE_HEIGHT, SLIDE_WIDTH }
 
-// Largeur de `max-w-7xl` (80rem) et marges des conteneurs de l'écran hôte.
-const CONTENT_W = 1280
-const CONTENT_X = (SLIDE_WIDTH - CONTENT_W) / 2
+// Marge latérale et largeur utile des boîtes par défaut.
+const SIDE_MARGIN = 32
+const CONTENT_W = SLIDE_WIDTH - SIDE_MARGIN * 2
+const CONTENT_X = SIDE_MARGIN
 const EDGE = 16
+// Le titre démarre sous le HUD du haut de l'écran hôte (compteur de question,
+// boutons son / suivant) pour ne pas passer dessous en pleine largeur.
+const TITLE_TOP = 100
 const ANSWER_GAP = 8
 // Hauteur d'un bouton de réponse de l'écran hôte (py-6 + ligne text-4xl).
 const ANSWER_ROW_H = 88
@@ -54,7 +58,7 @@ export const layoutAnswerCount = (question: Question): number => {
 
 export const defaultTitleBox = (): QuestionLayoutBox => ({
   x: CONTENT_X,
-  y: EDGE,
+  y: TITLE_TOP,
   width: CONTENT_W,
   height: 120,
 })
