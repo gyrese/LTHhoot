@@ -320,6 +320,8 @@
     "drawTitle": "Tirage au sort de la semaine",
     "drawText": "Le tirage au sort aura lieu en fin de semaine parmi le <top>Top {{count}} des meilleurs scores</top>. Si vous êtes sélectionné(e), l'administrateur vous contactera directement pour vous remettre votre lot et le visuel officiel du gagnant sera publié sur nos réseaux !",
     "share": "Défier des amis / Partager le quiz",
-    "playAgain": "Rejouer une partie"
+    "playAgain": "Rejouer une partie",
+    "copyLink": "Copier le lien",
+    "sharePasteIn": "Message copié ! Colle-le dans {{app}}."
   }
 }

@@ -320,6 +320,8 @@
     "drawTitle": "Estrazione della settimana",
     "drawText": "L'estrazione avverrà a fine settimana tra i <top>primi {{count}} migliori punteggi</top>. Se verrai selezionato/a, l'amministratore ti contatterà direttamente per consegnarti il premio e l'immagine ufficiale del vincitore sarà pubblicata sui nostri social!",
     "share": "Sfida gli amici / Condividi il quiz",
-    "playAgain": "Gioca di nuovo"
+    "playAgain": "Gioca di nuovo",
+    "copyLink": "Copia link",
+    "sharePasteIn": "Messaggio copiato! Incollalo su {{app}}."
   }
 }

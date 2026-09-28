@@ -320,6 +320,8 @@
     "drawTitle": "Sorteo de la semana",
     "drawText": "El sorteo se realizará al final de la semana entre el <top>Top {{count}} de las mejores puntuaciones</top>. Si resultas seleccionado/a, el administrador se pondrá en contacto contigo directamente para entregarte tu premio y la imagen oficial del ganador se publicará en nuestras redes.",
     "share": "Desafiar a amigos / Compartir el quiz",
-    "playAgain": "Jugar otra partida"
+    "playAgain": "Jugar otra partida",
+    "copyLink": "Copiar enlace",
+    "sharePasteIn": "¡Mensaje copiado! Pégalo en {{app}}."
   }
 }

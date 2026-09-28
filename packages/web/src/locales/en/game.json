@@ -319,7 +319,9 @@
     "drawTitle": "Weekly prize draw",
     "drawText": "The draw will take place at the end of the week among the <top>top {{count}} scores</top>. If you are selected, the administrator will contact you directly to hand over your prize, and the official winner visual will be posted on our social networks!",
     "share": "Challenge friends / Share the quiz",
-    "playAgain": "Play again"
+    "playAgain": "Play again",
+    "copyLink": "Copy link",
+    "sharePasteIn": "Message copied! Paste it into {{app}}."
   },
   "playersConnected_many": "{{count}} players connected"
 }

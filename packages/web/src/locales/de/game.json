@@ -319,7 +319,9 @@
     "drawTitle": "Verlosung der Woche",
     "drawText": "Die Verlosung findet am Ende der Woche unter den <top>Top {{count}} der besten Ergebnisse</top> statt. Wenn du ausgewählt wirst, kontaktiert dich der Administrator direkt, um dir deinen Preis zu übergeben, und das offizielle Gewinnerbild wird in unseren Netzwerken veröffentlicht!",
     "share": "Freunde herausfordern / Quiz teilen",
-    "playAgain": "Noch einmal spielen"
+    "playAgain": "Noch einmal spielen",
+    "copyLink": "Link kopieren",
+    "sharePasteIn": "Nachricht kopiert! Füge sie in {{app}} ein."
   },
   "playersConnected_many": "{{count}} Spieler verbunden"
 }
