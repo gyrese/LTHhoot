@@ -5,61 +5,68 @@ import { useSoundStore } from "@rahoot/web/features/game/stores/sound"
 
 type Props = {
   audio: string
+  // Quiz solo : aucun écran hôte, le fond sonore est joué sur l'appareil du
+  // joueur lui-même.
+  solo?: boolean
 }
 
-const AudioEmbed = forwardRef<HTMLAudioElement, Props>(({ audio }, ref) => {
-  const { isHost } = useGameConfig()
-  const muted = useSoundStore((state) => state.muted)
-  const src = parseAudio(audio)
+const AudioEmbed = forwardRef<HTMLAudioElement, Props>(
+  ({ audio, solo }, ref) => {
+    const { isHost } = useGameConfig()
+    const muted = useSoundStore((state) => state.muted)
+    const src = parseAudio(audio)
 
-  if (!isHost) {
-    return null
-  }
+    if (!isHost && !solo) {
+      return null
+    }
 
-  if (src.type === "file") {
-    return <audio ref={ref} src={src.url} autoPlay loop hidden muted={muted} />
-  }
+    if (src.type === "file") {
+      return (
+        <audio ref={ref} src={src.url} autoPlay loop hidden muted={muted} />
+      )
+    }
 
-  // YouTube audio : iframe minuscule hors-écran
-  const params = new URLSearchParams({
-    autoplay: "1",
-    loop: "1",
-    controls: "0",
-    // Son coupé par l'hôte : pris en compte au chargement du lecteur.
-    mute: muted ? "1" : "0",
-    playlist: src.videoId,
-    rel: "0",
-    playsinline: "1",
-    // Permet de lire la durée réelle du morceau via l'API iframe, pour caler la
-    // manche dessus quand aucune borne de fin n'a été saisie
-    // (cf. useYoutubeDuration).
-    enablejsapi: "1",
-    origin: typeof window !== "undefined" ? window.location.origin : "",
-  })
+    // YouTube audio : iframe minuscule hors-écran
+    const params = new URLSearchParams({
+      autoplay: "1",
+      loop: "1",
+      controls: "0",
+      // Son coupé par l'hôte : pris en compte au chargement du lecteur.
+      mute: muted ? "1" : "0",
+      playlist: src.videoId,
+      rel: "0",
+      playsinline: "1",
+      // Permet de lire la durée réelle du morceau via l'API iframe, pour caler la
+      // manche dessus quand aucune borne de fin n'a été saisie
+      // (cf. useYoutubeDuration).
+      enablejsapi: "1",
+      origin: typeof window !== "undefined" ? window.location.origin : "",
+    })
 
-  if (src.start > 0) {
-    params.set("start", String(src.start))
-  }
+    if (src.start > 0) {
+      params.set("start", String(src.start))
+    }
 
-  if (src.end > 0) {
-    params.set("end", String(src.end))
-  }
+    if (src.end > 0) {
+      params.set("end", String(src.end))
+    }
 
-  return (
-    <iframe
-      src={`https://www.youtube.com/embed/${src.videoId}?${params.toString()}`}
-      allow="autoplay; encrypted-media"
-      style={{
-        position: "absolute",
-        width: 1,
-        height: 1,
-        opacity: 0,
-        pointerEvents: "none",
-      }}
-      aria-hidden="true"
-    />
-  )
-})
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${src.videoId}?${params.toString()}`}
+        allow="autoplay; encrypted-media"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+        aria-hidden="true"
+      />
+    )
+  },
+)
 
 AudioEmbed.displayName = "AudioEmbed"
 

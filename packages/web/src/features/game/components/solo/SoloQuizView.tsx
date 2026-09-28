@@ -11,8 +11,10 @@ import QuestionMedia from "@rahoot/web/components/QuestionMedia"
 import BackgroundRevealer from "@rahoot/web/features/game/components/BackgroundRevealer"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
 import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
+import AudioEmbed from "@rahoot/web/features/game/components/AudioEmbed"
 import AnimatedPoints from "@rahoot/web/features/game/components/AnimatedPoints"
 import NotARobotCheck from "@rahoot/web/features/game/components/solo/NotARobotCheck"
+import SoloSharePanel from "@rahoot/web/features/game/components/solo/SoloSharePanel"
 import {
   useEvent,
   useSocket,
@@ -32,7 +34,6 @@ import {
   Plus,
   RotateCcw,
   Send,
-  Share2,
   Sparkles,
   Trophy,
   User,
@@ -89,6 +90,22 @@ const initialNumber = (question: SoloPublicQuestion | null): number => {
 
   return 0
 }
+
+// Fond sonore de la question (fichier ou YouTube), joué sur l'appareil du
+// joueur : en solo il n'y a pas d'écran hôte pour le diffuser. La clé relance
+// la lecture à chaque question.
+const SoloQuestionAudio = ({
+  active,
+  question,
+  questionIndex,
+}: {
+  active: boolean
+  question: SoloPublicQuestion | null
+  questionIndex: number
+}) =>
+  active && question?.audio ? (
+    <AudioEmbed key={questionIndex} audio={question.audio} solo />
+  ) : null
 
 export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const { socket, isConnected } = useSocket()
@@ -154,34 +171,6 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const [sfxPop] = useSound(SFX.ANSWERS.SOUND, { volume: 0.2 })
   const [sfxCorrect] = useSound(SFX.RESULTS_SOUND, { volume: 0.4 })
   const [sfxWrong] = useSound(SFX.BOUMP_SOUND, { volume: 0.4 })
-
-  const handleShareQuiz = async () => {
-    if (!quizz || !resultSummary) {
-      return
-    }
-
-    const shareText = t("game:solo.shareText", {
-      points: resultSummary.totalPoints.toLocaleString(),
-      subject: quizz.subject,
-    })
-    const shareUrl = window.location.href
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: quizz.subject,
-          text: shareText,
-          url: shareUrl,
-        })
-        return
-      } catch {
-        // Annulé par l'utilisateur
-      }
-    }
-
-    navigator.clipboard.writeText(shareUrl)
-    toast.success(t("game:solo.linkCopied"))
-  }
 
   const resetQuestionState = () => {
     setSelectedAnswer(null)
@@ -598,6 +587,12 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
             />
           </div>
         )}
+
+      <SoloQuestionAudio
+        active={step === "QUESTION"}
+        question={currentQuestion}
+        questionIndex={currentQuestionIdx}
+      />
 
       {/* ── SCREEN 1: START ── */}
       {step === "START" && (
@@ -1274,13 +1269,10 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
               {/* Actions Joueur */}
               <div className="flex w-full flex-col gap-2.5">
-                <button
-                  onClick={handleShareQuiz}
-                  className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-base font-extrabold text-white shadow-[0_10px_25px_rgba(249,115,22,0.4)] transition-all hover:from-orange-400 hover:to-amber-400 hover:shadow-[0_12px_30px_rgba(249,115,22,0.6)] active:scale-[0.99]"
-                >
-                  <Share2 className="size-5 transition-transform group-hover:scale-110" />
-                  <span>{t("game:solo.share")}</span>
-                </button>
+                <SoloSharePanel
+                  quizz={quizz}
+                  points={resultSummary.totalPoints}
+                />
 
                 <button
                   onClick={handlePlayAgain}
