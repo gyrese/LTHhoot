@@ -8,6 +8,7 @@ import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
 import { QuestionLayoutOverlay } from "@rahoot/web/features/game/components/QuestionLayoutView"
 import {
   fontFamilyCss,
+  defaultAnswerBoxes,
   layoutAnswerLabels,
 } from "@rahoot/web/features/game/utils/question-layout"
 import {
@@ -492,11 +493,21 @@ const Answers = ({
   // Mise en page libre et police : écran hôte uniquement (les téléphones des
   // joueurs gardent leur affichage habituel).
   const hostFont = isHost ? fontFamily : undefined
-  const hostLayout = isHost ? layout : undefined
   const answerLabels = layoutAnswerLabels(type, answers, [
     t("game:false"),
     t("game:true"),
   ])
+  // Sans mise en page personnalisée, les cases QCM / Vrai-Faux prennent les
+  // boîtes par défaut de l'éditeur : mêmes proportions que dans l'éditeur,
+  // quelle que soit la taille de l'écran (et non plus toute la largeur).
+  const hostLayout = isHost
+    ? {
+        ...layout,
+        answers:
+          layout?.answers ??
+          (answerLabels ? defaultAnswerBoxes(answerLabels.length) : undefined),
+      }
+    : undefined
 
   const hasTitleBox = Boolean(hostLayout?.title)
   const hasAnswerBoxes = Boolean(hostLayout?.answers && answerLabels)
