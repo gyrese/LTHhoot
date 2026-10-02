@@ -22,7 +22,8 @@ export default function EditorWorkspace() {
     return () => media.removeEventListener("change", update)
   }, [])
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    // Keep canvas overlays below the header and its toolbar popovers.
+    <div className="relative z-0 isolate flex min-h-0 flex-1 flex-col overflow-hidden">
       {!wide && (
         <div className="border-border bg-surface flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
           <Button
