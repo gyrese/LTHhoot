@@ -1,0 +1,97 @@
+{
+  "id": "tanjiro",
+  "displayName": "Tanjiro",
+  "description": "A chibi Sun Breathing swordsman companion with calm focus and fiery sword animations.",
+  "spritesheetPath": "spritesheet.webp",
+  "cellHeight": 208,
+  "atlasRows": 9,
+  "interactions": {
+    "click": {
+      "animations": [
+        "hinokami-dancing-flash",
+        "hinokami-burning-sun-wheel",
+        "hinokami-solar-dragon-dance",
+        "hinokami-flame-dance",
+        "hinokami-solar-halo-dragon-head-dance",
+        "hinokami-beneficent-radiance",
+        "hinokami-sunflower-thrust",
+        "hinokami-fire-wheel"
+      ],
+      "mode": "cycle"
+    }
+  },
+  "animations": {
+    "hinokami-dancing-flash": {
+      "displayName": "Form 1 Hinokami Kagura Dancing Flash",
+      "sourceRowIndex": 1,
+      "frameCount": 8,
+      "timingMs": [180, 150, 120, 100, 130, 150, 170, 230],
+      "playback": "once",
+      "loop": false,
+      "description": "A fast forward dash ending in one clean horizontal crescent of fire and falling embers."
+    },
+    "hinokami-burning-sun-wheel": {
+      "displayName": "Form 2 Hinokami Kagura Burning Sun Wheel",
+      "sourceRowIndex": 2,
+      "frameCount": 8,
+      "timingMs": [220, 200, 180, 160, 190, 210, 230, 280],
+      "playback": "once",
+      "loop": false,
+      "description": "A centered rotating sun wheel of layered flame ribbons, petals and embers."
+    },
+    "hinokami-solar-dragon-dance": {
+      "displayName": "Form 3 Hinokami Kagura Solar Dragon Dance",
+      "sourceRowIndex": 3,
+      "frameCount": 8,
+      "timingMs": [180, 160, 140, 120, 150, 170, 200, 260],
+      "playback": "once",
+      "loop": false,
+      "description": "The strongest technique: flowing slashes with a massive fire dragon and dense falling embers."
+    },
+    "hinokami-flame-dance": {
+      "displayName": "Form 4 Hinokami Kagura Flame Dance",
+      "sourceRowIndex": 4,
+      "frameCount": 8,
+      "timingMs": [180, 160, 130, 110, 130, 160, 190, 260],
+      "playback": "once",
+      "loop": false,
+      "description": "Two consecutive flaming slashes cross into a bright X-shaped fire trail with falling embers."
+    },
+    "hinokami-solar-halo-dragon-head-dance": {
+      "displayName": "Form 5 Hinokami Kagura Solar Halo Dragon Head Dance",
+      "sourceRowIndex": 5,
+      "frameCount": 8,
+      "timingMs": [180, 160, 140, 120, 150, 170, 200, 280],
+      "playback": "once",
+      "loop": false,
+      "description": "A signature dragon-head halo attack with a forward lunge, spiral flames and dense ember scatter."
+    },
+    "hinokami-beneficent-radiance": {
+      "displayName": "Form 6 Hinokami Kagura Beneficent Radiance",
+      "sourceRowIndex": 6,
+      "frameCount": 8,
+      "timingMs": [220, 200, 180, 150, 180, 200, 230, 300],
+      "playback": "once",
+      "loop": false,
+      "description": "An ultimate solar finishing move with a giant sun halo, expanding rings, fire rain and ember storm."
+    },
+    "hinokami-sunflower-thrust": {
+      "displayName": "Form 7 Hinokami Kagura Sunflower Thrust",
+      "sourceRowIndex": 7,
+      "frameCount": 8,
+      "timingMs": [180, 160, 140, 120, 150, 170, 200, 280],
+      "playback": "once",
+      "loop": false,
+      "description": "A precision thrust through a sunflower-shaped solar bloom with concentric rings and falling embers."
+    },
+    "hinokami-fire-wheel": {
+      "displayName": "Form 8 Hinokami Kagura Fire Wheel",
+      "sourceRowIndex": 8,
+      "frameCount": 8,
+      "timingMs": [180, 160, 140, 120, 150, 170, 200, 280],
+      "playback": "once",
+      "loop": false,
+      "description": "An airborne vertical fire wheel that encloses Tanjiro while spinning, then collapses into embers."
+    }
+  }
+}

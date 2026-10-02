@@ -15,14 +15,39 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
   },
   { seed: "aku", label: "Aku", spritesheetUrl: "/pets/aku/spritesheet.webp" },
   {
+    seed: "anya",
+    label: "Anya",
+    spritesheetUrl: "/pets/anya/spritesheet.webp",
+  },
+  {
+    seed: "artoria-saber",
+    label: "Artoria Saber",
+    spritesheetUrl: "/pets/artoria-saber/spritesheet.webp",
+  },
+  {
     seed: "asterix",
     label: "Asterix",
     spritesheetUrl: "/pets/asterix/spritesheet.webp",
   },
   {
+    seed: "asuka-red-plugsuit",
+    label: "Asuka · Red Plugsuit",
+    spritesheetUrl: "/pets/asuka-red-plugsuit/spritesheet.webp",
+  },
+  {
+    seed: "asuna",
+    label: "Asuna",
+    spritesheetUrl: "/pets/asuna/spritesheet.webp",
+  },
+  {
     seed: "batmeme",
     label: "Batmeme",
     spritesheetUrl: "/pets/batmeme/spritesheet.webp",
+  },
+  {
+    seed: "bee-teemo",
+    label: "Bee Teemo",
+    spritesheetUrl: "/pets/bee-teemo/spritesheet.webp",
   },
   {
     seed: "bitboy",
@@ -38,6 +63,16 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     seed: "buff-patrick",
     label: "Buff Patrick",
     spritesheetUrl: "/pets/buff-patrick/spritesheet.webp",
+  },
+  {
+    seed: "bulba_v8",
+    label: "Bulbasaur",
+    spritesheetUrl: "/pets/bulba_v8/spritesheet.webp",
+  },
+  {
+    seed: "bumblebee",
+    label: "Bumblebee",
+    spritesheetUrl: "/pets/bumblebee/spritesheet.webp",
   },
   {
     seed: "calcifer",
@@ -60,6 +95,11 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/cartman/spritesheet.webp",
   },
   {
+    seed: "charmander",
+    label: "Charmander",
+    spritesheetUrl: "/pets/charmander/spritesheet.webp",
+  },
+  {
     seed: "cicada",
     label: "Cicada",
     spritesheetUrl: "/pets/cicada/spritesheet.webp",
@@ -80,9 +120,24 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/crash-bandicoot/spritesheet.webp",
   },
   {
+    seed: "dalek",
+    label: "Dalek",
+    spritesheetUrl: "/pets/dalek/spritesheet.webp",
+  },
+  {
     seed: "dobby",
     label: "Dobby",
     spritesheetUrl: "/pets/dobby/spritesheet.webp",
+  },
+  {
+    seed: "robocop",
+    label: "RoboCop",
+    spritesheetUrl: "/pets/robocop/spritesheet.webp",
+  },
+  {
+    seed: "doraemon",
+    label: "Doraemon",
+    spritesheetUrl: "/pets/doraemon/spritesheet.webp",
   },
   {
     seed: "dude",
@@ -100,14 +155,29 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/eminem-brisk/spritesheet.webp",
   },
   {
+    seed: "eren-yeager",
+    label: "Eren Yeager",
+    spritesheetUrl: "/pets/eren-yeager/spritesheet.webp",
+  },
+  {
     seed: "fangjia",
     label: "FangJia",
     spritesheetUrl: "/pets/fangjia/spritesheet.webp",
   },
   {
+    seed: "gengarcat",
+    label: "Gengar",
+    spritesheetUrl: "/pets/gengarcat/spritesheet.webp",
+  },
+  {
     seed: "ghostface",
     label: "Ghostface",
     spritesheetUrl: "/pets/ghostface/spritesheet.webp",
+  },
+  {
+    seed: "godzilla",
+    label: "Godzilla",
+    spritesheetUrl: "/pets/godzilla/spritesheet.webp",
   },
   {
     seed: "gojo",
@@ -118,6 +188,16 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     seed: "goku",
     label: "Goku",
     spritesheetUrl: "/pets/goku/spritesheet.webp",
+  },
+  {
+    seed: "heimerdinger",
+    label: "Heimerdinger",
+    spritesheetUrl: "/pets/heimerdinger/spritesheet.webp",
+  },
+  {
+    seed: "homelander",
+    label: "Homelander",
+    spritesheetUrl: "/pets/homelander/spritesheet.webp",
   },
   {
     seed: "homie",
@@ -140,9 +220,19 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/jane/spritesheet.webp",
   },
   {
+    seed: "jinx",
+    label: "Jinx",
+    spritesheetUrl: "/pets/jinx/spritesheet.webp",
+  },
+  {
     seed: "johnny",
     label: "Johnny",
     spritesheetUrl: "/pets/johnny/spritesheet.webp",
+  },
+  {
+    seed: "jotaro",
+    label: "Jotaro",
+    spritesheetUrl: "/pets/jotaro/spritesheet.webp",
   },
   {
     seed: "kebo",
@@ -153,6 +243,16 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     seed: "kiki",
     label: "Kiki",
     spritesheetUrl: "/pets/kiki/spritesheet.webp",
+  },
+  {
+    seed: "Kirby",
+    label: "Kirby",
+    spritesheetUrl: "/pets/Kirby/spritesheet.png",
+  },
+  {
+    seed: "knuckles",
+    label: "Knuckles",
+    spritesheetUrl: "/pets/knuckles/spritesheet.webp",
   },
   {
     seed: "kratos-norse",
@@ -170,9 +270,34 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/luffy/spritesheet.webp",
   },
   {
+    seed: "makima",
+    label: "Makima",
+    spritesheetUrl: "/pets/makima/spritesheet.webp",
+  },
+  {
+    seed: "mandalorian",
+    label: "Mandalorian",
+    spritesheetUrl: "/pets/mandalorian/spritesheet.webp",
+  },
+  {
+    seed: "marcille-dungeon-meshi",
+    label: "Marcille Dungeon Meshi",
+    spritesheetUrl: "/pets/marcille-dungeon-meshi/spritesheet.webp",
+  },
+  {
     seed: "masked-manager",
     label: "Masked Manager",
     spritesheetUrl: "/pets/masked-manager/spritesheet.webp",
+  },
+  {
+    seed: "megumin",
+    label: "Megumin",
+    spritesheetUrl: "/pets/megumin/spritesheet.webp",
+  },
+  {
+    seed: "miku",
+    label: "Hatsune Miku",
+    spritesheetUrl: "/pets/miku/spritesheet.webp",
   },
   {
     seed: "mini-dark-lord",
@@ -180,9 +305,19 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/mini-dark-lord/spritesheet.webp",
   },
   {
+    seed: "mini-gandalf-the-grey",
+    label: "Gandalf",
+    spritesheetUrl: "/pets/mini-gandalf-the-grey/spritesheet.webp",
+  },
+  {
     seed: "mochi",
     label: "Mochi",
     spritesheetUrl: "/pets/mochi/spritesheet.webp",
+  },
+  {
+    seed: "naruto",
+    label: "Naruto",
+    spritesheetUrl: "/pets/naruto/spritesheet.webp",
   },
   {
     seed: "nezukocoder",
@@ -195,6 +330,21 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/noir-webling/spritesheet.webp",
   },
   {
+    seed: "one-punch-pet",
+    label: "Saitama",
+    spritesheetUrl: "/pets/one-punch-pet/spritesheet.webp",
+  },
+  {
+    seed: "prime-rig",
+    label: "Optimus Prime",
+    spritesheetUrl: "/pets/prime-rig/spritesheet.webp",
+  },
+  {
+    seed: "panam",
+    label: "Panam",
+    spritesheetUrl: "/pets/panam/spritesheet.webp",
+  },
+  {
     seed: "peter",
     label: "Peter",
     spritesheetUrl: "/pets/peter/spritesheet.webp",
@@ -203,6 +353,16 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     seed: "pickle-rick",
     label: "Pickle Rick",
     spritesheetUrl: "/pets/pickle-rick/spritesheet.webp",
+  },
+  {
+    seed: "capvolt",
+    label: "Pikachu",
+    spritesheetUrl: "/pets/capvolt/spritesheet.webp",
+  },
+  {
+    seed: "pochita-mini",
+    label: "Pochita",
+    spritesheetUrl: "/pets/pochita-mini/spritesheet.webp",
   },
   {
     seed: "popeye",
@@ -215,9 +375,24 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/prism/spritesheet.webp",
   },
   {
+    seed: "rei-ayanami",
+    label: "Rei Ayanami",
+    spritesheetUrl: "/pets/rei-ayanami/spritesheet.webp",
+  },
+  {
+    seed: "rick-sanchez",
+    label: "Rick Sanchez",
+    spritesheetUrl: "/pets/rick-sanchez/spritesheet.webp",
+  },
+  {
     seed: "rimuru",
     label: "Rimuru",
     spritesheetUrl: "/pets/rimuru/spritesheet.webp",
+  },
+  {
+    seed: "sasuke",
+    label: "Sasuke Uchiha",
+    spritesheetUrl: "/pets/sasuke/spritesheet.png",
   },
   {
     seed: "scorpion",
@@ -225,9 +400,34 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/scorpion/spritesheet.webp",
   },
   {
+    seed: "sephiroth",
+    label: "Sephiroth",
+    spritesheetUrl: "/pets/sephiroth/spritesheet.webp",
+  },
+  {
+    seed: "skybound-hero",
+    label: "Link",
+    spritesheetUrl: "/pets/skybound-hero/spritesheet.webp",
+  },
+  {
+    seed: "spongebob-star",
+    label: "SpongeBob",
+    spritesheetUrl: "/pets/spongebob-star/spritesheet.webp",
+  },
+  {
     seed: "spyro",
     label: "Spyro",
     spritesheetUrl: "/pets/spyro/spritesheet.png",
+  },
+  {
+    seed: "strike-freedom",
+    label: "Strike Freedom Gundam",
+    spritesheetUrl: "/pets/strike-freedom/spritesheet.webp",
+  },
+  {
+    seed: "tanjiro",
+    label: "Tanjiro",
+    spritesheetUrl: "/pets/tanjiro/spritesheet.webp",
   },
   {
     seed: "totoro",
@@ -260,13 +460,63 @@ export const LOCAL_PETDEX_AVATARS: readonly LocalPetdexAvatar[] = [
     spritesheetUrl: "/pets/yamcha/spritesheet.webp",
   },
   {
+    seed: "zelda",
+    label: "Zelda",
+    spritesheetUrl: "/pets/zelda/spritesheet.webp",
+  },
+  {
+    seed: "zenitsu",
+    label: "Zenitsu",
+    spritesheetUrl: "/pets/zenitsu/spritesheet.webp",
+  },
+  {
+    seed: "zero-two",
+    label: "Zero Two",
+    spritesheetUrl: "/pets/zero-two/spritesheet.webp",
+  },
+  {
     seed: "zoro",
     label: "Zoro",
     spritesheetUrl: "/pets/zoro/spritesheet.webp",
   },
   {
+    seed: "inosuke-hashibira",
+    label: "Inosuke Hashibira",
+    spritesheetUrl: "/pets/inosuke-hashibira/spritesheet.webp",
+  },
+  {
+    seed: "yagami-light",
+    label: "Light Yagami",
+    spritesheetUrl: "/pets/yagami-light/spritesheet.webp",
+  },
+  {
+    seed: "shinchan-petdex",
+    label: "Shin-chan",
+    spritesheetUrl: "/pets/shinchan-petdex/spritesheet.webp",
+  },
+  {
+    seed: "xiao-remu",
+    label: "Rem",
+    spritesheetUrl: "/pets/xiao-remu/spritesheet.webp",
+  },
+  {
+    seed: "ahri-star-guardian",
+    label: "Star Guardian Ahri",
+    spritesheetUrl: "/pets/ahri-star-guardian/spritesheet.webp",
+  },
+  {
     seed: "kyojuro-rengoku",
-    label: "炼狱杏寿郎",
+    label: "Kyojuro Rengoku",
     spritesheetUrl: "/pets/kyojuro-rengoku/spritesheet.webp",
+  },
+  {
+    seed: "super-saiyan-vegeta",
+    label: "Super Saiyan Vegeta",
+    spritesheetUrl: "/pets/super-saiyan-vegeta/spritesheet.webp",
+  },
+  {
+    seed: "majin-buu",
+    label: "Majin Buu",
+    spritesheetUrl: "/pets/majin-buu/spritesheet.webp",
   },
 ] as const

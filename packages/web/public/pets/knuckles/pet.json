@@ -1,0 +1,6 @@
+{
+  "id": "knuckles",
+  "displayName": "Knuckles",
+  "description": "A tiny red echidna brawler companion for a coding assistant.",
+  "spritesheetPath": "spritesheet.webp"
+}
