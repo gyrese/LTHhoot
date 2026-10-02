@@ -1,0 +1,9 @@
+{
+  "id": "ahri-star-guardian",
+  "displayName": "Star Guardian Ahri",
+  "description": "以星之守护者主题制作的阿狸 Codex 桌面宠物，采用明亮魔法少女风格、粉白金配色和完整九尾轮廓，包含待机、奔跑、挥手、跳跃、等待、审查等 9 组动画。",
+  "spritesheetPath": "spritesheet.webp",
+  "kind": "person",
+  "source": "fan-made",
+  "sourceId": "ahri-star-guardian"
+}

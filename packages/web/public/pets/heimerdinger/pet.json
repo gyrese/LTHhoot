@@ -1,0 +1,7 @@
+{
+  "id": "heimerdinger",
+  "displayName": "Heimerdinger",
+  "description": "A clear pixel-sprite Codex pet adapted from the provided character references, preserving face, silhouette, colors, and outfit.",
+  "spritesheetPath": "spritesheet.webp",
+  "kind": "person"
+}
