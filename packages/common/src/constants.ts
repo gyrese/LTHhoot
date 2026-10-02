@@ -42,6 +42,7 @@ export const EVENTS = {
     PLAYER_KICKED: "manager:playerKicked",
     AUTH: "manager:auth",
     RECONNECT: "manager:reconnect",
+    REMOTE_CONNECT: "manager:remoteConnect",
     KICK_PLAYER: "manager:kickPlayer",
     START_GAME: "manager:startGame",
     ABORT_QUIZ: "manager:abortQuiz",

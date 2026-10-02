@@ -90,6 +90,20 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
   })
 
+  // La télécommande rejoint uniquement la partie désignée, sans session admin.
+  socket.on(EVENTS.MANAGER.REMOTE_CONNECT, (payload) => {
+    const parsed = parsePayload(gameIdSchema, payload)
+    const game = parsed ? registry.getGameById(parsed.gameId) : undefined
+
+    if (!game) {
+      socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
+
+      return
+    }
+
+    game.reconnectRemote(socket)
+  })
+
   socket.on(EVENTS.MANAGER.RECONNECT, (payload) => {
     const parsed = parsePayload(gameIdSchema, payload)
 

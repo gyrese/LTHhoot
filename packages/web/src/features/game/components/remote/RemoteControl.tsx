@@ -37,11 +37,6 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const navigate = useNavigate()
   const { socket, isConnected } = useSocket()
 
-  // Stocké en localStorage (et non sessionStorage) : sur mobile, le navigateur
-  // tue l'onglet en arrière-plan et sessionStorage part avec — le PIN doit survivre.
-  const [password, setPassword] = useState(
-    () => localStorage.getItem("rc_pwd") ?? "",
-  )
   const [authError, setAuthError] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAuthLoading, setIsAuthLoading] = useState(false)
@@ -109,21 +104,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   }, [])
 
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
-    resetAuthLoading("Code PIN incorrect")
-    localStorage.removeItem("rc_pwd")
-  })
-
-  useEvent(EVENTS.MANAGER.ERROR_MESSAGE, (msg) => {
-    // Un PIN mémorisé refusé ne doit pas être retenté en boucle à chaque
-    // reconnexion (rate-limit serveur) : on l'oublie immédiatement.
-    if (msg === "errors:manager.invalidPassword") {
-      localStorage.removeItem("rc_pwd")
-      resetAuthLoading("Code PIN incorrect")
-
-      return
-    }
-
-    resetAuthLoading(msg || "Erreur de connexion à la partie")
+    setIsAuthenticated(false)
+    resetAuthLoading("Connexion interrompue. Réessayez.")
   })
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
@@ -251,54 +233,33 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     navigate({ to: "/remote" })
   })
 
-  const handleAuth = useCallback(
-    (isManualSubmit = false) => {
-      if (!socket || !password.trim()) {
-        return
-      }
+  const handleAuth = useCallback(() => {
+    if (!socket || !isConnected) {
+      return
+    }
 
-      setAuthError("")
-      setIsAuthLoading(true)
-      localStorage.setItem("rc_pwd", password)
+    setAuthError("")
+    setIsAuthLoading(true)
+    if (authTimeoutRef.current) {
+      clearTimeout(authTimeoutRef.current)
+    }
+    authTimeoutRef.current = setTimeout(() => {
+      setIsAuthLoading(false)
+      setAuthError("Connexion impossible. Vérifiez le réseau puis réessayez.")
+    }, 12000)
+    socket.emit(EVENTS.MANAGER.REMOTE_CONNECT, { gameId })
+  }, [socket, isConnected, gameId])
 
-      // Un seul AUTH par connexion : le socket-context réémet déjà MANAGER.AUTH
-      // à chaque `connect` à partir de `rc_pwd`. Émettre le nôtre en plus doublait
-      // la consommation du rate-limit d'auth (compté par IP, 5 essais/60s) : sur
-      // une IP partagée (4G de salle, partage de connexion), quelques blips
-      // réseau suffisaient à verrouiller la télécommande. On n'émet donc AUTH
-      // que sur saisie manuelle du PIN ; les reconnexions passent par le contexte.
-      if (isManualSubmit) {
-        socket?.emit(EVENTS.MANAGER.AUTH, password)
-      }
-
-      socket?.emit(EVENTS.MANAGER.RECONNECT, { gameId })
-
-      if (authTimeoutRef.current) {
-        clearTimeout(authTimeoutRef.current)
-      }
-
-      // 12s et non 5s : en 4G dégradée le transport reste en polling, et
-      // l'aller-retour AUTH + RECONNECT + SUCCESS_RECONNECT dépasse couramment
-      // 5s. On affichait alors « Partie introuvable » sur une partie bien vivante.
-      authTimeoutRef.current = setTimeout(() => {
-        setIsAuthLoading(false)
-        setAuthError("Partie introuvable. Vérifiez le code de partie.")
-      }, 12000)
-    },
-    [socket, password, gameId],
-  )
-
-  // Re-join automatique à chaque (re)connexion du socket. Après une coupure
-  // réseau, le socket serveur perd ses rooms : sans ce RECONNECT, la
-  // télécommande ne recevait plus aucun événement et semblait déconnectée en
-  // permanence. L'authentification elle-même est rejouée par le socket-context
-  // (à partir de `rc_pwd`), on ne la duplique donc pas ici. Dépendance limitée
-  // à isConnected : re-tenter à chaque frappe du PIN serait parasite.
   useEffect(() => {
     if (isConnected) {
       handleAuth()
     }
-  }, [isConnected])
+    return () => {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current)
+      }
+    }
+  }, [isConnected, handleAuth])
 
   const runPrimary = useCallback(() => {
     if (!socket || actionPending) {
@@ -458,12 +419,10 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   if (!isAuthenticated) {
     return (
       <AuthScreen
-        password={password}
-        setPassword={setPassword}
         error={authError}
         isLoading={isAuthLoading}
         isConnected={isConnected}
-        onSubmit={() => handleAuth(true)}
+        onSubmit={handleAuth}
       />
     )
   }

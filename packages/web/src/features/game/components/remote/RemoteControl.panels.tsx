@@ -44,15 +44,11 @@ import {
 // ─── Écran d'authentification ─────────────────────────────────────────────────
 
 export function AuthScreen({
-  password,
-  setPassword,
   error,
   isLoading,
   isConnected,
   onSubmit,
 }: {
-  password: string
-  setPassword: (_v: string) => void
   error: string
   isLoading: boolean
   isConnected: boolean
@@ -84,33 +80,23 @@ export function AuthScreen({
           </span>
         </div>
 
-        <label className="mb-2 block text-xs font-semibold tracking-widest text-white/50 uppercase">
-          Code PIN
-        </label>
-        <input
-          type="password"
-          inputMode="numeric"
-          autoComplete="off"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-          placeholder="••••"
-          className="mb-3 w-full rounded-xl border border-white/10 bg-white/8 px-4 py-3 text-center font-mono text-xl tracking-[0.5em] text-white placeholder-white/20 transition-all focus:border-orange-500/50 focus:bg-white/10 focus:outline-none"
-        />
+        <p className="mb-3 text-sm text-white/70">
+          Connexion à la télécommande sans code PIN.
+        </p>
 
         {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
 
         <button
           onClick={onSubmit}
-          disabled={isLoading || !isConnected || !password.trim()}
+          disabled={isLoading || !isConnected}
           className={clsx(
             "w-full rounded-xl py-3.5 text-base font-bold transition-all active:scale-95",
-            isLoading || !isConnected || !password.trim()
+            isLoading || !isConnected
               ? "cursor-not-allowed bg-white/8 text-white/25"
               : "bg-orange-500 text-white shadow-lg shadow-orange-500/25 hover:bg-orange-400",
           )}
         >
-          {isLoading ? "Connexion..." : "Accéder →"}
+          {isLoading ? "Connexion..." : "Réessayer →"}
         </button>
       </div>
 

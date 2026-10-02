@@ -264,6 +264,7 @@ export interface ClientToServerEvents {
     duration: number
   }) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
+  [EVENTS.MANAGER.REMOTE_CONNECT]: (_message: { gameId: string }) => void
   [EVENTS.MANAGER.KICK_PLAYER]: (_message: {
     gameId: string
     playerId: string
