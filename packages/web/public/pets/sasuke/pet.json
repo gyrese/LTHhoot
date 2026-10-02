@@ -9,16 +9,7 @@
       "displayName": "Sharingan Breathing",
       "sourceRow": "idle",
       "frameCount": 8,
-      "timingMs": [
-        240,
-        180,
-        180,
-        160,
-        160,
-        180,
-        180,
-        280
-      ],
+      "timingMs": [240, 180, 180, 160, 160, 180, 180, 280],
       "playback": "loop",
       "loop": true
     },
@@ -26,16 +17,7 @@
       "displayName": "Chidori Dash Right",
       "sourceRow": "running-right",
       "frameCount": 8,
-      "timingMs": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        220
-      ],
+      "timingMs": [120, 120, 120, 120, 120, 120, 120, 220],
       "playback": "once",
       "loop": false
     },
@@ -43,16 +25,7 @@
       "displayName": "Chidori Dash Left",
       "sourceRow": "running-left",
       "frameCount": 8,
-      "timingMs": [
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        120,
-        220
-      ],
+      "timingMs": [120, 120, 120, 120, 120, 120, 120, 220],
       "playback": "once",
       "loop": false
     },
@@ -60,16 +33,7 @@
       "displayName": "Amaterasu",
       "sourceRow": 3,
       "frameCount": 8,
-      "timingMs": [
-        140,
-        140,
-        160,
-        180,
-        200,
-        180,
-        160,
-        240
-      ],
+      "timingMs": [140, 140, 160, 180, 200, 180, 160, 240],
       "playback": "once",
       "loop": false
     },
@@ -77,16 +41,7 @@
       "displayName": "Kirin",
       "sourceRow": "jumping",
       "frameCount": 8,
-      "timingMs": [
-        140,
-        140,
-        160,
-        180,
-        220,
-        220,
-        180,
-        280
-      ],
+      "timingMs": [140, 140, 160, 180, 220, 220, 180, 280],
       "playback": "once",
       "loop": false
     },
@@ -94,16 +49,7 @@
       "displayName": "Perfect Susanoo",
       "sourceRow": "failed",
       "frameCount": 8,
-      "timingMs": [
-        140,
-        160,
-        180,
-        200,
-        240,
-        200,
-        180,
-        280
-      ],
+      "timingMs": [140, 160, 180, 200, 240, 200, 180, 280],
       "playback": "once",
       "loop": false
     },
@@ -111,16 +57,7 @@
       "displayName": "Amenotejikara",
       "sourceRow": "waiting",
       "frameCount": 8,
-      "timingMs": [
-        140,
-        160,
-        180,
-        200,
-        220,
-        180,
-        160,
-        240
-      ],
+      "timingMs": [140, 160, 180, 200, 220, 180, 160, 240],
       "playback": "once",
       "loop": false
     },
@@ -128,16 +65,7 @@
       "displayName": "Indra's Arrow",
       "sourceRow": "running",
       "frameCount": 8,
-      "timingMs": [
-        140,
-        160,
-        180,
-        200,
-        220,
-        240,
-        200,
-        300
-      ],
+      "timingMs": [140, 160, 180, 200, 220, 240, 200, 300],
       "playback": "once",
       "loop": false
     },
@@ -145,16 +73,7 @@
       "displayName": "Rinnegan Scan",
       "sourceRow": "review",
       "frameCount": 8,
-      "timingMs": [
-        180,
-        140,
-        140,
-        180,
-        180,
-        180,
-        160,
-        260
-      ],
+      "timingMs": [180, 140, 140, 180, 180, 180, 160, 260],
       "playback": "once",
       "loop": false
     }
