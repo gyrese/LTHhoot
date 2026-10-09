@@ -5,6 +5,7 @@ import {
   useEvent,
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
+import { joinSearchSchema } from "@rahoot/web/features/game/utils/join-search"
 import { usePlayerStore } from "@rahoot/web/features/game/stores/player"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect } from "react"
@@ -41,16 +42,7 @@ const PlayerAuthPage = () => {
   return <Room />
 }
 
-import { z } from "zod"
-
-const searchSchema = z.object({
-  pin: z
-    .union([z.string(), z.number()])
-    .nullish()
-    .transform((v) => (v === null || v === undefined ? v : String(v))),
-})
-
 export const Route = createFileRoute("/(auth)/")({
-  validateSearch: (search) => searchSchema.parse(search),
+  validateSearch: (search) => joinSearchSchema.parse(search),
   component: PlayerAuthPage,
 })

@@ -2,13 +2,9 @@ import Background from "@rahoot/web/components/Background"
 import LanguageSwitcher from "@rahoot/web/components/LanguageSwitcher"
 import Loader from "@rahoot/web/components/Loader"
 import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
+import { joinSearchSchema } from "@rahoot/web/features/game/utils/join-search"
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
-import { z } from "zod"
-
-const searchSchema = z.object({
-  pin: z.string().nullish(),
-})
 
 const AuthLayout = () => {
   const { isConnected } = useSocket()
@@ -37,5 +33,5 @@ const AuthLayout = () => {
 
 export const Route = createFileRoute("/(auth)")({
   component: AuthLayout,
-  validateSearch: searchSchema,
+  validateSearch: (search) => joinSearchSchema.parse(search),
 })
