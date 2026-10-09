@@ -1,5 +1,5 @@
 import {
-  getDiceBearUrl,
+  DEFAULT_AVATAR,
   getPetdexAvatar,
 } from "@rahoot/web/features/game/utils/avatars"
 import clsx from "clsx"
@@ -179,38 +179,37 @@ const GameAvatar = ({
     }
   }, [animated, dpr, frameSequence, pet, sourceUrl])
 
-  if (pet && !spriteFailed) {
-    return (
-      <span
-        role="img"
-        aria-label={pet.label}
-        className={clsx(
-          "shrink-0 overflow-hidden",
-          animated && idleBounce && "anim-avatar-idle",
-          className,
-        )}
-        style={{ ...style }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="h-full w-full"
-          style={{ imageRendering: "pixelated" }}
-        />
-      </span>
-    )
-  }
-
   return (
-    <img
-      src={getDiceBearUrl(seed)}
-      alt={seed}
+    <span
+      role="img"
+      aria-label={spriteFailed ? DEFAULT_AVATAR.label : pet.label}
       className={clsx(
-        "shrink-0 object-cover",
+        "shrink-0 overflow-hidden",
         animated && idleBounce && "anim-avatar-idle",
         className,
       )}
-      style={style}
-    />
+      style={{
+        ...style,
+        ...(spriteFailed
+          ? {
+              backgroundImage: `url(${DEFAULT_AVATAR.spritesheetUrl})`,
+              backgroundSize: "800% 900%",
+              backgroundPosition: "0 0",
+              backgroundRepeat: "no-repeat",
+              imageRendering: "pixelated",
+            }
+          : {}),
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="h-full w-full"
+        style={{
+          imageRendering: "pixelated",
+          visibility: spriteFailed ? "hidden" : "visible",
+        }}
+      />
+    </span>
   )
 }
 

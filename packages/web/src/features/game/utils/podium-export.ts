@@ -1,6 +1,5 @@
 import type { Player } from "@rahoot/common/types/game"
 import {
-  getDiceBearUrl,
   getPetdexAvatar,
   type PetdexAvatar,
 } from "@rahoot/web/features/game/utils/avatars"
@@ -61,15 +60,9 @@ const loadSpritesheet = async (
 type AvatarSource = { img: HTMLImageElement; sw: number; sh: number }
 
 // Résout l'image source à dessiner + la zone à découper (frame idle du
-// spritesheet Petdex, ou image DiceBear entière).
+// spritesheet du personnage).
 const resolveAvatarImage = async (seed: string): Promise<AvatarSource> => {
   const pet = getPetdexAvatar(seed)
-
-  if (!pet) {
-    const img = await loadImage(getDiceBearUrl(seed))
-
-    return { img, sw: img.width, sh: img.height }
-  }
 
   const img = await loadSpritesheet(pet)
 
