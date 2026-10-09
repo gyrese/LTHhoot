@@ -78,15 +78,18 @@ const QuestionEditor = ({
 
         {/* Titre (tous types) et cases QCM / vrai-faux : boîtes positionnées sur
             la slide. Les autres types gardent leur éditeur de réponses en bas ;
-            la barre d'outils du QCM se loge dans le coin haut-gauche. */}
+            les barres d'outils du QCM et de la grille (dont les cases sont
+            elles aussi posées sur la slide) se logent dans le coin haut-gauche. */}
         <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
-          {currentQuestion.type === "mcq" && (
+          {(currentQuestion.type === "mcq" ||
+            currentQuestion.type === "grid") && (
             <div className="pointer-events-auto self-start">
               <QuestionAnswerEditor />
             </div>
           )}
           <div className="pointer-events-none flex flex-1 flex-col"></div>
           {currentQuestion.type !== "title" &&
+            currentQuestion.type !== "grid" &&
             !hasLayoutAnswers(currentQuestion.type) && (
               <div className="pointer-events-auto">
                 <QuestionAnswerEditor />

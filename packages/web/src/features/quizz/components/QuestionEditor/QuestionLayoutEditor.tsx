@@ -1,4 +1,5 @@
 import type {
+  GridQuestion,
   QuestionLayoutBox,
   McqQuestion,
   TrueFalseQuestion,
@@ -20,6 +21,7 @@ import {
   SLIDE_WIDTH,
   updateLayoutBox,
 } from "@rahoot/web/features/game/utils/question-layout"
+import GridSlideEditor from "@rahoot/web/features/quizz/components/QuestionEditor/GridSlideEditor"
 import type { SlideView } from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import useAiRephrase from "@rahoot/web/features/quizz/hooks/useAiRephrase"
@@ -539,6 +541,10 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
           </button>
         )}
       </EditableBox>
+
+      {q.type === "grid" && (
+        <GridSlideEditor question={q as GridQuestion} titleBox={titleBox} />
+      )}
 
       <FitGroup>
         {Array.from({ length: answerCount }, (_, index) => {
