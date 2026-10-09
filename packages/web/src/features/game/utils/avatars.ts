@@ -69,9 +69,12 @@ export function loadSpritesheet(url: string): Promise<HTMLImageElement> {
             return
           }
 
-          setTimeout(() => {
-            attempt(retry + 1).then(resolve, reject)
-          }, SPRITESHEET_RETRY_MS * (retry + 1))
+          setTimeout(
+            () => {
+              attempt(retry + 1).then(resolve, reject)
+            },
+            SPRITESHEET_RETRY_MS * (retry + 1),
+          )
         }),
     )
 
