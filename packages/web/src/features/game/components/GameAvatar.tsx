@@ -1,9 +1,9 @@
 import {
-  DEFAULT_AVATAR,
   getPetdexAvatar,
+  loadSpritesheet,
 } from "@rahoot/web/features/game/utils/avatars"
 import clsx from "clsx"
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useMemo, useRef, type CSSProperties } from "react"
 
 type Props = {
   seed: string
@@ -53,21 +53,9 @@ const GameAvatar = ({
 
     return states.map((stateId) => PETDEX_STATES[stateId]).filter(Boolean)
   }, [animationStates])
-  const [sourceUrl, setSourceUrl] = useState<string | null>(
-    pet ? pet.spritesheetUrl : null,
-  )
-  const [spriteFailed, setSpriteFailed] = useState(false)
+  const sourceUrl = pet.spritesheetUrl
 
   useEffect(() => {
-    setSourceUrl(pet ? pet.spritesheetUrl : null)
-    setSpriteFailed(false)
-  }, [pet])
-
-  useEffect(() => {
-    if (!pet || !sourceUrl) {
-      return undefined
-    }
-
     const canvas = canvasRef.current
 
     if (!canvas) {
@@ -76,21 +64,8 @@ const GameAvatar = ({
 
     let raf = 0
     let stopped = false
-    const img = new Image()
 
-    img.onerror = () => {
-      if (stopped) {
-        return
-      }
-
-      if (pet.remoteSpritesheetUrl && sourceUrl !== pet.remoteSpritesheetUrl) {
-        setSourceUrl(pet.remoteSpritesheetUrl)
-      } else {
-        setSpriteFailed(true)
-      }
-    }
-
-    img.onload = () => {
+    const draw = (img: HTMLImageElement) => {
       if (stopped) {
         return
       }
@@ -168,7 +143,9 @@ const GameAvatar = ({
       raf = requestAnimationFrame(tick)
     }
 
-    img.src = sourceUrl
+    loadSpritesheet(sourceUrl).then(draw, () => {
+      // Échec réseau persistant : canvas vide, nouvel essai au prochain rendu.
+    })
 
     return () => {
       stopped = true
@@ -177,37 +154,23 @@ const GameAvatar = ({
         cancelAnimationFrame(raf)
       }
     }
-  }, [animated, dpr, frameSequence, pet, sourceUrl])
+  }, [animated, dpr, frameSequence, sourceUrl])
 
   return (
     <span
       role="img"
-      aria-label={spriteFailed ? DEFAULT_AVATAR.label : pet.label}
+      aria-label={pet.label}
       className={clsx(
         "shrink-0 overflow-hidden",
         animated && idleBounce && "anim-avatar-idle",
         className,
       )}
-      style={{
-        ...style,
-        ...(spriteFailed
-          ? {
-              backgroundImage: `url(${DEFAULT_AVATAR.spritesheetUrl})`,
-              backgroundSize: "800% 900%",
-              backgroundPosition: "0 0",
-              backgroundRepeat: "no-repeat",
-              imageRendering: "pixelated",
-            }
-          : {}),
-      }}
+      style={style}
     >
       <canvas
         ref={canvasRef}
         className="h-full w-full"
-        style={{
-          imageRendering: "pixelated",
-          visibility: spriteFailed ? "hidden" : "visible",
-        }}
+        style={{ imageRendering: "pixelated" }}
       />
     </span>
   )

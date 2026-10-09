@@ -1,7 +1,7 @@
 import type { Player } from "@rahoot/common/types/game"
 import {
   getPetdexAvatar,
-  type PetdexAvatar,
+  loadSpritesheet,
 } from "@rahoot/web/features/game/utils/avatars"
 
 // Doit rester synchronisé avec GameAvatar.tsx (grille du spritesheet Petdex) —
@@ -41,22 +41,6 @@ const drawFallbackAvatar = (
   ctx.fillText((seed[0] ?? "?").toUpperCase(), cx, cy)
 }
 
-// Spritesheet local d'abord, fallback CDN distant si le fichier n'est pas
-// synchronisé localement (cf. `tasks/petdex-sync.ps1`).
-const loadSpritesheet = async (
-  pet: PetdexAvatar,
-): Promise<HTMLImageElement> => {
-  try {
-    return await loadImage(pet.spritesheetUrl)
-  } catch {
-    if (!pet.remoteSpritesheetUrl) {
-      throw new Error("no remote fallback")
-    }
-
-    return loadImage(pet.remoteSpritesheetUrl)
-  }
-}
-
 type AvatarSource = { img: HTMLImageElement; sw: number; sh: number }
 
 // Résout l'image source à dessiner + la zone à découper (frame idle du
@@ -64,7 +48,7 @@ type AvatarSource = { img: HTMLImageElement; sw: number; sh: number }
 const resolveAvatarImage = async (seed: string): Promise<AvatarSource> => {
   const pet = getPetdexAvatar(seed)
 
-  const img = await loadSpritesheet(pet)
+  const img = await loadSpritesheet(pet.spritesheetUrl)
 
   return {
     img,

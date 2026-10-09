@@ -4,69 +4,84 @@ export type PetdexAvatar = {
   seed: string
   label: string
   spritesheetUrl: string
-  remoteSpritesheetUrl?: string
 }
 
-// Offline first: populated by `tasks/petdex-sync.ps1`.
-// Remote fallback helps fresh clones run without syncing pets.
-const REMOTE_FALLBACK_AVATARS: readonly PetdexAvatar[] = [
-  {
-    seed: "boba",
-    label: "Boba",
-    spritesheetUrl: "/pets/boba/spritesheet.webp",
-    remoteSpritesheetUrl:
-      "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/curated/boba/spritesheet.webp",
-  },
-  {
-    seed: "cosmo",
-    label: "Crafternauta",
-    spritesheetUrl: "/pets/cosmo/spritesheet.webp",
-    remoteSpritesheetUrl:
-      "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/curated/cosmo/spritesheet.webp",
-  },
-  {
-    seed: "nukey",
-    label: "Nukey",
-    spritesheetUrl: "/pets/nukey/spritesheet.webp",
-    remoteSpritesheetUrl:
-      "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/curated/nukey/spritesheet.webp",
-  },
-] as const
-
-const CDN_BASE = "https://pub-94495283df974cfea5e98d6a9e3fa462.r2.dev/curated"
-
-const withCdnFallback = (
-  avatars: readonly PetdexAvatar[],
-): readonly PetdexAvatar[] =>
-  avatars.map((a) => ({
-    ...a,
-    remoteSpritesheetUrl:
-      a.remoteSpritesheetUrl ?? `${CDN_BASE}/${a.seed}/spritesheet.webp`,
-  }))
-
-export const PETDEX_AVATARS: readonly PetdexAvatar[] = withCdnFallback(
-  LOCAL_PETDEX_AVATARS.length > 0
-    ? LOCAL_PETDEX_AVATARS
-    : REMOTE_FALLBACK_AVATARS,
-)
+// Généré par `tasks/petdex-sync.ps1` : les spritesheets sont servies par l'app.
+export const PETDEX_AVATARS: readonly PetdexAvatar[] = LOCAL_PETDEX_AVATARS
 
 export const AVATAR_SEEDS = PETDEX_AVATARS.map(
   (a) => a.seed,
 ) as readonly string[]
 export type AvatarSeed = (typeof AVATAR_SEEDS)[number]
 
-// Un personnage local reste le secours, même pour les anciens identifiants.
-export const DEFAULT_AVATAR: PetdexAvatar = {
-  seed: "asterix",
-  label: "Astérix",
-  spritesheetUrl: "/pets/asterix/spritesheet.webp",
-  remoteSpritesheetUrl: `${CDN_BASE}/asterix/spritesheet.webp`,
-}
+const hashSeed = (seed: string): number =>
+  Array.from(seed).reduce(
+    (hash, char) => (hash * 31 + char.charCodeAt(0)) % 2147483647,
+    0,
+  )
 
+// Toujours un vrai personnage : graine exacte, puis insensible à la casse,
+// sinon (ancien identifiant, pseudo) un personnage stable dérivé de la graine.
 export function getPetdexAvatar(seed: string): PetdexAvatar {
-  return PETDEX_AVATARS.find((a) => a.seed === seed) ?? DEFAULT_AVATAR
+  const lower = seed.toLowerCase()
+
+  return (
+    PETDEX_AVATARS.find((a) => a.seed === seed) ??
+    PETDEX_AVATARS.find((a) => a.seed.toLowerCase() === lower) ??
+    PETDEX_AVATARS[hashSeed(seed) % PETDEX_AVATARS.length]
+  )
 }
 
 export function getAvatarUrl(seed: string): string {
   return getPetdexAvatar(seed).spritesheetUrl
+}
+
+const SPRITESHEET_RETRIES = 3
+const SPRITESHEET_RETRY_MS = 1500
+
+const spritesheetCache = new Map<string, Promise<HTMLImageElement>>()
+
+const loadImageOnce = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error(`Failed to load ${url}`))
+    img.src = url
+  })
+
+// Une seule requête par spritesheet pour toute la page (plusieurs écrans
+// affichent le même joueur) ; un échec réseau est retenté au lieu d'abandonner.
+export function loadSpritesheet(url: string): Promise<HTMLImageElement> {
+  const cached = spritesheetCache.get(url)
+
+  if (cached) {
+    return cached
+  }
+
+  const attempt = (retry: number): Promise<HTMLImageElement> =>
+    loadImageOnce(url).catch(
+      (error: unknown) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          if (retry >= SPRITESHEET_RETRIES) {
+            reject(error)
+
+            return
+          }
+
+          setTimeout(() => {
+            attempt(retry + 1).then(resolve, reject)
+          }, SPRITESHEET_RETRY_MS * (retry + 1))
+        }),
+    )
+
+  const promise = attempt(0).catch((error: unknown) => {
+    // Pas de cache sur l'échec : le prochain affichage retentera.
+    spritesheetCache.delete(url)
+    throw error
+  })
+
+  spritesheetCache.set(url, promise)
+
+  return promise
 }
