@@ -279,5 +279,21 @@
     "hint": "Permite controlar una partida en curso, no acceder al panel.",
     "open": "Abrir el mando a distancia",
     "useAnotherCode": "Usar otra contraseña"
+  },
+  "archive": {
+    "sort": "Ordenar",
+    "year": "Año",
+    "month": "Mes",
+    "origin": "Carpeta de origen",
+    "allYears": "Todos los años",
+    "allMonths": "Todos los meses",
+    "allOrigins": "Todas las carpetas",
+    "noOrigin": "Sin carpeta",
+    "sortBy": {
+      "dateDesc": "Más recientes",
+      "dateAsc": "Más antiguos",
+      "title": "Título (A-Z)",
+      "origin": "Carpeta de origen"
+    }
   }
 }

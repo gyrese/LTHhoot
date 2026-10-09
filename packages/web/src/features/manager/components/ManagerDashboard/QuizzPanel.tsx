@@ -68,6 +68,11 @@ const CARD_ACTION =
 const CARD_STAT =
   "flex items-center gap-1 rounded-full bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-sm tabular-nums"
 
+type ArchiveSort = "dateDesc" | "dateAsc" | "title" | "origin"
+
+const ARCHIVE_SELECT =
+  "min-h-11 rounded-xl bg-white/10 px-2 py-1 text-xs text-white outline-none focus:ring-2 focus:ring-orange-400/60 [&>option]:text-black"
+
 const QuizzPanel = ({
   search,
   setSearch,
@@ -101,7 +106,13 @@ const QuizzPanel = ({
     null,
   )
   const shareModalQuizz = quizz.find((q) => q.id === shareModalQuizzId)
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  // Tri et filtres propres à l'Archive (année, mois, dossier d'origine).
+  const [archiveSort, setArchiveSort] = useState<ArchiveSort>("dateDesc")
+  const [archiveYear, setArchiveYear] = useState("")
+  const [archiveMonth, setArchiveMonth] = useState("")
+  const [archiveOrigin, setArchiveOrigin] = useState("")
+  const inArchive = isArchived(activeFolder ?? undefined)
 
   useEffect(() => {
     if (pendingDelete && !quizz.some((q) => q.id === pendingDelete)) {
@@ -299,34 +310,96 @@ const QuizzPanel = ({
     e.target.value = ""
   }
 
-  const filtered = useMemo(
-    () =>
-      quizz.filter((q) => {
-        if (search && !q.subject.toLowerCase().includes(search.toLowerCase())) {
-          return false
-        }
-
-        if (activeFolder) {
-          if (
-            q.folder !== activeFolder &&
-            !q.folder?.startsWith(`${activeFolder}/`)
-          ) {
-            return false
-          }
-        } else if (isArchived(q.folder) || isGuestFolder(q.folder)) {
-          // Comme l'Archive, les bibliothèques invités ne polluent pas la vue
-          // « Tous » : elles se consultent via le dossier Invités.
-          return false
-        }
-
-        if (activeTag && !(q.tags ?? []).includes(activeTag)) {
-          return false
-        }
-
-        return true
-      }),
-    [quizz, search, activeFolder, activeTag],
+  const archivedQuizz = useMemo(
+    () => (inArchive ? quizz.filter((q) => isArchived(q.folder)) : []),
+    [quizz, inArchive],
   )
+  const archiveYears = useMemo(
+    () =>
+      [
+        ...new Set(
+          archivedQuizz.flatMap((q) =>
+            q.archivedAt ? [new Date(q.archivedAt).getFullYear()] : [],
+          ),
+        ),
+      ].sort((a, b) => b - a),
+    [archivedQuizz],
+  )
+  const archiveOrigins = useMemo(
+    () =>
+      [...new Set(archivedQuizz.map((q) => q.archivedFrom ?? ""))].sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [archivedQuizz],
+  )
+
+  const filtered = useMemo(() => {
+    const matchesArchive = (q: (typeof quizz)[number]) => {
+      const date = q.archivedAt ? new Date(q.archivedAt) : null
+
+      if (archiveYear && date?.getFullYear() !== Number(archiveYear)) {
+        return false
+      }
+
+      if (archiveMonth && date?.getMonth() !== Number(archiveMonth) - 1) {
+        return false
+      }
+
+      return !archiveOrigin || (q.archivedFrom ?? "") === archiveOrigin
+    }
+
+    const list = quizz.filter((q) => {
+      if (search && !q.subject.toLowerCase().includes(search.toLowerCase())) {
+        return false
+      }
+
+      if (activeFolder) {
+        if (
+          q.folder !== activeFolder &&
+          !q.folder?.startsWith(`${activeFolder}/`)
+        ) {
+          return false
+        }
+      } else if (isArchived(q.folder) || isGuestFolder(q.folder)) {
+        // Comme l'Archive, les bibliothèques invités ne polluent pas la vue
+        // « Tous » : elles se consultent via le dossier Invités.
+        return false
+      }
+
+      if (activeTag && !(q.tags ?? []).includes(activeTag)) {
+        return false
+      }
+
+      return !inArchive || matchesArchive(q)
+    })
+
+    if (!inArchive) {
+      return list
+    }
+
+    const byDate = (a: (typeof list)[number], b: (typeof list)[number]) =>
+      (b.archivedAt ?? 0) - (a.archivedAt ?? 0)
+    const sorters: Record<ArchiveSort, typeof byDate> = {
+      dateDesc: byDate,
+      dateAsc: (a, b) => byDate(b, a),
+      title: (a, b) => a.subject.localeCompare(b.subject),
+      origin: (a, b) =>
+        (a.archivedFrom ?? "").localeCompare(b.archivedFrom ?? "") ||
+        byDate(a, b),
+    }
+
+    return [...list].sort(sorters[archiveSort])
+  }, [
+    quizz,
+    search,
+    activeFolder,
+    activeTag,
+    inArchive,
+    archiveSort,
+    archiveYear,
+    archiveMonth,
+    archiveOrigin,
+  ])
 
   const handleSelect = (id: string, isSelected: boolean) => {
     if (eveningMode) {
@@ -391,6 +464,64 @@ const QuizzPanel = ({
           onChange={handleImport}
         />
       </div>
+
+      {inArchive && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <select
+            className={ARCHIVE_SELECT}
+            value={archiveSort}
+            onChange={(e) => setArchiveSort(e.target.value as ArchiveSort)}
+            aria-label={t("manager:archive.sort")}
+          >
+            {(["dateDesc", "dateAsc", "title", "origin"] as const).map((k) => (
+              <option key={k} value={k}>
+                {t(`manager:archive.sortBy.${k}`)}
+              </option>
+            ))}
+          </select>
+          <select
+            className={ARCHIVE_SELECT}
+            value={archiveYear}
+            onChange={(e) => setArchiveYear(e.target.value)}
+            aria-label={t("manager:archive.year")}
+          >
+            <option value="">{t("manager:archive.allYears")}</option>
+            {archiveYears.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <select
+            className={ARCHIVE_SELECT}
+            value={archiveMonth}
+            onChange={(e) => setArchiveMonth(e.target.value)}
+            aria-label={t("manager:archive.month")}
+          >
+            <option value="">{t("manager:archive.allMonths")}</option>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i} value={i + 1}>
+                {new Date(2000, i, 1).toLocaleDateString(i18n.language, {
+                  month: "long",
+                })}
+              </option>
+            ))}
+          </select>
+          <select
+            className={ARCHIVE_SELECT}
+            value={archiveOrigin}
+            onChange={(e) => setArchiveOrigin(e.target.value)}
+            aria-label={t("manager:archive.origin")}
+          >
+            <option value="">{t("manager:archive.allOrigins")}</option>
+            {archiveOrigins.map((o) => (
+              <option key={o} value={o}>
+                {o || t("manager:archive.noOrigin")}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Grille */}
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
@@ -493,6 +624,15 @@ const QuizzPanel = ({
                     <p className="line-clamp-2 text-sm leading-tight font-bold text-white drop-shadow-md">
                       {q.subject}
                     </p>
+                    {inArchive && q.archivedAt && (
+                      <p className="mt-0.5 truncate text-[11px] text-amber-200/80">
+                        {new Date(q.archivedAt).toLocaleDateString(
+                          i18n.language,
+                          { day: "numeric", month: "short", year: "numeric" },
+                        )}
+                        {q.archivedFrom ? ` · ${q.archivedFrom}` : ""}
+                      </p>
+                    )}
                     {q.folder && (
                       <p
                         className={clsx(

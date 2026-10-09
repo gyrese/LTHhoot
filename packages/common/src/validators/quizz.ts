@@ -373,6 +373,8 @@ export const quizzValidator = z.object({
   description: z.string().optional(),
   folder: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  archivedAt: z.number().optional(),
+  archivedFrom: z.string().optional(),
   salonImage: z.string().optional(),
   listingImage: z.string().optional(),
   // .catch(undefined) : un thème retiré du catalogue déjà stocké sur disque

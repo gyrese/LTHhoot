@@ -279,5 +279,21 @@
     "hint": "It lets you control a running game, not access the dashboard.",
     "open": "Open the remote control",
     "useAnotherCode": "Use another password"
+  },
+  "archive": {
+    "sort": "Sort",
+    "year": "Year",
+    "month": "Month",
+    "origin": "Original folder",
+    "allYears": "All years",
+    "allMonths": "All months",
+    "allOrigins": "All folders",
+    "noOrigin": "No folder",
+    "sortBy": {
+      "dateDesc": "Newest first",
+      "dateAsc": "Oldest first",
+      "title": "Title (A-Z)",
+      "origin": "Original folder"
+    }
   }
 }

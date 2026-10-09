@@ -279,5 +279,21 @@
     "hint": "Damit steuerst du ein laufendes Spiel, aber du erhältst keinen Zugriff auf das Dashboard.",
     "open": "Fernbedienung öffnen",
     "useAnotherCode": "Anderes Passwort verwenden"
+  },
+  "archive": {
+    "sort": "Sortieren",
+    "year": "Jahr",
+    "month": "Monat",
+    "origin": "Ursprungsordner",
+    "allYears": "Alle Jahre",
+    "allMonths": "Alle Monate",
+    "allOrigins": "Alle Ordner",
+    "noOrigin": "Ohne Ordner",
+    "sortBy": {
+      "dateDesc": "Neueste zuerst",
+      "dateAsc": "Älteste zuerst",
+      "title": "Titel (A-Z)",
+      "origin": "Ursprungsordner"
+    }
   }
 }

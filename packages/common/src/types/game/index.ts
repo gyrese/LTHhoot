@@ -311,6 +311,9 @@ export type Quizz = {
   description?: string
   folder?: string
   tags?: string[]
+  // Renseignés au déplacement dans l'Archive (date, dossier d'origine).
+  archivedAt?: number
+  archivedFrom?: string
   salonImage?: string
   listingImage?: string
   podiumTheme?: PodiumThemeSetting
@@ -332,6 +335,8 @@ export type QuizzMeta = {
   tags?: string[]
   salonImage?: string
   listingImage?: string
+  archivedAt?: number
+  archivedFrom?: string
   // Nombre de questions jouables (slides titre exclus) : badge des cartes et
   // estimation de la durée d'une soirée.
   questionCount: number

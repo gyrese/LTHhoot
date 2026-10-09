@@ -279,5 +279,21 @@
     "hint": "Il permet de piloter une partie en cours, pas d'accéder au tableau de bord.",
     "open": "Ouvrir la télécommande",
     "useAnotherCode": "Utiliser un autre mot de passe"
+  },
+  "archive": {
+    "sort": "Trier",
+    "year": "Année",
+    "month": "Mois",
+    "origin": "Dossier d'origine",
+    "allYears": "Toutes les années",
+    "allMonths": "Tous les mois",
+    "allOrigins": "Tous les dossiers",
+    "noOrigin": "Sans dossier",
+    "sortBy": {
+      "dateDesc": "Plus récents",
+      "dateAsc": "Plus anciens",
+      "title": "Titre (A-Z)",
+      "origin": "Dossier d'origine"
+    }
   }
 }

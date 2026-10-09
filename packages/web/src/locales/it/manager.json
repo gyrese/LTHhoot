@@ -279,5 +279,21 @@
     "hint": "Permette di pilotare una partita in corso, non di accedere alla dashboard.",
     "open": "Apri il telecomando",
     "useAnotherCode": "Usa un'altra password"
+  },
+  "archive": {
+    "sort": "Ordina",
+    "year": "Anno",
+    "month": "Mese",
+    "origin": "Cartella di origine",
+    "allYears": "Tutti gli anni",
+    "allMonths": "Tutti i mesi",
+    "allOrigins": "Tutte le cartelle",
+    "noOrigin": "Senza cartella",
+    "sortBy": {
+      "dateDesc": "Più recenti",
+      "dateAsc": "Più vecchi",
+      "title": "Titolo (A-Z)",
+      "origin": "Cartella di origine"
+    }
   }
 }

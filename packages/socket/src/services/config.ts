@@ -182,6 +182,9 @@ class Config {
         tags,
         salonImage,
         listingImage,
+        archivedAt,
+        archivedFrom,
+        updatedAt,
         questions,
       }) => ({
         id,
@@ -192,6 +195,10 @@ class Config {
         tags,
         salonImage,
         listingImage,
+        // Les quiz archivés avant l'introduction d'archivedAt retombent sur la
+        // révision, que moveToFolder a bumpée au moment de l'archivage.
+        archivedAt: isArchived(folder) ? (archivedAt ?? updatedAt) : undefined,
+        archivedFrom,
         questionCount: countPlayableQuestions(questions),
         estimatedDurationSec: estimateQuizzDurationSec(questions),
       }),
@@ -323,6 +330,23 @@ class Config {
     }
 
     const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+    const wasArchived = isArchived(raw.folder)
+    const willBeArchived = isArchived(folder ?? undefined)
+
+    // Archivage : on retient la date et le dossier d'origine pour le tri de
+    // l'Archive. Un déplacement à l'intérieur de l'Archive les conserve.
+    if (willBeArchived && !wasArchived) {
+      raw.archivedAt = Date.now()
+
+      if (raw.folder) {
+        raw.archivedFrom = raw.folder
+      } else {
+        delete raw.archivedFrom
+      }
+    } else if (!willBeArchived) {
+      delete raw.archivedAt
+      delete raw.archivedFrom
+    }
 
     if (folder === null || folder === "") {
       delete raw.folder
