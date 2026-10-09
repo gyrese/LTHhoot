@@ -43,6 +43,6 @@ const PlayerAuthPage = () => {
 }
 
 export const Route = createFileRoute("/(auth)/")({
-  validateSearch: (search) => joinSearchSchema.parse(search),
+  validateSearch: joinSearchSchema,
   component: PlayerAuthPage,
 })

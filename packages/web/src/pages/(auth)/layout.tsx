@@ -33,5 +33,5 @@ const AuthLayout = () => {
 
 export const Route = createFileRoute("/(auth)")({
   component: AuthLayout,
-  validateSearch: (search) => joinSearchSchema.parse(search),
+  validateSearch: joinSearchSchema,
 })
