@@ -12,14 +12,14 @@ import type {
   SoloSolution,
 } from "@rahoot/common/types/solo"
 import { resolveQuestionFont } from "@rahoot/common/utils/question-layout"
-import { checkAnswer } from "@rahoot/socket/utils/game"
+import { answerScoreRatio } from "@rahoot/socket/utils/game"
 import { randomBytes, randomInt } from "node:crypto"
 
 // Solo public chronométré et corrigé côté serveur.
 //
 // Le client ne reçoit qu'UNE question à la fois, sans sa solution, horodatée
 // par le serveur à l'envoi. La réponse est corrigée ici avec la logique du jeu
-// live (`checkAnswer`), si bien que TOUS les types de question sont scorés de
+// live (`answerScoreRatio`), si bien que TOUS les types de question sont scorés de
 // la même façon qu'en partie. Le temps de réponse est mesuré entre deux
 // horodatages serveur : le client ne fournit plus ni `timeMs` ni `startedAt`.
 
@@ -169,6 +169,7 @@ export const toSoloPublicQuestion = (
         type: "grid",
         cells: question.cells,
         cellsPerRow: question.cellsPerRow,
+        pickCount: question.correctIndexes.length,
       }
 
     default:
@@ -392,6 +393,7 @@ export class SoloSessions {
     const late = now > session.endsAt + SOLO_ANSWER_GRACE_MS
     const hasAnswer =
       payload.answerId !== undefined ||
+      payload.answerIds !== undefined ||
       payload.textAnswer !== undefined ||
       payload.numberAnswer !== undefined ||
       payload.orderAnswer !== undefined
@@ -399,15 +401,21 @@ export class SoloSessions {
     const answer: Answer = {
       playerId: session.id,
       answerId: payload.answerId,
+      answerIds: payload.answerIds,
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: toOriginalOrder(payload.orderAnswer, entry.order),
       points: 0,
     }
 
-    const correct = hasAnswer && !late && checkAnswer(entry.question, answer)
+    // Part du barème : une fraction pour une grille partiellement trouvée.
+    const scoreRatio =
+      hasAnswer && !late ? answerScoreRatio(entry.question, answer) : 0
+    const correct = scoreRatio > 0
     const points = correct
-      ? soloPoints(elapsedMs, timeLimitMs(entry.question))
+      ? Math.round(
+          soloPoints(elapsedMs, timeLimitMs(entry.question)) * scoreRatio,
+        )
       : 0
 
     if (correct) {
@@ -419,6 +427,7 @@ export class SoloSessions {
       ? {
           playerName: session.playerName,
           answerId: answer.answerId ?? null,
+          answerIds: answer.answerIds ?? null,
           textAnswer: answer.textAnswer ?? null,
           numberAnswer: answer.numberAnswer ?? null,
           orderAnswer: answer.orderAnswer ?? null,

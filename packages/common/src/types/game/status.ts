@@ -92,6 +92,9 @@ export type CommonStatusDataMap = {
     // sont PAS diffusées ici : elles partent au seul manager via `solutions`.
     cells?: GridCell[]
     cellsPerRow?: number
+    // Nombre de cases que le joueur peut (et doit) choisir : celui des bonnes
+    // cases. Seul le nombre est diffusé, jamais les index.
+    pickCount?: number
     isFrozen?: boolean
     isScrambled?: boolean
     roundEvent?: RoundEventType

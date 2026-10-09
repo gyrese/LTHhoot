@@ -5,8 +5,8 @@ import { Check } from "lucide-react"
 type Props = {
   cells: GridCell[]
   cellsPerRow: number
-  /** Case actuellement sélectionnée par le joueur (avant validation). */
-  selectedIndex?: number | null
+  /** Cases actuellement sélectionnées par le joueur (avant validation). */
+  selectedIndexes?: number[]
   /** Rend la grille cliquable (écran joueur). */
   onSelect?: (_index: number) => void
   disabled?: boolean
@@ -32,7 +32,7 @@ type Props = {
 const GridBoard = ({
   cells,
   cellsPerRow,
-  selectedIndex,
+  selectedIndexes,
   onSelect,
   disabled,
   correctIndexes,
@@ -55,7 +55,7 @@ const GridBoard = ({
       }}
     >
       {cells.map((cell, index) => {
-        const isSelected = selectedIndex === index
+        const isSelected = Boolean(selectedIndexes?.includes(index))
         const isCorrect = Boolean(correctIndexes?.includes(index))
         const interactive = Boolean(onSelect) && !disabled
 

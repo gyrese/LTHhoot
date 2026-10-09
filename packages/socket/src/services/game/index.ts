@@ -1212,7 +1212,8 @@ class Game {
       startedAt: startedAt > 0 ? startedAt : undefined,
       hasAnswered: Boolean(playerAnswer),
       submittedAnswer: playerAnswer
-        ? (playerAnswer.answerId ??
+        ? (playerAnswer.answerIds ??
+          playerAnswer.answerId ??
           playerAnswer.textAnswer ??
           playerAnswer.numberAnswer ??
           playerAnswer.orderAnswer)
@@ -1402,6 +1403,7 @@ class Game {
     socket: Socket,
     payload: {
       answerId?: number
+      answerIds?: number[]
       textAnswer?: string
       numberAnswer?: number
       orderAnswer?: number[]

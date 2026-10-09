@@ -42,6 +42,7 @@ const answerSchema = z.object({
   sessionId,
   questionIndex: z.number().int().min(0),
   answerId: z.number().int().min(0).max(1000).optional(),
+  answerIds: z.array(z.number().int().min(0).max(1000)).max(100).optional(),
   textAnswer: z.string().max(500).optional(),
   numberAnswer: z.number().optional(),
   orderAnswer: z.array(z.number().int().min(0).max(1000)).max(100).optional(),
@@ -249,13 +250,20 @@ export const asyncQuizzSocketHandlers = ({ socket }: SocketContext) => {
       return
     }
 
-    const { questionIndex, answerId, textAnswer, numberAnswer, orderAnswer } =
-      parsed
+    const {
+      questionIndex,
+      answerId,
+      answerIds,
+      textAnswer,
+      numberAnswer,
+      orderAnswer,
+    } = parsed
 
     replyAck(
       ack,
       SoloSessions.answer(session, questionIndex, {
         answerId,
+        answerIds,
         textAnswer,
         numberAnswer,
         orderAnswer,

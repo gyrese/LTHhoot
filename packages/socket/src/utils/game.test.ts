@@ -17,6 +17,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   answerPoints,
   calculateAwards,
+  answerScoreRatio,
   checkAnswer,
   detectTopTie,
   timeToPoint,
@@ -284,6 +285,47 @@ describe("checkAnswer", () => {
 
     it("rejette une absence de réponse", () => {
       expect(checkAnswer(question, buildAnswer({}))).toBe(false)
+    })
+
+    describe("sélection multiple (answerIds)", () => {
+      it("donne une part du barème par bonne case trouvée", () => {
+        expect(
+          answerScoreRatio(question, buildAnswer({ answerIds: [1, 4] })),
+        ).toBe(1)
+        expect(
+          answerScoreRatio(question, buildAnswer({ answerIds: [1, 0] })),
+        ).toBe(0.5)
+        expect(
+          answerScoreRatio(question, buildAnswer({ answerIds: [0, 2] })),
+        ).toBe(0)
+      })
+
+      it("compte juste une grille partiellement trouvée", () => {
+        expect(checkAnswer(question, buildAnswer({ answerIds: [4, 2] }))).toBe(
+          true,
+        )
+        expect(checkAnswer(question, buildAnswer({ answerIds: [0, 2] }))).toBe(
+          false,
+        )
+      })
+
+      it("ignore les doublons", () => {
+        expect(
+          answerScoreRatio(question, buildAnswer({ answerIds: [1, 1] })),
+        ).toBe(0.5)
+      })
+
+      it("vaut 0 au-delà du quota de cases (tout cocher ne paie pas)", () => {
+        expect(
+          answerScoreRatio(question, buildAnswer({ answerIds: [1, 4, 0] })),
+        ).toBe(0)
+      })
+
+      it("reste compatible avec une case unique (answerId)", () => {
+        expect(answerScoreRatio(question, buildAnswer({ answerId: 4 }))).toBe(
+          0.5,
+        )
+      })
     })
   })
 

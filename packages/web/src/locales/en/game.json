@@ -1,4 +1,5 @@
 {
+  "gridPick": "Find the {{count}} correct tiles",
   "answerSent": "Answer sent!",
   "answerSendFailed": "Answer not sent — tap to retry",
   "answerSending": "Sending your answer…",

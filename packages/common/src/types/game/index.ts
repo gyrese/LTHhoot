@@ -36,6 +36,9 @@ export type PublicPlayer = Omit<Player, "clientId">
 export type Answer = {
   playerId: string
   answerId?: number
+  // Grille à plusieurs bonnes cases : cases choisies (au plus autant que de
+  // bonnes cases).
+  answerIds?: number[]
   textAnswer?: string
   numberAnswer?: number
   orderAnswer?: number[]
@@ -344,6 +347,7 @@ export type GameUpdateQuestion = {
 export type PlayerAnswerRecord = {
   playerName: string
   answerId?: number | null
+  answerIds?: number[] | null
   textAnswer?: string | null
   numberAnswer?: number | null
   orderAnswer?: number[] | null

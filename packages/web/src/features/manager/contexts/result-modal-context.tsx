@@ -54,6 +54,7 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
   const answeredCount = questionResult.playerAnswers.filter(
     (pa) =>
       (pa.answerId !== null && pa.answerId !== undefined) ||
+      Boolean(pa.answerIds?.length) ||
       (pa.textAnswer !== null && pa.textAnswer !== undefined) ||
       (pa.numberAnswer !== null && pa.numberAnswer !== undefined),
   ).length

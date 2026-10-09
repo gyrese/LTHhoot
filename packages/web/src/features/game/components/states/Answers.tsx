@@ -109,6 +109,7 @@ const Answers = ({
     pinImage,
     cells,
     cellsPerRow,
+    pickCount,
     isFrozen,
     isScrambled,
     roundEvent,
@@ -267,6 +268,7 @@ const Answers = ({
   const sendAnswer = (
     payload: {
       answerId?: number
+      answerIds?: number[]
       textAnswer?: string
       numberAnswer?: number
       orderAnswer?: number[]
@@ -362,6 +364,7 @@ const Answers = ({
 
   const emit = (payload: {
     answerId?: number
+    answerIds?: number[]
     textAnswer?: string
     numberAnswer?: number
     orderAnswer?: number[]
@@ -901,7 +904,8 @@ const Answers = ({
             key={question}
             cells={cells}
             cellsPerRow={cellsPerRow ?? 3}
-            onAnswer={(index) => emit({ answerId: index })}
+            pickCount={pickCount}
+            onAnswer={(indexes) => emit({ answerIds: indexes })}
           />
         )}
 

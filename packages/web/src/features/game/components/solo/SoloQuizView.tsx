@@ -140,6 +140,8 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(
     null,
   )
+  // Grille à plusieurs bonnes cases : cases cochées avant validation.
+  const [gridSelection, setGridSelection] = useState<number[]>([])
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
   const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean | null>(null)
   // Correction renvoyée par le serveur après la réponse.
@@ -174,6 +176,7 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
 
   const resetQuestionState = () => {
     setSelectedAnswer(null)
+    setGridSelection([])
     setHasSubmittedAnswer(false)
     setIsCorrectAnswer(null)
     setSolution(null)
@@ -280,7 +283,9 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
       return true
     }
 
-    return selectedAnswer === index ? false : undefined
+    return selectedAnswer === index || gridSelection.includes(index)
+      ? false
+      : undefined
   }
 
   // Envoi de la réponse : la correction (juste/faux, points, solution) est
@@ -450,6 +455,39 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
     sfxPop()
     setSelectedAnswer(ansIdx)
     submitAnswer({ answerId: ansIdx })
+  }
+
+  // Grille : une seule bonne case → le tap valide directement ; sinon le tap
+  // coche / décoche (dans la limite du quota) et le joueur valide ensuite.
+  const handleGridTap = (idx: number) => {
+    if (hasSubmittedAnswer || currentQuestion?.type !== "grid") {
+      return
+    }
+
+    if (currentQuestion.pickCount <= 1) {
+      handleAnswerSelect(idx)
+
+      return
+    }
+
+    sfxPop()
+    setGridSelection((current) => {
+      if (current.includes(idx)) {
+        return current.filter((i) => i !== idx)
+      }
+
+      return current.length < currentQuestion.pickCount
+        ? [...current, idx]
+        : current
+    })
+  }
+
+  const handleGridSubmit = () => {
+    if (hasSubmittedAnswer || gridSelection.length === 0) {
+      return
+    }
+
+    submitAnswer({ answerIds: gridSelection })
   }
 
   const handleNumberSubmit = (val: number) => {
@@ -820,7 +858,16 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
               </div>
             )}
 
-            {/* Grille : le joueur tape la case qu'il pense juste */}
+            {/* Grille : le joueur tape la (ou les) case(s) qu'il pense juste(s) */}
+            {currentQuestion.type === "grid" &&
+              currentQuestion.pickCount > 1 && (
+                <p className="mb-2 flex items-center justify-center gap-2 text-sm font-bold">
+                  {t("game:gridPick", { count: currentQuestion.pickCount })}
+                  <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs tabular-nums">
+                    {gridSelection.length}/{currentQuestion.pickCount}
+                  </span>
+                </p>
+              )}
             {currentQuestion.type === "grid" && (
               <div
                 className="mx-auto mb-3 grid max-w-2xl gap-2"
@@ -833,9 +880,13 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                     key={`${cell.image}-${idx}`}
                     type="button"
                     disabled={hasSubmittedAnswer}
-                    onClick={() => handleAnswerSelect(idx)}
+                    onClick={() => handleGridTap(idx)}
+                    aria-pressed={gridSelection.includes(idx)}
                     className={clsx(
                       "relative min-h-[44px] cursor-pointer overflow-hidden rounded-xl border-2 border-white/20 bg-black/40",
+                      !hasSubmittedAnswer &&
+                        gridSelection.includes(idx) &&
+                        "border-orange-400 ring-4 ring-orange-400/40",
                       answerState(idx) === true && "ring-4 ring-green-400",
                       answerState(idx) === false && "opacity-50 grayscale",
                     )}
@@ -854,6 +905,21 @@ export const SoloQuizView: React.FC<Props> = ({ quizzId }) => {
                 ))}
               </div>
             )}
+            {currentQuestion.type === "grid" &&
+              currentQuestion.pickCount > 1 &&
+              !hasSubmittedAnswer && (
+                <div className="mx-auto mb-3 flex max-w-2xl justify-center">
+                  <button
+                    type="button"
+                    onClick={handleGridSubmit}
+                    disabled={gridSelection.length === 0}
+                    className="flex cursor-pointer items-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    <span>{t("game:solo.submit")}</span>
+                    <Send className="size-5" />
+                  </button>
+                </div>
+              )}
 
             {/* Open Question */}
             {(currentQuestion.type === "open" ||

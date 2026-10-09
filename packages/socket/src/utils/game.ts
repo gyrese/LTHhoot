@@ -7,6 +7,7 @@ import type {
   Answer,
   Award,
   GameResult,
+  GridQuestion,
   Player,
   PodiumThemeId,
   PublicPlayer,
@@ -166,6 +167,45 @@ export const answerPoints = (
 ): number =>
   noSpeedMode ? MAX_ANSWER_POINTS : timeToPoint(startTime, secondes)
 
+// Grille : cases choisies — `answerIds` (sélection multiple), sinon
+// `answerId` (une seule bonne case, anciens clients). Doublons ignorés.
+export const gridPicks = (answer: Answer): number[] => {
+  if (answer.answerIds) {
+    return [...new Set(answer.answerIds)]
+  }
+
+  return answer.answerId === undefined ? [] : [answer.answerId]
+}
+
+// Grille : part du barème méritée, une part par bonne case trouvée. Choisir
+// plus de cases qu'il n'y a de bonnes réponses est impossible depuis le client
+// (quota) : une telle réponse vaut 0, sinon tout cocher serait gagnant.
+const gridScoreRatio = (question: GridQuestion, answer: Answer): number => {
+  const picks = gridPicks(answer)
+  const { correctIndexes } = question
+
+  if (picks.length === 0 || picks.length > correctIndexes.length) {
+    return 0
+  }
+
+  const hits = picks.filter((i) => correctIndexes.includes(i)).length
+
+  return hits / correctIndexes.length
+}
+
+// Part du barème (0 à 1) méritée par une réponse. Binaire pour tous les types,
+// sauf la grille où chaque bonne case rapporte sa part.
+export const answerScoreRatio = (
+  question: Question,
+  answer: Answer,
+): number => {
+  if (question.type === "grid") {
+    return gridScoreRatio(question, answer)
+  }
+
+  return checkAnswer(question, answer) ? 1 : 0
+}
+
 export const checkAnswer = (question: Question, answer: Answer): boolean => {
   switch (question.type) {
     case "mcq":
@@ -214,13 +254,10 @@ export const checkAnswer = (question: Question, answer: Answer): boolean => {
         answer.orderAnswer.every((v, i) => v === i)
       )
 
-    // Grille : `answerId` est l'index de la case tapée. Plusieurs cases peuvent
-    // être justes — une seule suffit.
+    // Grille : juste dès qu'au moins une bonne case est trouvée (les points,
+    // eux, sont proportionnels — cf. answerScoreRatio).
     case "grid":
-      return (
-        answer.answerId !== undefined &&
-        question.correctIndexes.includes(answer.answerId)
-      )
+      return gridScoreRatio(question, answer) > 0
 
     case "drop_pin": {
       if (question.type !== "drop_pin") {

@@ -1,4 +1,5 @@
 {
+  "gridPick": "Finde die {{count}} richtigen Felder",
   "answerSent": "Antwort gesendet!",
   "answerSendFailed": "Antwort nicht gesendet – zum Wiederholen tippen",
   "answerSending": "Antwort wird gesendet…",

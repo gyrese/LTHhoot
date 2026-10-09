@@ -44,6 +44,8 @@ import { TieBreakManager } from "@rahoot/socket/services/game/tie-break-manager"
 import { buildOpenAnswersList } from "@rahoot/socket/utils/open-answers"
 import { collectAllMediaUrls } from "@rahoot/socket/utils/collect-media-refs"
 import {
+  answerScoreRatio,
+  gridPicks,
   checkAnswer,
   detectTopTie,
   resolvePodiumTheme,
@@ -609,6 +611,7 @@ export class RoundManager {
             return {
               cells: question.cells,
               cellsPerRow: question.cellsPerRow,
+              pickCount: question.correctIndexes.length,
             }
 
           default:
@@ -787,10 +790,16 @@ export class RoundManager {
       return this.leaderboard.map((p) => ({ ...p }))
     })()
 
+    // Grille : chaque case choisie compte (un joueur peut en choisir
+    // plusieurs) — « combien de joueurs ont choisi cette case ».
     const totalType = this.playersAnswers.reduce(
       (acc: Record<number, number>, answer) => {
-        const key = answer.answerId ?? -1
-        acc[key] = (acc[key] || 0) + 1
+        const keys =
+          question.type === "grid" ? gridPicks(answer) : [answer.answerId ?? -1]
+
+        keys.forEach((key) => {
+          acc[key] = (acc[key] || 0) + 1
+        })
 
         return acc
       },
@@ -808,12 +817,17 @@ export class RoundManager {
           (a) => a.playerId === player.id,
         )
 
-        const isCorrect = playerAnswer
-          ? checkAnswer(question, playerAnswer)
-          : false
+        // Part du barème : 1 si juste, 0 si faux ; une fraction pour une
+        // grille partiellement trouvée (qui compte alors comme juste).
+        const scoreRatio = playerAnswer
+          ? answerScoreRatio(question, playerAnswer)
+          : 0
+        const isCorrect = scoreRatio > 0
 
         let points =
-          playerAnswer && isCorrect ? Math.round(playerAnswer.points) : 0
+          playerAnswer && isCorrect
+            ? Math.round(playerAnswer.points * scoreRatio)
+            : 0
 
         // Multiplicateur de points configuré sur la question (ex. x2)
         if (
@@ -990,6 +1004,7 @@ export class RoundManager {
         return {
           playerName: player.username,
           answerId: ans?.answerId ?? null,
+          answerIds: ans?.answerIds ?? null,
           textAnswer: ans?.textAnswer ?? null,
           numberAnswer: ans?.numberAnswer ?? null,
           orderAnswer: ans?.orderAnswer ?? null,
@@ -1057,6 +1072,7 @@ export class RoundManager {
     socket: Socket,
     payload: {
       answerId?: number
+      answerIds?: number[]
       textAnswer?: string
       numberAnswer?: number
       orderAnswer?: number[]
@@ -1101,6 +1117,7 @@ export class RoundManager {
     const answer: Answer = {
       playerId: player.id,
       answerId: payload.answerId,
+      answerIds: payload.answerIds,
       textAnswer: payload.textAnswer,
       numberAnswer: payload.numberAnswer,
       orderAnswer: payload.orderAnswer,

@@ -45,6 +45,7 @@ export const selectedAnswerSchema = z.object({
   gameId: optionalId,
   data: z.object({
     answerId: nullish(z.number().int().min(0).max(1000)),
+    answerIds: nullish(z.array(z.number().int().min(0).max(1000)).max(100)),
     textAnswer: nullish(z.string().max(500)),
     numberAnswer: nullish(z.number()),
     orderAnswer: nullish(z.array(z.number().int().min(0).max(1000)).max(100)),

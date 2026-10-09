@@ -57,7 +57,13 @@ export type SoloPublicQuestion = SoloQuestionBase &
     // index de CETTE liste, le serveur retrouve l'ordre d'origine.
     | { type: "puzzle"; items: string[] }
     | { type: "drop_pin"; pinImage: string }
-    | { type: "grid"; cells: GridCell[]; cellsPerRow: number }
+    | {
+        type: "grid"
+        cells: GridCell[]
+        cellsPerRow: number
+        // Nombre de cases à choisir (= nombre de bonnes cases).
+        pickCount: number
+      }
   )
 
 // Correction renvoyée après une réponse (champs selon le type de question).
@@ -79,6 +85,7 @@ export type SoloSolution = {
 
 export type SoloAnswerPayload = {
   answerId?: number
+  answerIds?: number[]
   textAnswer?: string
   numberAnswer?: number
   orderAnswer?: number[]

@@ -354,6 +354,7 @@ export interface ClientToServerEvents {
   [EVENTS.PLAYER.SELECTED_ANSWER]: (
     _message: MessageWithoutStatus<{
       answerId?: number
+      answerIds?: number[]
       textAnswer?: string
       numberAnswer?: number
       orderAnswer?: number[]

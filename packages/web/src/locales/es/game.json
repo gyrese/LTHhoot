@@ -1,4 +1,5 @@
 {
+  "gridPick": "Encuentra las {{count}} casillas correctas",
   "answerSent": "¡Respuesta enviada!",
   "answerSendFailed": "Respuesta no enviada: toca para reintentar",
   "answerSending": "Enviando tu respuesta…",

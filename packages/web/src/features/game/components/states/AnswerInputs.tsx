@@ -146,18 +146,38 @@ export const PuzzleAnswer = ({
 export const GridAnswer = ({
   cells,
   cellsPerRow,
+  pickCount = 1,
   onAnswer,
 }: {
   cells: GridCell[]
   cellsPerRow: number
-  onAnswer: (_index: number) => void
+  /** Nombre de cases à choisir (= nombre de bonnes cases). */
+  pickCount?: number
+  onAnswer: (_indexes: number[]) => void
 }) => {
-  const [selected, setSelected] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
   const { t } = useTranslation()
+  const quota = Math.max(1, pickCount)
+
+  // Une seule case à trouver : un tap remplace le choix. Sinon un tap
+  // coche / décoche, dans la limite du quota.
+  const toggle = (index: number) => {
+    setSelected((current) => {
+      if (quota === 1) {
+        return [index]
+      }
+
+      if (current.includes(index)) {
+        return current.filter((i) => i !== index)
+      }
+
+      return current.length < quota ? [...current, index] : current
+    })
+  }
 
   const handleSubmit = () => {
-    if (!submitted && selected !== null) {
+    if (!submitted && selected.length > 0) {
       setSubmitted(true)
       onAnswer(selected)
     }
@@ -165,21 +185,30 @@ export const GridAnswer = ({
 
   return (
     <div className="mx-auto mb-4 flex w-full max-w-lg flex-col px-2">
+      {quota > 1 && (
+        <p className="mb-2 flex items-center justify-center gap-2 text-sm font-bold text-white">
+          {t("game:gridPick", { count: quota })}
+          <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs tabular-nums">
+            {selected.length}/{quota}
+          </span>
+        </p>
+      )}
+
       {/* Même garde que le puzzle : la grille est bornée en hauteur pour que le
           bouton de validation reste atteignable sur les petits mobiles. */}
       <div className="mb-3 max-h-[50dvh] overflow-y-auto overscroll-contain px-1 py-1">
         <GridBoard
           cells={cells}
           cellsPerRow={cellsPerRow}
-          selectedIndex={selected}
-          onSelect={setSelected}
+          selectedIndexes={selected}
+          onSelect={toggle}
           disabled={submitted}
         />
       </div>
 
       <button
         type="button"
-        disabled={submitted || selected === null}
+        disabled={submitted || selected.length === 0}
         onClick={handleSubmit}
         className="w-full shrink-0 rounded-2xl bg-yellow-500 py-4 text-xl font-black tracking-wider text-white uppercase shadow-[0_0_30px_rgba(255,153,0,0.3)] transition-all hover:scale-[1.02] hover:bg-yellow-600 active:scale-95 disabled:opacity-40"
       >
