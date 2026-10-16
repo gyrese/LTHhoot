@@ -1,28 +1,46 @@
-import { useEffect, useRef, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import type { QuestionWithId } from "../contexts/quizz-editor-context"
 import PreviewPresenterView from "./SlideEditor/PreviewPresenterView"
 
-export default function LazySlidePreview({
-  question,
-}: {
-  question: QuestionWithId
-}) {
+const listeners = new Map<Element, (_visible: boolean) => void>()
+let sharedObserver: IntersectionObserver | null = null
+
+const watchPreview = (
+  element: Element,
+  onVisible: (_visible: boolean) => void,
+) => {
+  if (typeof IntersectionObserver === "undefined") {
+    onVisible(true)
+    return () => undefined
+  }
+  sharedObserver ||= new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        listeners.get(entry.target)?.(entry.isIntersecting)
+      }
+    },
+    { rootMargin: "250px" },
+  )
+  listeners.set(element, onVisible)
+  sharedObserver.observe(element)
+  return () => {
+    sharedObserver?.unobserve(element)
+    listeners.delete(element)
+    if (listeners.size === 0) {
+      sharedObserver?.disconnect()
+      sharedObserver = null
+    }
+  }
+}
+
+const LazySlidePreview = memo(({ question }: { question: QuestionWithId }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     if (!ref.current) {
       return () => undefined
     }
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true)
-      return () => undefined
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { rootMargin: "250px" },
-    )
-    observer.observe(ref.current)
-    return () => observer.disconnect()
+    return watchPreview(ref.current, setVisible)
   }, [])
   return (
     <div ref={ref} className="bg-canvas aspect-video overflow-hidden">
@@ -39,4 +57,7 @@ export default function LazySlidePreview({
       )}
     </div>
   )
-}
+})
+LazySlidePreview.displayName = "LazySlidePreview"
+
+export default LazySlidePreview

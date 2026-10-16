@@ -1,3 +1,4 @@
+import toast from "react-hot-toast"
 import {
   type SlideElement,
   type SlideBackground,
@@ -799,6 +800,12 @@ const SlideCanvas = ({
           }
         }
 
+        img.onerror = () => {
+          URL.revokeObjectURL(localDataUrl)
+          toast.error(
+            "Cette image ne peut pas être lue. Essayez un fichier PNG, JPEG ou WebP.",
+          )
+        }
         img.src = localDataUrl
 
         return
@@ -870,6 +877,12 @@ const SlideCanvas = ({
       }
     }
 
+    img.onerror = () => {
+      URL.revokeObjectURL(localDataUrl)
+      toast.error(
+        "Cette image ne peut pas être lue. Essayez un fichier PNG, JPEG ou WebP.",
+      )
+    }
     img.src = localDataUrl
   }
 
@@ -1443,6 +1456,10 @@ const useSimpleImage = (url: string) => {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   useEffect(() => {
     const img = new window.Image()
+    img.onerror = () =>
+      toast.error(
+        "Impossible de charger cette image. Vérifiez le lien puis ajoutez-la à nouveau.",
+      )
     img.src = url
     img.crossOrigin = "Anonymous"
     img.onload = () => setImage(img)

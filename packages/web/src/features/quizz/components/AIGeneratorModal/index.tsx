@@ -1,314 +1,457 @@
-import type { Question } from "@rahoot/common/types/game"
-import { EVENTS } from "@rahoot/common/constants"
-import {
-  useSocket,
-  useEvent,
-} from "@rahoot/web/features/game/contexts/socket-context"
-import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import GeneratorForm from "@rahoot/web/features/quizz/components/AIGeneratorModal/GeneratorForm"
-import QuestionsPreview from "@rahoot/web/features/quizz/components/AIGeneratorModal/QuestionsPreview"
-import {
-  loadSettings,
-  saveSettings,
-  type GeneratorSettings,
-} from "@rahoot/web/features/quizz/components/AIGeneratorModal/options"
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-  X,
-} from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
+import {
+  Check,
+  Loader2,
+  Lock,
+  LockOpen,
+  RefreshCw,
+  Send,
+  Settings,
+  Trash2,
+  Undo2,
+  X,
+} from "lucide-react"
+import { useQuizzEditor } from "../../contexts/quizz-editor-context"
+import EditorDialog from "../EditorDialog"
+import GeneratorForm from "./GeneratorForm"
+import WorkshopQuestionEditor from "./WorkshopQuestionEditor"
+import useWorkshop from "./useWorkshop"
 
-type Props = {
-  open: boolean
-  onClose: () => void
-}
+type Props = { open: boolean; onClose: () => void }
+const smallButton =
+  "focus-ring text-ink-muted hover:bg-panel hover:text-ink flex size-8 shrink-0 items-center justify-center rounded-md disabled:opacity-40"
 
-const AIGeneratorModal = ({ open, onClose }: Props) => {
-  const { socket } = useSocket()
-  const { importQuestions, description, setDescription } = useQuizzEditor()
+function Workshop({ open, onClose }: Props) {
   const { t } = useTranslation()
-
-  const [prompt, setPrompt] = useState("")
-  const [settings, setSettings] = useState<GeneratorSettings>(loadSettings)
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  // Non nul = on est à l'étape de relecture, plus à l'étape de réglages.
-  const [generated, setGenerated] = useState<Question[] | null>(null)
-  const [selected, setSelected] = useState<Set<number>>(new Set())
-  const [suggestedDescription, setSuggestedDescription] = useState("")
-  // Coché d'office seulement si le quiz n'a pas encore de description : on
-  // n'écrase jamais une saisie de l'auteur sans un geste explicite.
-  const [useDescription, setUseDescription] = useState(false)
-
-  const updateSettings = (updates: Partial<GeneratorSettings>) =>
-    setSettings((prev) => ({ ...prev, ...updates }))
-
-  useEvent(
-    EVENTS.QUIZZ.AI_GENERATE_SUCCESS,
-    (data: { questions: Question[]; description: string }) => {
-      if (!loading) {
-        return
-      }
-
-      setLoading(false)
-
-      if (data.questions.length > 0) {
-        setGenerated(data.questions)
-        setSelected(new Set(data.questions.map((_, index) => index)))
-        setSuggestedDescription(data.description)
-        setUseDescription(!description.trim() && Boolean(data.description))
-      } else {
-        setErrorMsg("Aucune question n'a pu être générée. Veuillez réessayer.")
-      }
-    },
-  )
-
-  // Canal AI_ERROR dédié : les erreurs IA ne transitent plus par QUIZZ.ERROR
-  // (partagé avec la sauvegarde de l'éditeur → toasts/reset croisés).
-  useEvent(EVENTS.QUIZZ.AI_ERROR, (message: string) => {
-    if (!loading) {
-      return
-    }
-
-    setLoading(false)
-    // Map backend error messages if translated
-    setErrorMsg(message.startsWith("errors:") ? t(message) : message)
-  })
-
-  // Fermeture au clavier. Inactive pendant la génération, comme la croix et le
-  // clic sur le fond : une requête IA est en vol.
+  const workshop = useWorkshop(onClose)
+  const {
+    session,
+    setSession,
+    settings,
+    setSettings,
+    subject,
+    loading,
+    error,
+    storageError,
+    previous,
+    setPrevious,
+    mobileTab,
+    setMobileTab,
+    send,
+    update,
+    selected,
+    importDraft,
+    remove,
+    undo,
+    reset,
+    retry,
+  } = workshop
+  const [confirmReset, setConfirmReset] = useState(false)
+  const conversationRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!open || loading) {
-      return undefined
+    const area = conversationRef.current
+    if (area) {
+      area.scrollTop = area.scrollHeight
     }
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose()
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown)
-
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [open, loading, onClose])
+  }, [session.messages.length, loading, open])
 
   if (!open) {
     return null
   }
-
-  const handleGenerate = () => {
-    if (!prompt.trim()) {
-      toast.error("Veuillez saisir un thème ou sujet.")
-
-      return
-    }
-
-    if (settings.questionTypes.length === 0) {
-      toast.error("Veuillez sélectionner au moins un type de question.")
-
-      return
-    }
-
-    saveSettings(settings)
-    setLoading(true)
-    setErrorMsg(null)
-    setGenerated(null)
-
-    socket?.emit(EVENTS.QUIZZ.AI_GENERATE, {
-      prompt: prompt.trim(),
-      count: settings.count,
-      questionTypes: settings.questionTypes,
-      difficulties: settings.difficulties,
-      tone: settings.tone,
-      language: settings.language,
-      // 0 dans le select = « Auto » : le serveur attend null pour laisser
-      // l'IA moduler la durée selon la difficulté.
-      time: settings.time === 0 ? null : settings.time,
-      withExplanations: settings.withExplanations,
-      instructions: settings.instructions.trim() || undefined,
-    })
-  }
-
-  const handleToggle = (index: number) =>
-    setSelected((prev) => {
-      const next = new Set(prev)
-
-      if (next.has(index)) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-
-      return next
-    })
-
-  const handleToggleAll = (selectAll: boolean) =>
-    setSelected(
-      selectAll
-        ? new Set((generated ?? []).map((_, index) => index))
-        : new Set(),
-    )
-
-  const handleImport = () => {
-    if (!generated) {
-      return
-    }
-
-    const kept = generated.filter((_, index) => selected.has(index))
-
-    importQuestions(kept)
-
-    if (useDescription && suggestedDescription) {
-      setDescription(suggestedDescription)
-    }
-
-    toast.success(
-      t("quizz:aiGenerateSuccessMsg", {
-        count: kept.length,
-        defaultValue: `{{count}} question(s) générée(s) avec succès !`,
-      }),
-    )
-    onClose()
-    setPrompt("")
-    setGenerated(null)
-  }
-
-  const isPreview = generated !== null
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={() => !loading && onClose()}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Générer des questions par IA"
-        onClick={(e) => e.stopPropagation()}
-        className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border shadow-2xl duration-200"
-      >
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="text-primary flex items-center gap-2">
-            <Sparkles className={`size-5 ${loading ? "animate-pulse" : ""}`} />
-            <h2 className="text-ink text-lg font-bold">
-              {isPreview
-                ? "Relire les questions"
-                : "Générer des questions par IA"}
-            </h2>
+    <EditorDialog label="Atelier IA" onClose={onClose} wide>
+      <div className="flex h-full min-h-0 flex-col">
+        <header className="border-border flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3">
+          <h2 className="text-ink text-lg font-bold">Atelier IA</h2>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={smallButton}
+              title="Nouvelle conversation"
+              aria-label="Nouvelle conversation"
+              disabled={loading}
+              onClick={() => setConfirmReset((v) => !v)}
+            >
+              <Trash2 className="size-4" />
+            </button>
+            <button
+              type="button"
+              className={smallButton}
+              title="Fermer"
+              aria-label="Fermer"
+              onClick={onClose}
+            >
+              <X className="size-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            aria-label="Fermer"
-            className="text-ink-subtle hover:text-ink hover:bg-border/40 rounded-lg p-1 transition-colors disabled:opacity-30"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="scrollbar-light flex-1 space-y-6 overflow-y-auto p-6">
-          {errorMsg && (
-            <div className="bg-danger/10 border-danger/30 text-danger flex items-start gap-2.5 rounded-lg border p-3 text-sm">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {isPreview ? (
-            <QuestionsPreview
-              questions={generated}
-              selected={selected}
-              onToggle={handleToggle}
-              onToggleAll={handleToggleAll}
-              suggestedDescription={suggestedDescription}
-              useDescription={useDescription}
-              onToggleDescription={() => setUseDescription((v) => !v)}
-              hasExistingDescription={Boolean(description.trim())}
-            />
-          ) : (
-            <GeneratorForm
-              prompt={prompt}
-              onPromptChange={setPrompt}
-              settings={settings}
-              onSettingsChange={updateSettings}
-              loading={loading}
-            />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
-          {isPreview ? (
-            <>
+        </header>
+        {confirmReset && (
+          <div className="bg-panel border-border flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 text-sm">
+            <span>Effacer la conversation et les questions proposées ?</span>
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setGenerated(null)}
-                className="focus-ring border-border text-ink-muted hover:bg-border/30 flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
-              >
-                <ArrowLeft className="size-4" />
-                Réglages
-              </button>
-              <button
-                type="button"
-                onClick={handleGenerate}
-                className="focus-ring border-border text-ink-muted hover:bg-border/30 flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
-              >
-                <RefreshCw className="size-4" />
-                Régénérer
-              </button>
-              <button
-                type="button"
-                onClick={handleImport}
-                disabled={selected.size === 0}
-                className="focus-ring bg-primary text-secondary flex items-center justify-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:brightness-[0.97] active:scale-[0.98] disabled:opacity-40"
-              >
-                Importer ({selected.size})
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="focus-ring border-border text-ink-muted hover:bg-border/30 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-30"
+                className="focus-ring rounded px-2 py-1"
+                onClick={() => setConfirmReset(false)}
               >
                 Annuler
               </button>
               <button
                 type="button"
-                onClick={handleGenerate}
-                disabled={loading || !prompt.trim()}
-                className="focus-ring bg-primary text-secondary flex items-center justify-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:brightness-[0.97] active:scale-[0.98] disabled:opacity-40"
+                disabled={loading}
+                className="focus-ring text-danger rounded px-2 py-1 font-semibold disabled:opacity-40"
+                onClick={() => {
+                  reset()
+                  setConfirmReset(false)
+                }}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Génération...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="size-4" />
-                    Générer
-                  </>
-                )}
+                Effacer
               </button>
-            </>
-          )}
+            </div>
+          </div>
+        )}
+        {storageError && (
+          <p
+            role="status"
+            className="bg-danger-soft text-danger px-4 py-2 text-sm"
+          >
+            Le navigateur ne peut pas enregistrer ce brouillon. Gardez cette
+            page ouverte jusqu’à l’ajout au quiz.
+          </p>
+        )}
+        <div
+          className="border-border flex shrink-0 border-b md:hidden"
+          aria-label="Vue de l’atelier"
+        >
+          {(["chat", "questions"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              aria-pressed={mobileTab === tab}
+              className={`focus-ring flex-1 px-3 py-3 text-sm font-semibold ${mobileTab === tab ? "bg-primary-soft text-primary-ink" : "text-ink-muted"}`}
+              onClick={() => setMobileTab(tab)}
+            >
+              {tab === "chat"
+                ? "Conversation"
+                : `Questions (${session.questions.length})`}
+            </button>
+          ))}
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <section
+            aria-label="Conversation"
+            className={`${mobileTab === "chat" ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col md:flex md:max-w-[44%]`}
+          >
+            <div
+              ref={conversationRef}
+              className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {!session.messages.length && (
+                <div className="py-3">
+                  <h3 className="text-ink text-base font-semibold">
+                    Quel quiz veux-tu créer ?
+                  </h3>
+                  <p className="text-ink-muted mt-2 text-sm">
+                    Décris ton idée, puis ajuste les propositions au fil de la
+                    conversation.
+                  </p>
+                  <button
+                    type="button"
+                    className="focus-ring border-border text-ink-muted hover:bg-panel mt-4 rounded-lg border px-3 py-2 text-left text-sm"
+                    onClick={() =>
+                      setSession((prev) => ({
+                        ...prev,
+                        input: `Crée ${settings.count} questions sur ${subject || "Disney"} pour une soirée entre adultes, avec une difficulté progressive.`,
+                      }))
+                    }
+                  >
+                    Par exemple : un quiz {subject || "Disney"} pour une soirée
+                  </button>
+                </div>
+              )}
+              {session.messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={
+                    message.role === "user"
+                      ? "bg-primary-soft text-ink ml-6 rounded-lg px-3 py-2.5"
+                      : "text-ink mr-2 py-1"
+                  }
+                >
+                  <span className="text-ink-muted mb-1 block text-xs font-semibold">
+                    {message.role === "user" ? "Vous" : "Assistant"}
+                  </span>
+                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                </div>
+              ))}
+              {loading && (
+                <div
+                  role="status"
+                  className="text-ink-muted flex items-center gap-2 text-sm"
+                >
+                  <Loader2 className="size-4 motion-safe:animate-spin" />
+                  L’IA prépare sa proposition…
+                </div>
+              )}
+            </div>
+            <div className="border-border shrink-0 space-y-3 border-t px-4 py-3">
+              {error && (
+                <div role="alert" className="text-danger space-y-2 text-sm">
+                  <p>{error}</p>
+                  {retry && (
+                    <button
+                      type="button"
+                      disabled={loading}
+                      className="focus-ring rounded font-semibold underline disabled:opacity-40"
+                      onClick={retry}
+                    >
+                      Réessayer
+                    </button>
+                  )}
+                </div>
+              )}
+              <details>
+                <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
+                  <Settings className="size-3.5" />
+                  Réglages
+                </summary>
+                <div className="mt-3 max-h-[35dvh] space-y-4 overflow-y-auto pr-1">
+                  <label className="text-ink block space-y-1 text-sm font-semibold">
+                    <span>Public visé</span>
+                    <input
+                      className="focus-ring border-border bg-surface w-full rounded-md border px-3 py-2 font-normal"
+                      maxLength={150}
+                      placeholder="Famille, adultes, passionnés…"
+                      value={session.audience}
+                      disabled={loading}
+                      onChange={(e) =>
+                        setSession((prev) => ({
+                          ...prev,
+                          audience: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <GeneratorForm
+                    hidePrompt
+                    prompt=""
+                    onPromptChange={() => undefined}
+                    settings={settings}
+                    onSettingsChange={(patch) =>
+                      setSettings((prev) => ({ ...prev, ...patch }))
+                    }
+                    loading={loading}
+                  />
+                </div>
+              </details>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  send(session.input)
+                }}
+                className="flex items-end gap-2"
+              >
+                <textarea
+                  aria-label="Message à l’IA"
+                  placeholder={
+                    session.questions.length
+                      ? "Plus difficile, remplace la question 3…"
+                      : "Décris le quiz à créer…"
+                  }
+                  value={session.input}
+                  maxLength={2000}
+                  rows={2}
+                  disabled={loading}
+                  onChange={(e) =>
+                    setSession((prev) => ({ ...prev, input: e.target.value }))
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter" &&
+                      !event.shiftKey &&
+                      !event.nativeEvent.isComposing
+                    ) {
+                      event.preventDefault()
+                      send(session.input)
+                    }
+                  }}
+                  className="focus-ring border-border bg-surface text-ink min-w-0 flex-1 resize-none rounded-lg border px-3 py-2 text-sm disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  title="Envoyer"
+                  aria-label="Envoyer"
+                  disabled={loading || !session.input.trim()}
+                  className="focus-ring bg-primary text-secondary flex size-10 shrink-0 items-center justify-center rounded-lg disabled:opacity-40"
+                >
+                  <Send className="size-4" />
+                </button>
+              </form>
+            </div>
+          </section>
+          <section
+            aria-label="Questions proposées"
+            className={`${mobileTab === "questions" ? "flex" : "hidden"} border-border bg-panel min-h-0 min-w-0 flex-1 flex-col md:flex md:border-l`}
+          >
+            <div className="border-border flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+              <h3 className="text-sm font-bold">
+                Questions proposées ({session.questions.length})
+              </h3>
+              <div className="flex items-center gap-2">
+                {previous && (
+                  <button
+                    type="button"
+                    className={smallButton}
+                    title="Annuler la dernière modification"
+                    aria-label="Annuler la dernière modification"
+                    disabled={loading}
+                    onClick={undo}
+                  >
+                    <Undo2 className="size-4" />
+                  </button>
+                )}
+                {session.questions.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="focus-ring text-ink-muted rounded px-1 py-1 text-xs font-semibold disabled:opacity-40"
+                    onClick={() =>
+                      setSession((prev) => ({
+                        ...prev,
+                        questions: prev.questions.map((q) => ({
+                          ...q,
+                          selected: selected.length !== prev.questions.length,
+                        })),
+                      }))
+                    }
+                  >
+                    {selected.length === session.questions.length
+                      ? "Tout décocher"
+                      : "Tout cocher"}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              {!session.questions.length && (
+                <p className="text-ink-muted py-6 text-center text-sm">
+                  Les propositions apparaîtront ici.
+                </p>
+              )}
+              <ol className="divide-border divide-y">
+                {session.questions.map((item, index) => (
+                  <li key={item.id} className="py-3">
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        aria-label={`Ajouter la question ${index + 1}`}
+                        disabled={loading}
+                        onChange={() =>
+                          update(item.id, { selected: !item.selected })
+                        }
+                        className="accent-primary focus-ring mt-2 size-4 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-ink-muted text-xs">
+                          {index + 1} ·{" "}
+                          {t(`quizz:questionType.${item.question.type}`)}
+                        </span>
+                        <p className="text-ink mt-1 text-sm font-semibold">
+                          {item.question.question}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={smallButton}
+                        disabled={loading}
+                        aria-label={`${item.locked ? "Déprotéger" : "Protéger"} la question ${index + 1}`}
+                        title={
+                          item.locked
+                            ? "Protégée des modifications IA"
+                            : "Protéger des modifications IA"
+                        }
+                        onClick={() =>
+                          update(item.id, { locked: !item.locked })
+                        }
+                      >
+                        {item.locked ? (
+                          <Lock className="text-primary-ink size-4" />
+                        ) : (
+                          <LockOpen className="size-4" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className={smallButton}
+                        disabled={loading || item.locked}
+                        aria-label={`Remplacer la question ${index + 1}`}
+                        title="Proposer une autre question"
+                        onClick={() =>
+                          send(
+                            `Remplace uniquement la question ${index + 1} par une autre sur le même thème et du même niveau.`,
+                            [item.id],
+                          )
+                        }
+                      >
+                        <RefreshCw className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className={smallButton}
+                        disabled={loading}
+                        aria-label={`Retirer la question ${index + 1}`}
+                        title="Retirer du brouillon"
+                        onClick={() => remove(item.id)}
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                    <details className="mt-2 ml-6">
+                      <summary className="focus-ring text-ink-muted cursor-pointer rounded text-xs font-semibold">
+                        Réponses · Modifier
+                      </summary>
+                      <WorkshopQuestionEditor
+                        key={JSON.stringify(item.question)}
+                        question={item.question}
+                        disabled={loading}
+                        onSave={(question) => {
+                          setPrevious(session.questions)
+                          update(item.id, { question })
+                          toast.success("Question modifiée")
+                        }}
+                      />
+                    </details>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <footer className="border-border bg-surface flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3">
+              <span className="text-ink-muted text-xs">
+                {selected.length} sélectionnée(s)
+              </span>
+              <button
+                type="button"
+                disabled={loading || !selected.length}
+                onClick={importDraft}
+                className="focus-ring bg-primary text-secondary flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+              >
+                <Check className="size-4" />
+                Ajouter au quiz ({selected.length})
+              </button>
+            </footer>
+          </section>
         </div>
       </div>
-    </div>
+    </EditorDialog>
   )
 }
 
-export default AIGeneratorModal
+export default function AIGeneratorModal(props: Props) {
+  const { quizzId } = useQuizzEditor()
+  return <Workshop key={quizzId || "new"} {...props} />
+}

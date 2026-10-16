@@ -49,7 +49,10 @@ export const uploadImageToServer = async (
     return data.url
   } catch (err) {
     console.error("Upload error:", err)
-    toast.error("Échec de l'upload de l'image.", { id: loadingToast })
+    toast.error(
+      "L’image n’a pas été envoyée. Vérifiez votre connexion et le fichier, puis réessayez l’import.",
+      { id: loadingToast, duration: 6000 },
+    )
     throw err
   }
 }

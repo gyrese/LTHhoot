@@ -7,6 +7,7 @@ import {
   zoneColor,
 } from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorDropPin/shapes"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useQuestionImagePicker } from "../useQuestionImagePicker"
 import clsx from "clsx"
 import {
   Check,
@@ -16,11 +17,9 @@ import {
   PenTool,
   Square,
   Trash2,
-  UploadCloud,
   X,
 } from "lucide-react"
-import { useRef, useState } from "react"
-import toast from "react-hot-toast"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 type DropPinWithId = DropPinQuestion & { id: string }
@@ -38,36 +37,16 @@ const QuestionEditorDropPin = () => {
   const q = currentQuestion as DropPinWithId
   const zones = q.zones ?? []
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [isDraggingFile, setIsDraggingFile] = useState(false)
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [tool, setTool] = useState<DrawTool>("rect")
-
-  const handleFileUpload = async (file: File) => {
-    setUploading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append("image", file)
-      const res = await fetch("/upload", {
-        method: "POST",
-        body: formData,
-        headers: { "x-client-id": localStorage.getItem("client_id") ?? "" },
-      })
-
-      if (!res.ok) {
-        throw new Error("Upload failed")
+  const { openPicker, picker } = useQuestionImagePicker(
+    (questionIndex, target, url) => {
+      if (target.type === "drop_pin") {
+        updateQuestion(questionIndex, { pinImage: url, zones: [] })
+        setSelectedZoneId(null)
       }
-
-      const data = (await res.json()) as { url: string }
-      updateQuestion(currentIndex, { pinImage: data.url, zones: [] })
-    } catch {
-      toast.error(t("errors:upload.failed"))
-    } finally {
-      setUploading(false)
-    }
-  }
+    },
+  )
 
   const updateZones = (next: DropPinZone[]) => {
     updateQuestion(currentIndex, { zones: next })
@@ -85,78 +64,27 @@ const QuestionEditorDropPin = () => {
     }
   }
 
-  const fileInput = (
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={(e) => {
-        const file = e.target.files?.[0]
-
-        if (file) {
-          void handleFileUpload(file)
-        }
-
-        e.target.value = ""
-      }}
-    />
-  )
-
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 flex min-h-0 w-full flex-1 flex-col gap-4 duration-500">
+    <div
+      tabIndex={-1}
+      data-validation-target={`questions.${currentIndex}.zones`}
+      className="animate-in fade-in slide-in-from-bottom-4 flex min-h-0 w-full flex-1 flex-col gap-4 duration-500"
+    >
       {!q.pinImage && (
-        <div
-          className={clsx(
-            "group flex min-h-[50vh] flex-1 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300",
-            isDraggingFile
-              ? "scale-[0.98] border-purple-500 bg-purple-500/10"
-              : "border-white/20 bg-black/20 hover:border-white/40 hover:bg-black/40",
-          )}
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setIsDraggingFile(true)
-          }}
-          onDragLeave={() => setIsDraggingFile(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setIsDraggingFile(false)
-            const file = e.dataTransfer.files?.[0]
-
-            if (file) {
-              void handleFileUpload(file)
-            }
-          }}
+        <button
+          type="button"
+          data-validation-target={`questions.${currentIndex}.pinImage`}
+          onClick={() => openPicker(q.id)}
+          className="focus-ring border-border text-ink-muted hover:border-primary hover:text-ink flex min-h-[40vh] flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed bg-black/20 p-8 text-center transition-colors"
         >
-          {fileInput}
-          <div className="z-10 flex flex-col items-center gap-6 p-8 text-center">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-purple-500 opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40" />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-transform duration-500 group-hover:scale-110">
-                <UploadCloud
-                  className={clsx(
-                    "h-12 w-12 transition-colors duration-500",
-                    isDraggingFile
-                      ? "text-purple-400"
-                      : "text-white/60 group-hover:text-white",
-                  )}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold tracking-tight text-white">
-                {uploading
-                  ? "Création de la magie..."
-                  : "Glissez l'image cible ici"}
-              </h3>
-              <p className="mx-auto max-w-md text-base text-white/50">
-                Ou cliquez pour parcourir. Choisissez une image sur laquelle vos
-                joueurs devront placer leur épingle.
-              </p>
-            </div>
-          </div>
-        </div>
+          <ImagePlus className="size-10" />
+          <span className="text-base font-semibold">
+            {t("quizz:dropPin.chooseImage")}
+          </span>
+          <span className="max-w-md text-sm">
+            {t("quizz:dropPin.chooseImageHint")}
+          </span>
+        </button>
       )}
 
       {q.pinImage && (
@@ -197,16 +125,33 @@ const QuestionEditorDropPin = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                  onClick={() => openPicker(q.id)}
+                  aria-label={t("quizz:dropPin.replaceImageHint")}
+                  title={t("quizz:dropPin.replaceImageHint")}
                   className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white shadow-lg transition-all hover:bg-white/15"
                 >
                   <ImagePlus className="h-3.5 w-3.5" />
-                  Changer l'image
+                  {t("quizz:dropPin.replaceImage")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateQuestion(currentIndex, {
+                      pinImage: undefined,
+                      zones: [],
+                    })
+                    setSelectedZoneId(null)
+                  }}
+                  aria-label={t("quizz:dropPin.removeImageHint")}
+                  title={t("quizz:dropPin.removeImageHint")}
+                  className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500/20"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t("quizz:dropPin.removeImage")}
                 </button>
               </div>
             </div>
-
-            {fileInput}
 
             <ZoneCanvas
               pinImage={q.pinImage}
@@ -302,6 +247,7 @@ const QuestionEditorDropPin = () => {
           )}
         </div>
       )}
+      {picker}
     </div>
   )
 }

@@ -134,6 +134,7 @@ const GridSlideEditor = ({
   return (
     <>
       <div
+        data-validation-target={`questions.${currentIndex}.cells`}
         className="pointer-events-none absolute grid"
         style={{
           left: zone.x + (zone.width - gridW) / 2,

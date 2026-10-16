@@ -3,6 +3,11 @@ import { AI_TIMEOUT_MS, withTimeout } from "@rahoot/socket/utils/timeout"
 import { questionValidator } from "@rahoot/common/validators/quizz"
 import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
 import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
+import type {
+  WorkshopRequest,
+  WorkshopResult,
+} from "@rahoot/common/validators/ai-workshop"
+import { buildWorkshopPrompt, parseWorkshopResult } from "./ai-workshop"
 import {
   isUnsplashConfigured,
   searchUnsplash,
@@ -15,6 +20,42 @@ const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash"
 
 export class AIService {
   private static genAI: GoogleGenAI | null = null
+
+  public static async workshop(
+    request: WorkshopRequest,
+  ): Promise<WorkshopResult> {
+    const response = await withTimeout(
+      this.getClient().models.generateContent({
+        model: TEXT_MODEL,
+        contents: buildWorkshopPrompt(request),
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.6,
+          maxOutputTokens: 16000,
+        },
+      }),
+      AI_TIMEOUT_MS,
+    )
+    const raw = JSON.parse(response.text || "{}")
+
+    if (Array.isArray(raw.operations)) {
+      raw.operations = raw.operations.map(
+        (operation: Record<string, unknown>) => ({
+          ...operation,
+          ...(operation.question
+            ? {
+                question: this.normalizeTimings(
+                  operation.question,
+                  request.settings.time,
+                ),
+              }
+            : {}),
+        }),
+      )
+    }
+
+    return parseWorkshopResult(raw, request)
+  }
 
   private static getClient(): GoogleGenAI {
     if (!this.genAI) {

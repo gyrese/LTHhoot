@@ -1,104 +1,91 @@
+import { ValidatedInput } from "../EditorValidation"
 import type { SliderQuestion } from "@rahoot/common/types/game"
-import {
-  useQuizzEditor,
-  type QuestionWithId,
-} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useId } from "react"
 import { useTranslation } from "react-i18next"
-
-type SliderWithId = SliderQuestion & { id: string }
-
-const NumberField = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (_v: number) => void
-}) => (
-  <div className="flex flex-col gap-1">
-    <label className="text-sm font-semibold text-white">{label}</label>
-    <input
-      type="number"
-      className="w-full rounded bg-white px-3 py-2 text-center font-bold text-gray-800 outline-none"
-      value={value}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-    />
-  </div>
-)
+import {
+  AnswerEditorNumberField,
+  AnswerEditorPanel,
+  AnswerEditorSection,
+} from "./AnswerEditorParts"
 
 const QuestionEditorSlider = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
-  const q = currentQuestion as QuestionWithId & SliderWithId
+  const correctValueId = useId()
+  const question = currentQuestion as SliderQuestion & { id: string }
 
   const updateMin = (newMin: number) => {
-    const safeMin = newMin < q.max ? newMin : q.max - 1
-    const safeCorrect = Math.max(safeMin, q.correctValue)
-    updateQuestion(currentIndex, { min: safeMin, correctValue: safeCorrect })
+    const min = Math.min(newMin, question.max - 1)
+    updateQuestion(currentIndex, {
+      min,
+      correctValue: Math.max(min, question.correctValue),
+    })
   }
 
   const updateMax = (newMax: number) => {
-    const safeMax = newMax > q.min ? newMax : q.min + 1
-    const safeCorrect = Math.min(safeMax, q.correctValue)
-    updateQuestion(currentIndex, { max: safeMax, correctValue: safeCorrect })
+    const max = Math.max(newMax, question.min + 1)
+    updateQuestion(currentIndex, {
+      max,
+      correctValue: Math.min(max, question.correctValue),
+    })
   }
 
   return (
-    <div className="z-10 flex flex-col gap-4 rounded-xl bg-white/10 p-4">
-      <div className="grid grid-cols-2 gap-3">
-        <NumberField
-          label={t("quizz:sliderMin")}
-          value={q.min}
-          onChange={updateMin}
-        />
-        <NumberField
-          label={t("quizz:sliderMax")}
-          value={q.max}
-          onChange={updateMax}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-semibold text-white">
-          {t("quizz:sliderCorrect")}
-        </label>
-        <input
-          type="range"
-          className="w-full accent-yellow-400"
-          value={q.correctValue}
-          min={q.min}
-          max={q.max}
-          onChange={(e) =>
-            updateQuestion(currentIndex, {
-              correctValue: parseFloat(e.target.value),
-            })
-          }
-        />
-        <div className="flex justify-between text-xs text-white/60">
-          <span>{q.min}</span>
-          <span className="font-bold text-yellow-300">{q.correctValue}</span>
-          <span>{q.max}</span>
+    <AnswerEditorPanel>
+      <AnswerEditorSection title={t("quizz:sliderCorrect")}>
+        <div className="grid grid-cols-2 gap-3">
+          <AnswerEditorNumberField
+            field="min"
+            label={t("quizz:sliderMin")}
+            value={question.min}
+            onChange={updateMin}
+          />
+          <AnswerEditorNumberField
+            field="max"
+            label={t("quizz:sliderMax")}
+            value={question.max}
+            onChange={updateMax}
+          />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-semibold text-white">
-          {t("quizz:sliderTolerance")} (±{q.tolerance})
-        </label>
-        <input
-          type="number"
-          className="w-full rounded bg-white px-3 py-2 text-center font-bold text-gray-800 outline-none"
-          value={q.tolerance}
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor={correctValueId}
+            className="text-ink-muted text-xs font-semibold"
+          >
+            {t("quizz:sliderCorrect")}
+          </label>
+          <ValidatedInput
+            id={correctValueId}
+            field="correctValue"
+            type="range"
+            className="accent-primary w-full"
+            value={question.correctValue}
+            min={question.min}
+            max={question.max}
+            onChange={(event) =>
+              updateQuestion(currentIndex, {
+                correctValue: Number(event.target.value),
+              })
+            }
+          />
+          <div className="text-ink-muted flex justify-between text-xs tabular-nums">
+            <span>{question.min}</span>
+            <span>{question.correctValue}</span>
+            <span>{question.max}</span>
+          </div>
+        </div>
+        <AnswerEditorNumberField
+          field="tolerance"
+          label={`${t("quizz:sliderTolerance")} (±${question.tolerance})`}
+          value={question.tolerance}
           min={0}
-          onChange={(e) =>
-            updateQuestion(currentIndex, {
-              tolerance: parseFloat(e.target.value) || 0,
-            })
+          onChange={(value) =>
+            updateQuestion(currentIndex, { tolerance: value })
           }
         />
-      </div>
-    </div>
+      </AnswerEditorSection>
+    </AnswerEditorPanel>
   )
 }
 

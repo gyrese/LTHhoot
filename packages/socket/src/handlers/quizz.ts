@@ -11,6 +11,10 @@ import manager, {
   type LibrarySession,
 } from "@rahoot/socket/services/manager"
 import { AIService } from "@rahoot/socket/services/ai"
+import {
+  workshopRequestValidator,
+  type WorkshopReply,
+} from "@rahoot/common/validators/ai-workshop"
 
 // Bibliothèque ciblée par une session : celle de l'invité connecté, ou celle
 // de l'admin. Le scoping vient TOUJOURS de la session serveur, jamais du client.
@@ -59,8 +63,20 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
         activeAIAccounts.size >= 3 ||
         activeAIAccounts.has(account) ||
         quota.count >= 10 ||
-        JSON.stringify(args).length > 20000
+        JSON.stringify(args).length >
+          (typeof args.at(-1) === "function" ? 60000 : 20000)
       ) {
+        const reply = args.at(-1)
+
+        if (typeof reply === "function") {
+          reply({
+            error:
+              "Limite IA atteinte ou requête trop longue. Réessayez dans une minute ; votre brouillon est conservé.",
+          } satisfies WorkshopReply)
+
+          return
+        }
+
         socket.emit(
           EVENTS.QUIZZ.AI_ERROR,
           "Limite IA atteinte ou requête trop longue. Réessayez dans une minute.",
@@ -233,6 +249,48 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
       } catch (error) {
         console.error("Failed to set quizz public info:", error)
         socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.failedToUpdate")
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.QUIZZ.AI_WORKSHOP,
+    withAIAuth(async (_session, payload, reply) => {
+      if (typeof reply !== "function") {
+        return
+      }
+
+      const parsed = workshopRequestValidator.safeParse(payload)
+
+      if (!parsed.success) {
+        reply({
+          error:
+            "La demande est trop longue ou contient des réglages invalides. Votre brouillon est conservé.",
+        })
+
+        return
+      }
+
+      try {
+        reply({ result: await AIService.workshop(parsed.data) })
+      } catch (error) {
+        console.error("AI workshop failed:", error)
+        const message = error instanceof Error ? error.message : ""
+        let errorMessage =
+          "L’IA n’a pas pu terminer cette demande. Réessayez ; votre brouillon est conservé."
+
+        if (
+          /brouillon|proposition|doublon|format non autorisé/iu.test(message)
+        ) {
+          errorMessage = message
+        }
+
+        if (/429|quota|RESOURCE_EXHAUSTED|rate.?limit/iu.test(message)) {
+          errorMessage =
+            "Le quota IA est atteint. Réessayez plus tard ; votre conversation et vos questions sont conservées."
+        }
+
+        reply({ error: errorMessage })
       }
     }),
   )

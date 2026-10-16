@@ -8,17 +8,23 @@ import openImg from "@rahoot/web/assets/game/types/open.png"
 import puzzleImg from "@rahoot/web/assets/game/types/puzzle.png"
 import sliderImg from "@rahoot/web/assets/game/types/slider.png"
 import trueFalseImg from "@rahoot/web/assets/game/types/true_false.png"
-import AlertDialog from "@rahoot/web/components/AlertDialog"
-import { type QuestionWithId } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import {
+  type QuestionWithId,
+  useQuizzEditor,
+} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import LazySlidePreview from "@rahoot/web/features/quizz/components/LazySlidePreview"
 import clsx from "clsx"
-import { Presentation, Trash2, Copy, AlertTriangle } from "lucide-react"
-import { type MouseEvent } from "react"
+import {
+  AlertTriangle,
+  Copy,
+  MoreHorizontal,
+  Presentation,
+  Trash2,
+} from "lucide-react"
+import type { KeyboardEvent, MouseEvent, Ref } from "react"
 import { useTranslation } from "react-i18next"
-import { twMerge } from "tailwind-merge"
-import { validateQuestion } from "@rahoot/web/features/quizz/utils/validation"
 
-const TYPE_ASSETS = new Map<QuestionType, any>([
+const TYPE_ASSETS = new Map<QuestionType, typeof Presentation | string>([
   ["title", Presentation],
   ["mcq", mcqImg],
   ["true_false", trueFalseImg],
@@ -37,11 +43,20 @@ type Props = {
   isActive: boolean
   isSelected?: boolean
   canDelete: boolean
-  onClick: (_e: MouseEvent) => void
+  showSelection?: boolean
+  menuOpen?: boolean
+  onClick: (_event: MouseEvent<HTMLButtonElement>) => void
+  onKeyDown?: (_event: KeyboardEvent<HTMLButtonElement>) => void
+  buttonRef?: Ref<HTMLButtonElement>
   onDelete: () => void
   onDuplicate: () => void
-  onContextMenu?: (_e: MouseEvent) => void
+  onToggleSelection?: () => void
+  onMore: (_event: MouseEvent<HTMLButtonElement>) => void
+  onContextMenu?: (_event: MouseEvent<HTMLDivElement>) => void
 }
+
+const actionClass =
+  "focus-ring text-ink-muted hover:bg-surface hover:text-ink flex size-8 shrink-0 items-center justify-center rounded-md transition-colors"
 
 const QuizzEditorCard = ({
   question,
@@ -49,104 +64,141 @@ const QuizzEditorCard = ({
   isActive,
   isSelected,
   canDelete,
+  showSelection = false,
+  menuOpen = false,
   onClick,
+  onKeyDown,
+  buttonRef,
   onDelete,
   onDuplicate,
+  onToggleSelection,
+  onMore,
   onContextMenu,
 }: Props) => {
   const { t } = useTranslation()
-  const Asset = TYPE_ASSETS.get(question.type)
-  const isImage = typeof Asset === "string"
-  const validationErrors = validateQuestion(question)
-  let borderClasses = "ring-border group-hover:ring-border-strong"
-
+  const asset = TYPE_ASSETS.get(question.type)
+  const { validationIssues, setShowValidation, setCurrentIndex } =
+    useQuizzEditor()
+  const validationErrors = validationIssues.filter(
+    (issue) => issue.questionIndex === index,
+  )
+  const typeLabel = t(
+    `quizz:questionType.${question.type === "title" ? "title_slide" : question.type}`,
+  )
+  const title = question.question?.trim() || typeLabel
+  const Icon = typeof asset === "string" ? null : asset
+  let status = ""
   if (isActive) {
-    borderClasses =
-      "ring-primary shadow-[0_2px_14px_rgba(255,153,0,0.28)] ring-2"
+    status = t("quizz:sidebar.current")
   } else if (isSelected) {
-    borderClasses =
-      "ring-primary/50 shadow-[0_1px_8px_rgba(255,153,0,0.15)] ring-2"
+    status = t("quizz:sidebar.selected")
   }
 
-  const numberColor =
-    isActive || isSelected
-      ? "text-primary-ink"
-      : "text-ink-subtle group-hover:text-ink-muted"
-
   return (
-    <div
-      onClick={onClick}
-      onContextMenu={onContextMenu}
-      className="group flex cursor-pointer items-center gap-2.5"
-    >
-      <span
-        className={clsx(
-          "w-4 shrink-0 text-center text-xs font-bold tabular-nums transition-colors",
-          numberColor,
-        )}
-      >
-        {index + 1}
-      </span>
-
+    <div className="min-w-0 flex-1" onContextMenu={onContextMenu}>
       <div
-        className={twMerge(
-          clsx(
-            "ease-out-soft relative flex-1 overflow-hidden rounded-lg ring-1 transition-all duration-150",
-            borderClasses,
-          ),
+        className={clsx(
+          "border-border bg-surface focus-within:ring-primary min-w-0 flex-1 overflow-hidden rounded-lg border transition-colors focus-within:ring-2",
+          isActive && "border-primary ring-primary ring-2",
+          !isActive && isSelected && "border-primary/70 ring-primary/40 ring-2",
         )}
       >
-        <div
-          className="pointer-events-none absolute top-1 left-1 z-20 flex h-4 w-4 items-center justify-center rounded bg-black/45 p-0.5 text-white backdrop-blur-sm"
-          title={t(`quizz:questionType.${question.type}`)}
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={onClick}
+          onKeyDown={onKeyDown}
+          aria-current={isActive ? "step" : undefined}
+          aria-label={t("quizz:sidebar.openQuestion", {
+            number: index + 1,
+            title,
+          })}
+          className="focus-ring group block w-full text-left"
         >
-          {isImage ? (
-            <img src={Asset} alt="" className="h-full w-full object-contain" />
-          ) : (
-            <Asset className="size-2.5" />
+          <div className="relative">
+            <LazySlidePreview question={question} />
+            <span
+              className="absolute top-1 left-1 flex size-5 items-center justify-center rounded bg-black/60 text-white"
+              aria-hidden="true"
+            >
+              {typeof asset === "string" && (
+                <img src={asset} alt="" className="size-4 object-contain" />
+              )}
+              {Icon && <Icon className="size-3.5" />}
+            </span>
+          </div>
+        </button>
+        <div className="border-border/70 bg-panel flex min-h-9 items-center gap-0.5 border-t px-1.5">
+          {showSelection && (
+            <input
+              type="checkbox"
+              checked={Boolean(isSelected)}
+              onChange={onToggleSelection}
+              aria-label={t("quizz:sidebar.selectQuestion", {
+                number: index + 1,
+              })}
+              className="accent-primary focus-ring ml-1 size-4 shrink-0 cursor-pointer"
+            />
+          )}
+          <span
+            className="text-ink-muted min-w-0 flex-1 truncate pl-1 text-[11px] font-medium"
+            title={status ? `${typeLabel} · ${status}` : typeLabel}
+          >
+            {typeLabel}
+            {status && ` · ${status}`}
+          </span>
+          {validationErrors.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentIndex(index)
+                setShowValidation(true)
+              }}
+              className="focus-ring text-danger hover:bg-danger-soft flex min-h-8 items-center gap-1 rounded px-1.5 text-xs font-semibold"
+              aria-label={t("quizz:sidebar.issues", {
+                number: index + 1,
+                count: validationErrors.length,
+              })}
+              title={validationErrors
+                .map((error) => t(error.message, error.message))
+                .join("\n")}
+            >
+              <AlertTriangle className="size-3.5" />
+              {validationErrors.length}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className={actionClass}
+            aria-label={t("quizz:question.duplicateQuestion")}
+            title={t("quizz:question.duplicateQuestion")}
+          >
+            <Copy className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onMore}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className={actionClass}
+            aria-label={t("quizz:sidebar.actions", { number: index + 1 })}
+            title={t("quizz:sidebar.actions", { number: index + 1 })}
+          >
+            <MoreHorizontal className="size-4" />
+          </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className={clsx(actionClass, "hover:text-danger")}
+              aria-label={t("quizz:question.deleteQuestion")}
+              title={t("quizz:question.deleteQuestion")}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
           )}
         </div>
-
-        <LazySlidePreview question={question} />
-
-        {validationErrors.length > 0 && (
-          <div
-            className="bg-danger absolute bottom-1 left-1 z-10 flex h-4.5 w-4.5 cursor-help items-center justify-center rounded text-white shadow-sm"
-            title={validationErrors.map((error) => t(error, error)).join("\n")}
-          >
-            <AlertTriangle className="size-3 animate-pulse" />
-          </div>
-        )}
-
-        {canDelete && (
-          <div className="ease-out-soft absolute top-1 right-1 z-10 flex flex-col gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onDuplicate()
-              }}
-              className="text-ink-muted hover:text-primary-ink rounded-md bg-white/85 p-1 shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
-              title={t("quizz:question.duplicateQuestion")}
-            >
-              <Copy className="size-3" />
-            </button>
-
-            <AlertDialog
-              trigger={
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-ink-muted hover:text-danger rounded-md bg-white/85 p-1 shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
-                >
-                  <Trash2 className="size-3" />
-                </button>
-              }
-              title={t("quizz:question.deleteQuestion")}
-              description={t("quizz:question.deleteQuestionConfirm")}
-              confirmLabel={t("common:delete")}
-              onConfirm={onDelete}
-            />
-          </div>
-        )}
       </div>
     </div>
   )

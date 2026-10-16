@@ -1,101 +1,88 @@
+import { ValidatedInput } from "../EditorValidation"
 import type { DateQuestion } from "@rahoot/common/types/game"
-import {
-  useQuizzEditor,
-  type QuestionWithId,
-} from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useId } from "react"
 import { useTranslation } from "react-i18next"
-
-type DateWithId = DateQuestion & { id: string }
+import {
+  AnswerEditorNumberField,
+  AnswerEditorPanel,
+  AnswerEditorSection,
+} from "./AnswerEditorParts"
 
 const QuestionEditorDate = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
-  const q = currentQuestion as QuestionWithId & DateWithId
-
-  const correctYear = q.correctYear ?? new Date().getFullYear()
-  const minYear = q.minYear ?? correctYear - 30
-  const maxYear = q.maxYear ?? correctYear + 30
+  const toleranceId = useId()
+  const question = currentQuestion as DateQuestion & { id: string }
+  const correctYear = question.correctYear ?? new Date().getFullYear()
+  const minYear = question.minYear ?? correctYear - 30
+  const maxYear = question.maxYear ?? correctYear + 30
 
   return (
-    <div className="z-10 flex flex-col gap-4 rounded-xl bg-white/10 p-4">
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-semibold text-white">
-          {t("quizz:correctYear")}
-        </label>
-        <input
-          type="number"
-          className="w-full rounded bg-white px-3 py-2 text-center text-xl font-bold text-gray-800 outline-none"
+    <AnswerEditorPanel>
+      <AnswerEditorSection title={t("quizz:correctYear")}>
+        <AnswerEditorNumberField
+          field="correctYear"
+          label={t("quizz:correctYear")}
           value={correctYear}
           min={-9999}
           max={2200}
-          onChange={(e) =>
-            updateQuestion(currentIndex, {
-              correctYear: parseInt(e.target.value, 10) || 0,
-            })
+          onChange={(value) =>
+            updateQuestion(currentIndex, { correctYear: value })
           }
         />
-      </div>
-
-      <div className="flex gap-3">
-        <div className="flex flex-1 flex-col gap-1">
-          <label className="text-sm font-semibold text-white">
-            {t("quizz:minYear")}
-          </label>
-          <input
-            type="number"
-            className="w-full rounded bg-white px-3 py-2 text-center text-lg font-bold text-gray-800 outline-none"
+        <div className="grid grid-cols-2 gap-3">
+          <AnswerEditorNumberField
+            field="minYear"
+            label={t("quizz:minYear")}
             value={minYear}
             min={-9999}
             max={maxYear - 1}
-            onChange={(e) =>
-              updateQuestion(currentIndex, {
-                minYear: parseInt(e.target.value, 10) || 0,
-              })
+            onChange={(value) =>
+              updateQuestion(currentIndex, { minYear: value })
             }
           />
-        </div>
-        <div className="flex flex-1 flex-col gap-1">
-          <label className="text-sm font-semibold text-white">
-            {t("quizz:maxYear")}
-          </label>
-          <input
-            type="number"
-            className="w-full rounded bg-white px-3 py-2 text-center text-lg font-bold text-gray-800 outline-none"
+          <AnswerEditorNumberField
+            field="maxYear"
+            label={t("quizz:maxYear")}
             value={maxYear}
             min={minYear + 1}
             max={2200}
-            onChange={(e) =>
-              updateQuestion(currentIndex, {
-                maxYear: parseInt(e.target.value, 10) || 0,
-              })
+            onChange={(value) =>
+              updateQuestion(currentIndex, { maxYear: value })
             }
           />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-semibold text-white">
-          {t("quizz:tolerance")} (±{q.tolerance} {t("quizz:toleranceYears")})
-        </label>
-        <input
-          type="range"
-          className="w-full accent-yellow-400"
-          value={q.tolerance}
-          min={1}
-          max={100}
-          onChange={(e) =>
-            updateQuestion(currentIndex, {
-              tolerance: parseInt(e.target.value, 10),
-            })
-          }
-        />
-        <div className="flex justify-between text-xs text-white/60">
-          <span>1</span>
-          <span className="font-bold text-yellow-300">{q.tolerance}</span>
-          <span>100</span>
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor={toleranceId}
+            className="text-ink-muted text-xs font-semibold"
+          >
+            {t("quizz:tolerance")} (±{question.tolerance}{" "}
+            {t("quizz:toleranceYears")})
+          </label>
+          <ValidatedInput
+            id={toleranceId}
+            field="tolerance"
+            type="range"
+            className="accent-primary w-full"
+            value={question.tolerance}
+            min={1}
+            max={100}
+            onChange={(event) =>
+              updateQuestion(currentIndex, {
+                tolerance: Number(event.target.value),
+              })
+            }
+          />
+          <div className="text-ink-muted flex justify-between text-xs tabular-nums">
+            <span>1</span>
+            <span>{question.tolerance}</span>
+            <span>100</span>
+          </div>
         </div>
-      </div>
-    </div>
+      </AnswerEditorSection>
+    </AnswerEditorPanel>
   )
 }
 

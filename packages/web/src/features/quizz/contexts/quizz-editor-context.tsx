@@ -1,4 +1,17 @@
 import { SaveSession } from "@rahoot/web/features/quizz/utils/save-session"
+import {
+  duplicateQuestionBatch,
+  removeQuestionBatch,
+} from "@rahoot/web/features/quizz/utils/question-batch"
+import { copyTimingToSimilarQuestions } from "@rahoot/web/features/quizz/utils/question-settings"
+import {
+  findDraftBackup,
+  type DraftCandidate,
+} from "@rahoot/web/features/quizz/utils/draft-backup"
+import {
+  createEditorValidator,
+  type EditorIssue,
+} from "@rahoot/web/features/quizz/utils/validation"
 import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
 import type {
   AnswerReveal,
@@ -26,6 +39,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useMemo,
   useState,
   type PropsWithChildren,
 } from "react"
@@ -86,6 +100,11 @@ export type QuestionUpdate = {
 }
 
 type QuizzEditorContextType = {
+  validationIssues: EditorIssue[]
+  showValidation: boolean
+  setShowValidation: (_open: boolean) => void
+  validationTarget: EditorIssue | null
+  goToIssue: (_issue: EditorIssue) => void
   quizzId: string | null
   subject: string
   publicName: string
@@ -111,10 +130,13 @@ type QuizzEditorContextType = {
   setCurrentIndex: (_index: number) => void
   addQuestion: () => void
   removeQuestion: (_index: number) => void
+  removeQuestions: (_ids: string[]) => void
   reorderQuestions: (_from: number, _to: number) => void
   duplicateQuestion: (_index: number) => void
+  duplicateQuestions: (_ids: string[]) => void
   updateQuestion: (_index: number, _updates: QuestionUpdate) => void
   applyToAllQuestions: (_patch: QuestionUpdate) => void
+  applyTimingToSimilarQuestions: (_sourceIndex: number) => void
   changeQuestionType: (_index: number, _type: QuestionType) => void
   selectedId: string | undefined
   setSelectedId: (_id: string | undefined) => void
@@ -139,6 +161,8 @@ type QuizzEditorContextType = {
   canRedo: boolean
   activeInspectorPanel: InspectorPanel
   setActiveInspectorPanel: (_panel: InspectorPanel) => void
+  inspectorRequest: { panel: InspectorPanel } | null
+  openInspector: (_panel: InspectorPanel) => void
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -156,11 +180,18 @@ const defaultQuestion = (): QuestionWithId => ({
 // Le serveur fait foi une fois la sauvegarde confirmée : les brouillons locaux
 // n'ont plus de raison d'être, et un localStorage indisponible ne doit pas
 // transformer un enregistrement réussi en erreur.
-const clearBackups = (backupKey: string, previousId?: string) => {
+const clearBackups = (
+  backupKey: string,
+  previousId?: string,
+  restoredKey?: string,
+) => {
   try {
     localStorage.removeItem(backupKey)
     if (previousId) {
       localStorage.removeItem(`rahoot-backup-${previousId}`)
+    }
+    if (restoredKey) {
+      localStorage.removeItem(restoredKey)
     }
   } catch {
     /* Saving on the server succeeded */
@@ -267,7 +298,7 @@ export const QuizzEditorProvider = ({
   initialData,
 }: QuizzEditorProviderProps) => {
   const { socket, isConnected } = useSocket()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const [subject, setSubject] = useState(
     initialData?.subject ?? "Untitled Quizz",
@@ -294,6 +325,39 @@ export const QuizzEditorProvider = ({
       : [defaultQuestion()],
   )
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [showValidation, setShowValidation] = useState(false)
+  const [validationTarget, setValidationTarget] = useState<EditorIssue | null>(
+    null,
+  )
+  const validateEditor = useMemo(createEditorValidator, [])
+  const validationIssues = useMemo(
+    () =>
+      validateEditor({
+        subject,
+        publicName,
+        description,
+        folder,
+        tags,
+        salonImage,
+        listingImage,
+        podiumTheme,
+        fontFamily,
+        questions,
+      }),
+    [
+      validateEditor,
+      subject,
+      publicName,
+      description,
+      folder,
+      tags,
+      salonImage,
+      listingImage,
+      podiumTheme,
+      fontFamily,
+      questions,
+    ],
+  )
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(
     () => [questions[0]?.id || ""],
   )
@@ -320,9 +384,19 @@ export const QuizzEditorProvider = ({
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const [pendingRestore, setPendingRestore] = useState<any | null>(null)
+  const [pendingRestore, setPendingRestore] = useState<DraftCandidate | null>(
+    null,
+  )
+  const restoredBackupKey = useRef<string | null>(null)
   const [activeInspectorPanel, setActiveInspectorPanel] =
     useState<InspectorPanel>("settings")
+  const [inspectorRequest, setInspectorRequest] = useState<{
+    panel: InspectorPanel
+  } | null>(null)
+  const openInspector = (panel: InspectorPanel) => {
+    setActiveInspectorPanel(panel)
+    setInspectorRequest({ panel })
+  }
   // `updatedAt` connu du client pour ce quiz : sert à détecter, côté serveur,
   // qu'une autre session a sauvegardé entre-temps (concurrence optimiste).
   const [updatedAt, setUpdatedAt] = useState<number | undefined>(
@@ -340,15 +414,18 @@ export const QuizzEditorProvider = ({
       return generateId()
     }
   })
-  const [backupKey] = useState(() => {
+  const [backupClientId] = useState(() => {
     let clientId = "local"
     try {
       clientId = localStorage.getItem("client_id") || clientId
     } catch {
       /* Storage unavailable */
     }
-    return `rahoot-backup-${clientId}-${initialData?.id ?? creationId}`
+    return clientId
   })
+  const [backupKey] = useState(
+    () => `rahoot-backup-${backupClientId}-${initialData?.id ?? creationId}`,
+  )
   useBlocker({
     enableBeforeUnload: () => dirtyRef.current,
     shouldBlockFn: () => {
@@ -366,6 +443,40 @@ export const QuizzEditorProvider = ({
     questions[currentIndex] ||
     questions[Math.max(0, questions.length - 1)] ||
     questions[0]
+
+  const goToIssue = (issue: EditorIssue) => {
+    if (issue.questionIndex !== undefined) {
+      handleSetCurrentIndex(issue.questionIndex)
+      const question = questions[issue.questionIndex]
+      if (question) {
+        setSelectedQuestionIds([question.id])
+      }
+      setSelectedLayoutKey(undefined)
+    }
+    const [, , field] = issue.path.split(".")
+    const appearance = [
+      "backgroundOpacity",
+      "revealDuration",
+      "gridCols",
+      "gridRows",
+      "revelationStyle",
+    ]
+    setActiveInspectorPanel(
+      appearance.includes(field) ? "appearance" : "settings",
+    )
+    if (field === "elements" && issue.questionIndex !== undefined) {
+      const element =
+        questions[issue.questionIndex]?.elements?.[
+          Number(issue.path.split(".")[3])
+        ]
+      if (element) {
+        setSelectedId(element.id)
+        setActiveInspectorPanel("element")
+      }
+    }
+    setShowValidation(false)
+    setValidationTarget({ ...issue })
+  }
 
   const markDirty = () => {
     saveSession.current.change()
@@ -638,36 +749,22 @@ export const QuizzEditorProvider = ({
     markDirty()
   }
 
-  const removeQuestion = (index: number) => {
-    const clickedId = questions[index]?.id
-    const idsToDelete =
-      clickedId && selectedQuestionIds.includes(clickedId)
-        ? selectedQuestionIds
-        : [clickedId].filter(Boolean)
-
-    if (questions.length <= idsToDelete.length) {
+  const removeQuestions = (ids: string[]) => {
+    const result = removeQuestionBatch(questions, ids)
+    if (!result) {
       return
     }
-
-    const nextQuestions = questions.filter((q) => !idsToDelete.includes(q.id))
-    setQuestions(nextQuestions)
-
-    let newActiveIndex = 0
-    const remainingActive = questions.find(
-      (q, i) => !idsToDelete.includes(q.id) && i >= index,
-    )
-
-    if (remainingActive) {
-      newActiveIndex = nextQuestions.findIndex(
-        (q) => q.id === remainingActive.id,
-      )
-    } else {
-      newActiveIndex = Math.max(0, nextQuestions.length - 1)
-    }
-
-    handleSetCurrentIndex(newActiveIndex)
-    setSelectedQuestionIds([nextQuestions[newActiveIndex].id])
+    setQuestions(result.questions)
+    handleSetCurrentIndex(result.activeIndex)
+    setSelectedQuestionIds([result.questions[result.activeIndex].id])
     markDirty()
+  }
+
+  const removeQuestion = (index: number) => {
+    const id = questions[index]?.id
+    if (id) {
+      removeQuestions([id])
+    }
   }
 
   const reorderQuestions = (from: number, to: number) => {
@@ -713,50 +810,22 @@ export const QuizzEditorProvider = ({
     markDirty()
   }
 
-  const duplicateQuestion = (index: number) => {
-    const clickedId = questions[index]?.id
-    const isMultiSelection =
-      clickedId !== undefined &&
-      selectedQuestionIds.includes(clickedId) &&
-      selectedQuestionIds.length > 1
-
-    if (isMultiSelection) {
-      // Duplique tous les slides sélectionnés, dans leur ordre d'apparition
-      const orderedSelected = questions.filter((q) =>
-        selectedQuestionIds.includes(q.id),
-      )
-      const newCopies = orderedSelected.map((q) => ({ ...q, id: generateId() }))
-
-      // Détermine l'index du dernier slide sélectionné pour insérer les copies juste après
-      const lastSelectedIndex = questions.reduce(
-        (acc, q, i) => (selectedQuestionIds.includes(q.id) ? i : acc),
-        -1,
-      )
-
-      setQuestions((prev) => {
-        const next = [...prev]
-        next.splice(lastSelectedIndex + 1, 0, ...newCopies)
-
-        return next
-      })
-
-      const firstCopyIndex = lastSelectedIndex + 1
-      setSelectedQuestionIds(newCopies.map((c) => c.id))
-      handleSetCurrentIndex(firstCopyIndex)
-    } else {
-      // Comportement d'origine : duplique un seul slide
-      setQuestions((prev) => {
-        const next = [...prev]
-        const duplicated = { ...next[index], id: generateId() }
-        next.splice(index + 1, 0, duplicated)
-        setSelectedQuestionIds([duplicated.id])
-
-        return next
-      })
-      handleSetCurrentIndex(index + 1)
+  const duplicateQuestions = (ids: string[]) => {
+    const result = duplicateQuestionBatch(questions, ids, generateId)
+    if (!result) {
+      return
     }
-
+    setQuestions(result.questions)
+    setSelectedQuestionIds(result.copies.map((copy) => copy.id))
+    handleSetCurrentIndex(result.activeIndex)
     markDirty()
+  }
+
+  const duplicateQuestion = (index: number) => {
+    const id = questions[index]?.id
+    if (id) {
+      duplicateQuestions([id])
+    }
   }
 
   const updateQuestion = (index: number, updates: QuestionUpdate) => {
@@ -796,6 +865,14 @@ export const QuizzEditorProvider = ({
     setQuestions((prev) =>
       prev.map((q) => ({ ...q, ...patch }) as QuestionWithId),
     )
+    markDirty()
+  }
+
+  const applyTimingToSimilarQuestions = (sourceIndex: number) => {
+    if (!questions[sourceIndex]) {
+      return
+    }
+    setQuestions((prev) => copyTimingToSimilarQuestions(prev, sourceIndex))
     markDirty()
   }
 
@@ -872,6 +949,7 @@ export const QuizzEditorProvider = ({
       })
       if (!result.success) {
         if (!options?.silent) {
+          setShowValidation(true)
           const [first] = result.error.issues
           if (
             first.path[0] === "questions" &&
@@ -879,7 +957,10 @@ export const QuizzEditorProvider = ({
           ) {
             handleSetCurrentIndex(first.path[1])
           }
-          toast.error(t(first.message, first.message), { id: "quizz-save" })
+          toast.error(
+            "Enregistrement impossible : consultez les points à corriger.",
+            { id: "quizz-save" },
+          )
         }
         return null
       }
@@ -924,7 +1005,12 @@ export const QuizzEditorProvider = ({
         dirtyRef.current = !currentSaved
         setIsDirty(!currentSaved)
         if (currentSaved) {
-          clearBackups(backupKey, initialData?.id)
+          clearBackups(
+            backupKey,
+            initialData?.id,
+            restoredBackupKey.current ?? undefined,
+          )
+          restoredBackupKey.current = null
         }
         if (!options?.silent) {
           toast.success(
@@ -984,81 +1070,56 @@ export const QuizzEditorProvider = ({
   // the playable schema, but reject malformed storage before using it as state.
   useEffect(() => {
     try {
-      const raw =
-        localStorage.getItem(backupKey) ??
-        (initialData?.id
-          ? localStorage.getItem(`rahoot-backup-${initialData.id}`)
-          : null)
-      if (raw) {
-        const backup = JSON.parse(raw)
-        if (
-          Array.isArray(backup.questions) &&
-          backup.questions.length &&
-          backup.questions.every(
-            (q: unknown) =>
-              q &&
-              typeof q === "object" &&
-              typeof (q as Question).type === "string",
-          )
-        ) {
-          setPendingRestore(backup)
-        }
-      }
+      setPendingRestore(
+        findDraftBackup(
+          localStorage,
+          backupKey,
+          `rahoot-backup-${backupClientId}-`,
+          initialData?.id,
+        ),
+      )
     } catch {
       toast.error("Le brouillon local ne peut pas être lu.")
     }
-  }, [backupKey])
+  }, [backupKey, backupClientId, initialData?.id])
 
   const handleApplyRestore = () => {
     if (pendingRestore) {
-      if (pendingRestore.subject !== undefined) {
-        setSubject(pendingRestore.subject)
+      const { backup, key } = pendingRestore
+      restoredBackupKey.current = key
+      if (backup.subject !== undefined) {
+        setSubject(backup.subject)
       }
 
-      if (pendingRestore.publicName !== undefined) {
-        setPublicName(pendingRestore.publicName)
+      if (backup.publicName !== undefined) {
+        setPublicName(backup.publicName)
       }
 
-      if (pendingRestore.description !== undefined) {
-        setDescription(pendingRestore.description)
+      if (backup.description !== undefined) {
+        setDescription(backup.description)
       }
 
-      if (pendingRestore.folder !== undefined) {
-        setFolder(pendingRestore.folder)
+      if (backup.folder !== undefined) {
+        setFolder(backup.folder)
       }
 
-      if (pendingRestore.tags !== undefined) {
-        setTags(pendingRestore.tags)
+      if (backup.tags !== undefined) {
+        setTags(backup.tags)
       }
 
-      if (pendingRestore.salonImage !== undefined) {
-        setSalonImage(pendingRestore.salonImage)
-      }
+      // Missing optional fields in JSON mean they were cleared in the draft.
+      setSalonImage(backup.salonImage)
+      setListingImage(backup.listingImage)
+      setPodiumTheme(backup.podiumTheme)
+      setFontFamily(backup.fontFamily)
 
-      if (pendingRestore.listingImage !== undefined) {
-        setListingImage(pendingRestore.listingImage)
-      }
+      setQuestions(backup.questions.map(toQuestionWithId))
 
-      if (pendingRestore.podiumTheme !== undefined) {
-        setPodiumTheme(pendingRestore.podiumTheme)
+      if (typeof backup.savedId === "string") {
+        setQuizzId(backup.savedId)
       }
-
-      if (pendingRestore.fontFamily !== undefined) {
-        setFontFamily(pendingRestore.fontFamily)
-      }
-
-      if (pendingRestore.questions !== undefined) {
-        setQuestions(pendingRestore.questions.map(toQuestionWithId))
-      }
-
-      setSalonImage(pendingRestore.salonImage)
-      setListingImage(pendingRestore.listingImage)
-      setPodiumTheme(pendingRestore.podiumTheme)
-      if (typeof pendingRestore.savedId === "string") {
-        setQuizzId(pendingRestore.savedId)
-      }
-      if (typeof pendingRestore.baseUpdatedAt === "number") {
-        setUpdatedAt(pendingRestore.baseUpdatedAt)
+      if (typeof backup.baseUpdatedAt === "number") {
+        setUpdatedAt(backup.baseUpdatedAt)
       } else if (initialData?.id) {
         setSaveConflict(true)
       }
@@ -1071,7 +1132,9 @@ export const QuizzEditorProvider = ({
 
   const handleDiscardRestore = () => {
     try {
-      localStorage.removeItem(backupKey)
+      if (pendingRestore) {
+        localStorage.removeItem(pendingRestore.key)
+      }
       if (initialData?.id) {
         localStorage.removeItem(`rahoot-backup-${initialData.id}`)
       }
@@ -1092,6 +1155,7 @@ export const QuizzEditorProvider = ({
         JSON.stringify({
           savedId: quizzId,
           baseUpdatedAt: updatedAt,
+          savedAt: Date.now(),
           subject,
           publicName,
           description,
@@ -1104,6 +1168,13 @@ export const QuizzEditorProvider = ({
           questions: questions.map(({ id: _id, ...q }) => q),
         }),
       )
+      if (
+        restoredBackupKey.current &&
+        restoredBackupKey.current !== backupKey
+      ) {
+        localStorage.removeItem(restoredBackupKey.current)
+        restoredBackupKey.current = null
+      }
     } catch {
       toast.error(
         "Le stockage local est plein ou indisponible. Enregistrez sur le serveur ou exportez le quiz.",
@@ -1195,6 +1266,11 @@ export const QuizzEditorProvider = ({
         return
       }
 
+      // La liste gère ses propres flèches et le déplacement au clavier.
+      if (target?.closest("[data-editor-question-list]")) {
+        return
+      }
+
       // ─── Déplacement / Réorganisation (Ctrl+Flèche ou Alt+Flèche) ───
       if (
         (e.key === "ArrowUp" || e.key === "ArrowLeft") &&
@@ -1271,6 +1347,11 @@ export const QuizzEditorProvider = ({
   return (
     <QuizzEditorContext.Provider
       value={{
+        validationIssues,
+        showValidation,
+        setShowValidation,
+        validationTarget,
+        goToIssue,
         quizzId,
         subject,
         publicName,
@@ -1296,11 +1377,14 @@ export const QuizzEditorProvider = ({
         setCurrentIndex: handleSetCurrentIndex,
         addQuestion,
         removeQuestion,
+        removeQuestions,
         reorderQuestions,
         duplicateQuestion,
+        duplicateQuestions,
         updateQuestion,
         importQuestions,
         applyToAllQuestions,
+        applyTimingToSimilarQuestions,
         changeQuestionType,
         selectedId,
         setSelectedId,
@@ -1319,28 +1403,42 @@ export const QuizzEditorProvider = ({
         canRedo,
         activeInspectorPanel,
         setActiveInspectorPanel,
+        inspectorRequest,
+        openInspector,
       }}
     >
       {children}
 
       {/* Emergency Cache Recovery Prompt Modal */}
       {pendingRestore && (
-        <EditorDialog label="Restauration de session">
+        <EditorDialog label={t("quizz:draftRecovery.title")}>
           <div className="bg-panel border-border animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
             {/* Header */}
             <div className="border-border text-primary flex items-center gap-2 border-b px-6 py-4">
               <RotateCcw className="size-5 shrink-0" />
               <h3 className="text-ink text-base font-bold">
-                Restauration de session
+                {t("quizz:draftRecovery.title")}
               </h3>
             </div>
             {/* Body */}
             <div className="p-6 text-sm">
               <p className="text-ink-muted">
-                Des modifications locales non sauvegardées ont été trouvées dans
-                le cache de votre navigateur pour ce quiz. Souhaitez-vous
-                restaurer votre travail précédent ?
+                {t("quizz:draftRecovery.description")}
               </p>
+              <div className="border-border bg-surface mt-4 rounded-lg border p-3">
+                <p className="text-ink font-semibold">
+                  {pendingRestore.backup.subject ||
+                    t("quizz:titleQuizzPlaceholder")}
+                </p>
+                <p className="text-ink-muted mt-1 text-xs">
+                  {t("quizz:draftRecovery.questionCount", {
+                    count: pendingRestore.backup.questions.length,
+                  })}
+                  {pendingRestore.backup.savedAt
+                    ? ` · ${new Date(pendingRestore.backup.savedAt).toLocaleString(i18n.language)}`
+                    : ""}
+                </p>
+              </div>
             </div>
             {/* Footer */}
             <div className="border-border bg-border/10 flex items-center justify-end gap-3 border-t px-6 py-4">
@@ -1349,10 +1447,10 @@ export const QuizzEditorProvider = ({
                 size="sm"
                 onClick={handleDiscardRestore}
               >
-                Ignorer et supprimer
+                {t("quizz:draftRecovery.discard")}
               </Button>
               <Button variant="primary" size="sm" onClick={handleApplyRestore}>
-                Restaurer
+                {t("quizz:draftRecovery.restore")}
               </Button>
             </div>
           </div>

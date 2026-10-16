@@ -4,10 +4,19 @@ import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor
 import QuizzSettingsModal from "@rahoot/web/features/quizz/components/QuizzSettingsModal"
 import AIGeneratorModal from "@rahoot/web/features/quizz/components/AIGeneratorModal"
 import SlideToolbar from "@rahoot/web/features/quizz/components/SlideEditor/SlideToolbar"
-import useTestDrive from "@rahoot/web/features/quizz/hooks/useTestDrive"
+import SlidePreviewModal from "./SlideEditor/SlidePreviewModal"
+import { ToolbarPopover } from "./SlideEditor/ToolbarControls"
 import { useNavigate } from "@tanstack/react-router"
-import { Download, PlayCircle, Settings, Upload, Sparkles } from "lucide-react"
-import { useRef, useState } from "react"
+import {
+  ArrowLeftRight,
+  Download,
+  Eye,
+  Settings,
+  Upload,
+  Sparkles,
+} from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import EditorValidation from "./EditorValidation"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
@@ -25,6 +34,9 @@ type SaveStatus = "saving" | "dirty" | "saved"
 
 const QuizzEditorHeader = () => {
   const {
+    validationIssues,
+    setShowValidation,
+    validationTarget,
     subject,
     publicName,
     podiumTheme,
@@ -35,7 +47,6 @@ const QuizzEditorHeader = () => {
     salonImage,
     listingImage,
     questions,
-    currentIndex,
     importQuestions,
     saveQuizz,
     isDirty,
@@ -46,8 +57,13 @@ const QuizzEditorHeader = () => {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [showSettings, setShowSettings] = useState(false)
+  useEffect(() => {
+    if (validationTarget && validationTarget.questionIndex === undefined) {
+      setShowSettings(true)
+    }
+  }, [validationTarget])
   const [showAIGenerator, setShowAIGenerator] = useState(false)
-  const { startTestDrive, isTestDriving } = useTestDrive()
+  const [showPreview, setShowPreview] = useState(false)
   const reduceMotion = useReducedMotion()
   const csvInputRef = useRef<HTMLInputElement>(null)
 
@@ -263,47 +279,59 @@ const QuizzEditorHeader = () => {
             variant="ghost"
             size="sm"
             className="text-ink-muted h-8 gap-2"
-            aria-label="Générer par IA"
+            aria-label="Atelier IA"
             onClick={() => setShowAIGenerator(true)}
           >
             <Sparkles className="text-primary size-4 animate-pulse" />
-            <span className="hidden md:inline">Générer par IA</span>
+            <span className="hidden md:inline">Atelier IA</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="text-ink-muted h-8 gap-2"
-            disabled={questions.length === 0 || isTestDriving || isSaving}
-            aria-label={t("quizz:testDrive", "Tester")}
-            onClick={() => void startTestDrive(currentIndex)}
+            disabled={questions.length === 0}
+            aria-label={t("quizz:previewFlow.open")}
+            onClick={() => setShowPreview(true)}
           >
-            <PlayCircle className="size-4" />
+            <Eye className="size-4" />
             <span className="hidden md:inline">
-              {t("quizz:testDrive", "Tester")}
+              {t("quizz:previewFlow.open")}
             </span>
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-ink-muted h-8 gap-2"
-            aria-label={t("quizz:importCsv", "Importer")}
-            onClick={() => csvInputRef.current?.click()}
+          <ToolbarPopover
+            label={`${t("quizz:importCsv", "Importer")} / ${t("common:export")}`}
+            icon={<ArrowLeftRight className="size-4" />}
+            iconOnly
           >
-            <Upload className="size-4" />
-            <span className="hidden md:inline">
-              {t("quizz:importCsv", "Importer")}
-            </span>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-8"
-            aria-label={t("common:export")}
-            onClick={handleExport}
-          >
-            <Download className="size-4" />
-            <span className="hidden md:inline">{t("common:export")}</span>
-          </Button>
+            {(close) => (
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={() => {
+                    close()
+                    csvInputRef.current?.click()
+                  }}
+                >
+                  <Upload className="size-4" />
+                  {t("quizz:importCsv", "Importer")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={() => {
+                    close()
+                    void handleExport()
+                  }}
+                >
+                  <Download className="size-4" />
+                  {t("common:export")}
+                </Button>
+              </div>
+            )}
+          </ToolbarPopover>
           <Button
             variant="primary"
             size="sm"
@@ -315,9 +343,27 @@ const QuizzEditorHeader = () => {
           </Button>
         </div>
       </header>
+      {validationIssues.length > 0 && (isDirty || !quizzId) && (
+        <div
+          role="status"
+          className="bg-danger-soft text-danger flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+        >
+          <span>
+            Enregistrement sur le serveur bloqué : {validationIssues.length}{" "}
+            point(s) à corriger.
+          </span>
+          <button
+            type="button"
+            className="focus-ring rounded font-semibold underline"
+            onClick={() => setShowValidation(true)}
+          >
+            Voir les problèmes
+          </button>
+        </div>
+      )}
 
       {/* Barre d'outils dédiée juste en dessous */}
-      <div className="border-border bg-surface relative z-30 flex h-10 w-full shrink-0 items-center border-b px-4">
+      <div className="border-border bg-surface relative z-30 flex w-full shrink-0 items-center border-b px-4">
         <SlideToolbar />
       </div>
 
@@ -325,6 +371,10 @@ const QuizzEditorHeader = () => {
         open={showSettings}
         onClose={() => setShowSettings(false)}
       />
+      <EditorValidation />
+      {showPreview && (
+        <SlidePreviewModal onClose={() => setShowPreview(false)} />
+      )}
       <AIGeneratorModal
         open={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}

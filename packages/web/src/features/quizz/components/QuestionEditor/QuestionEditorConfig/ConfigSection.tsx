@@ -1,21 +1,33 @@
 import { ChevronDown } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { useState, type PropsWithChildren, type ReactNode } from "react"
+import {
+  useEffect,
+  useState,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react"
 import clsx from "clsx"
 
 type Props = PropsWithChildren<{
   title: string
   icon?: ReactNode
   defaultOpen?: boolean
+  revealKey?: object | null
 }>
 
 const ConfigSection = ({
   title,
   icon,
   defaultOpen = true,
+  revealKey,
   children,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  useEffect(() => {
+    if (revealKey) {
+      setIsOpen(true)
+    }
+  }, [revealKey])
   const reduceMotion = useReducedMotion()
 
   return (

@@ -25,7 +25,10 @@ const DEFAULT_BG: CSSProperties = {
 const noopChange = (_els: SlideElement[]) => undefined
 const noopSelect = (_id: string | undefined) => undefined
 
-const Question = ({
+export const QuestionContent = ({
+  isHost = false,
+  elapsedSec = 0,
+  preview = false,
   data: {
     question,
     type,
@@ -42,44 +45,12 @@ const Question = ({
     gridCols,
     gridRows,
     revelationStyle,
-    startedAt,
-    endsAt,
   },
-}: Props) => {
-  const muted = useSoundStore((state) => state.muted)
-  const [sfxShow] = useSound(SFX.SHOW_SOUND, {
-    volume: 0.5,
-    soundEnabled: !muted,
-  })
-
-  const { isHost } = useGameConfig()
-  const { getServerTime } = useSocket()
-
+}: Props & { isHost?: boolean; elapsedSec?: number; preview?: boolean }) => {
   // Mise en page libre et police : écran hôte uniquement, les téléphones des
   // joueurs gardent leur affichage habituel.
   const titleBox = isHost ? layout?.title : undefined
   const titleFont = isHost ? fontFamily : undefined
-
-  // Temps déjà écoulé de la phase, calculé sur l'horloge serveur : après une
-  // reconnexion (ou un montage tardif), la barre de progression et la
-  // révélation reprennent là où en est la partie au lieu de repartir de zéro.
-  const [elapsedSec] = useState(() => {
-    let elapsed = 0
-
-    if (endsAt && endsAt > 0) {
-      elapsed = cooldown - (endsAt - getServerTime()) / 1000
-    } else if (startedAt && startedAt > 0) {
-      elapsed = (getServerTime() - startedAt) / 1000
-    }
-
-    return Math.min(cooldown, Math.max(0, elapsed))
-  })
-
-  useEffect(() => {
-    if (isHost) {
-      sfxShow()
-    }
-  }, [sfxShow, isHost])
 
   // Les slides ("title") n'ont qu'une seule phase d'affichage : la révélation
   // doit donc s'y jouer directement. Pour les autres types, cette phase n'est
@@ -182,13 +153,42 @@ const Question = ({
             className="bg-primary mb-20 h-4 self-start rounded-full"
             style={{
               // Délai négatif = temps déjà écoulé côté serveur.
-              animation: `progressBar ${cooldown}s linear -${elapsedSec}s forwards`,
+              animation: preview
+                ? undefined
+                : `progressBar ${cooldown}s linear -${elapsedSec}s forwards`,
+              width: preview ? "100%" : undefined,
             }}
           />
         )}
       </section>
     </div>
   )
+}
+
+const Question = ({ data }: Props) => {
+  const muted = useSoundStore((state) => state.muted)
+  const [sfxShow] = useSound(SFX.SHOW_SOUND, {
+    volume: 0.5,
+    soundEnabled: !muted,
+  })
+  const { isHost } = useGameConfig()
+  const { getServerTime } = useSocket()
+  const [elapsedSec] = useState(() => {
+    const { cooldown, endsAt, startedAt } = data
+    let elapsed = 0
+    if (endsAt && endsAt > 0) {
+      elapsed = cooldown - (endsAt - getServerTime()) / 1000
+    } else if (startedAt && startedAt > 0) {
+      elapsed = (getServerTime() - startedAt) / 1000
+    }
+    return Math.min(cooldown, Math.max(0, elapsed))
+  })
+  useEffect(() => {
+    if (isHost) {
+      sfxShow()
+    }
+  }, [sfxShow, isHost])
+  return <QuestionContent data={data} isHost={isHost} elapsedSec={elapsedSec} />
 }
 
 export default Question

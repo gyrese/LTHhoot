@@ -5,11 +5,15 @@ export default function EditorDialog({
   children,
   label,
   onClose,
+  returnFocusTo,
   fullscreen = false,
+  wide = false,
 }: PropsWithChildren<{
   label: string
   onClose?: () => void
+  returnFocusTo?: () => HTMLElement | null | undefined
   fullscreen?: boolean
+  wide?: boolean
 }>) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
@@ -18,9 +22,23 @@ export default function EditorDialog({
     dialog?.showModal()
     return () => {
       dialog?.close()
-      previous?.focus()
+      if (previous?.isConnected && previous !== document.body) {
+        previous.focus()
+      } else {
+        returnFocusTo?.()?.focus()
+      }
     }
   }, [])
+  let dialogClass =
+    "text-ink m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-md overflow-auto rounded-xl bg-transparent p-0 backdrop:bg-black/60"
+  if (wide) {
+    dialogClass =
+      "text-ink bg-surface m-auto h-[90dvh] max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-6xl overflow-hidden rounded-xl p-0 backdrop:bg-black/60"
+  }
+  if (fullscreen) {
+    dialogClass =
+      "bg-surface text-ink m-0 h-dvh max-h-none w-screen max-w-none p-0 backdrop:bg-black/60"
+  }
   return (
     <dialog
       ref={ref}
@@ -30,11 +48,7 @@ export default function EditorDialog({
         event.preventDefault()
         onClose?.()
       }}
-      className={
-        fullscreen
-          ? "bg-surface text-ink m-0 h-dvh max-h-none w-screen max-w-none p-0 backdrop:bg-black/60"
-          : "text-ink m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-md overflow-auto rounded-xl bg-transparent p-0 backdrop:bg-black/60"
-      }
+      className={dialogClass}
     >
       {children}
     </dialog>

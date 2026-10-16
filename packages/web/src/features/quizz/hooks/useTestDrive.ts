@@ -63,7 +63,7 @@ const useTestDrive = () => {
 
     setIsTestDriving(true)
     pendingRef.current = true
-    const savedId = await saveQuizz()
+    const savedId = await saveQuizz({ navigate: false })
     if (!savedId || !socket.connected || !pendingRef.current) {
       pendingRef.current = false
       setIsTestDriving(false)

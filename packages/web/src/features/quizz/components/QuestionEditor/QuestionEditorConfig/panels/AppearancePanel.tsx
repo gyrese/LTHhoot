@@ -1,3 +1,4 @@
+import { ValidatedInput } from "../../../EditorValidation"
 import ConfigField from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField"
 import ConfigNumberInput from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigNumberInput"
 import ConfigToggle from "@rahoot/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigToggle"
@@ -29,7 +30,8 @@ const AppearancePanel = () => {
           unit=""
         />
         <div className="flex items-center gap-3">
-          <input
+          <ValidatedInput
+            field="backgroundOpacity"
             type="range"
             min="0"
             max="100"
@@ -92,6 +94,7 @@ const AppearancePanel = () => {
                   )}
                 />
                 <ConfigNumberInput
+                  field="revealDuration"
                   value={
                     currentQuestion.revealDuration ??
                     (isSlide
@@ -295,6 +298,7 @@ const AppearancePanel = () => {
                       )}
                     />
                     <ConfigNumberInput
+                      field="gridCols"
                       value={currentQuestion.gridCols ?? 8}
                       min={2}
                       max={30}
@@ -311,6 +315,7 @@ const AppearancePanel = () => {
                       )}
                     />
                     <ConfigNumberInput
+                      field="gridRows"
                       value={currentQuestion.gridRows ?? 6}
                       min={2}
                       max={30}

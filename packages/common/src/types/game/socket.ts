@@ -1,5 +1,9 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type {
+  WorkshopRequest,
+  WorkshopReply,
+} from "@rahoot/common/validators/ai-workshop"
+import type {
   GameResult,
   GameUpdateQuestion,
   PublicPlayer,
@@ -334,6 +338,10 @@ export interface ClientToServerEvents {
     withExplanations: boolean
     instructions?: string
   }) => void
+  [EVENTS.QUIZZ.AI_WORKSHOP]: (
+    _data: WorkshopRequest,
+    _reply: (_data: WorkshopReply) => void,
+  ) => void
   [EVENTS.QUIZZ.AI_REPHRASE]: (_data: { currentText: string }) => void
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS]: (_data: {
     correctAnswer: string

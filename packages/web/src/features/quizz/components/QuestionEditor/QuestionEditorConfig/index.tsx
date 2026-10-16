@@ -22,6 +22,7 @@ const QuestionEditorConfig = () => {
     selectedId,
     activeInspectorPanel,
     setActiveInspectorPanel,
+    currentIndex,
   } = useQuizzEditor()
 
   const selectedElement = currentQuestion?.elements?.find(
@@ -53,7 +54,15 @@ const QuestionEditorConfig = () => {
           </span>
         </div>
 
-        <div className="flex flex-col px-4 pb-4">
+        <div
+          className="flex flex-col px-4 pb-4"
+          tabIndex={-1}
+          data-validation-target={
+            activeInspectorPanel === "element"
+              ? `questions.${currentIndex}.elements`
+              : undefined
+          }
+        >
           {activeInspectorPanel === "settings" && <SettingsPanel />}
           {activeInspectorPanel === "appearance" && <AppearancePanel />}
           {activeInspectorPanel === "layers" && <LayersPanel />}

@@ -22,6 +22,7 @@ import {
   updateLayoutBox,
 } from "@rahoot/web/features/game/utils/question-layout"
 import GridSlideEditor from "@rahoot/web/features/quizz/components/QuestionEditor/GridSlideEditor"
+import { FieldErrors } from "../EditorValidation"
 import type { SlideView } from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import useAiRephrase from "@rahoot/web/features/quizz/hooks/useAiRephrase"
@@ -87,6 +88,7 @@ type Gesture = {
 }
 
 type EditableBoxProps = {
+  field: string
   box: QuestionLayoutBox
   scale: number
   label: string
@@ -102,6 +104,7 @@ type EditableBoxProps = {
 // géométrie en cours de geste reste locale (brouillon) et n'est validée dans le
 // quiz — donc dans l'historique annuler / rétablir — qu'au relâchement.
 const EditableBox = ({
+  field,
   box,
   scale,
   label,
@@ -112,6 +115,9 @@ const EditableBox = ({
   onCommit,
   children,
 }: EditableBoxProps) => {
+  const { currentIndex, validationIssues } = useQuizzEditor()
+  const path = `questions.${currentIndex}.${field}`
+  const invalid = validationIssues.some((issue) => issue.path === path)
   const gestureRef = useRef<Gesture | null>(null)
   const draftRef = useRef<QuestionLayoutBox | null>(null)
   const [draft, setDraft] = useState<QuestionLayoutBox | null>(null)
@@ -186,6 +192,8 @@ const EditableBox = ({
   return (
     <div
       role="button"
+      data-validation-target={path}
+      aria-invalid={invalid || undefined}
       tabIndex={0}
       aria-label={label}
       aria-pressed={selected}
@@ -215,6 +223,18 @@ const EditableBox = ({
       }}
     >
       {children}
+      {invalid && (
+        <div
+          className="pointer-events-none absolute top-full left-0 z-30"
+          style={{
+            transform: `scale(${1 / scale})`,
+            transformOrigin: "top left",
+            minWidth: 180,
+          }}
+        >
+          <FieldErrors field={field} />
+        </div>
+      )}
 
       {/* Survol : contour discret pour signaler que la boîte est manipulable */}
       {!selected && (
@@ -324,6 +344,7 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
     fontFamily: quizzFont,
     selectedLayoutKey,
     setSelectedLayoutKey,
+    validationTarget,
   } = useQuizzEditor()
   const { t } = useTranslation()
   const { rephrase, isRephrasing, canRephrase } = useAiRephrase()
@@ -342,6 +363,13 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
   useEffect(() => {
     setEditingKey((key) => (key === selectedLayoutKey ? key : undefined))
   }, [selectedLayoutKey, currentIndex])
+
+  useEffect(() => {
+    if (validationTarget?.path === `questions.${currentIndex}.question`) {
+      setSelectedLayoutKey("title")
+      setEditingKey("title")
+    }
+  }, [validationTarget, currentIndex])
 
   const commitBox = (key: LayoutBoxKey, patch: Partial<QuestionLayoutBox>) => {
     updateQuestion(currentIndex, { layout: updateLayoutBox(q, key, patch) })
@@ -481,6 +509,7 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
       }}
     >
       <EditableBox
+        field="question"
         box={titleBox}
         scale={view.scale}
         label={t("quizz:question.layout.titleBox")}
@@ -554,6 +583,7 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
 
           return (
             <EditableBox
+              field={`answers.${index}`}
               key={index}
               box={box}
               scale={view.scale}
@@ -577,6 +607,11 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
                     onPointerDown={stopGesture}
                     onClick={() => toggleCorrect(index)}
                     aria-pressed={correct}
+                    data-validation-target={
+                      q.type === "true_false"
+                        ? `questions.${currentIndex}.solution`
+                        : undefined
+                    }
                     title={t("quizz:markCorrect", "Marquer comme correcte")}
                     className={clsx(
                       "flex shrink-0 items-center justify-center rounded-full border-current transition-colors",

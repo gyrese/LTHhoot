@@ -12,6 +12,7 @@ import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor
 import { hasLayoutAnswers } from "@rahoot/web/features/game/utils/question-layout"
 
 import SlideEditor from "@rahoot/web/features/quizz/components/SlideEditor"
+import { FieldErrors } from "../EditorValidation"
 
 const QuestionAnswerEditor = () => {
   const { currentQuestion } = useQuizzEditor()
@@ -24,7 +25,7 @@ const QuestionAnswerEditor = () => {
     // QCM et vrai-faux : les cases sont éditées sur la diapositive
     // (QuestionLayoutEditor) ; le QCM garde ici sa barre d'outils.
     case "mcq":
-      return <QuestionEditorAnswersToolbar />
+      return <QuestionEditorAnswersToolbar key={currentQuestion.id} />
 
     case "open":
       return <QuestionEditorOpen />
@@ -81,6 +82,39 @@ const QuestionEditor = ({
             les barres d'outils du QCM et de la grille (dont les cases sont
             elles aussi posées sur la slide) se logent dans le coin haut-gauche. */}
         <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
+          <div
+            className="pointer-events-auto self-start"
+            tabIndex={-1}
+            data-validation-target={`questions.${currentIndex}`}
+          >
+            <FieldErrors field="answers" exact />
+            {(
+              [
+                "solutions",
+                "solution",
+                "images",
+                "zones",
+                "pinImage",
+                "cells",
+                "cellsPerRow",
+                "correctIndexes",
+                "elements",
+                "layout",
+                "media",
+                "audio",
+                "background",
+                "fontFamily",
+                "backgroundOpacity",
+                "revealDuration",
+                "gridCols",
+                "gridRows",
+                "pointsMultiplier",
+                "answerReveal",
+              ] as const
+            ).map((field) => (
+              <FieldErrors key={field} field={field} />
+            ))}
+          </div>
           {(currentQuestion.type === "mcq" ||
             currentQuestion.type === "grid") && (
             <div className="pointer-events-auto self-start">

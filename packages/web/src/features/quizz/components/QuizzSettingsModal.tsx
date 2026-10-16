@@ -263,12 +263,22 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                 </p>
                 <div className="relative">
                   <input
+                    data-validation-target="subject"
+                    aria-invalid={!localSubject.trim() || undefined}
+                    aria-describedby={
+                      !localSubject.trim() ? "quiz-subject-error" : undefined
+                    }
                     value={localSubject}
                     onChange={(e) => setLocalSubject(e.target.value)}
                     maxLength={90}
                     className="border-border focus:border-primary w-full rounded-lg border px-4 py-3 pr-14 text-sm outline-none"
                     placeholder={t("quizz:titleQuizzPlaceholder")}
                   />
+                  {!localSubject.trim() && (
+                    <p id="quiz-subject-error" className="text-danger text-sm">
+                      Renseignez le titre du quiz.
+                    </p>
+                  )}
                   <span className="text-ink-subtle absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                     {localSubject.length}/90
                   </span>

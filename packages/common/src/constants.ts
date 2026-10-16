@@ -76,6 +76,7 @@ export const EVENTS = {
     SET_PUBLIC_INFO: "quizz:setPublicInfo",
     ERROR: "quizz:error",
     AI_GENERATE: "quizz:aiGenerate",
+    AI_WORKSHOP: "quizz:aiWorkshop",
     AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",
     AI_REPHRASE: "quizz:aiRephrase",
     AI_REPHRASE_SUCCESS: "quizz:aiRephraseSuccess",

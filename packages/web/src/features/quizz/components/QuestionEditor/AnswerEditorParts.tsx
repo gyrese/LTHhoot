@@ -1,0 +1,168 @@
+import { FieldErrors, ValidatedInput } from "../EditorValidation"
+import { Minus, Plus } from "lucide-react"
+import { useEffect, useId, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
+
+export const AnswerEditorPanel = ({
+  children,
+  validationField,
+}: {
+  children: ReactNode
+  validationField?: string
+}) => (
+  <div
+    data-validation-target={validationField}
+    className="border-border bg-surface/95 text-ink relative z-10 flex flex-col gap-4 rounded-xl border p-4 shadow-sm backdrop-blur-sm"
+  >
+    {children}
+  </div>
+)
+
+export const AnswerEditorSection = ({
+  title,
+  children,
+  hint,
+  action,
+  actionLabel,
+}: {
+  title: string
+  children: ReactNode
+  hint?: string
+  action?: () => void
+  actionLabel?: string
+}) => (
+  <section className="flex min-w-0 flex-col gap-3">
+    <div className="flex min-h-9 items-center justify-between gap-3">
+      <h3 className="text-ink text-sm font-semibold">{title}</h3>
+      {action && (
+        <button
+          type="button"
+          onClick={action}
+          aria-label={actionLabel}
+          title={actionLabel}
+          className="focus-ring border-border bg-panel text-ink-muted hover:text-ink flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors"
+        >
+          <Plus className="size-4" />
+        </button>
+      )}
+    </div>
+    {children}
+    {hint && <p className="text-ink-muted text-xs">{hint}</p>}
+  </section>
+)
+
+export const AnswerEditorNumberField = ({
+  field,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  field: string
+  label: string
+  value: number
+  min?: number
+  max?: number
+  onChange: (_value: number) => void
+}) => {
+  const id = useId()
+  const [input, setInput] = useState(String(value))
+
+  useEffect(() => {
+    setInput(String(value))
+  }, [value])
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label htmlFor={id} className="text-ink-muted text-xs font-semibold">
+        {label}
+      </label>
+      <ValidatedInput
+        id={id}
+        field={field}
+        type="number"
+        value={input}
+        min={min}
+        max={max}
+        onChange={(event) => {
+          const raw = event.target.value
+          setInput(raw)
+          const next = Number(raw)
+
+          if (raw !== "" && Number.isFinite(next)) {
+            onChange(next)
+          }
+        }}
+        onBlur={() => setInput(String(value))}
+        className="border-border bg-surface text-ink focus:border-primary focus:ring-primary/30 w-full rounded-lg border px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:ring-2"
+      />
+    </div>
+  )
+}
+
+export const EditableAnswerList = ({
+  field,
+  values,
+  minimum,
+  title,
+  placeholder,
+  hint,
+  onChange,
+}: {
+  field: string
+  values: string[]
+  minimum: number
+  title: string
+  placeholder: string
+  hint?: string
+  onChange: (_values: string[]) => void
+}) => {
+  const { t } = useTranslation()
+
+  return (
+    <AnswerEditorSection
+      title={title}
+      hint={hint}
+      action={() => onChange([...values, ""])}
+      actionLabel={t("quizz:answerEditor.add")}
+    >
+      <FieldErrors field={field} exact />
+      <div className="flex flex-col gap-2">
+        {values.map((value, index) => (
+          <div key={index} className="flex min-w-0 items-center gap-2">
+            <span className="bg-panel text-ink-muted flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums">
+              {index + 1}
+            </span>
+            <ValidatedInput
+              field={`${field}.${index}`}
+              aria-label={`${placeholder} ${index + 1}`}
+              placeholder={placeholder}
+              value={value}
+              onChange={(event) =>
+                onChange(
+                  values.map((item, itemIndex) =>
+                    itemIndex === index ? event.target.value : item,
+                  ),
+                )
+              }
+              className="border-border bg-surface text-ink placeholder:text-ink-muted focus:border-primary focus:ring-primary/30 min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+            />
+            <button
+              type="button"
+              disabled={values.length <= minimum}
+              onClick={() =>
+                onChange(values.filter((_, itemIndex) => itemIndex !== index))
+              }
+              aria-label={`${t("quizz:answerEditor.remove")} ${index + 1}`}
+              title={t("quizz:answerEditor.remove")}
+              className="focus-ring border-border text-ink-muted hover:bg-panel hover:text-ink flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:opacity-40"
+            >
+              <Minus className="size-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </AnswerEditorSection>
+  )
+}

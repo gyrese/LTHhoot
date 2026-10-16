@@ -5,14 +5,13 @@ import {
   useSocket,
 } from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { useQuestionImagePicker } from "./useQuestionImagePicker"
 import {
   Image as ImageIcon,
-  Link,
   Loader2,
   Play,
   Sparkles,
   Trash2,
-  Upload,
   X,
 } from "lucide-react"
 import { useRef, useState, type ChangeEvent } from "react"
@@ -106,14 +105,20 @@ const QuestionEditorAnswerReveal = () => {
     useQuizzEditor()
   const { socket } = useSocket()
   const { t } = useTranslation()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [showImageUrl, setShowImageUrl] = useState(false)
-  const [imageUrl, setImageUrl] = useState("")
   const [youtubeUrl, setYoutubeUrl] = useState("")
-  const [uploading, setUploading] = useState(false)
   const [isGeneratingAiExplanation, setIsGeneratingAiExplanation] =
     useState(false)
   const pendingAiRef = useRef<{ index: number; id: string } | null>(null)
+  const { openPicker, picker } = useQuestionImagePicker(
+    (questionIndex, target, url) => {
+      updateQuestion(questionIndex, {
+        answerReveal: {
+          ...(target.answerReveal ?? { enabled: true }),
+          image: url,
+        },
+      })
+    },
+  )
 
   const reveal: AnswerReveal = currentQuestion.answerReveal ?? {
     enabled: false,
@@ -181,43 +186,6 @@ const QuestionEditorAnswerReveal = () => {
     toast.error(t(message))
   })
 
-  const handleUploadImage = async (file: File) => {
-    setUploading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append("image", file)
-      const res = await fetch("/upload", {
-        method: "POST",
-        body: formData,
-        headers: { "x-client-id": localStorage.getItem("client_id") ?? "" },
-      })
-
-      if (!res.ok) {
-        throw new Error("Upload failed")
-      }
-
-      const data = (await res.json()) as { url: string }
-      updateReveal({ image: data.url })
-    } catch {
-      toast.error(t("errors:upload.failed"))
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleAddImageUrl = () => {
-    const url = imageUrl.trim()
-
-    if (!url) {
-      return
-    }
-
-    updateReveal({ image: url })
-    setImageUrl("")
-    setShowImageUrl(false)
-  }
-
   const handleChangeYoutube = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     setYoutubeUrl(value)
@@ -261,96 +229,39 @@ const QuestionEditorAnswerReveal = () => {
               <ImageIcon className="text-ink-subtle size-4" /> Image
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-
-                if (file) {
-                  void handleUploadImage(file)
-                }
-
-                e.target.value = ""
-              }}
-            />
-
             {reveal.image ? (
-              <div className="border-border relative overflow-hidden rounded-lg border">
+              <div className="flex flex-col gap-2">
                 <img
                   src={reveal.image}
                   alt="Aperçu réponse"
-                  className="h-28 w-full object-cover"
+                  className="h-28 w-full rounded-lg object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={() => updateReveal({ image: undefined })}
-                  className="hover:bg-danger absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white transition-colors"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="focus-ring border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                    onClick={() => openPicker(currentQuestion.id)}
+                    className="focus-ring border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink flex-1 rounded-lg border px-2 py-2 text-xs font-semibold transition-colors"
                   >
-                    {uploading ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="size-3.5" />
-                    )}
-                    Importer
+                    {t("quizz:media.replaceImage")}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowImageUrl((v) => !v)}
-                    className={`focus-ring flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm transition-colors ${
-                      showImageUrl
-                        ? "border-primary bg-primary-soft text-primary-ink"
-                        : "border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink"
-                    }`}
+                    onClick={() => updateReveal({ image: undefined })}
+                    aria-label={t("quizz:imageSequence.removeImage")}
+                    className="focus-ring border-border text-ink-muted hover:text-danger rounded-lg border px-2 py-2 transition-colors"
                   >
-                    <Link className="size-3.5" /> URL
+                    <Trash2 className="size-3.5" />
                   </button>
                 </div>
-
-                {showImageUrl && (
-                  <div className="flex gap-1.5">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleAddImageUrl()
-                        }
-
-                        if (e.key === "Escape") {
-                          setShowImageUrl(false)
-                        }
-                      }}
-                      placeholder="https://..."
-                      className="border-border text-ink focus:border-primary focus:ring-primary/30 flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddImageUrl}
-                      disabled={!imageUrl.trim()}
-                      className="bg-primary text-secondary rounded-lg px-2.5 text-xs font-semibold transition-transform hover:brightness-[0.97] active:scale-95 disabled:opacity-40"
-                    >
-                      OK
-                    </button>
-                  </div>
-                )}
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openPicker(currentQuestion.id)}
+                className="focus-ring border-border bg-surface text-ink-muted hover:bg-panel hover:text-ink rounded-lg border border-dashed px-2 py-3 text-xs font-semibold transition-colors"
+              >
+                {t("quizz:media.chooseImage")}
+              </button>
             )}
           </div>
 
@@ -429,6 +340,7 @@ const QuestionEditorAnswerReveal = () => {
           </div>
         </div>
       )}
+      {picker}
     </div>
   )
 }

@@ -1,82 +1,25 @@
 import type { PuzzleQuestion } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
-
-type PuzzleWithId = PuzzleQuestion & { id: string }
+import { AnswerEditorPanel, EditableAnswerList } from "./AnswerEditorParts"
 
 const QuestionEditorPuzzle = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
-  const q = currentQuestion as PuzzleWithId
-
-  const updateItem = (index: number, value: string) => {
-    const next = [...q.items]
-    next[index] = value
-    updateQuestion(currentIndex, { items: next })
-  }
-
-  const addItem = () => {
-    updateQuestion(currentIndex, { items: [...q.items, ""] })
-  }
-
-  const removeItem = (index: number) => {
-    if (q.items.length <= 2) {
-      return
-    }
-
-    updateQuestion(currentIndex, {
-      items: q.items.filter((_, i) => i !== index),
-    })
-  }
+  const question = currentQuestion as PuzzleQuestion & { id: string }
 
   return (
-    <div className="z-10 flex flex-col gap-3">
-      <div className="flex items-center justify-between px-1">
-        <span className="bg-surface/90 text-ink-muted rounded-lg px-2.5 py-1 text-sm font-semibold shadow-sm backdrop-blur-sm">
-          {t("quizz:puzzle.itemsLabel")}
-        </span>
-        <button
-          type="button"
-          aria-label="Ajouter un élément"
-          onClick={addItem}
-          className="focus-ring bg-surface/90 text-ink-muted hover:bg-panel hover:text-ink flex size-9 items-center justify-center rounded-lg shadow-sm backdrop-blur-sm transition-colors active:scale-95"
-        >
-          <Plus className="size-4" />
-        </button>
-      </div>
-
-      <p className="px-1 text-xs text-white/70">{t("quizz:puzzle.hint")}</p>
-
-      <div className="flex flex-col gap-2">
-        {q.items.map((item, i) => (
-          <div
-            key={i}
-            className="shadow-inset flex items-center gap-3 rounded bg-purple-500 px-4 py-4"
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
-              {i + 1}
-            </span>
-            <input
-              className="flex-1 bg-transparent font-semibold text-white placeholder-white/70 outline-none"
-              aria-label={`${t("quizz:puzzle.itemPlaceholder")} ${i + 1}`}
-              placeholder={t("quizz:puzzle.itemPlaceholder")}
-              value={item}
-              onChange={(e) => updateItem(i, e.target.value)}
-            />
-            <button
-              type="button"
-              aria-label={`Supprimer l’élément ${i + 1}`}
-              onClick={() => removeItem(i)}
-              disabled={q.items.length <= 2}
-              className="flex size-9 items-center justify-center rounded-full border-2 border-white/60 text-white/80 hover:border-white disabled:opacity-30"
-            >
-              <Minus className="size-3" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    <AnswerEditorPanel validationField={`questions.${currentIndex}.items`}>
+      <EditableAnswerList
+        field="items"
+        values={question.items}
+        minimum={2}
+        title={t("quizz:puzzle.itemsLabel")}
+        placeholder={t("quizz:puzzle.itemPlaceholder")}
+        hint={t("quizz:puzzle.hint")}
+        onChange={(items) => updateQuestion(currentIndex, { items })}
+      />
+    </AnswerEditorPanel>
   )
 }
 

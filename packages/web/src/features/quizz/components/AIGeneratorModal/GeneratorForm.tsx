@@ -21,6 +21,7 @@ type Props = {
   settings: GeneratorSettings
   onSettingsChange: (_updates: Partial<GeneratorSettings>) => void
   loading: boolean
+  hidePrompt?: boolean
 }
 
 const selectClasses =
@@ -32,6 +33,7 @@ const GeneratorForm = ({
   settings,
   onSettingsChange,
   loading,
+  hidePrompt = false,
 }: Props) => {
   const { t } = useTranslation()
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -72,19 +74,21 @@ const GeneratorForm = ({
   return (
     <div className="space-y-6">
       {/* Sujet */}
-      <div className="space-y-2">
-        <label className="text-ink block text-sm font-bold">
-          Sujet ou thème du quiz
-        </label>
-        <textarea
-          value={prompt}
-          onChange={(e) => onPromptChange(e.target.value)}
-          placeholder="Ex: Les capitales européennes, La programmation JavaScript, L'Histoire de l'Egypte Antique..."
-          rows={3}
-          disabled={loading}
-          className="border-border text-ink focus:border-primary w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm transition-colors outline-none disabled:opacity-50"
-        />
-      </div>
+      {!hidePrompt && (
+        <div className="space-y-2">
+          <label className="text-ink block text-sm font-bold">
+            Sujet ou thème du quiz
+          </label>
+          <textarea
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            placeholder="Ex: Les capitales européennes, La programmation JavaScript, L'Histoire de l'Egypte Antique..."
+            rows={3}
+            disabled={loading}
+            className="border-border text-ink focus:border-primary w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm transition-colors outline-none disabled:opacity-50"
+          />
+        </div>
+      )}
 
       {/* Ton */}
       <div className="space-y-2">
