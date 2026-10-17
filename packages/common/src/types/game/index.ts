@@ -328,6 +328,7 @@ export type QuizzWithId = Quizz & { id: string }
 
 export type QuizzMeta = {
   id: string
+  updatedAt?: number
   subject: string
   publicName?: string
   description?: string

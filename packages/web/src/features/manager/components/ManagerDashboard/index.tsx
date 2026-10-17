@@ -17,6 +17,8 @@ import EveningFooter from "./EveningFooter"
 import LaunchModal from "./LaunchModal"
 import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
 import GuestAccountsModal from "./GuestAccountsModal"
+import { moveQuizInOrder } from "./library"
+import useLaunchMotion from "./useLaunchMotion"
 import {
   DEFAULT_FAST_MODE_INTENSITY,
   type FastModeIntensity,
@@ -32,6 +34,7 @@ import {
   SlidersHorizontal,
   Users,
   WifiOff,
+  X,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -84,6 +87,13 @@ const ManagerDashboard = ({ data }: Props) => {
   )
   // Tiroir de la barre latérale sous `lg` (au-delà, elle reste affichée).
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const dashboardRef = useRef<HTMLDivElement>(null)
+  useLaunchMotion(
+    dashboardRef,
+    view === "quizz" && (eveningMode || Boolean(selectedQuizz)),
+    eveningMode,
+    eveningMode ? eveningQuizIds.join(",") : (selectedQuizz ?? ""),
+  )
   // Lancement en cours : bloque le double clic sur « Démarrer » (qui créait
   // deux parties) jusqu'à la navigation vers le salon ou une erreur serveur.
   const [isStarting, setIsStarting] = useState(false)
@@ -227,18 +237,34 @@ const ManagerDashboard = ({ data }: Props) => {
   const selectedName = selectedQuizzMeta?.subject
 
   const closeSidebar = () => setSidebarOpen(false)
+  const openFolder = (folder: string | null) => {
+    setActiveFolder(folder)
+    setSelectedQuizz(null)
+    setActiveTag(null)
+    setSearch("")
+  }
+  const openView = (next: "quizz" | "results") => {
+    setView(next)
+    setSelectedQuizz(null)
+    setSearch("")
+  }
+  const openTag = (tag: string | null) => {
+    setActiveTag(tag)
+    setSelectedQuizz(null)
+  }
   const canStart = Boolean(selectedQuizz) && !isStarting && isConnected
 
   return (
     <ConfigProvider data={data}>
       <div
-        className="relative flex h-dvh flex-col overflow-hidden bg-cover bg-center bg-no-repeat"
+        ref={dashboardRef}
+        className="dashboard-root relative flex h-dvh flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white"
         style={{ backgroundImage: `url(${background})` }}
       >
         <div className="pointer-events-none absolute inset-0 bg-black/55" />
 
         {/* Header */}
-        <header className="relative z-10 flex h-20 shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-black/30 px-3 backdrop-blur-md sm:px-5">
+        <header className="relative z-10 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-black/30 px-3 backdrop-blur-xl sm:px-5">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               type="button"
@@ -250,7 +276,7 @@ const ManagerDashboard = ({ data }: Props) => {
             >
               <Menu className="size-5" />
             </button>
-            <Logo className="h-12 shrink-0 sm:h-16" />
+            <Logo className="h-9 shrink-0 sm:h-11" />
             {isGuest && (
               <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-300 ring-1 ring-orange-500/40">
                 <Users className="size-3.5 shrink-0" />
@@ -272,6 +298,35 @@ const ManagerDashboard = ({ data }: Props) => {
                   {t("manager:connection.lost")}
                 </span>
               </span>
+            )}
+            {!isGuest && view === "quizz" && (
+              <button
+                type="button"
+                className="dashboard-secondary"
+                aria-pressed={eveningMode}
+                aria-label={t(
+                  eveningMode
+                    ? "manager:evening.disable"
+                    : "manager:library.prepareEvening",
+                )}
+                title={t(
+                  eveningMode
+                    ? "manager:evening.disable"
+                    : "manager:library.prepareEvening",
+                )}
+                onClick={() =>
+                  eveningMode ? handleToggleEveningOff() : setEveningMode(true)
+                }
+              >
+                <PartyPopper className="size-4" />
+                <span className="hidden sm:inline">
+                  {t(
+                    eveningMode
+                      ? "manager:evening.disable"
+                      : "manager:library.prepareEvening",
+                  )}
+                </span>
+              </button>
             )}
             <LanguageSwitcher />
             {!isGuest && (
@@ -301,19 +356,20 @@ const ManagerDashboard = ({ data }: Props) => {
             z-index, sinon le footer, plus loin dans le DOM, le recouvrirait). */}
         <main
           className={clsx(
-            "relative flex min-h-0 flex-1 gap-3 p-2 sm:p-3",
+            "relative flex min-h-0 flex-1 gap-4 p-3 sm:p-5",
             sidebarOpen ? "z-30" : "z-10",
           )}
         >
           <DashboardSidebar
+            key={`${data.role ?? "admin"}:${data.guestName ?? ""}`}
             isOpen={sidebarOpen}
             onClose={closeSidebar}
             activeFolder={activeFolder}
-            setActiveFolder={setActiveFolder}
+            setActiveFolder={openFolder}
             activeTag={activeTag}
-            setActiveTag={setActiveTag}
+            setActiveTag={openTag}
             view={view}
-            setView={setView}
+            setView={openView}
             onMoveToFolder={handleMoveToFolder}
           />
           <div className="min-h-0 min-w-0 flex-1">
@@ -328,6 +384,9 @@ const ManagerDashboard = ({ data }: Props) => {
                 eveningMode={eveningMode}
                 eveningQuizIds={eveningQuizIds}
                 onToggleEveningQuizz={handleToggleEveningQuizz}
+                onMoveToFolder={handleMoveToFolder}
+                onOpenFolder={openFolder}
+                onClearTag={() => setActiveTag(null)}
               />
             ) : (
               <ResultsPanel />
@@ -336,7 +395,7 @@ const ManagerDashboard = ({ data }: Props) => {
         </main>
 
         {/* Footer */}
-        {eveningMode ? (
+        {view === "quizz" && eveningMode && (
           <EveningFooter
             eveningQuizIds={eveningQuizIds}
             quizzList={data.quizz}
@@ -348,28 +407,36 @@ const ManagerDashboard = ({ data }: Props) => {
             fastModeIntensity={fastModeIntensity}
             onFastModeIntensityChange={setFastModeIntensity}
             onRemove={handleToggleEveningQuizz}
+            onReorder={(id, direction) =>
+              setEveningQuizIds((prev) => moveQuizInOrder(prev, id, direction))
+            }
             onStart={handleEveningStart}
             isStarting={isStarting}
             isConnected={isConnected}
             onToggleOff={handleToggleEveningOff}
             onOpenPowerUpsConfig={() => setPowerUpsModalOpen(true)}
           />
-        ) : (
+        )}
+        {view === "quizz" && !eveningMode && Boolean(selectedQuizz) && (
           <footer className="relative z-10 flex min-h-16 shrink-0 items-center justify-between gap-2 border-t border-white/10 bg-black/30 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-5">
-            <div className="flex min-w-0 items-center gap-3">
-              {!isGuest && (
-                <button
-                  type="button"
-                  onClick={() => setEveningMode(true)}
-                  className="flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white/70 ring-1 ring-white/10 transition-colors select-none hover:bg-orange-500/20 hover:text-orange-300 hover:ring-orange-500/40 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
-                  title={t("manager:evening.enable")}
-                  aria-label={t("manager:evening.enable")}
-                >
-                  <PartyPopper className="size-4" />
-                  <span className="hidden sm:inline">
-                    {t("manager:evening.mode")}
-                  </span>
-                </button>
+            <div
+              data-launch-content
+              className="flex min-w-0 items-center gap-3"
+            >
+              <button
+                type="button"
+                className="dashboard-icon"
+                onClick={() => setSelectedQuizz(null)}
+                aria-label={t("manager:library.clearSelection")}
+              >
+                <X className="size-4" />
+              </button>
+              {selectedQuizzMeta?.listingImage && (
+                <img
+                  src={selectedQuizzMeta.listingImage}
+                  alt=""
+                  className="hidden h-10 w-8 shrink-0 rounded-md object-cover sm:block"
+                />
               )}
               <p className="truncate text-sm text-white/60">
                 {selectedName ? (

@@ -19,6 +19,7 @@
     "@rahoot/socket": "workspace:*",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-router": "^1.168.22",
+    "animejs": "^4.5.0",
     "clsx": "^2.1.1",
     "i18next": "^26.0.5",
     "i18next-browser-languagedetector": "^8.2.1",

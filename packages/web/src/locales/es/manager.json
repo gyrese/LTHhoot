@@ -295,5 +295,49 @@
       "title": "Título (A-Z)",
       "origin": "Carpeta de origen"
     }
+  },
+  "library": {
+    "title": "Biblioteca",
+    "count": "{{count}} cuestionarios",
+    "unfiled": "Sin carpeta",
+    "favorite": "Añadir «{{name}}» a favoritos",
+    "unfavorite": "Quitar «{{name}}» de favoritos",
+    "actions": "Acciones para «{{name}}»",
+    "moveTitle": "Mover {{count}} cuestionarios",
+    "destination": "Carpeta de destino",
+    "move": "Mover a…",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "organize": "Organizar",
+    "done": "Listo",
+    "filters": "Filtrar biblioteca",
+    "filter": {
+      "all": "Todos",
+      "favorites": "Favoritos",
+      "unfiled": "Sin carpeta"
+    },
+    "resetFilters": "Borrar filtros",
+    "sortLabel": "Ordenar cuestionarios",
+    "sort": {
+      "recent": "Modificados recientemente",
+      "title": "Título A → Z",
+      "duration": "Menor duración",
+      "questions": "Número de preguntas"
+    },
+    "layoutLabel": "Vista de biblioteca",
+    "layout": {
+      "grid": "Vista de tarjetas",
+      "list": "Vista de lista"
+    },
+    "selected": "{{count}} seleccionados",
+    "selectAll": "Seleccionar todos",
+    "moved": "{{count}} cuestionarios movidos",
+    "moveTimeout": "No se ha confirmado el movimiento. Comprueba las carpetas antes de reintentarlo.",
+    "breadcrumbRoot": "Volver a la biblioteca",
+    "prepareEvening": "Preparar una velada",
+    "clearSelection": "Cancelar selección",
+    "moveEarlier": "Adelantar «{{name}}»",
+    "moveLater": "Retrasar «{{name}}»",
+    "filterOptions": "Filtros y vista"
   }
 }

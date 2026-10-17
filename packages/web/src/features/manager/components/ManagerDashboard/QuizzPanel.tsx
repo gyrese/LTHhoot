@@ -1,6 +1,17 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Quizz } from "@rahoot/common/types/game"
-import AlertDialog from "@rahoot/web/components/AlertDialog"
+import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
+import LibraryQuizCard from "./LibraryQuizCard"
+import LibraryScrollArea from "./LibraryScrollArea"
+import MoveQuizzesDialog from "./MoveQuizzesDialog"
+import useLibraryPreferences from "./useLibraryPreferences"
+import useLibraryMotion from "./useLibraryMotion"
+import {
+  matchesSearch,
+  sortLibrary,
+  type LibraryFilter,
+  type LibrarySort,
+} from "./library"
 import {
   useEvent,
   useSocket,
@@ -8,11 +19,7 @@ import {
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import { useNavigate } from "@tanstack/react-router"
 import {
-  Check,
-  Clock,
   Download,
-  ListOrdered,
-  Loader2,
   Plus,
   Search,
   SquarePen,
@@ -20,6 +27,13 @@ import {
   Upload,
   X,
   Share2,
+  Archive,
+  FolderInput,
+  FolderOpen,
+  LayoutGrid,
+  List,
+  Star,
+  SlidersHorizontal,
 } from "lucide-react"
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -32,15 +46,11 @@ import { parseQuestionsCsv } from "@rahoot/web/features/quizz/utils/import-csv"
 import {
   isArchived,
   isGuestFolder,
+  ARCHIVE_FOLDER,
 } from "@rahoot/web/features/manager/utils/folders"
 import { translateServerError } from "@rahoot/web/features/manager/utils/errors"
-import {
-  formatEstimatedDuration,
-  formatQuizzStats,
-} from "@rahoot/web/features/manager/utils/quizzStats"
 import { isGuestQuizId } from "@rahoot/common/utils/guest"
 import toast from "react-hot-toast"
-import clsx from "clsx"
 
 type Props = {
   search: string
@@ -52,6 +62,9 @@ type Props = {
   eveningMode?: boolean
   eveningQuizIds?: string[]
   onToggleEveningQuizz?: (_id: string) => void
+  onMoveToFolder: (_id: string, _folder: string | null) => void
+  onOpenFolder: (_folder: string | null) => void
+  onClearTag: () => void
 }
 
 type ExportType = "json" | "pptx"
@@ -59,14 +72,7 @@ type ExportType = "json" | "pptx"
 // Délai maximal d'attente de l'accusé d'import : au-delà (socket coupé…), le
 // toast de chargement laisse place à une erreur au lieu de tourner à vide.
 const IMPORT_ACK_TIMEOUT_MS = 15000
-
-// Actions d'une carte : 28 px à la souris, 44 px sur écran tactile.
-const CARD_ACTION =
-  "flex items-center justify-center rounded-lg bg-black/60 p-1.5 backdrop-blur-sm hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
-
-// Pastilles de statistiques en bas des cartes (questions, durée estimée).
-const CARD_STAT =
-  "flex items-center gap-1 rounded-full bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-sm tabular-nums"
+const NO_ARCHIVE_ORIGIN = "__archive_no_origin__"
 
 type ArchiveSort = "dateDesc" | "dateAsc" | "title" | "origin"
 
@@ -83,11 +89,30 @@ const QuizzPanel = ({
   eveningMode = false,
   eveningQuizIds = [],
   onToggleEveningQuizz,
+  onMoveToFolder,
+  onOpenFolder,
+  onClearTag,
 }: Props) => {
-  const { quizz } = useConfig()
+  const { quizz, role, guestName } = useConfig()
+  const {
+    preferences,
+    update: updatePreferences,
+    toggleFavorite,
+  } = useLibraryPreferences(role, guestName)
+  const [quickFilter, setQuickFilter] = useState<LibraryFilter>("all")
+  const [organizing, setOrganizing] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [organizedIds, setOrganizedIds] = useState<string[]>([])
+  const [moveIds, setMoveIds] = useState<string[] | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [pendingMove, setPendingMove] = useState<{
+    ids: string[]
+    folder: string | null
+  } | null>(null)
   const { socket } = useSocket()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const libraryRef = useRef<HTMLDivElement>(null)
   // Export en cours : le quiz complet est demandé au serveur (QUIZZ.GET), la
   // réponse QUIZZ.DATA déclenche le téléchargement au format choisi.
   const exportRequestRef = useRef<{
@@ -95,8 +120,6 @@ const QuizzPanel = ({
     type: ExportType
     toastId: string
   } | null>(null)
-  const [exportMenuFor, setExportMenuFor] = useState<string | null>(null)
-  const exportMenuRef = useRef<HTMLDivElement>(null)
   // Suppression en attente : le serveur ne renvoie pas d'accusé, le succès se
   // constate quand le quiz disparaît de la config renvoyée.
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
@@ -113,6 +136,21 @@ const QuizzPanel = ({
   const [archiveMonth, setArchiveMonth] = useState("")
   const [archiveOrigin, setArchiveOrigin] = useState("")
   const inArchive = isArchived(activeFolder ?? undefined)
+  const activeFilters =
+    Number(quickFilter !== "all") +
+    Number(Boolean(activeTag)) +
+    (inArchive
+      ? Number(Boolean(archiveYear)) +
+        Number(Boolean(archiveMonth)) +
+        Number(Boolean(archiveOrigin))
+      : 0)
+
+  useEffect(() => {
+    if (activeFolder) {
+      setQuickFilter("all")
+    }
+    setOrganizedIds([])
+  }, [activeFolder])
 
   useEffect(() => {
     if (pendingDelete && !quizz.some((q) => q.id === pendingDelete)) {
@@ -121,35 +159,9 @@ const QuizzPanel = ({
     }
   }, [quizz])
 
-  // Menu d'export : se referme au clic extérieur et sur Échap.
-  useEffect(() => {
-    if (!exportMenuFor) {
-      return undefined
-    }
-
-    const handlePointerDown = (e: PointerEvent) => {
-      if (!exportMenuRef.current?.contains(e.target as Node)) {
-        setExportMenuFor(null)
-      }
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setExportMenuFor(null)
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown)
-    document.addEventListener("keydown", handleKeyDown)
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown)
-      document.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [exportMenuFor])
-
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
     setPendingDelete(null)
+    setPendingMove(null)
     const request = exportRequestRef.current
 
     if (request) {
@@ -191,8 +203,6 @@ const QuizzPanel = ({
   })
 
   const handleExport = (id: string, type: ExportType) => {
-    setExportMenuFor(null)
-
     // Un export à la fois : la réponse QUIZZ.DATA ne porte pas le format.
     if (exportRequestRef.current || !socket) {
       return
@@ -345,11 +355,23 @@ const QuizzPanel = ({
         return false
       }
 
-      return !archiveOrigin || (q.archivedFrom ?? "") === archiveOrigin
+      return (
+        !archiveOrigin ||
+        (q.archivedFrom || NO_ARCHIVE_ORIGIN) === archiveOrigin
+      )
     }
 
     const list = quizz.filter((q) => {
-      if (search && !q.subject.toLowerCase().includes(search.toLowerCase())) {
+      if (search && !matchesSearch(q, search)) {
+        return false
+      }
+      if (
+        quickFilter === "favorites" &&
+        !preferences.favorites.includes(q.id)
+      ) {
+        return false
+      }
+      if (quickFilter === "unfiled" && q.folder) {
         return false
       }
 
@@ -374,7 +396,7 @@ const QuizzPanel = ({
     })
 
     if (!inArchive) {
-      return list
+      return sortLibrary(list, preferences.sort)
     }
 
     const byDate = (a: (typeof list)[number], b: (typeof list)[number]) =>
@@ -399,21 +421,197 @@ const QuizzPanel = ({
     archiveYear,
     archiveMonth,
     archiveOrigin,
+    quickFilter,
+    preferences.sort,
+    preferences.favorites,
   ])
 
   const handleSelect = (id: string, isSelected: boolean) => {
-    if (eveningMode) {
+    if (organizing) {
+      setOrganizedIds((prev) =>
+        prev.includes(id)
+          ? prev.filter((selected) => selected !== id)
+          : [...prev, id],
+      )
+    } else if (eveningMode) {
       onToggleEveningQuizz?.(id)
     } else {
       setSelectedQuizz(isSelected ? null : id)
     }
   }
 
+  useEffect(() => {
+    if (
+      !eveningMode &&
+      selectedQuizz &&
+      !filtered.some((quiz) => quiz.id === selectedQuizz)
+    ) {
+      setSelectedQuizz(null)
+    }
+  }, [filtered, selectedQuizz, eveningMode, setSelectedQuizz])
+
+  useLibraryMotion(
+    libraryRef,
+    `${preferences.layout}:${filtered.map((quiz) => quiz.id).join(",")}`,
+  )
+
   const goToCreate = () => navigate({ to: "/manager/quizz" })
   const openImport = () => fileInputRef.current?.click()
 
+  useEffect(() => {
+    const available = new Set(quizz.map((q) => q.id))
+    setOrganizedIds((prev) =>
+      prev.every((id) => available.has(id))
+        ? prev
+        : prev.filter((id) => available.has(id)),
+    )
+  }, [quizz])
+  useEffect(() => {
+    if (eveningMode) {
+      setOrganizing(false)
+      setOrganizedIds([])
+    }
+  }, [eveningMode])
+  useEffect(() => {
+    if (!pendingMove) {
+      return
+    }
+    if (
+      pendingMove.ids.every((id) => {
+        const quiz = quizz.find((q) => q.id === id)
+        return Boolean(quiz && (quiz.folder || null) === pendingMove.folder)
+      })
+    ) {
+      toast.success(
+        t("manager:library.moved", { count: pendingMove.ids.length }),
+      )
+      setPendingMove(null)
+      setOrganizedIds([])
+    }
+  }, [quizz, pendingMove, t])
+  useEffect(() => {
+    if (!pendingMove) {
+      return undefined
+    }
+    const timer = setTimeout(() => {
+      setPendingMove(null)
+      toast.error(t("manager:library.moveTimeout"))
+    }, 15000)
+    return () => clearTimeout(timer)
+  }, [pendingMove, t])
+  const moveQuizzes = (ids: string[], folder: string | null) => {
+    if (pendingMove) {
+      return
+    }
+    if (!socket?.connected) {
+      toast.error(t("manager:connection.lost"))
+      return
+    }
+    const movable = quizz.filter(
+      (q) =>
+        ids.includes(q.id) &&
+        !isGuestQuizId(q.id) &&
+        (q.folder || null) !== folder,
+    )
+    setMoveIds(null)
+    if (!movable.length) {
+      return
+    }
+    setPendingMove({ ids: movable.map((q) => q.id), folder })
+    movable.forEach((q) => {
+      onMoveToFolder(q.id, folder)
+    })
+  }
+
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur-md sm:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-1 sm:p-0">
+      <div className="flex shrink-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            {activeFolder && (
+              <button
+                type="button"
+                className="dashboard-icon shrink-0"
+                onClick={() => onOpenFolder(null)}
+                aria-label={t("manager:library.breadcrumbRoot")}
+              >
+                <FolderOpen className="size-4" />
+              </button>
+            )}
+            <h1
+              className="truncate text-xl font-bold tracking-tight text-white"
+              title={activeFolder || t("manager:library.title")}
+            >
+              {activeFolder || t("manager:library.title")}
+            </h1>
+            <span
+              className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70 tabular-nums"
+              role="status"
+              aria-label={t("manager:library.count", {
+                count: filtered.length,
+              })}
+            >
+              {filtered.length}
+            </span>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={goToCreate}
+            aria-label={t("manager:quizz.create")}
+            className="dashboard-primary min-h-11"
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">
+              {t("manager:quizz.create")}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={openImport}
+            className="dashboard-icon min-h-11 min-w-11"
+            title={t("manager:quizz.import")}
+            aria-label={t("manager:quizz.import")}
+          >
+            <Upload className="size-4" />
+          </button>
+          {!eveningMode && (
+            <button
+              type="button"
+              aria-pressed={organizing}
+              className={
+                organizing
+                  ? "dashboard-secondary bg-orange-500/15 text-orange-200"
+                  : "dashboard-icon min-h-11 min-w-11"
+              }
+              aria-label={t(
+                organizing
+                  ? "manager:library.done"
+                  : "manager:library.organize",
+              )}
+              title={t(
+                organizing
+                  ? "manager:library.done"
+                  : "manager:library.organize",
+              )}
+              onClick={() => {
+                setOrganizing(!organizing)
+                setOrganizedIds([])
+                setSelectedQuizz(null)
+              }}
+            >
+              <FolderInput className="size-4" />
+              {organizing &&
+                t(
+                  organizing
+                    ? "manager:library.done"
+                    : "manager:library.organize",
+                )}
+            </button>
+          )}
+        </div>
+      </div>
       {/* Toolbar */}
       <div className="flex shrink-0 items-center gap-2">
         <div className="relative min-w-0 flex-1">
@@ -440,21 +638,16 @@ const QuizzPanel = ({
         </div>
         <button
           type="button"
-          onClick={goToCreate}
-          aria-label={t("manager:quizz.create")}
-          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-orange-500 px-3 py-2 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-colors hover:bg-orange-400 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:outline-none sm:px-4"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          className={`dashboard-secondary min-h-11 shrink-0 ${filtersOpen || activeFilters ? "bg-orange-500/15 text-orange-200" : ""}`}
+          title={t("manager:library.filterOptions")}
+          aria-label={t("manager:library.filterOptions")}
+          aria-expanded={filtersOpen}
         >
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">{t("manager:quizz.create")}</span>
-        </button>
-        <button
-          type="button"
-          onClick={openImport}
-          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
-          title={t("manager:quizz.import")}
-          aria-label={t("manager:quizz.import")}
-        >
-          <Upload className="size-4" />
+          <SlidersHorizontal className="size-4" />
+          {activeFilters > 0 && (
+            <span className="text-xs tabular-nums">{activeFilters}</span>
+          )}
         </button>
         <input
           ref={fileInputRef}
@@ -465,66 +658,206 @@ const QuizzPanel = ({
         />
       </div>
 
-      {inArchive && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <select
-            className={ARCHIVE_SELECT}
-            value={archiveSort}
-            onChange={(e) => setArchiveSort(e.target.value as ArchiveSort)}
-            aria-label={t("manager:archive.sort")}
-          >
-            {(["dateDesc", "dateAsc", "title", "origin"] as const).map((k) => (
-              <option key={k} value={k}>
-                {t(`manager:archive.sortBy.${k}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            className={ARCHIVE_SELECT}
-            value={archiveYear}
-            onChange={(e) => setArchiveYear(e.target.value)}
-            aria-label={t("manager:archive.year")}
-          >
-            <option value="">{t("manager:archive.allYears")}</option>
-            {archiveYears.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select
-            className={ARCHIVE_SELECT}
-            value={archiveMonth}
-            onChange={(e) => setArchiveMonth(e.target.value)}
-            aria-label={t("manager:archive.month")}
-          >
-            <option value="">{t("manager:archive.allMonths")}</option>
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i + 1}>
-                {new Date(2000, i, 1).toLocaleDateString(i18n.language, {
-                  month: "long",
-                })}
-              </option>
-            ))}
-          </select>
-          <select
-            className={ARCHIVE_SELECT}
-            value={archiveOrigin}
-            onChange={(e) => setArchiveOrigin(e.target.value)}
-            aria-label={t("manager:archive.origin")}
-          >
-            <option value="">{t("manager:archive.allOrigins")}</option>
-            {archiveOrigins.map((o) => (
-              <option key={o} value={o}>
-                {o || t("manager:archive.noOrigin")}
-              </option>
-            ))}
-          </select>
+      {filtersOpen && (
+        <div className="shrink-0 space-y-2 rounded-xl bg-white/5 p-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div
+              className="flex flex-wrap items-center gap-1"
+              aria-label={t("manager:library.filters")}
+            >
+              {(["all", "favorites", "unfiled"] as const).map((filter) => (
+                <button
+                  type="button"
+                  key={filter}
+                  aria-pressed={quickFilter === filter}
+                  onClick={() => {
+                    setQuickFilter(filter)
+                    if (filter === "unfiled") {
+                      onOpenFolder(null)
+                    }
+                  }}
+                  className={`dashboard-filter ${quickFilter === filter ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+                >
+                  {filter === "favorites" && <Star className="size-3.5" />}
+                  {t(`manager:library.filter.${filter}`)}
+                </button>
+              ))}
+              {Boolean(activeTag || search || activeFilters) && (
+                <button
+                  type="button"
+                  className="dashboard-icon"
+                  aria-label={t("manager:library.resetFilters")}
+                  title={t("manager:library.resetFilters")}
+                  onClick={() => {
+                    setSearch("")
+                    setQuickFilter("all")
+                    setArchiveYear("")
+                    setArchiveMonth("")
+                    setArchiveOrigin("")
+                    onClearTag()
+                  }}
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {!inArchive && (
+                <select
+                  className="dashboard-select max-w-44"
+                  aria-label={t("manager:library.sortLabel")}
+                  value={preferences.sort}
+                  onChange={(event) =>
+                    updatePreferences({
+                      sort: event.target.value as LibrarySort,
+                    })
+                  }
+                >
+                  {(["recent", "title", "duration", "questions"] as const).map(
+                    (sort) => (
+                      <option key={sort} value={sort}>
+                        {t(`manager:library.sort.${sort}`)}
+                      </option>
+                    ),
+                  )}
+                </select>
+              )}
+              <div
+                className="flex rounded-lg bg-white/5 p-0.5"
+                aria-label={t("manager:library.layoutLabel")}
+              >
+                {(["grid", "list"] as const).map((layout) => (
+                  <button
+                    key={layout}
+                    type="button"
+                    className={`dashboard-icon ${preferences.layout === layout ? "bg-white/15 text-white" : "text-white/60"}`}
+                    aria-label={t(`manager:library.layout.${layout}`)}
+                    aria-pressed={preferences.layout === layout}
+                    onClick={() => updatePreferences({ layout })}
+                  >
+                    {layout === "grid" ? (
+                      <LayoutGrid className="size-4" />
+                    ) : (
+                      <List className="size-4" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {activeTag && (
+            <button
+              type="button"
+              className="dashboard-filter text-orange-200"
+              onClick={onClearTag}
+            >
+              #{activeTag} <X className="size-3" />
+            </button>
+          )}
+          {inArchive && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <select
+                className={ARCHIVE_SELECT}
+                value={archiveSort}
+                onChange={(e) => setArchiveSort(e.target.value as ArchiveSort)}
+                aria-label={t("manager:archive.sort")}
+              >
+                {(["dateDesc", "dateAsc", "title", "origin"] as const).map(
+                  (k) => (
+                    <option key={k} value={k}>
+                      {t(`manager:archive.sortBy.${k}`)}
+                    </option>
+                  ),
+                )}
+              </select>
+              <select
+                className={ARCHIVE_SELECT}
+                value={archiveYear}
+                onChange={(e) => setArchiveYear(e.target.value)}
+                aria-label={t("manager:archive.year")}
+              >
+                <option value="">{t("manager:archive.allYears")}</option>
+                {archiveYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <select
+                className={ARCHIVE_SELECT}
+                value={archiveMonth}
+                onChange={(e) => setArchiveMonth(e.target.value)}
+                aria-label={t("manager:archive.month")}
+              >
+                <option value="">{t("manager:archive.allMonths")}</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i} value={i + 1}>
+                    {new Date(2000, i, 1).toLocaleDateString(i18n.language, {
+                      month: "long",
+                    })}
+                  </option>
+                ))}
+              </select>
+              <select
+                className={ARCHIVE_SELECT}
+                value={archiveOrigin}
+                onChange={(e) => setArchiveOrigin(e.target.value)}
+                aria-label={t("manager:archive.origin")}
+              >
+                <option value="">{t("manager:archive.allOrigins")}</option>
+                {archiveOrigins.map((o) => (
+                  <option key={o} value={o || NO_ARCHIVE_ORIGIN}>
+                    {o || t("manager:archive.noOrigin")}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+      {organizing && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300/20 bg-orange-500/10 px-3 py-2 text-sm text-orange-100">
+          <span>
+            {t("manager:library.selected", { count: organizedIds.length })}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="dashboard-filter"
+              onClick={() =>
+                setOrganizedIds(
+                  organizedIds.length
+                    ? []
+                    : filtered
+                        .filter((q) => !isGuestQuizId(q.id))
+                        .map((q) => q.id),
+                )
+              }
+            >
+              {t(
+                organizedIds.length
+                  ? "manager:library.clearSelection"
+                  : "manager:library.selectAll",
+              )}
+            </button>
+            <button
+              type="button"
+              className="dashboard-secondary"
+              disabled={!organizedIds.length || Boolean(pendingMove)}
+              onClick={() => setMoveIds(organizedIds)}
+            >
+              <FolderInput className="size-4" />
+              {t("manager:library.move")}
+            </button>
+          </div>
         </div>
       )}
 
       {/* Grille */}
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <LibraryScrollArea
+        viewportRef={libraryRef}
+        label={t("manager:library.title")}
+      >
         {filtered.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 p-4 text-center">
             <p className="text-sm text-white/60">
@@ -536,7 +869,22 @@ const QuizzPanel = ({
             </p>
             {/* État vide : les deux façons de remplir la bibliothèque (ou ce
                 dossier — l'import y range le quiz). */}
-            {!search && (
+            {search || activeFilters ? (
+              <button
+                type="button"
+                className="dashboard-secondary"
+                onClick={() => {
+                  setSearch("")
+                  setQuickFilter("all")
+                  setArchiveYear("")
+                  setArchiveMonth("")
+                  setArchiveOrigin("")
+                  onClearTag()
+                }}
+              >
+                {t("manager:library.resetFilters")}
+              </button>
+            ) : (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
@@ -558,244 +906,159 @@ const QuizzPanel = ({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] content-start gap-3">
+          <div
+            className={
+              preferences.layout === "list"
+                ? "flex flex-col gap-2"
+                : "grid grid-cols-2 content-start gap-3 sm:grid-cols-[repeat(auto-fill,minmax(156px,1fr))]"
+            }
+          >
             {filtered.map((q) => {
-              const isSelected = eveningMode
-                ? eveningQuizIds.includes(q.id)
-                : selectedQuizz === q.id
-              const eveningOrder = eveningMode
-                ? eveningQuizIds.indexOf(q.id) + 1
-                : 0
-              // Quiz d'une bibliothèque invité (vue admin) : consultable,
-              // exportable et lançable, mais ni éditable, ni supprimable,
-              // ni déplaçable.
               const isReadonly = isGuestQuizId(q.id)
-              const isDeleting = pendingDelete === q.id
-              const hasOrderBadge = isSelected && eveningMode
-
+              let selected = selectedQuizz === q.id
+              if (eveningMode) {
+                selected = eveningQuizIds.includes(q.id)
+              }
+              if (organizing) {
+                selected = organizedIds.includes(q.id)
+              }
+              let archiveTarget: string | null = ARCHIVE_FOLDER
+              if (inArchive) {
+                archiveTarget =
+                  q.archivedFrom && !isGuestFolder(q.archivedFrom)
+                    ? q.archivedFrom
+                    : null
+              }
+              const edit = () =>
+                navigate({
+                  to: "/manager/quizz/$quizzId",
+                  params: { quizzId: q.id },
+                })
+              const actions = [
+                ...(!isReadonly
+                  ? [
+                      {
+                        label: t("manager:actions.edit"),
+                        icon: <SquarePen className="size-4" />,
+                        onSelect: edit,
+                      },
+                      {
+                        label: t("manager:library.move"),
+                        icon: <FolderInput className="size-4" />,
+                        onSelect: () => setMoveIds([q.id]),
+                      },
+                    ]
+                  : []),
+                {
+                  label: t("manager:share.title"),
+                  icon: <Share2 className="size-4" />,
+                  onSelect: () => setShareModalQuizzId(q.id),
+                },
+                ...(["json", "pptx"] as const).map((type) => ({
+                  label: t(`manager:quizz.exportAs.${type}`),
+                  icon: <Download className="size-4" />,
+                  onSelect: () => handleExport(q.id, type),
+                })),
+                ...(!isReadonly
+                  ? [
+                      {
+                        label: t(
+                          inArchive
+                            ? "manager:library.restore"
+                            : "manager:library.archive",
+                        ),
+                        icon: <Archive className="size-4" />,
+                        onSelect: () => moveQuizzes([q.id], archiveTarget),
+                      },
+                      {
+                        label: t("common:delete"),
+                        icon: <Trash2 className="size-4" />,
+                        danger: true,
+                        onSelect: () => setConfirmDelete(q.id),
+                      },
+                    ]
+                  : []),
+              ]
               return (
-                <div
+                <LibraryQuizCard
                   key={q.id}
-                  draggable={!isReadonly}
-                  onDragStart={(e) => {
-                    if (isReadonly) {
+                  quiz={q}
+                  selected={selected}
+                  order={
+                    eveningMode && selected
+                      ? eveningQuizIds.indexOf(q.id) + 1
+                      : undefined
+                  }
+                  favorite={preferences.favorites.includes(q.id)}
+                  readonly={isReadonly}
+                  deleting={
+                    pendingDelete === q.id ||
+                    Boolean(pendingMove?.ids.includes(q.id))
+                  }
+                  list={preferences.layout === "list"}
+                  selectingMany={organizing || eveningMode}
+                  selectDisabled={organizing && isReadonly}
+                  onSelect={() => {
+                    if (organizing && isReadonly) {
                       return
                     }
-
-                    e.dataTransfer.setData("quizzId", q.id)
-                    e.dataTransfer.effectAllowed = "move"
+                    handleSelect(q.id, selected)
                   }}
-                  className={clsx(
-                    "group relative aspect-[3/4] overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 transition-all duration-200",
-                    isSelected
-                      ? "scale-[0.97] shadow-xl ring-2 shadow-orange-500/40 ring-orange-400 ring-offset-2 ring-offset-black/0"
-                      : "hover:scale-[1.03] hover:shadow-xl hover:shadow-black/40",
-                    isDeleting && "opacity-50",
-                  )}
-                >
-                  {q.listingImage && (
-                    <img
-                      src={q.listingImage}
-                      alt=""
-                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                    />
-                  )}
-
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  <div className="pointer-events-none absolute right-0 bottom-0 left-0 p-3">
-                    {/* Nombre de questions + durée estimée (discret, glass) */}
-                    <div
-                      className="mb-1.5 flex flex-wrap gap-1"
-                      title={formatQuizzStats(t, q)}
-                    >
-                      <span className={CARD_STAT}>
-                        <ListOrdered className="size-3" aria-hidden="true" />
-                        {q.questionCount}
-                      </span>
-                      {q.estimatedDurationSec ? (
-                        <span className={CARD_STAT}>
-                          <Clock className="size-3" aria-hidden="true" />
-                          {formatEstimatedDuration(t, q.estimatedDurationSec)}
-                        </span>
-                      ) : null}
-                      <span className="sr-only">{formatQuizzStats(t, q)}</span>
-                    </div>
-                    <p className="line-clamp-2 text-sm leading-tight font-bold text-white drop-shadow-md">
-                      {q.subject}
-                    </p>
-                    {inArchive && q.archivedAt && (
-                      <p className="mt-0.5 truncate text-[11px] text-amber-200/80">
-                        {new Date(q.archivedAt).toLocaleDateString(
-                          i18n.language,
-                          { day: "numeric", month: "short", year: "numeric" },
-                        )}
-                        {q.archivedFrom ? ` · ${q.archivedFrom}` : ""}
-                      </p>
-                    )}
-                    {q.folder && (
-                      <p
-                        className={clsx(
-                          "mt-0.5 truncate text-xs",
-                          isReadonly
-                            ? "font-semibold text-orange-300"
-                            : "text-white/70",
-                        )}
-                      >
-                        {q.folder}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Zone de sélection : un vrai bouton (clavier, lecteurs
-                      d'écran) qui couvre la carte, sous les actions. */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(q.id, isSelected)}
-                    aria-pressed={isSelected}
-                    aria-label={
-                      eveningMode && isSelected
-                        ? t("manager:quizz.selectInEvening", {
-                            name: q.subject,
-                            order: eveningOrder,
-                          })
-                        : q.subject
-                    }
-                    className="absolute inset-0 cursor-pointer rounded-2xl focus-visible:ring-4 focus-visible:ring-orange-300 focus-visible:outline-none focus-visible:ring-inset"
-                  />
-
-                  {isSelected && !eveningMode && (
-                    <div className="pointer-events-none absolute top-2 right-2 rounded-full bg-orange-500 p-0.5 shadow-md">
-                      <Check className="size-3.5 stroke-[3] text-white" />
-                    </div>
-                  )}
-
-                  {/* Badge d'ordre de la soirée en haut à gauche (plan) : les
-                      actions se décalent alors vers la droite. */}
-                  {hasOrderBadge && (
-                    <div className="pointer-events-none absolute top-2 left-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white shadow-md">
-                      {eveningOrder}
-                    </div>
-                  )}
-
-                  {isDeleting && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="size-6 animate-spin text-white" />
-                    </div>
-                  )}
-
-                  {/* Actions : au survol, au focus clavier (focus-within) et
-                      en permanence sur écran tactile, où il n'y a pas de survol. */}
-                  <div
-                    ref={exportMenuFor === q.id ? exportMenuRef : undefined}
-                    className={clsx(
-                      "absolute top-2 flex flex-wrap gap-1",
-                      hasOrderBadge
-                        ? "right-2 left-10 justify-end"
-                        : "right-10 left-2",
-                      "transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
-                      exportMenuFor === q.id ? "opacity-100" : "opacity-0",
-                    )}
-                  >
-                    {!isReadonly && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate({
-                            to: "/manager/quizz/$quizzId",
-                            params: { quizzId: q.id },
-                          })
-                        }
-                        className={clsx(CARD_ACTION, "text-white")}
-                        title={t("manager:actions.edit")}
-                        aria-label={t("manager:actions.editNamed", {
-                          name: q.subject,
-                        })}
-                      >
-                        <SquarePen className="size-3.5" />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShareModalQuizzId(q.id)}
-                      className={clsx(CARD_ACTION, "text-orange-400")}
-                      title={t("manager:share.title")}
-                      aria-label={t("manager:share.titleNamed", {
-                        name: q.subject,
-                      })}
-                    >
-                      <Share2 className="size-3.5" />
-                    </button>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExportMenuFor(exportMenuFor === q.id ? null : q.id)
-                        }
-                        aria-haspopup="menu"
-                        aria-expanded={exportMenuFor === q.id}
-                        className={clsx(CARD_ACTION, "text-sky-300")}
-                        title={t("manager:quizz.export")}
-                        aria-label={t("manager:quizz.exportNamed", {
-                          name: q.subject,
-                        })}
-                      >
-                        <Download className="size-3.5" />
-                      </button>
-                      {exportMenuFor === q.id && (
-                        <div
-                          role="menu"
-                          className={clsx(
-                            "absolute top-full z-20 mt-1 flex w-36",
-                            hasOrderBadge ? "right-0" : "left-0",
-                            "flex-col overflow-hidden rounded-xl border border-white/10 bg-black/85 py-1 shadow-xl backdrop-blur-md",
-                          )}
-                        >
-                          {(["json", "pptx"] as const).map((type) => (
-                            <button
-                              key={type}
-                              type="button"
-                              role="menuitem"
-                              onClick={() => handleExport(q.id, type)}
-                              className="min-h-9 px-3 py-1.5 text-left text-xs font-semibold text-white/90 hover:bg-white/10 focus-visible:bg-white/15 focus-visible:outline-none [@media(hover:none)]:min-h-11"
-                            >
-                              {t(`manager:quizz.exportAs.${type}`)}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {!isReadonly && (
-                      <AlertDialog
-                        trigger={
-                          <button
-                            type="button"
-                            disabled={isDeleting}
-                            className={clsx(CARD_ACTION, "text-red-400")}
-                            title={t("common:delete")}
-                            aria-label={t("manager:quizz.deleteNamed", {
-                              name: q.subject,
-                            })}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        }
-                        title={t("manager:quizz.delete")}
-                        description={t("manager:quizz.deleteConfirm", {
-                          name: q.subject,
-                        })}
-                        confirmLabel={t("common:delete")}
-                        onConfirm={handleDelete(q.id)}
-                      />
-                    )}
-                  </div>
-                </div>
+                  onEdit={edit}
+                  onFavorite={() => toggleFavorite(q.id)}
+                  actions={actions}
+                />
               )
             })}
           </div>
         )}
-      </div>
+      </LibraryScrollArea>
 
+      {moveIds && (
+        <MoveQuizzesDialog
+          quizzes={quizz}
+          ids={moveIds}
+          role={role}
+          guestName={guestName}
+          onClose={() => setMoveIds(null)}
+          onMove={(folder) => moveQuizzes(moveIds, folder)}
+        />
+      )}
+      {confirmDelete && (
+        <EditorDialog
+          label={t("manager:quizz.delete")}
+          onClose={() => setConfirmDelete(null)}
+        >
+          <div className="rounded-xl border border-white/15 bg-slate-950 p-5 text-white">
+            <h2 className="text-base font-bold">{t("manager:quizz.delete")}</h2>
+            <p className="mt-3 text-sm text-white/75">
+              {t("manager:quizz.deleteConfirm", {
+                name: quizz.find((q) => q.id === confirmDelete)?.subject,
+              })}
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                autoFocus
+                className="dashboard-secondary"
+                onClick={() => setConfirmDelete(null)}
+              >
+                {t("common:cancel")}
+              </button>
+              <button
+                type="button"
+                className="dashboard-secondary bg-red-500/20 text-red-200"
+                onClick={() => {
+                  handleDelete(confirmDelete)()
+                  setConfirmDelete(null)
+                }}
+              >
+                {t("common:delete")}
+              </button>
+            </div>
+          </div>
+        </EditorDialog>
+      )}
       {shareModalQuizz && (
         <ShareSocialModal
           quizz={shareModalQuizz}

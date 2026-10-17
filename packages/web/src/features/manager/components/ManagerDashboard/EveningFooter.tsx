@@ -5,8 +5,18 @@ import {
   sumQuizzStats,
 } from "@rahoot/web/features/manager/utils/quizzStats"
 import FastModeToggle from "./FastModeToggle"
-import { Loader2, Play, X, PartyPopper, Sparkles, TimerOff } from "lucide-react"
+import {
+  Loader2,
+  Play,
+  X,
+  PartyPopper,
+  Sparkles,
+  TimerOff,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import clsx from "clsx"
+import QuizActionsMenu from "./QuizActionsMenu"
 import { useTranslation } from "react-i18next"
 
 type Props = {
@@ -17,6 +27,7 @@ type Props = {
   fastMode: boolean
   fastModeIntensity: FastModeIntensity
   onRemove: (_id: string) => void
+  onReorder: (_id: string, _direction: -1 | 1) => void
   onStart: () => void
   // Lancement déjà demandé / socket coupé : « Démarrer la soirée » bloqué.
   isStarting: boolean
@@ -36,6 +47,7 @@ const EveningFooter = ({
   fastMode,
   fastModeIntensity,
   onRemove,
+  onReorder,
   onStart,
   isStarting,
   isConnected,
@@ -93,17 +105,40 @@ const EveningFooter = ({
                   {index + 1}
                 </span>
                 <span className="max-w-[120px] truncate">{quiz.subject}</span>
-                <button
-                  type="button"
-                  onClick={() => onRemove(id)}
-                  aria-label={t("manager:evening.remove", {
-                    name: quiz.subject,
-                  })}
-                  title={t("manager:evening.remove", { name: quiz.subject })}
-                  className="flex min-h-6 min-w-6 cursor-pointer items-center justify-center rounded-full text-orange-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-11 [@media(hover:none)]:min-w-11"
-                >
-                  <X className="size-3" />
-                </button>
+                <QuizActionsMenu
+                  label={t("manager:library.actions", { name: quiz.subject })}
+                  actions={[
+                    ...(index > 0
+                      ? [
+                          {
+                            label: t("manager:library.moveEarlier", {
+                              name: quiz.subject,
+                            }),
+                            icon: <ChevronLeft className="size-4" />,
+                            onSelect: () => onReorder(id, -1),
+                          },
+                        ]
+                      : []),
+                    ...(index < eveningQuizIds.length - 1
+                      ? [
+                          {
+                            label: t("manager:library.moveLater", {
+                              name: quiz.subject,
+                            }),
+                            icon: <ChevronRight className="size-4" />,
+                            onSelect: () => onReorder(id, 1),
+                          },
+                        ]
+                      : []),
+                    {
+                      label: t("manager:evening.remove", {
+                        name: quiz.subject,
+                      }),
+                      icon: <X className="size-4" />,
+                      onSelect: () => onRemove(id),
+                    },
+                  ]}
+                />
               </div>
             )
           })}

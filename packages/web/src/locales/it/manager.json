@@ -295,5 +295,49 @@
       "title": "Titolo (A-Z)",
       "origin": "Cartella di origine"
     }
+  },
+  "library": {
+    "title": "Biblioteca",
+    "count": "{{count}} quiz",
+    "unfiled": "Senza cartella",
+    "favorite": "Aggiungi «{{name}}» ai preferiti",
+    "unfavorite": "Rimuovi «{{name}}» dai preferiti",
+    "actions": "Azioni per «{{name}}»",
+    "moveTitle": "Sposta {{count}} quiz",
+    "destination": "Cartella di destinazione",
+    "move": "Sposta in…",
+    "archive": "Archivia",
+    "restore": "Ripristina",
+    "organize": "Organizza",
+    "done": "Fine",
+    "filters": "Filtra la biblioteca",
+    "filter": {
+      "all": "Tutti",
+      "favorites": "Preferiti",
+      "unfiled": "Senza cartella"
+    },
+    "resetFilters": "Azzera filtri",
+    "sortLabel": "Ordina i quiz",
+    "sort": {
+      "recent": "Modificati di recente",
+      "title": "Titolo A → Z",
+      "duration": "Durata crescente",
+      "questions": "Numero di domande"
+    },
+    "layoutLabel": "Vista biblioteca",
+    "layout": {
+      "grid": "Vista schede",
+      "list": "Vista elenco"
+    },
+    "selected": "{{count}} selezionati",
+    "selectAll": "Seleziona tutto",
+    "moved": "{{count}} quiz spostati",
+    "moveTimeout": "Lo spostamento non è stato confermato. Controlla le cartelle prima di riprovare.",
+    "breadcrumbRoot": "Torna alla biblioteca",
+    "prepareEvening": "Prepara una serata",
+    "clearSelection": "Annulla selezione",
+    "moveEarlier": "Anticipa «{{name}}»",
+    "moveLater": "Posticipa «{{name}}»",
+    "filterOptions": "Filtri e vista"
   }
 }

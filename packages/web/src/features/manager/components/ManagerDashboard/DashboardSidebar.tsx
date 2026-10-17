@@ -1,4 +1,6 @@
-import AlertDialog from "@rahoot/web/components/AlertDialog"
+import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
+import QuizActionsMenu from "./QuizActionsMenu"
+import { readCustomFolders } from "./library"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import {
   Archive,
@@ -27,6 +29,7 @@ import {
   useEffect,
   type DragEvent,
   type KeyboardEvent,
+  type SetStateAction,
 } from "react"
 import { useTranslation } from "react-i18next"
 import clsx from "clsx"
@@ -115,6 +118,7 @@ const DashboardSidebar = ({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
+  const [deleteFolder, setDeleteFolder] = useState<string | null>(null)
   // Null = pas en création, "" = racine, "Maths" = sous-dossier de Maths
   const [creatingIn, setCreatingIn] = useState<string | null>(null)
   const [newFolderName, setNewFolderName] = useState("")
@@ -123,13 +127,25 @@ const DashboardSidebar = ({
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const asideRef = useRef<HTMLElement>(null)
 
-  const [userFolders, setUserFolders] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(foldersKey) ?? "[]")
-    } catch {
-      return []
-    }
-  })
+  const [folderState, setFolderState] = useState(() => ({
+    key: foldersKey,
+    folders: readCustomFolders(role, guestName),
+  }))
+  const userFolders =
+    folderState.key === foldersKey
+      ? folderState.folders
+      : readCustomFolders(role, guestName)
+  const setUserFolders = (update: SetStateAction<string[]>) =>
+    setFolderState((prev) => {
+      const folders =
+        prev.key === foldersKey
+          ? prev.folders
+          : readCustomFolders(role, guestName)
+      return {
+        key: foldersKey,
+        folders: typeof update === "function" ? update(folders) : update,
+      }
+    })
 
   const foldersFromQuizz = useMemo(
     () => [...new Set(quizz.map((q) => q.folder).filter(Boolean) as string[])],
@@ -148,12 +164,18 @@ const DashboardSidebar = ({
 
   const allFolders = useMemo(
     () => [
-      ...new Set([
-        ARCHIVE_FOLDER,
-        ...(hasGuestFolder ? [GUEST_FOLDER] : []),
-        ...foldersFromQuizz,
-        ...userFolders,
-      ]),
+      ...new Set(
+        [
+          ARCHIVE_FOLDER,
+          ...(hasGuestFolder ? [GUEST_FOLDER] : []),
+          ...foldersFromQuizz,
+          ...userFolders,
+        ].flatMap((path) =>
+          path
+            .split("/")
+            .map((_, index, parts) => parts.slice(0, index + 1).join("/")),
+        ),
+      ),
     ],
     [foldersFromQuizz, hasGuestFolder, userFolders],
   )
@@ -161,8 +183,15 @@ const DashboardSidebar = ({
   const tree = useMemo(() => buildTree(allFolders), [allFolders])
 
   useEffect(() => {
-    localStorage.setItem(foldersKey, JSON.stringify(userFolders))
-  }, [foldersKey, userFolders])
+    if (folderState.key !== foldersKey) {
+      return
+    }
+    try {
+      localStorage.setItem(foldersKey, JSON.stringify(folderState.folders))
+    } catch {
+      /* Server folders remain available. */
+    }
+  }, [foldersKey, folderState])
 
   const tags = useMemo(
     () => [...new Set(quizz.flatMap((q) => q.tags ?? []))],
@@ -595,49 +624,28 @@ const DashboardSidebar = ({
             </button>
           )}
 
-          {/* Actions — en overlay (absolute) et non dans le flux : en flux, ces
-              3 boutons réservaient ~60px en permanence, même invisibles, ce
-              qui tronquait le nom du dossier en pure perte. Visibles au survol,
-              au focus clavier, et en permanence sur écran tactile (sans
-              survol) où elles repassent dans le flux avec des cibles de 44 px. */}
           {!isEditing && !isGuest && !isArchiveRoot && (
-            <div className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-l-lg bg-gradient-to-l from-black/80 from-60% to-transparent pl-5 opacity-0 backdrop-blur-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:static [@media(hover:none)]:translate-y-0 [@media(hover:none)]:bg-none [@media(hover:none)]:pl-0 [@media(hover:none)]:opacity-100 [@media(hover:none)]:backdrop-blur-none">
-              <button
-                type="button"
-                onClick={() => startCreate(node.path)}
-                className={clsx(FOLDER_ACTION, "hover:text-orange-400")}
-                title={t("manager:sidebar.newSubfolder")}
-                aria-label={t("manager:sidebar.newSubfolder")}
-              >
-                <Plus className="size-3" />
-              </button>
-              <button
-                type="button"
-                onClick={() => startRename(node.path)}
-                className={clsx(FOLDER_ACTION, "hover:text-blue-400")}
-                title={t("manager:sidebar.rename")}
-                aria-label={t("manager:sidebar.rename")}
-              >
-                <Pencil className="size-3" />
-              </button>
-              <AlertDialog
-                trigger={
-                  <button
-                    type="button"
-                    className={clsx(FOLDER_ACTION, "hover:text-red-400")}
-                    title={t("manager:sidebar.deleteFolder")}
-                    aria-label={t("manager:sidebar.deleteFolder")}
-                  >
-                    <Trash2 className="size-3" />
-                  </button>
-                }
-                title={t("manager:sidebar.deleteFolder")}
-                description={t("manager:sidebar.deleteFolderConfirm", {
-                  name: node.label,
-                  count,
-                })}
-                confirmLabel={t("common:delete")}
-                onConfirm={() => handleDeleteFolder(node.path)}
+            <div className="shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+              <QuizActionsMenu
+                label={t("manager:library.actions", { name: node.label })}
+                actions={[
+                  {
+                    label: t("manager:sidebar.newSubfolder"),
+                    icon: <Plus className="size-4" />,
+                    onSelect: () => startCreate(node.path),
+                  },
+                  {
+                    label: t("manager:sidebar.rename"),
+                    icon: <Pencil className="size-4" />,
+                    onSelect: () => startRename(node.path),
+                  },
+                  {
+                    label: t("manager:sidebar.deleteFolder"),
+                    icon: <Trash2 className="size-4" />,
+                    danger: true,
+                    onSelect: () => setDeleteFolder(node.path),
+                  },
+                ]}
               />
             </div>
           )}
@@ -668,8 +676,6 @@ const DashboardSidebar = ({
         : "text-white/70 hover:bg-white/10 hover:text-white",
     )
 
-  const isAllActive = activeFolder === null
-
   return (
     <>
       {/* Fond du tiroir (sous `lg`) : un clic à l'extérieur le referme. */}
@@ -685,17 +691,17 @@ const DashboardSidebar = ({
         id="manager-sidebar"
         aria-label={t("manager:sidebar.label")}
         className={clsx(
-          "flex flex-col gap-4 overflow-y-auto border border-white/10 p-3 backdrop-blur-md",
+          "flex flex-col gap-4 overflow-y-auto border border-white/10 p-3 backdrop-blur-xl",
           // Tiroir sous `lg` : hors écran (et hors tabulation) quand fermé.
           "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] rounded-r-2xl bg-black/85 transition-[transform,visibility] duration-200",
           isOpen ? "visible translate-x-0" : "invisible -translate-x-full",
           // Barre latérale fixe au-delà.
-          "lg:visible lg:static lg:z-auto lg:w-64 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:rounded-2xl lg:bg-black/30 lg:transition-none 2xl:w-72",
+          "lg:visible lg:static lg:z-auto lg:w-56 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:rounded-2xl lg:bg-black/30 lg:transition-none 2xl:w-60",
         )}
       >
         {/* Fermeture du tiroir */}
         <div className="flex items-center justify-between lg:hidden">
-          <p className="px-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
+          <p className="px-1 text-xs font-semibold text-white/65">
             {t("manager:sidebar.label")}
           </p>
           <button
@@ -713,12 +719,33 @@ const DashboardSidebar = ({
         <div className="flex flex-col gap-1">
           <button
             type="button"
-            onClick={() => navigateTo(() => setView("quizz"))}
-            className={navButtonClass(view === "quizz")}
-            aria-current={view === "quizz" ? "page" : undefined}
+            onClick={() =>
+              navigateTo(() => {
+                setView("quizz")
+                setActiveFolder(null)
+                setActiveTag(null)
+              })
+            }
+            onDragOver={(event) => handleDragOver(event, "root")}
+            onDragLeave={() => setDragOverFolder(null)}
+            onDrop={(event) => handleDrop(event, null)}
+            className={clsx(
+              navButtonClass(view === "quizz" && activeFolder === null),
+              dragOverFolder === "root" && "ring-2 ring-orange-300",
+            )}
+            aria-current={
+              view === "quizz" && activeFolder === null ? "page" : undefined
+            }
           >
             <LayoutGrid className="size-4" />
-            {t("manager:tabs.quizz")}
+            {t("manager:library.title")}
+            <span className="ml-auto rounded-full bg-white/10 px-1.5 py-0.5 text-xs">
+              {
+                quizz.filter(
+                  (q) => !isArchived(q.folder) && !isGuestFolder(q.folder),
+                ).length
+              }
+            </span>
           </button>
           {!isGuestSession && (
             <button
@@ -743,7 +770,7 @@ const DashboardSidebar = ({
           <>
             <div>
               <div className="mb-2 flex items-center justify-between px-1">
-                <p className="text-xs font-semibold tracking-wider text-white/60 uppercase">
+                <p className="text-xs font-semibold text-white/65">
                   {t("manager:sidebar.folders")}
                 </p>
                 <button
@@ -765,56 +792,32 @@ const DashboardSidebar = ({
                 renderCreateInput(t("manager:sidebar.newFolderPlaceholder"))}
 
               <div className="flex flex-col gap-0.5">
-                {/* Tous */}
-                <button
-                  type="button"
-                  onClick={() => navigateTo(() => setActiveFolder(null))}
-                  onDragOver={(e) => handleDragOver(e, "root")}
-                  onDragLeave={() => setDragOverFolder(null)}
-                  onDrop={(e) => handleDrop(e, null)}
-                  aria-current={isAllActive ? "true" : undefined}
-                  className={clsx(
-                    "flex items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none [@media(hover:none)]:min-h-11",
-                    dragOverFolder === "root" &&
-                      "bg-orange-500/30 ring-1 ring-orange-400",
-                    dragOverFolder !== "root" &&
-                      isAllActive &&
-                      "bg-orange-500 font-semibold text-white shadow-lg shadow-orange-500/20",
-                    dragOverFolder !== "root" &&
-                      !isAllActive &&
-                      "text-white/70 hover:bg-white/10 hover:text-white",
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    <FolderOpen className="size-3.5" />
-                    {t("manager:sidebar.all")}
-                  </span>
-                  <span
-                    className={clsx(
-                      "rounded-full px-1.5 text-xs",
-                      isAllActive ? "bg-white/25" : "bg-white/10",
-                    )}
-                  >
-                    {
-                      quizz.filter(
-                        (q) =>
-                          !isArchived(q.folder) && !isGuestFolder(q.folder),
-                      ).length
-                    }
-                  </span>
-                </button>
-
                 {/* Arbre de dossiers */}
-                {tree.map((node) => renderFolder(node, 0))}
+                {tree
+                  .filter(
+                    (node) =>
+                      node.path !== ARCHIVE_FOLDER &&
+                      node.path !== GUEST_FOLDER,
+                  )
+                  .map((node) => renderFolder(node, 0))}
+                <div className="mt-3 space-y-0.5 border-t border-white/10 pt-3">
+                  {tree
+                    .filter(
+                      (node) =>
+                        node.path === ARCHIVE_FOLDER ||
+                        node.path === GUEST_FOLDER,
+                    )
+                    .map((node) => renderFolder(node, 0))}
+                </div>
               </div>
             </div>
 
             {/* Tags */}
             {tags.length > 0 && (
-              <div>
-                <p className="mb-2 px-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
+              <details>
+                <summary className="mb-2 cursor-pointer px-1 text-xs font-semibold text-white/65">
                   {t("manager:sidebar.tags")}
-                </p>
+                </summary>
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
                     <button
@@ -838,11 +841,50 @@ const DashboardSidebar = ({
                     </button>
                   ))}
                 </div>
-              </div>
+              </details>
             )}
           </>
         )}
       </aside>
+      {deleteFolder && (
+        <EditorDialog
+          label={t("manager:sidebar.deleteFolder")}
+          onClose={() => setDeleteFolder(null)}
+          returnFocusTo={() => asideRef.current?.querySelector("button")}
+        >
+          <div className="rounded-xl border border-white/15 bg-black/90 p-5 text-white backdrop-blur-xl">
+            <h2 className="text-base font-bold">
+              {t("manager:sidebar.deleteFolder")}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">
+              {t("manager:sidebar.deleteFolderConfirm", {
+                name: deleteFolder,
+                count: countInFolder(deleteFolder),
+              })}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                autoFocus
+                className="dashboard-secondary"
+                onClick={() => setDeleteFolder(null)}
+              >
+                {t("common:cancel")}
+              </button>
+              <button
+                type="button"
+                className="dashboard-secondary bg-red-500/20 text-red-200"
+                onClick={() => {
+                  handleDeleteFolder(deleteFolder)
+                  setDeleteFolder(null)
+                }}
+              >
+                {t("common:delete")}
+              </button>
+            </div>
+          </div>
+        </EditorDialog>
+      )}
     </>
   )
 }

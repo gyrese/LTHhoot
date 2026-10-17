@@ -670,3 +670,223 @@ button:not(:disabled),
     left: 100%;
   }
 }
+
+@layer components {
+  .dashboard-scroll-viewport[data-custom-scroll] {
+    scrollbar-width: none;
+  }
+  .dashboard-scroll-viewport[data-custom-scroll]::-webkit-scrollbar {
+    display: none;
+  }
+  @media (hover: none), (forced-colors: active) {
+    .dashboard-scroll-rail {
+      display: none;
+    }
+    .dashboard-scroll-viewport[data-custom-scroll] {
+      scrollbar-width: auto;
+    }
+    .dashboard-scroll-viewport[data-custom-scroll]::-webkit-scrollbar {
+      display: block;
+    }
+  }
+  .dashboard-icon {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg text-white/75 outline-none hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-300 disabled:cursor-not-allowed disabled:opacity-40;
+    transition:
+      background-color 150ms ease-out,
+      color 150ms ease-out;
+  }
+  .dashboard-secondary {
+    @apply inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-white/85 outline-none hover:border-white/25 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-orange-300 disabled:cursor-not-allowed disabled:opacity-40;
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out;
+  }
+  .dashboard-primary {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white outline-none hover:bg-orange-400 focus-visible:ring-2 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-40;
+    transition: background-color 150ms ease-out;
+  }
+  .dashboard-filter {
+    @apply flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-orange-300;
+    transition:
+      color 150ms ease-out,
+      background-color 150ms ease-out;
+  }
+  .dashboard-select {
+    @apply min-h-9 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-white outline-none focus-visible:ring-2 focus-visible:ring-orange-300;
+  }
+  .dashboard-select option {
+    background: #0f172a;
+    color: #fff;
+  }
+  .dashboard-quiz {
+    perspective: 900px;
+  }
+  .dashboard-quiz:hover,
+  .dashboard-quiz:focus-within {
+    z-index: 2;
+  }
+  .dashboard-jacket {
+    transform-style: preserve-3d;
+  }
+  .dashboard-card-art {
+    box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
+  }
+  .dashboard-spotlight-outline {
+    padding: 2px;
+    opacity: var(--card-light-opacity, 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+  .dashboard-spotlight-colors {
+    background: conic-gradient(
+      var(--edge-top, #fb923c) 0deg,
+      var(--edge-top-right, #fb923c) 45deg,
+      var(--edge-right, #fb923c) 90deg,
+      var(--edge-bottom-right, #fb923c) 135deg,
+      var(--edge-bottom, #fb923c) 180deg,
+      var(--edge-bottom-left, #fb923c) 225deg,
+      var(--edge-left, #fb923c) 270deg,
+      var(--edge-top-left, #fb923c) 315deg,
+      var(--edge-top, #fb923c) 360deg
+    );
+    filter: brightness(1.25) saturate(1.15);
+    mask-image: radial-gradient(
+      240px circle at var(--card-light-x, 50%) var(--card-light-y, 50%),
+      #fff 30%,
+      transparent 90%
+    );
+  }
+  .dashboard-jacket-light {
+    opacity: var(--card-light-opacity, 0);
+    background: radial-gradient(
+      ellipse at var(--card-light-x, 50%) var(--card-light-y, 30%),
+      rgb(255 255 255 / 0.14),
+      transparent 62%
+    );
+  }
+  .dashboard-card-art img {
+    object-position: center 35%;
+  }
+  .dashboard-quiz[data-card-layout="grid"] .dashboard-card-art {
+    transform: translateZ(var(--card-art-depth, 0px));
+  }
+  .dashboard-quiz[data-card-layout="grid"] .dashboard-jacket-caption {
+    transform: translateZ(var(--card-content-depth, 2px));
+  }
+  .dashboard-quiz[data-card-layout="grid"] .dashboard-card-tools,
+  .dashboard-quiz[data-card-layout="grid"] .dashboard-card-selection {
+    transform: translateZ(var(--card-tools-depth, 3px));
+  }
+  .dashboard-card-shade {
+    background: linear-gradient(0deg, rgb(0 0 0 / 0.75), transparent 42%);
+  }
+  .dashboard-jacket-caption {
+    transform-style: preserve-3d;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+  }
+  .dashboard-jacket-title {
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+  }
+  .dashboard-edit-button {
+    position: relative;
+    transform-style: preserve-3d;
+    background: transparent;
+  }
+  .dashboard-edit-button:hover,
+  .dashboard-edit-button:focus-visible {
+    background: transparent;
+  }
+  .dashboard-edit-face {
+    background: linear-gradient(145deg, #fb923c, #ea580c);
+    border: 1px solid rgb(255 255 255 / 0.3);
+    transform: translate3d(0, 0, 0);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 3px 0 #9a3412,
+      0 5px 10px rgb(0 0 0 / 0.3);
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      filter 220ms ease-out,
+      box-shadow 220ms ease-out,
+      border-color 220ms ease-out;
+  }
+  .dashboard-edit-button:hover .dashboard-edit-face,
+  .dashboard-edit-button:focus-visible .dashboard-edit-face {
+    transform: translate3d(0, -4px, 18px) scale(1.1);
+    filter: brightness(1.16) saturate(1.08);
+    border-color: rgb(255 255 255 / 0.7);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      0 6px 0 #9a3412,
+      0 12px 18px rgb(0 0 0 / 0.4),
+      0 0 14px rgb(249 115 22 / 0.3);
+  }
+  .dashboard-edit-button:active .dashboard-edit-face {
+    transform: translate3d(0, 1px, 1px) scale(0.97);
+    filter: brightness(1.04);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      0 1px 0 #9a3412;
+  }
+  .dashboard-card-tools {
+    opacity: 0;
+    transition: opacity 160ms ease-out;
+  }
+  .dashboard-card-tools-favorite,
+  .dashboard-quiz:hover .dashboard-card-tools,
+  .dashboard-quiz:focus-within .dashboard-card-tools {
+    opacity: 1;
+  }
+  .dashboard-card-selection {
+    transition: opacity 150ms ease-out;
+  }
+  .dashboard-quiz-list .dashboard-card-tools {
+    top: auto;
+  }
+  .dashboard-quiz-list .dashboard-card-selection {
+    top: 8px;
+    left: 8px;
+  }
+  .dashboard-cover-fallback {
+    background: linear-gradient(135deg, #fb923c, #d97706);
+  }
+  .dashboard-menu {
+    box-shadow: 0 6px 12px rgb(0 0 0 / 0.2);
+  }
+  @media (hover: none) {
+    .dashboard-card-tools {
+      opacity: 1;
+    }
+    .dashboard-card-selection {
+      opacity: 1;
+    }
+    .dashboard-icon {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .dashboard-filter,
+    .dashboard-select,
+    .dashboard-primary,
+    .dashboard-secondary {
+      min-height: 44px;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .dashboard-card-tools {
+      backdrop-filter: none;
+      background-color: #191b22;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-root .dashboard-edit-button .dashboard-edit-face {
+      transform: none;
+    }
+    .dashboard-root *,
+    .dashboard-menu {
+      animation: none !important;
+      transition-duration: 0s !important;
+    }
+  }
+}

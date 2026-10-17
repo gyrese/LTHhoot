@@ -295,5 +295,49 @@
       "title": "Title (A-Z)",
       "origin": "Original folder"
     }
+  },
+  "library": {
+    "title": "Library",
+    "count": "{{count}} quizzes",
+    "unfiled": "Unfiled",
+    "favorite": "Add “{{name}}” to favorites",
+    "unfavorite": "Remove “{{name}}” from favorites",
+    "actions": "Actions for “{{name}}”",
+    "moveTitle": "Move {{count}} quizzes",
+    "destination": "Destination folder",
+    "move": "Move to…",
+    "archive": "Archive",
+    "restore": "Restore",
+    "organize": "Organize",
+    "done": "Done",
+    "filters": "Filter library",
+    "filter": {
+      "all": "All",
+      "favorites": "Favorites",
+      "unfiled": "Unfiled"
+    },
+    "resetFilters": "Clear filters",
+    "sortLabel": "Sort quizzes",
+    "sort": {
+      "recent": "Recently modified",
+      "title": "Title A → Z",
+      "duration": "Shortest first",
+      "questions": "Number of questions"
+    },
+    "layoutLabel": "Library layout",
+    "layout": {
+      "grid": "Card view",
+      "list": "List view"
+    },
+    "selected": "{{count}} selected",
+    "selectAll": "Select all",
+    "moved": "{{count}} quizzes moved",
+    "moveTimeout": "The move was not confirmed. Check the folders before trying again.",
+    "breadcrumbRoot": "Back to library",
+    "prepareEvening": "Plan an evening",
+    "clearSelection": "Clear selection",
+    "moveEarlier": "Move “{{name}}” earlier",
+    "moveLater": "Move “{{name}}” later",
+    "filterOptions": "Filters and display"
   }
 }

@@ -295,5 +295,49 @@
       "title": "Titel (A-Z)",
       "origin": "Ursprungsordner"
     }
+  },
+  "library": {
+    "title": "Bibliothek",
+    "count": "{{count}} Quiz",
+    "unfiled": "Ohne Ordner",
+    "favorite": "„{{name}}“ zu Favoriten hinzufügen",
+    "unfavorite": "„{{name}}“ aus Favoriten entfernen",
+    "actions": "Aktionen für „{{name}}“",
+    "moveTitle": "{{count}} Quiz verschieben",
+    "destination": "Zielordner",
+    "move": "Verschieben nach…",
+    "archive": "Archivieren",
+    "restore": "Wiederherstellen",
+    "organize": "Organisieren",
+    "done": "Fertig",
+    "filters": "Bibliothek filtern",
+    "filter": {
+      "all": "Alle",
+      "favorites": "Favoriten",
+      "unfiled": "Ohne Ordner"
+    },
+    "resetFilters": "Filter zurücksetzen",
+    "sortLabel": "Quiz sortieren",
+    "sort": {
+      "recent": "Zuletzt bearbeitet",
+      "title": "Titel A → Z",
+      "duration": "Kürzeste zuerst",
+      "questions": "Anzahl der Fragen"
+    },
+    "layoutLabel": "Bibliotheksansicht",
+    "layout": {
+      "grid": "Kartenansicht",
+      "list": "Listenansicht"
+    },
+    "selected": "{{count}} ausgewählt",
+    "selectAll": "Alle auswählen",
+    "moved": "{{count}} Quiz verschoben",
+    "moveTimeout": "Das Verschieben wurde nicht bestätigt. Prüfe die Ordner, bevor du es erneut versuchst.",
+    "breadcrumbRoot": "Zurück zur Bibliothek",
+    "prepareEvening": "Quizabend planen",
+    "clearSelection": "Auswahl aufheben",
+    "moveEarlier": "„{{name}}“ vorziehen",
+    "moveLater": "„{{name}}“ nach hinten verschieben",
+    "filterOptions": "Filter und Ansicht"
   }
 }

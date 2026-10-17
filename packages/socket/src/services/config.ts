@@ -200,6 +200,7 @@ class Config {
         archivedAt: isArchived(folder) ? (archivedAt ?? updatedAt) : undefined,
         archivedFrom,
         questionCount: countPlayableQuestions(questions),
+        updatedAt,
         estimatedDurationSec: estimateQuizzDurationSec(questions),
       }),
     )

@@ -295,5 +295,49 @@
       "title": "Titre (A-Z)",
       "origin": "Dossier d'origine"
     }
+  },
+  "library": {
+    "title": "Bibliothèque",
+    "count": "{{count}} quiz",
+    "unfiled": "Sans dossier",
+    "favorite": "Ajouter « {{name}} » aux favoris",
+    "unfavorite": "Retirer « {{name}} » des favoris",
+    "actions": "Actions pour « {{name}} »",
+    "moveTitle": "Déplacer {{count}} quiz",
+    "destination": "Dossier de destination",
+    "move": "Déplacer vers…",
+    "archive": "Archiver",
+    "restore": "Restaurer",
+    "organize": "Ranger",
+    "done": "Terminer",
+    "filters": "Filtrer la bibliothèque",
+    "filter": {
+      "all": "Tous",
+      "favorites": "Favoris",
+      "unfiled": "Sans dossier"
+    },
+    "resetFilters": "Effacer les filtres",
+    "sortLabel": "Trier les quiz",
+    "sort": {
+      "recent": "Modifiés récemment",
+      "title": "Titre A → Z",
+      "duration": "Durée croissante",
+      "questions": "Nombre de questions"
+    },
+    "layoutLabel": "Affichage de la bibliothèque",
+    "layout": {
+      "grid": "Vue cartes",
+      "list": "Vue liste"
+    },
+    "selected": "{{count}} sélectionné(s)",
+    "selectAll": "Tout sélectionner",
+    "moved": "{{count}} quiz déplacé(s)",
+    "moveTimeout": "Le déplacement n’a pas été confirmé. Vérifiez les dossiers avant de réessayer.",
+    "breadcrumbRoot": "Revenir à la bibliothèque",
+    "prepareEvening": "Préparer une soirée",
+    "clearSelection": "Annuler la sélection",
+    "moveEarlier": "Avancer « {{name}} »",
+    "moveLater": "Reculer « {{name}} »",
+    "filterOptions": "Filtres et affichage"
   }
 }
