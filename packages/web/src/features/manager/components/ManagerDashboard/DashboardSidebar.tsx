@@ -1,7 +1,12 @@
 import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
-import QuizActionsMenu from "./QuizActionsMenu"
+import QuizActionsMenu, { type QuizMenuAction } from "./QuizActionsMenu"
 import { readCustomFolders } from "./library"
 import { CUSTOM_FOLDERS_CHANGED } from "./useCustomFolderPaths"
+import DashboardContextMenu, {
+  contextMenuAt,
+  type DashboardMenuState,
+} from "./DashboardContextMenu"
+import { FOLDER_COMMAND, type FolderCommand } from "./folderCommands"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import {
   Archive,
@@ -123,6 +128,12 @@ const DashboardSidebar = ({
   // Null = pas en création, "" = racine, "Maths" = sous-dossier de Maths
   const [creatingIn, setCreatingIn] = useState<string | null>(null)
   const [newFolderName, setNewFolderName] = useState("")
+  const [contextCreateParent, setContextCreateParent] = useState<string | null>(
+    null,
+  )
+  const [contextMenu, setContextMenu] = useState<DashboardMenuState | null>(
+    null,
+  )
   // Message de validation affiché sous le champ de création / renommage.
   const [folderError, setFolderError] = useState<string | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -182,6 +193,33 @@ const DashboardSidebar = ({
   )
 
   const tree = useMemo(() => buildTree(allFolders), [allFolders])
+  useEffect(() => {
+    const command = (event: Event) => {
+      const { detail } = event as CustomEvent<FolderCommand>
+      if (
+        !detail ||
+        detail.key !== foldersKey ||
+        isArchived(detail.path ?? undefined) ||
+        isGuestFolder(detail.path ?? undefined)
+      ) {
+        return
+      }
+      if (detail.path && !allFolders.includes(detail.path)) {
+        return
+      }
+      if (detail.action === "create") {
+        setContextCreateParent(detail.path ?? "")
+        setCreatingIn(null)
+        setEditingFolder(null)
+        setNewFolderName("")
+        setFolderError(null)
+      } else if (detail.action === "delete" && detail.path) {
+        setDeleteFolder(detail.path)
+      }
+    }
+    window.addEventListener(FOLDER_COMMAND, command)
+    return () => window.removeEventListener(FOLDER_COMMAND, command)
+  }, [allFolders, foldersKey])
 
   useEffect(() => {
     if (folderState.key !== foldersKey) {
@@ -308,12 +346,14 @@ const DashboardSidebar = ({
   }
 
   const cancelCreate = () => {
+    setContextCreateParent(null)
     setCreatingIn(null)
     setNewFolderName("")
     setFolderError(null)
   }
 
   const startCreate = (parentPath: string | null) => {
+    setContextCreateParent(null)
     setCreatingIn(parentPath ?? "")
     setNewFolderName("")
     setEditingFolder(null)
@@ -331,7 +371,7 @@ const DashboardSidebar = ({
 
   const confirmCreate = () => {
     const name = newFolderName.trim()
-    const parentPath = creatingIn ?? ""
+    const parentPath = contextCreateParent ?? creatingIn ?? ""
     const error = validateFolderName(name, parentPath)
 
     if (error) {
@@ -540,6 +580,7 @@ const DashboardSidebar = ({
     return (
       <div key={node.path}>
         <div
+          data-context-folder={node.path}
           className="group relative flex items-center gap-0.5"
           style={{ paddingLeft: indent }}
         >
@@ -694,6 +735,48 @@ const DashboardSidebar = ({
       )}
       <aside
         ref={asideRef}
+        onContextMenu={(event) => {
+          const path =
+            (event.target as HTMLElement).closest<HTMLElement>(
+              "[data-context-folder]",
+            )?.dataset.contextFolder ?? null
+          if (
+            isArchived(path ?? undefined) ||
+            isGuestFolder(path ?? undefined)
+          ) {
+            return
+          }
+          const actions: QuizMenuAction[] = [
+            {
+              label: t("manager:sidebar.newFolder"),
+              icon: <Plus className="size-4" />,
+              onSelect: () => {
+                setContextCreateParent(path ?? "")
+                setCreatingIn(null)
+                setEditingFolder(null)
+                setNewFolderName("")
+                setFolderError(null)
+              },
+            },
+          ]
+          if (path) {
+            actions.push({
+              label: t("manager:sidebar.deleteFolder"),
+              icon: <Trash2 className="size-4" />,
+              danger: true,
+              onSelect: () => setDeleteFolder(path),
+            })
+          }
+          setContextMenu(
+            contextMenuAt(
+              event,
+              actions,
+              t("manager:library.actions", {
+                name: path ?? t("manager:library.title"),
+              }),
+            ),
+          )
+        }}
         id="manager-sidebar"
         aria-label={t("manager:sidebar.label")}
         className={clsx(
@@ -852,6 +935,54 @@ const DashboardSidebar = ({
           </>
         )}
       </aside>
+      {contextMenu && (
+        <DashboardContextMenu
+          state={contextMenu}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+      {contextCreateParent !== null && (
+        <EditorDialog
+          label={t("manager:sidebar.newFolder")}
+          onClose={cancelCreate}
+        >
+          <form
+            className="rounded-xl border border-white/15 bg-black/90 p-5 text-white backdrop-blur-xl"
+            onSubmit={(event) => {
+              event.preventDefault()
+              confirmCreate()
+            }}
+          >
+            <h2 className="text-base font-bold">
+              {t("manager:sidebar.newFolder")}
+            </h2>
+            <input
+              autoFocus
+              value={newFolderName}
+              onChange={(event) => {
+                setNewFolderName(event.target.value)
+                setFolderError(null)
+              }}
+              aria-label={t("manager:sidebar.newFolderPlaceholder")}
+              aria-invalid={Boolean(folderError)}
+              className="mt-4 min-h-11 w-full rounded-xl border border-white/20 bg-white/10 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-300"
+            />
+            {renderFolderError()}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={cancelCreate}
+                className="dashboard-secondary"
+              >
+                {t("common:cancel")}
+              </button>
+              <button type="submit" className="dashboard-primary">
+                {t("manager:sidebar.createConfirm")}
+              </button>
+            </div>
+          </form>
+        </EditorDialog>
+      )}
       {deleteFolder && (
         <EditorDialog
           label={t("manager:sidebar.deleteFolder")}

@@ -9,7 +9,9 @@ import {
 } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import type { ManagerConfig } from "@rahoot/common/types/manager"
+import { EVENTS } from "@rahoot/common/constants"
 import QuizzPanel from "./QuizzPanel"
+import DashboardSidebar from "./DashboardSidebar"
 
 const mocks = vi.hoisted(() => ({
   config: { quizz: [], results: [], role: "admin" } as ManagerConfig,
@@ -105,6 +107,155 @@ beforeEach(() => {
   })
 })
 afterEach(cleanup)
+
+function renderDashboardForContext() {
+  return render(
+    <>
+      <DashboardSidebar
+        isOpen={false}
+        onClose={vi.fn()}
+        activeFolder={null}
+        setActiveFolder={vi.fn()}
+        activeTag={null}
+        setActiveTag={vi.fn()}
+        view="quizz"
+        setView={vi.fn()}
+        onMoveToFolder={defaults.onMoveToFolder}
+      />
+      <QuizzPanel {...defaults} />
+    </>,
+  )
+}
+
+it("creates a folder from the background context menu even when the sidebar drawer is closed", () => {
+  const view = renderDashboardForContext()
+  fireEvent.contextMenu(
+    view.container.querySelector(".dashboard-scroll-viewport")!,
+    { clientX: 120, clientY: 80 },
+  )
+  fireEvent.click(
+    screen.getByRole("menuitem", { name: "manager:sidebar.newFolder" }),
+  )
+  const dialog = screen.getByRole("dialog", {
+    name: "manager:sidebar.newFolder",
+  })
+  fireEvent.change(within(dialog).getByRole("textbox"), {
+    target: { value: "Cinéma" },
+  })
+  fireEvent.click(
+    within(dialog).getByRole("button", {
+      name: "manager:sidebar.createConfirm",
+    }),
+  )
+  expect(JSON.parse(localStorage.getItem("rahoot:folders")!)).toContain(
+    "Cinéma",
+  )
+  expect(screen.getByRole("button", { name: /^Cinéma,/u })).toBeTruthy()
+  expect(screen.queryByRole("dialog")).toBeNull()
+})
+
+it("confirms folder removal from its context menu and preserves its quizzes", () => {
+  renderDashboardForContext()
+  fireEvent.contextMenu(screen.getByRole("button", { name: /^Culture,/u }), {
+    clientX: 120,
+    clientY: 80,
+  })
+  const menu = screen.getByRole("menu")
+  expect(document.activeElement).toBe(within(menu).getAllByRole("menuitem")[0])
+  fireEvent.keyDown(menu, { key: "End" })
+  expect(document.activeElement).toBe(
+    within(menu).getByRole("menuitem", {
+      name: "manager:sidebar.deleteFolder",
+    }),
+  )
+  fireEvent.click(document.activeElement!)
+  expect(defaults.onMoveToFolder).not.toHaveBeenCalled()
+  const dialog = screen.getByRole("dialog", {
+    name: "manager:sidebar.deleteFolder",
+  })
+  fireEvent.click(within(dialog).getByRole("button", { name: "common:delete" }))
+  expect(defaults.onMoveToFolder).toHaveBeenCalledExactlyOnceWith("a", null)
+  expect(mocks.emit).not.toHaveBeenCalled()
+})
+
+it("confirms quiz deletion and leaves text fields' native context menus intact", () => {
+  render(<QuizzPanel {...defaults} />)
+  const quiz = screen.getByRole("button", { name: "Musique" })
+  fireEvent.contextMenu(quiz, { clientX: 180, clientY: 120 })
+  fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" })
+  expect(screen.queryByRole("menu")).toBeNull()
+  expect(document.activeElement).toBe(quiz)
+  fireEvent.contextMenu(quiz, { clientX: 180, clientY: 120 })
+  fireEvent.click(
+    screen.getByRole("menuitem", { name: "manager:quizz.delete" }),
+  )
+  expect(mocks.emit).not.toHaveBeenCalled()
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", {
+      name: "common:cancel",
+    }),
+  )
+  expect(mocks.emit).not.toHaveBeenCalled()
+  const event = new MouseEvent("contextmenu", {
+    bubbles: true,
+    cancelable: true,
+  })
+  fireEvent(
+    screen.getByRole("textbox", { name: "manager:quizz.search" }),
+    event,
+  )
+  expect(event.defaultPrevented).toBe(false)
+  expect(screen.queryByRole("menu")).toBeNull()
+  fireEvent.contextMenu(quiz, { clientX: 180, clientY: 120 })
+  fireEvent.click(
+    screen.getByRole("menuitem", { name: "manager:quizz.delete" }),
+  )
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", {
+      name: "common:delete",
+    }),
+  )
+  expect(mocks.emit).toHaveBeenCalledExactlyOnceWith(EVENTS.QUIZZ.DELETE, "b")
+})
+
+it("ignores cross-account folder commands and protects system folders", () => {
+  const view = renderDashboardForContext()
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("rahoot:folder-command", {
+        detail: {
+          key: "rahoot:folders:guest:alice",
+          action: "delete",
+          path: "Culture",
+        },
+      }),
+    ),
+  )
+  expect(screen.queryByRole("dialog")).toBeNull()
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("rahoot:folder-command", {
+        detail: { key: "rahoot:folders", action: "delete", path: "Archive" },
+      }),
+    ),
+  )
+  expect(screen.queryByRole("dialog")).toBeNull()
+  fireEvent.contextMenu(
+    view.container.querySelector('[data-context-folder="Invités"]')!,
+    { clientX: 180, clientY: 120 },
+  )
+  expect(screen.queryByRole("menu")).toBeNull()
+  expect(defaults.onMoveToFolder).not.toHaveBeenCalled()
+})
+
+it("offers no deletion context menu for read-only guest quizzes", () => {
+  render(<QuizzPanel {...defaults} activeFolder="Invités/Alice" />)
+  fireEvent.contextMenu(screen.getByRole("button", { name: "Quiz invité" }), {
+    clientX: 180,
+    clientY: 120,
+  })
+  expect(screen.queryByRole("menu")).toBeNull()
+})
 
 it("filters favorites, persists the chosen layout and keeps portrait cards", () => {
   mocks.config.quizz[0].folder = undefined

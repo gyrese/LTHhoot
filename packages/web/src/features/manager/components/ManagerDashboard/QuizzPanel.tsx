@@ -5,6 +5,11 @@ import LibraryQuizCard from "./LibraryQuizCard"
 import LibraryFolderCard from "./LibraryFolderCard"
 import useCustomFolderPaths from "./useCustomFolderPaths"
 import { buildFolderGrid } from "./folderGrid"
+import DashboardContextMenu, {
+  contextMenuAt,
+  type DashboardMenuState,
+} from "./DashboardContextMenu"
+import { requestFolderCommand } from "./folderCommands"
 import LibraryScrollArea from "./LibraryScrollArea"
 import MoveQuizzesDialog from "./MoveQuizzesDialog"
 import useLibraryPreferences from "./useLibraryPreferences"
@@ -39,7 +44,14 @@ import {
   SlidersHorizontal,
   ChevronLeft,
 } from "lucide-react"
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
+import {
+  type ChangeEvent,
+  type MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import { ShareSocialModal } from "@rahoot/web/features/manager/components/ShareSocialModal"
 import {
@@ -110,6 +122,10 @@ const QuizzPanel = ({
   const [organizedIds, setOrganizedIds] = useState<string[]>([])
   const [moveIds, setMoveIds] = useState<string[] | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<DashboardMenuState | null>(
+    null,
+  )
+  useEffect(() => setContextMenu(null), [quizz, activeFolder, role, guestName])
   const [pendingMove, setPendingMove] = useState<{
     ids: string[]
     folder: string | null
@@ -542,8 +558,59 @@ const QuizzPanel = ({
     })
   }
 
+  const openContextMenu = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement
+    const folder = target.closest<HTMLElement>("[data-library-folder]")?.dataset
+      .libraryFolder
+    const quizId =
+      target.closest<HTMLElement>("[data-library-id]")?.dataset.libraryId
+    const quiz = quizz.find((item) => item.id === quizId)
+    const actions = []
+    const path = folder ?? activeFolder
+    if (
+      !quiz &&
+      !isArchived(path ?? undefined) &&
+      !isGuestFolder(path ?? undefined)
+    ) {
+      actions.push({
+        label: t("manager:sidebar.newFolder"),
+        icon: <FolderInput className="size-4" />,
+        onSelect: () => requestFolderCommand("create", path, role, guestName),
+      })
+      if (folder) {
+        actions.push({
+          label: t("manager:sidebar.deleteFolder"),
+          icon: <Trash2 className="size-4" />,
+          danger: true,
+          onSelect: () =>
+            requestFolderCommand("delete", folder, role, guestName),
+        })
+      }
+    }
+    if (quiz && !isGuestQuizId(quiz.id)) {
+      actions.push({
+        label: t("manager:quizz.delete"),
+        icon: <Trash2 className="size-4" />,
+        danger: true,
+        onSelect: () => setConfirmDelete(quiz.id),
+      })
+    }
+    setContextMenu(
+      contextMenuAt(
+        event,
+        actions,
+        t("manager:library.actions", {
+          name: folder ?? quiz?.subject ?? t("manager:library.title"),
+        }),
+      ),
+    )
+  }
+
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-1 sm:p-0">
+    <div
+      onContextMenu={openContextMenu}
+      className="flex h-full min-h-0 flex-col gap-3 p-1 sm:p-0"
+    >
       <div className="flex shrink-0 flex-col gap-3 rounded-[24px] border border-white/15 bg-black/15 bg-linear-to-br from-white/5 to-transparent p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
         <div className="flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -1081,6 +1148,12 @@ const QuizzPanel = ({
         )}
       </LibraryScrollArea>
 
+      {contextMenu && (
+        <DashboardContextMenu
+          state={contextMenu}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {moveIds && (
         <MoveQuizzesDialog
           quizzes={quizz}
