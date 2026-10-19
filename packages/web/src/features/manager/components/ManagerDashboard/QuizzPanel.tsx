@@ -544,311 +544,315 @@ const QuizzPanel = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-1 sm:p-0">
-      <div className="flex shrink-0 items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            {activeFolder && (
-              <button
-                type="button"
-                className="dashboard-icon shrink-0"
-                onClick={() => onOpenFolder(null)}
-                aria-label={t("manager:library.breadcrumbRoot")}
+      <div className="flex shrink-0 flex-col gap-3 rounded-[24px] border border-white/15 bg-black/15 bg-linear-to-br from-white/5 to-transparent p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
+        <div className="flex shrink-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              {activeFolder && (
+                <button
+                  type="button"
+                  className="dashboard-icon shrink-0"
+                  onClick={() => onOpenFolder(null)}
+                  aria-label={t("manager:library.breadcrumbRoot")}
+                >
+                  <FolderOpen className="size-4" />
+                </button>
+              )}
+              {activeFolder?.includes("/") && (
+                <button
+                  type="button"
+                  className="dashboard-icon shrink-0"
+                  onClick={() =>
+                    onOpenFolder(
+                      activeFolder.split("/").slice(0, -1).join("/") || null,
+                    )
+                  }
+                  aria-label={t("manager:library.parentFolder")}
+                  title={t("manager:library.parentFolder")}
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+              )}
+              <h1
+                className="truncate text-xl font-bold tracking-tight text-white"
+                title={activeFolder || t("manager:library.title")}
               >
-                <FolderOpen className="size-4" />
-              </button>
-            )}
-            {activeFolder?.includes("/") && (
-              <button
-                type="button"
-                className="dashboard-icon shrink-0"
-                onClick={() =>
-                  onOpenFolder(
-                    activeFolder.split("/").slice(0, -1).join("/") || null,
-                  )
-                }
-                aria-label={t("manager:library.parentFolder")}
-                title={t("manager:library.parentFolder")}
+                {activeFolder?.split("/").at(-1) || t("manager:library.title")}
+              </h1>
+              <span
+                className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70 tabular-nums"
+                role="status"
+                aria-label={t("manager:library.count", {
+                  count: filtered.length,
+                })}
               >
-                <ChevronLeft className="size-4" />
-              </button>
-            )}
-            <h1
-              className="truncate text-xl font-bold tracking-tight text-white"
-              title={activeFolder || t("manager:library.title")}
-            >
-              {activeFolder?.split("/").at(-1) || t("manager:library.title")}
-            </h1>
-            <span
-              className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70 tabular-nums"
-              role="status"
-              aria-label={t("manager:library.count", {
-                count: filtered.length,
-              })}
-            >
-              {filtered.length}
-            </span>
+                {filtered.length}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <button
-            type="button"
-            onClick={goToCreate}
-            aria-label={t("manager:quizz.create")}
-            className="dashboard-primary min-h-11"
-          >
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">
-              {t("manager:quizz.create")}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={openImport}
-            className="dashboard-icon min-h-11 min-w-11"
-            title={t("manager:quizz.import")}
-            aria-label={t("manager:quizz.import")}
-          >
-            <Upload className="size-4" />
-          </button>
-          {!eveningMode && (
+          <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
-              aria-pressed={organizing}
-              className={
-                organizing
-                  ? "dashboard-secondary bg-orange-500/15 text-orange-200"
-                  : "dashboard-icon min-h-11 min-w-11"
-              }
-              aria-label={t(
-                organizing
-                  ? "manager:library.done"
-                  : "manager:library.organize",
-              )}
-              title={t(
-                organizing
-                  ? "manager:library.done"
-                  : "manager:library.organize",
-              )}
-              onClick={() => {
-                setOrganizing(!organizing)
-                setOrganizedIds([])
-                setSelectedQuizz(null)
-              }}
+              onClick={goToCreate}
+              aria-label={t("manager:quizz.create")}
+              className="dashboard-primary min-h-11"
             >
-              <FolderInput className="size-4" />
-              {organizing &&
-                t(
+              <Plus className="size-4" />
+              <span className="hidden sm:inline">
+                {t("manager:quizz.create")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={openImport}
+              className="dashboard-icon min-h-11 min-w-11"
+              title={t("manager:quizz.import")}
+              aria-label={t("manager:quizz.import")}
+            >
+              <Upload className="size-4" />
+            </button>
+            {!eveningMode && (
+              <button
+                type="button"
+                aria-pressed={organizing}
+                className={
+                  organizing
+                    ? "dashboard-secondary bg-orange-500/15 text-orange-200"
+                    : "dashboard-icon min-h-11 min-w-11"
+                }
+                aria-label={t(
                   organizing
                     ? "manager:library.done"
                     : "manager:library.organize",
                 )}
-            </button>
-          )}
+                title={t(
+                  organizing
+                    ? "manager:library.done"
+                    : "manager:library.organize",
+                )}
+                onClick={() => {
+                  setOrganizing(!organizing)
+                  setOrganizedIds([])
+                  setSelectedQuizz(null)
+                }}
+              >
+                <FolderInput className="size-4" />
+                {organizing &&
+                  t(
+                    organizing
+                      ? "manager:library.done"
+                      : "manager:library.organize",
+                  )}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-      {/* Toolbar */}
-      <div className="flex shrink-0 items-center gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/60" />
+        {/* Toolbar */}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/60" />
+            <input
+              type="text"
+              className="min-h-11 w-full rounded-xl bg-white/10 py-2 pr-11 pl-9 text-sm text-white placeholder-white/50 transition-colors outline-none focus:bg-white/15 focus:ring-2 focus:ring-orange-400/60"
+              placeholder={t("manager:quizz.search")}
+              aria-label={t("manager:quizz.search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label={t("manager:quizz.clearSearch")}
+                title={t("manager:quizz.clearSearch")}
+                className="absolute top-1/2 right-0 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-xl text-white/60 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className={`dashboard-secondary min-h-11 shrink-0 ${filtersOpen || activeFilters ? "bg-orange-500/15 text-orange-200" : ""}`}
+            title={t("manager:library.filterOptions")}
+            aria-label={t("manager:library.filterOptions")}
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="size-4" />
+            {activeFilters > 0 && (
+              <span className="text-xs tabular-nums">{activeFilters}</span>
+            )}
+          </button>
           <input
-            type="text"
-            className="min-h-11 w-full rounded-xl bg-white/10 py-2 pr-11 pl-9 text-sm text-white placeholder-white/50 transition-colors outline-none focus:bg-white/15 focus:ring-2 focus:ring-orange-400/60"
-            placeholder={t("manager:quizz.search")}
-            aria-label={t("manager:quizz.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.csv"
+            className="hidden"
+            onChange={handleImport}
           />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              aria-label={t("manager:quizz.clearSearch")}
-              title={t("manager:quizz.clearSearch")}
-              className="absolute top-1/2 right-0 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-xl text-white/60 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
-            >
-              <X className="size-4" />
-            </button>
-          )}
         </div>
-        <button
-          type="button"
-          onClick={() => setFiltersOpen(!filtersOpen)}
-          className={`dashboard-secondary min-h-11 shrink-0 ${filtersOpen || activeFilters ? "bg-orange-500/15 text-orange-200" : ""}`}
-          title={t("manager:library.filterOptions")}
-          aria-label={t("manager:library.filterOptions")}
-          aria-expanded={filtersOpen}
-        >
-          <SlidersHorizontal className="size-4" />
-          {activeFilters > 0 && (
-            <span className="text-xs tabular-nums">{activeFilters}</span>
-          )}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.csv"
-          className="hidden"
-          onChange={handleImport}
-        />
-      </div>
 
-      {filtersOpen && (
-        <div className="shrink-0 space-y-2 rounded-xl bg-white/5 p-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div
-              className="flex flex-wrap items-center gap-1"
-              aria-label={t("manager:library.filters")}
-            >
-              {(["all", "favorites", "unfiled"] as const).map((filter) => (
-                <button
-                  type="button"
-                  key={filter}
-                  aria-pressed={quickFilter === filter}
-                  onClick={() => {
-                    setQuickFilter(filter)
-                    if (filter === "unfiled") {
-                      onOpenFolder(null)
+        {filtersOpen && (
+          <div className="shrink-0 space-y-2 rounded-xl bg-white/5 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div
+                className="flex flex-wrap items-center gap-1"
+                aria-label={t("manager:library.filters")}
+              >
+                {(["all", "favorites", "unfiled"] as const).map((filter) => (
+                  <button
+                    type="button"
+                    key={filter}
+                    aria-pressed={quickFilter === filter}
+                    onClick={() => {
+                      setQuickFilter(filter)
+                      if (filter === "unfiled") {
+                        onOpenFolder(null)
+                      }
+                    }}
+                    className={`dashboard-filter ${quickFilter === filter ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+                  >
+                    {filter === "favorites" && <Star className="size-3.5" />}
+                    {t(`manager:library.filter.${filter}`)}
+                  </button>
+                ))}
+                {Boolean(activeTag || search || activeFilters) && (
+                  <button
+                    type="button"
+                    className="dashboard-icon"
+                    aria-label={t("manager:library.resetFilters")}
+                    title={t("manager:library.resetFilters")}
+                    onClick={() => {
+                      setSearch("")
+                      setQuickFilter("all")
+                      setArchiveYear("")
+                      setArchiveMonth("")
+                      setArchiveOrigin("")
+                      onClearTag()
+                    }}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {!inArchive && (
+                  <select
+                    className="dashboard-select max-w-44"
+                    aria-label={t("manager:library.sortLabel")}
+                    value={preferences.sort}
+                    onChange={(event) =>
+                      updatePreferences({
+                        sort: event.target.value as LibrarySort,
+                      })
                     }
-                  }}
-                  className={`dashboard-filter ${quickFilter === filter ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
-                >
-                  {filter === "favorites" && <Star className="size-3.5" />}
-                  {t(`manager:library.filter.${filter}`)}
-                </button>
-              ))}
-              {Boolean(activeTag || search || activeFilters) && (
-                <button
-                  type="button"
-                  className="dashboard-icon"
-                  aria-label={t("manager:library.resetFilters")}
-                  title={t("manager:library.resetFilters")}
-                  onClick={() => {
-                    setSearch("")
-                    setQuickFilter("all")
-                    setArchiveYear("")
-                    setArchiveMonth("")
-                    setArchiveOrigin("")
-                    onClearTag()
-                  }}
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              {!inArchive && (
-                <select
-                  className="dashboard-select max-w-44"
-                  aria-label={t("manager:library.sortLabel")}
-                  value={preferences.sort}
-                  onChange={(event) =>
-                    updatePreferences({
-                      sort: event.target.value as LibrarySort,
-                    })
-                  }
-                >
-                  {(["recent", "title", "duration", "questions"] as const).map(
-                    (sort) => (
+                  >
+                    {(
+                      ["recent", "title", "duration", "questions"] as const
+                    ).map((sort) => (
                       <option key={sort} value={sort}>
                         {t(`manager:library.sort.${sort}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div
+                  className="flex rounded-lg bg-white/5 p-0.5"
+                  aria-label={t("manager:library.layoutLabel")}
+                >
+                  {(["grid", "list"] as const).map((layout) => (
+                    <button
+                      key={layout}
+                      type="button"
+                      className={`dashboard-icon ${preferences.layout === layout ? "bg-white/15 text-white" : "text-white/60"}`}
+                      aria-label={t(`manager:library.layout.${layout}`)}
+                      aria-pressed={preferences.layout === layout}
+                      onClick={() => updatePreferences({ layout })}
+                    >
+                      {layout === "grid" ? (
+                        <LayoutGrid className="size-4" />
+                      ) : (
+                        <List className="size-4" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {activeTag && (
+              <button
+                type="button"
+                className="dashboard-filter text-orange-200"
+                onClick={onClearTag}
+              >
+                #{activeTag} <X className="size-3" />
+              </button>
+            )}
+            {inArchive && (
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <select
+                  className={ARCHIVE_SELECT}
+                  value={archiveSort}
+                  onChange={(e) =>
+                    setArchiveSort(e.target.value as ArchiveSort)
+                  }
+                  aria-label={t("manager:archive.sort")}
+                >
+                  {(["dateDesc", "dateAsc", "title", "origin"] as const).map(
+                    (k) => (
+                      <option key={k} value={k}>
+                        {t(`manager:archive.sortBy.${k}`)}
                       </option>
                     ),
                   )}
                 </select>
-              )}
-              <div
-                className="flex rounded-lg bg-white/5 p-0.5"
-                aria-label={t("manager:library.layoutLabel")}
-              >
-                {(["grid", "list"] as const).map((layout) => (
-                  <button
-                    key={layout}
-                    type="button"
-                    className={`dashboard-icon ${preferences.layout === layout ? "bg-white/15 text-white" : "text-white/60"}`}
-                    aria-label={t(`manager:library.layout.${layout}`)}
-                    aria-pressed={preferences.layout === layout}
-                    onClick={() => updatePreferences({ layout })}
-                  >
-                    {layout === "grid" ? (
-                      <LayoutGrid className="size-4" />
-                    ) : (
-                      <List className="size-4" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {activeTag && (
-            <button
-              type="button"
-              className="dashboard-filter text-orange-200"
-              onClick={onClearTag}
-            >
-              #{activeTag} <X className="size-3" />
-            </button>
-          )}
-          {inArchive && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <select
-                className={ARCHIVE_SELECT}
-                value={archiveSort}
-                onChange={(e) => setArchiveSort(e.target.value as ArchiveSort)}
-                aria-label={t("manager:archive.sort")}
-              >
-                {(["dateDesc", "dateAsc", "title", "origin"] as const).map(
-                  (k) => (
-                    <option key={k} value={k}>
-                      {t(`manager:archive.sortBy.${k}`)}
+                <select
+                  className={ARCHIVE_SELECT}
+                  value={archiveYear}
+                  onChange={(e) => setArchiveYear(e.target.value)}
+                  aria-label={t("manager:archive.year")}
+                >
+                  <option value="">{t("manager:archive.allYears")}</option>
+                  {archiveYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
                     </option>
-                  ),
-                )}
-              </select>
-              <select
-                className={ARCHIVE_SELECT}
-                value={archiveYear}
-                onChange={(e) => setArchiveYear(e.target.value)}
-                aria-label={t("manager:archive.year")}
-              >
-                <option value="">{t("manager:archive.allYears")}</option>
-                {archiveYears.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <select
-                className={ARCHIVE_SELECT}
-                value={archiveMonth}
-                onChange={(e) => setArchiveMonth(e.target.value)}
-                aria-label={t("manager:archive.month")}
-              >
-                <option value="">{t("manager:archive.allMonths")}</option>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i} value={i + 1}>
-                    {new Date(2000, i, 1).toLocaleDateString(i18n.language, {
-                      month: "long",
-                    })}
-                  </option>
-                ))}
-              </select>
-              <select
-                className={ARCHIVE_SELECT}
-                value={archiveOrigin}
-                onChange={(e) => setArchiveOrigin(e.target.value)}
-                aria-label={t("manager:archive.origin")}
-              >
-                <option value="">{t("manager:archive.allOrigins")}</option>
-                {archiveOrigins.map((o) => (
-                  <option key={o} value={o || NO_ARCHIVE_ORIGIN}>
-                    {o || t("manager:archive.noOrigin")}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
+                  ))}
+                </select>
+                <select
+                  className={ARCHIVE_SELECT}
+                  value={archiveMonth}
+                  onChange={(e) => setArchiveMonth(e.target.value)}
+                  aria-label={t("manager:archive.month")}
+                >
+                  <option value="">{t("manager:archive.allMonths")}</option>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i + 1}>
+                      {new Date(2000, i, 1).toLocaleDateString(i18n.language, {
+                        month: "long",
+                      })}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={ARCHIVE_SELECT}
+                  value={archiveOrigin}
+                  onChange={(e) => setArchiveOrigin(e.target.value)}
+                  aria-label={t("manager:archive.origin")}
+                >
+                  <option value="">{t("manager:archive.allOrigins")}</option>
+                  {archiveOrigins.map((o) => (
+                    <option key={o} value={o || NO_ARCHIVE_ORIGIN}>
+                      {o || t("manager:archive.noOrigin")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       {organizing && (
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300/20 bg-orange-500/10 px-3 py-2 text-sm text-orange-100">
           <span>
