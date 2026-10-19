@@ -1,6 +1,7 @@
 import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
 import QuizActionsMenu from "./QuizActionsMenu"
 import { readCustomFolders } from "./library"
+import { CUSTOM_FOLDERS_CHANGED } from "./useCustomFolderPaths"
 import { useConfig } from "@rahoot/web/features/manager/contexts/config-context"
 import {
   Archive,
@@ -191,6 +192,11 @@ const DashboardSidebar = ({
     } catch {
       /* Server folders remain available. */
     }
+    window.dispatchEvent(
+      new CustomEvent(CUSTOM_FOLDERS_CHANGED, {
+        detail: { key: foldersKey, folders: folderState.folders },
+      }),
+    )
   }, [foldersKey, folderState])
 
   const tags = useMemo(

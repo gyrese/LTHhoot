@@ -338,6 +338,7 @@
     "clearSelection": "Auswahl aufheben",
     "moveEarlier": "„{{name}}“ vorziehen",
     "moveLater": "„{{name}}“ nach hinten verschieben",
-    "filterOptions": "Filter und Ansicht"
+    "filterOptions": "Filter und Ansicht",
+    "parentFolder": "Zum übergeordneten Ordner"
   }
 }

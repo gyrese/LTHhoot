@@ -338,6 +338,7 @@
     "clearSelection": "Annulla selezione",
     "moveEarlier": "Anticipa «{{name}}»",
     "moveLater": "Posticipa «{{name}}»",
-    "filterOptions": "Filtri e vista"
+    "filterOptions": "Filtri e vista",
+    "parentFolder": "Torna alla cartella superiore"
   }
 }

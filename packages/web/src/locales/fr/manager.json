@@ -338,6 +338,7 @@
     "clearSelection": "Annuler la sélection",
     "moveEarlier": "Avancer « {{name}} »",
     "moveLater": "Reculer « {{name}} »",
-    "filterOptions": "Filtres et affichage"
+    "filterOptions": "Filtres et affichage",
+    "parentFolder": "Revenir au dossier parent"
   }
 }

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -106,6 +107,7 @@ beforeEach(() => {
 afterEach(cleanup)
 
 it("filters favorites, persists the chosen layout and keeps portrait cards", () => {
+  mocks.config.quizz[0].folder = undefined
   const view = render(<QuizzPanel {...defaults} />)
   expect(
     screen.getByRole("button", { name: "Disney" }).closest("article")
@@ -137,6 +139,7 @@ it("filters favorites, persists the chosen layout and keeps portrait cards", () 
 })
 
 it("moves selected quizzes to an empty folder and only reports success after server confirmation", () => {
+  mocks.config.quizz[0].folder = undefined
   localStorage.setItem("rahoot:folders", JSON.stringify(["Vide"]))
   const move = vi.fn()
   const view = render(<QuizzPanel {...defaults} onMoveToFolder={move} />)
@@ -169,7 +172,7 @@ it("moves selected quizzes to an empty folder and only reports success after ser
 })
 
 it("offers read-only guest quizzes without edit, delete or move actions", () => {
-  render(<QuizzPanel {...defaults} activeFolder="Invités" />)
+  render(<QuizzPanel {...defaults} activeFolder="Invités/Alice" />)
   fireEvent.click(
     screen.getByRole("button", { name: "manager:library.actions:Quiz invité" }),
   )
@@ -183,7 +186,7 @@ it("offers read-only guest quizzes without edit, delete or move actions", () => 
 })
 
 it("supports menu keyboard navigation and restores focus on Escape", () => {
-  render(<QuizzPanel {...defaults} />)
+  render(<QuizzPanel {...defaults} activeFolder="Culture" />)
   const trigger = screen.getByRole("button", {
     name: "manager:library.actions:Disney",
   })
@@ -219,7 +222,8 @@ it("keeps sorting and filters folded until requested and makes an empty filtered
   fireEvent.click(
     screen.getAllByRole("button", { name: "manager:library.resetFilters" })[1],
   )
-  expect(screen.getByRole("button", { name: "Disney" })).toBeTruthy()
+  expect(screen.getByRole("button", { name: /^Culture,/u })).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Musique" })).toBeTruthy()
 })
 
 it("does not offer a no-op move and clears a batch when its folder changes", () => {
@@ -300,4 +304,80 @@ it("clears a hidden play selection without touching a planned evening", () => {
     />,
   )
   expect(select).not.toHaveBeenCalled()
+})
+
+it("browses immediate folders with real cover previews and no duplicated quiz cards", () => {
+  mocks.config.quizz[0].listingImage = "/covers/disney.png"
+  mocks.config.quizz.push({
+    id: "nested",
+    subject: "Pixar",
+    folder: "Culture/Disney",
+    questionCount: 3,
+  })
+  const open = vi.fn()
+  const view = render(<QuizzPanel {...defaults} onOpenFolder={open} />)
+  const folder = screen.getByRole("button", { name: /^Culture,/u })
+  expect(folder.querySelector("img")?.getAttribute("src")).toBe(
+    "/covers/disney.png",
+  )
+  expect(screen.queryByRole("button", { name: "Disney" })).toBeNull()
+  fireEvent.click(folder)
+  expect(open).toHaveBeenLastCalledWith("Culture")
+  view.rerender(
+    <QuizzPanel {...defaults} activeFolder="Culture" onOpenFolder={open} />,
+  )
+  expect(screen.getByRole("button", { name: "Disney" })).toBeTruthy()
+  fireEvent.click(screen.getByRole("button", { name: /^Disney,/u }))
+  expect(open).toHaveBeenLastCalledWith("Culture/Disney")
+  view.rerender(
+    <QuizzPanel
+      {...defaults}
+      activeFolder="Culture/Disney"
+      onOpenFolder={open}
+    />,
+  )
+  expect(screen.getByRole("button", { name: "Pixar" })).toBeTruthy()
+  fireEvent.click(
+    screen.getByRole("button", { name: "manager:library.parentFolder" }),
+  )
+  expect(open).toHaveBeenLastCalledWith("Culture")
+  view.rerender(
+    <QuizzPanel {...defaults} search="Disney" onOpenFolder={open} />,
+  )
+  expect(view.container.querySelector("[data-library-folder]")).toBeNull()
+  expect(screen.getByRole("button", { name: "Disney" })).toBeTruthy()
+})
+
+it("accepts a quiz dropped into a saved empty folder without reporting premature success", () => {
+  localStorage.setItem("rahoot:folders", JSON.stringify(["Vide"]))
+  const move = vi.fn()
+  render(<QuizzPanel {...defaults} onMoveToFolder={move} />)
+  fireEvent.drop(screen.getByRole("button", { name: /^Vide,/u }), {
+    dataTransfer: { getData: () => "b" },
+  })
+  expect(move).toHaveBeenCalledWith("b", "Vide")
+  expect(mocks.success).not.toHaveBeenCalled()
+})
+
+it("updates empty folder cards from the sidebar's scoped same-tab event", () => {
+  const view = render(<QuizzPanel {...defaults} />)
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("rahoot:folders-changed", {
+        detail: { key: "rahoot:folders", folders: ["Nouveau"] },
+      }),
+    ),
+  )
+  expect(screen.getByRole("button", { name: /^Nouveau,/u })).toBeTruthy()
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("rahoot:folders-changed", {
+        detail: { key: "rahoot:folders:guest:alice", folders: ["Privé"] },
+      }),
+    ),
+  )
+  expect(screen.queryByRole("button", { name: /^Privé,/u })).toBeNull()
+  expect(
+    view.container.querySelector('[data-library-folder="Nouveau"]'),
+  ).toBeTruthy()
 })

@@ -338,6 +338,7 @@
     "clearSelection": "Clear selection",
     "moveEarlier": "Move “{{name}}” earlier",
     "moveLater": "Move “{{name}}” later",
-    "filterOptions": "Filters and display"
+    "filterOptions": "Filters and display",
+    "parentFolder": "Back to parent folder"
   }
 }

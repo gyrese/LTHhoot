@@ -2,6 +2,9 @@ import { EVENTS } from "@rahoot/common/constants"
 import type { Quizz } from "@rahoot/common/types/game"
 import EditorDialog from "@rahoot/web/features/quizz/components/EditorDialog"
 import LibraryQuizCard from "./LibraryQuizCard"
+import LibraryFolderCard from "./LibraryFolderCard"
+import useCustomFolderPaths from "./useCustomFolderPaths"
+import { buildFolderGrid } from "./folderGrid"
 import LibraryScrollArea from "./LibraryScrollArea"
 import MoveQuizzesDialog from "./MoveQuizzesDialog"
 import useLibraryPreferences from "./useLibraryPreferences"
@@ -34,6 +37,7 @@ import {
   List,
   Star,
   SlidersHorizontal,
+  ChevronLeft,
 } from "lucide-react"
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -94,6 +98,7 @@ const QuizzPanel = ({
   onClearTag,
 }: Props) => {
   const { quizz, role, guestName } = useConfig()
+  const customFolders = useCustomFolderPaths(role, guestName)
   const {
     preferences,
     update: updatePreferences,
@@ -150,6 +155,9 @@ const QuizzPanel = ({
       setQuickFilter("all")
     }
     setOrganizedIds([])
+    if (libraryRef.current) {
+      libraryRef.current.scrollTop = 0
+    }
   }, [activeFolder])
 
   useEffect(() => {
@@ -426,6 +434,17 @@ const QuizzPanel = ({
     preferences.favorites,
   ])
 
+  const browsingFolders =
+    !inArchive && !search.trim() && !activeTag && quickFilter === "all"
+  const folderGrid = useMemo(
+    () =>
+      browsingFolders
+        ? buildFolderGrid(filtered, customFolders, activeFolder)
+        : { folders: [], quizzes: filtered },
+    [browsingFolders, filtered, customFolders, activeFolder],
+  )
+  const visibleQuizzes = folderGrid.quizzes
+
   const handleSelect = (id: string, isSelected: boolean) => {
     if (organizing) {
       setOrganizedIds((prev) =>
@@ -444,15 +463,15 @@ const QuizzPanel = ({
     if (
       !eveningMode &&
       selectedQuizz &&
-      !filtered.some((quiz) => quiz.id === selectedQuizz)
+      !visibleQuizzes.some((quiz) => quiz.id === selectedQuizz)
     ) {
       setSelectedQuizz(null)
     }
-  }, [filtered, selectedQuizz, eveningMode, setSelectedQuizz])
+  }, [visibleQuizzes, selectedQuizz, eveningMode, setSelectedQuizz])
 
   useLibraryMotion(
     libraryRef,
-    `${preferences.layout}:${filtered.map((quiz) => quiz.id).join(",")}`,
+    `${activeFolder}:${preferences.layout}:${folderGrid.folders.map((folder) => folder.path).join(",")}:${visibleQuizzes.map((quiz) => quiz.id).join(",")}`,
   )
 
   const goToCreate = () => navigate({ to: "/manager/quizz" })
@@ -538,11 +557,26 @@ const QuizzPanel = ({
                 <FolderOpen className="size-4" />
               </button>
             )}
+            {activeFolder?.includes("/") && (
+              <button
+                type="button"
+                className="dashboard-icon shrink-0"
+                onClick={() =>
+                  onOpenFolder(
+                    activeFolder.split("/").slice(0, -1).join("/") || null,
+                  )
+                }
+                aria-label={t("manager:library.parentFolder")}
+                title={t("manager:library.parentFolder")}
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
             <h1
               className="truncate text-xl font-bold tracking-tight text-white"
               title={activeFolder || t("manager:library.title")}
             >
-              {activeFolder || t("manager:library.title")}
+              {activeFolder?.split("/").at(-1) || t("manager:library.title")}
             </h1>
             <span
               className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70 tabular-nums"
@@ -828,7 +862,7 @@ const QuizzPanel = ({
                 setOrganizedIds(
                   organizedIds.length
                     ? []
-                    : filtered
+                    : visibleQuizzes
                         .filter((q) => !isGuestQuizId(q.id))
                         .map((q) => q.id),
                 )
@@ -858,7 +892,7 @@ const QuizzPanel = ({
         viewportRef={libraryRef}
         label={t("manager:library.title")}
       >
-        {filtered.length === 0 ? (
+        {visibleQuizzes.length === 0 && folderGrid.folders.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 p-4 text-center">
             <p className="text-sm text-white/60">
               {t(
@@ -913,7 +947,36 @@ const QuizzPanel = ({
                 : "grid grid-cols-2 content-start gap-3 sm:grid-cols-[repeat(auto-fill,minmax(156px,1fr))]"
             }
           >
-            {filtered.map((q) => {
+            {folderGrid.folders.map((folder) => (
+              <LibraryFolderCard
+                key={`folder:${folder.path}`}
+                path={folder.path}
+                quizzes={folder.quizzes}
+                list={preferences.layout === "list"}
+                onOpen={() => onOpenFolder(folder.path)}
+                canDropQuiz={(id) => {
+                  if (
+                    pendingMove ||
+                    !socket?.connected ||
+                    isGuestFolder(folder.path) ||
+                    isArchived(folder.path)
+                  ) {
+                    return false
+                  }
+                  return (
+                    !id ||
+                    quizz.some(
+                      (quiz) =>
+                        quiz.id === id &&
+                        !isGuestQuizId(id) &&
+                        quiz.folder !== folder.path,
+                    )
+                  )
+                }}
+                onDropQuiz={(id) => moveQuizzes([id], folder.path)}
+              />
+            ))}
+            {visibleQuizzes.map((q) => {
               const isReadonly = isGuestQuizId(q.id)
               let selected = selectedQuizz === q.id
               if (eveningMode) {
