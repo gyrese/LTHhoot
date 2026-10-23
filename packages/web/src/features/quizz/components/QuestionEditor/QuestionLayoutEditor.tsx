@@ -22,7 +22,6 @@ import {
   updateLayoutBox,
 } from "@rahoot/web/features/game/utils/question-layout"
 import GridSlideEditor from "@rahoot/web/features/quizz/components/QuestionEditor/GridSlideEditor"
-import { FieldErrors } from "../EditorValidation"
 import type { SlideView } from "@rahoot/web/features/quizz/components/SlideEditor/SlideCanvas"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
 import useAiRephrase from "@rahoot/web/features/quizz/hooks/useAiRephrase"
@@ -115,9 +114,8 @@ const EditableBox = ({
   onCommit,
   children,
 }: EditableBoxProps) => {
-  const { currentIndex, validationIssues } = useQuizzEditor()
+  const { currentIndex } = useQuizzEditor()
   const path = `questions.${currentIndex}.${field}`
-  const invalid = validationIssues.some((issue) => issue.path === path)
   const gestureRef = useRef<Gesture | null>(null)
   const draftRef = useRef<QuestionLayoutBox | null>(null)
   const [draft, setDraft] = useState<QuestionLayoutBox | null>(null)
@@ -193,7 +191,6 @@ const EditableBox = ({
     <div
       role="button"
       data-validation-target={path}
-      aria-invalid={invalid || undefined}
       tabIndex={0}
       aria-label={label}
       aria-pressed={selected}
@@ -223,18 +220,6 @@ const EditableBox = ({
       }}
     >
       {children}
-      {invalid && (
-        <div
-          className="pointer-events-none absolute top-full left-0 z-30"
-          style={{
-            transform: `scale(${1 / scale})`,
-            transformOrigin: "top left",
-            minWidth: 180,
-          }}
-        >
-          <FieldErrors field={field} />
-        </div>
-      )}
 
       {/* Survol : contour discret pour signaler que la boîte est manipulable */}
       {!selected && (
@@ -575,7 +560,7 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
         <GridSlideEditor question={q as GridQuestion} titleBox={titleBox} />
       )}
 
-      <FitGroup>
+      <FitGroup key={q.id}>
         {Array.from({ length: answerCount }, (_, index) => {
           const box = layout.answers![index]!
           const text = answerText(index)
@@ -598,6 +583,7 @@ const QuestionLayoutEditor = ({ view }: { view: SlideView }) => {
             >
               <AnswerBoxView
                 index={index}
+                fitKey={`${view.scale}|${editingKey === index}`}
                 box={box}
                 text={text || t("quizz:addAnswerPlaceholder")}
                 fontFamily={font}

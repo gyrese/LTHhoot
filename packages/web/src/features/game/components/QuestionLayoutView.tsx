@@ -162,6 +162,14 @@ const useFitFontSize = (
   const cap = activeGroup?.cap
   const report = activeGroup?.report
   const forget = activeGroup?.forget
+  const capRef = useRef(cap)
+  capRef.current = cap
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.fontSize = `${Math.min(fitted.current, cap ?? max)}px`
+    }
+  }, [ref, cap, max])
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -179,7 +187,12 @@ const useFitFontSize = (
       )
     }
 
+    let active = true
     const measure = () => {
+      // Hidden or detached previews must not shrink every answer in the group.
+      if (!active || !el.isConnected || !el.clientWidth || !el.clientHeight) {
+        return
+      }
       let best = MIN_FIT_FONT_SIZE
 
       if (fits(max)) {
@@ -201,7 +214,7 @@ const useFitFontSize = (
       }
 
       fitted.current = best
-      el.style.fontSize = `${Math.min(best, cap ?? best)}px`
+      el.style.fontSize = `${Math.min(best, capRef.current ?? best)}px`
       report?.(id, best)
     }
 
@@ -212,8 +225,11 @@ const useFitFontSize = (
     // Une police web arrivée après coup change la place occupée par le texte.
     void document.fonts?.ready.then(measure)
 
-    return () => observer.disconnect()
-  }, [ref, max, fitKey, cap, report, id])
+    return () => {
+      active = false
+      observer.disconnect()
+    }
+  }, [ref, max, fitKey, report, id])
 
   useEffect(() => () => forget?.(id), [forget, id])
 }
@@ -272,6 +288,7 @@ export const TitleBoxView = ({
 // couleur Kahoot + forme + texte, sauf surcharge de fond / texte / taille.
 export const AnswerBoxView = ({
   index,
+  fitKey = "",
   box,
   text,
   fontFamily,
@@ -280,6 +297,7 @@ export const AnswerBoxView = ({
   className,
 }: {
   index: number
+  fitKey?: string
   box: QuestionLayoutBox
   text: string
   fontFamily?: string
@@ -295,7 +313,7 @@ export const AnswerBoxView = ({
   useFitFontSize(
     ref,
     box.fontSize ?? DEFAULT_ANSWER_MAX_FONT_SIZE,
-    `${text}|${fontFamily}|${box.width}x${box.height}`,
+    `${text}|${fontFamily}|${box.width}x${box.height}|${fitKey}`,
     box.fontSize === undefined,
   )
 

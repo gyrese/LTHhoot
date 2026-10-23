@@ -121,21 +121,9 @@ describe("validation interface", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fermer" }))
     expect(state.setShowValidation).toHaveBeenCalledWith(false)
   })
-  it("associates inline feedback with the input and clears it after correction", () => {
-    const { rerender } = render(
-      <ValidatedInput field="answers.0" aria-label="Réponse" />,
-    )
-    const input = screen.getByRole("textbox")
-    expect(input.getAttribute("aria-invalid")).toBe("true")
-    expect(
-      document.getElementById(input.getAttribute("aria-describedby")!)
-        ?.textContent,
-    ).toContain("Réponse vide")
-    const issues = state.validationIssues
-    state.validationIssues = []
-    rerender(<ValidatedInput field="answers.0" aria-label="Réponse" />)
-    expect(input.hasAttribute("aria-invalid")).toBe(false)
+  it("keeps invalid answers editable without inline warnings", () => {
+    render(<ValidatedInput field="answers.0" aria-label="Réponse" />)
+    expect(screen.getByRole("textbox").hasAttribute("aria-invalid")).toBe(false)
     expect(screen.queryByText(/Réponse vide/u)).toBeNull()
-    state.validationIssues = issues
   })
 })

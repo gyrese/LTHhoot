@@ -34,8 +34,6 @@ type SaveStatus = "saving" | "dirty" | "saved"
 
 const QuizzEditorHeader = () => {
   const {
-    validationIssues,
-    setShowValidation,
     validationTarget,
     subject,
     publicName,
@@ -343,25 +341,6 @@ const QuizzEditorHeader = () => {
           </Button>
         </div>
       </header>
-      {validationIssues.length > 0 && (isDirty || !quizzId) && (
-        <div
-          role="status"
-          className="bg-danger-soft text-danger flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
-        >
-          <span>
-            Enregistrement sur le serveur bloqué : {validationIssues.length}{" "}
-            point(s) à corriger.
-          </span>
-          <button
-            type="button"
-            className="focus-ring rounded font-semibold underline"
-            onClick={() => setShowValidation(true)}
-          >
-            Voir les problèmes
-          </button>
-        </div>
-      )}
-
       {/* Barre d'outils dédiée juste en dessous */}
       <div className="border-border bg-surface relative z-30 flex w-full shrink-0 items-center border-b px-4">
         <SlideToolbar />

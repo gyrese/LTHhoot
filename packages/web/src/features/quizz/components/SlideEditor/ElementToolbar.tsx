@@ -336,7 +336,7 @@ export default function ElementToolbar({
     <div
       role="group"
       aria-label={t("quizz:editorToolbar.tools", { type: typeName })}
-      className="flex min-h-11 flex-wrap items-center gap-x-2 gap-y-1 py-1"
+      className="flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 py-1"
     >
       <span
         className="text-ink max-w-44 truncate text-sm font-semibold"

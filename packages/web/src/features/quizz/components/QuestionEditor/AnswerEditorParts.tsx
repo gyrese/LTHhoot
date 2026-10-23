@@ -1,5 +1,5 @@
 import { FieldErrors, ValidatedInput } from "../EditorValidation"
-import { Minus, Plus } from "lucide-react"
+import { ChevronDown, Minus, Plus } from "lucide-react"
 import { useEffect, useId, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -9,14 +9,24 @@ export const AnswerEditorPanel = ({
 }: {
   children: ReactNode
   validationField?: string
-}) => (
-  <div
-    data-validation-target={validationField}
-    className="border-border bg-surface/95 text-ink relative z-10 flex flex-col gap-4 rounded-xl border p-4 shadow-sm backdrop-blur-sm"
-  >
-    {children}
-  </div>
-)
+}) => {
+  const { t } = useTranslation()
+  return (
+    <details
+      key={validationField}
+      data-validation-target={validationField}
+      className="border-border bg-surface/95 text-ink group relative z-10 ml-auto w-full max-w-xl rounded-lg border shadow-sm backdrop-blur-sm"
+    >
+      <summary className="focus-ring flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+        {t("quizz:previewFlow.answers")}
+        <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-border flex max-h-[min(28dvh,16rem)] flex-col gap-2 overflow-y-auto border-t p-3">
+        {children}
+      </div>
+    </details>
+  )
+}
 
 export const AnswerEditorSection = ({
   title,
@@ -31,7 +41,7 @@ export const AnswerEditorSection = ({
   action?: () => void
   actionLabel?: string
 }) => (
-  <section className="flex min-w-0 flex-col gap-3">
+  <section className="flex min-w-0 flex-col gap-2">
     <div className="flex min-h-9 items-center justify-between gap-3">
       <h3 className="text-ink text-sm font-semibold">{title}</h3>
       {action && (
@@ -128,7 +138,7 @@ export const EditableAnswerList = ({
       actionLabel={t("quizz:answerEditor.add")}
     >
       <FieldErrors field={field} exact />
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {values.map((value, index) => (
           <div key={index} className="flex min-w-0 items-center gap-2">
             <span className="bg-panel text-ink-muted flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums">

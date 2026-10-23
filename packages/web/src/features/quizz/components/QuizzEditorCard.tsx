@@ -154,7 +154,7 @@ const QuizzEditorCard = ({
                 setCurrentIndex(index)
                 setShowValidation(true)
               }}
-              className="focus-ring text-danger hover:bg-danger-soft flex min-h-8 items-center gap-1 rounded px-1.5 text-xs font-semibold"
+              className="focus-ring flex min-h-8 items-center gap-1 rounded px-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/10"
               aria-label={t("quizz:sidebar.issues", {
                 number: index + 1,
                 count: validationErrors.length,

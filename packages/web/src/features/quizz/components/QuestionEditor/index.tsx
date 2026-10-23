@@ -126,7 +126,7 @@ const QuestionEditor = ({
             currentQuestion.type !== "grid" &&
             !hasLayoutAnswers(currentQuestion.type) && (
               <div className="pointer-events-auto">
-                <QuestionAnswerEditor />
+                <QuestionAnswerEditor key={currentQuestion.id} />
               </div>
             )}
         </div>

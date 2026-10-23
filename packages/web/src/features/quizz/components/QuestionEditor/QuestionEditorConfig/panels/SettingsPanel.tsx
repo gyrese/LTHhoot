@@ -196,14 +196,14 @@ const SettingsPanel = () => {
           />
           <ConfigToggle
             icon={<Zap className="size-4 text-amber-500" />}
-            label={t("quizz:question.config.doublePoints")}
+            label={t("game:roundEvent.doublePoints")}
             checked={currentQuestion.pointsMultiplier === 2}
             onChange={(value) =>
               updateQuestion(currentIndex, {
                 pointsMultiplier: value ? 2 : undefined,
               })
             }
-            description={t("quizz:question.config.doublePointsHint")}
+            description={t("game:roundEvent.doublePointsHint")}
           />
           <ConfigToggle
             icon={<Zap className="size-4" />}

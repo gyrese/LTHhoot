@@ -145,7 +145,7 @@ export default function SlideToolbar() {
       <div
         role="toolbar"
         aria-label={t("quizz:editorToolbar.slideTools")}
-        className="flex min-h-11 flex-wrap items-center gap-x-2 gap-y-1 py-1"
+        className="flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 py-1"
       >
         <div className="flex items-center gap-0.5">
           <ToolButton
@@ -203,7 +203,7 @@ export default function SlideToolbar() {
         <span aria-hidden="true" className="bg-border h-5 w-px" />
         <BackgroundButton />
         <AudioButton />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <ToolButton
             label={t("quizz:editorToolbar.layers")}
             icon={<Layers className="size-4" />}

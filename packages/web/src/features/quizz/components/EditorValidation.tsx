@@ -1,63 +1,26 @@
-import { useEffect, useId, type InputHTMLAttributes } from "react"
+import { useEffect, type InputHTMLAttributes } from "react"
 import { useTranslation } from "react-i18next"
 import { AlertTriangle, CheckCircle2, ChevronRight, X } from "lucide-react"
 import { useQuizzEditor } from "../contexts/quizz-editor-context"
 import EditorDialog from "./EditorDialog"
 
-export function FieldErrors({
-  field,
-  exact = false,
-}: {
-  field: string
-  exact?: boolean
-}) {
-  const { validationIssues, currentIndex } = useQuizzEditor()
-  const { t } = useTranslation()
-  const path = `questions.${currentIndex}.${field}`
-  const errors = validationIssues.filter(
-    (issue) =>
-      issue.path === path || (!exact && issue.path.startsWith(`${path}.`)),
-  )
-  if (!errors.length) {
-    return null
-  }
-  return (
-    <div className="bg-surface text-danger mt-1 rounded px-2 py-1 text-xs leading-relaxed">
-      {errors.map((issue, index) => (
-        <p key={`${issue.path}-${index}`}>
-          {issue.field} : {t(issue.message, issue.message)}
-        </p>
-      ))}
-    </div>
-  )
+// Validation stays available from the thumbnail, without inline editor warnings.
+export function FieldErrors(_props: { field: string; exact?: boolean }) {
+  return null
 }
 
 export function ValidatedInput({
   field,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & { field: string }) {
-  const { validationIssues, currentIndex } = useQuizzEditor()
-  const path = `questions.${currentIndex}.${field}`
-  const id = useId()
-  const invalid = validationIssues.some(
-    (issue) => issue.path === path || issue.path.startsWith(`${path}.`),
-  )
+  const { currentIndex } = useQuizzEditor()
   return (
     <div className="min-w-0 flex-1">
       <input
         {...props}
         className={`${props.className ?? ""} w-full min-w-0`}
-        data-validation-target={path}
-        aria-invalid={invalid || undefined}
-        aria-describedby={
-          [props["aria-describedby"], invalid ? id : undefined]
-            .filter(Boolean)
-            .join(" ") || undefined
-        }
+        data-validation-target={`questions.${currentIndex}.${field}`}
       />
-      <div id={id}>
-        <FieldErrors field={field} />
-      </div>
     </div>
   )
 }
@@ -76,9 +39,24 @@ export function ValidationFocus() {
         'dialog[open], [role="dialog"][aria-modal="true"]',
       )
       const root = dialogs[dialogs.length - 1] ?? document
-      const targets = Array.from(
+      const candidates = Array.from(
         root.querySelectorAll<HTMLElement>("[data-validation-target]"),
-      ).filter((el) => el.getClientRects().length > 0)
+      )
+      for (const candidate of candidates) {
+        if (
+          candidate.dataset.validationTarget === validationTarget.path ||
+          validationTarget.path.startsWith(
+            `${candidate.dataset.validationTarget}.`,
+          )
+        ) {
+          let details = candidate.closest("details")
+          while (details) {
+            details.open = true
+            details = details.parentElement?.closest("details") ?? null
+          }
+        }
+      }
+      const targets = candidates.filter((el) => el.getClientRects().length > 0)
       const target =
         targets.find(
           (el) => el.dataset.validationTarget === validationTarget.path,
@@ -193,7 +171,7 @@ export default function EditorValidation() {
                           </span>
                           <span
                             aria-label={`${issues.length} problème(s)`}
-                            className="bg-danger-soft text-danger shrink-0 rounded px-1.5 py-0.5 text-xs tabular-nums"
+                            className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600 tabular-nums"
                           >
                             {issues.length}
                           </span>
@@ -207,7 +185,7 @@ export default function EditorValidation() {
                                 aria-label={`Corriger ${issue.field} : ${t(issue.message, issue.message)}`}
                                 className="focus-ring hover:bg-panel flex w-full items-start gap-3 rounded-md px-2 py-3 text-left"
                               >
-                                <AlertTriangle className="text-danger mt-0.5 size-4 shrink-0" />
+                                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
                                 <span>
                                   <span className="text-ink block text-sm font-semibold">
                                     {issue.field}

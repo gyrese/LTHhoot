@@ -7,11 +7,13 @@ type LabelProps = {
 }
 
 const Label = ({ icon, label, unit = "sec" }: LabelProps) => (
-  <div className="text-ink flex items-center gap-2 text-sm font-semibold">
-    <span className="text-ink-subtle">{icon}</span>
-    {label}
+  <div className="text-ink flex min-w-0 items-center gap-2 text-sm font-semibold">
+    <span className="text-ink-subtle shrink-0">{icon}</span>
+    <span className="min-w-0 wrap-anywhere">{label}</span>
     {unit && (
-      <span className="text-ink-subtle text-xs font-normal">({unit})</span>
+      <span className="text-ink-subtle shrink-0 text-xs font-normal">
+        ({unit})
+      </span>
     )}
   </div>
 )

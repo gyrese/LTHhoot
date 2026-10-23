@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   AnswerEditorNumberField,
+  AnswerEditorPanel,
   EditableAnswerList,
 } from "./AnswerEditorParts"
 
@@ -22,6 +23,20 @@ vi.mock("react-i18next", () => ({
 afterEach(cleanup)
 
 describe("structure commune des réponses", () => {
+  it("keeps the answer panel collapsed until requested", () => {
+    const { container } = render(
+      <AnswerEditorPanel>
+        <input aria-label="Réponse correcte" />
+      </AnswerEditorPanel>,
+    )
+    const panel = container.querySelector("details")!
+    expect(panel.open).toBe(false)
+    fireEvent.click(container.querySelector("summary")!)
+    expect(panel.open).toBe(true)
+    expect(
+      screen.getByRole("textbox", { name: "Réponse correcte" }),
+    ).toBeTruthy()
+  })
   it("ajoute, modifie et retire une réponse sans descendre sous le minimum", () => {
     const onChange = vi.fn()
     const { rerender } = render(
