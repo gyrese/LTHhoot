@@ -1,3 +1,4 @@
+import type { EveningSummary } from "./evening"
 import type { GameResultMeta, QuizzMeta } from "@rahoot/common/types/game"
 
 // "remote" : session ouverte par le PIN de télécommande (REMOTE_PIN). Elle ne
@@ -14,6 +15,7 @@ export type GuestMeta = {
 export type ManagerConfig = {
   quizz: QuizzMeta[]
   results: GameResultMeta[]
+  evening?: EveningSummary
   // Absent = admin (clients existants) : seule la valeur "guest" restreint l'UI.
   role?: ManagerRole
   // Nom affiché du compte invité connecté (rôle guest uniquement).

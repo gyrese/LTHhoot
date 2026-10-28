@@ -1,7 +1,23 @@
 import { FieldErrors, ValidatedInput } from "../EditorValidation"
 import { ChevronDown, Minus, Plus } from "lucide-react"
-import { useEffect, useId, useState, type ReactNode } from "react"
+import {
+  useEffect,
+  useId,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react"
 import { useTranslation } from "react-i18next"
+
+const answerPanelTheme = {
+  "--color-surface": "rgb(255 255 255 / 0.08)",
+  "--color-panel": "rgb(255 255 255 / 0.12)",
+  "--color-border": "rgb(255 255 255 / 0.2)",
+  "--color-border-strong": "rgb(255 255 255 / 0.35)",
+  "--color-ink": "#ffffff",
+  "--color-ink-muted": "rgb(255 255 255 / 0.85)",
+  "--color-ink-subtle": "rgb(255 255 255 / 0.75)",
+} as CSSProperties
 
 export const AnswerEditorPanel = ({
   children,
@@ -14,8 +30,10 @@ export const AnswerEditorPanel = ({
   return (
     <details
       key={validationField}
+      open
       data-validation-target={validationField}
-      className="border-border bg-surface/95 text-ink group relative z-10 ml-auto w-full max-w-xl rounded-lg border shadow-sm backdrop-blur-sm"
+      style={answerPanelTheme}
+      className="text-ink group relative z-10 w-full rounded-xl border border-white/20 bg-slate-950/60 shadow-lg backdrop-blur-xl"
     >
       <summary className="focus-ring flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         {t("quizz:previewFlow.answers")}

@@ -3,16 +3,19 @@ import type { PowerUpType } from "@rahoot/common/types/powerup"
 import { isRoundEventType } from "@rahoot/common/types/round-event"
 import { inviteCodeValidator } from "@rahoot/common/validators/auth"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
+import eveningTracker from "@rahoot/socket/services/evening-tracker"
 import Config from "@rahoot/socket/services/config"
 import Game from "@rahoot/socket/services/game"
 import Manager from "@rahoot/socket/services/manager"
 import Registry from "@rahoot/socket/services/registry"
 import {
+  answerVideoExpandedSchema,
   buyPowerUpSchema,
   createGameSchema,
   eveningStartSchema,
   gameIdSchema,
   kickPlayerSchema,
+  recoverPlayerSchema,
   loginSchema,
   openAnswerSchema,
   powerUpUseSchema,
@@ -55,6 +58,37 @@ const removeAbandonedGames = (clientId: string) => {
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   const registry = Registry.getInstance()
+
+  socket.on(EVENTS.MANAGER.CREATE_RECOVERY, (payload, ack) => {
+    if (typeof ack !== "function") {
+      return
+    }
+
+    const parsed = parsePayload(kickPlayerSchema, payload)
+
+    if (!parsed || !socket.rooms.has(`manager-${parsed.gameId}`)) {
+      ack({ error: "recovery:unavailable" })
+
+      return
+    }
+
+    const result = registry
+      .getGameById(parsed.gameId)
+      ?.createPlayerRecovery(parsed.playerId)
+    ack(result ?? { error: "recovery:unavailable" })
+  })
+
+  socket.on(EVENTS.PLAYER.RECOVER, (payload, ack) => {
+    if (typeof ack !== "function") {
+      return
+    }
+
+    const parsed = parsePayload(recoverPlayerSchema, payload)
+    const result = parsed
+      ? registry.getGameById(parsed.gameId)?.recoverPlayer(parsed.token)
+      : undefined
+    ack(result ?? { error: "recovery:invalid" })
+  })
 
   // Sonde de vivacité du watchdog client (retour d'arrière-plan mobile) : on
   // acquitte immédiatement pour prouver que le lien est réellement vivant.
@@ -207,6 +241,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     removeAbandonedGames(socket.handshake.auth.clientId)
 
     const game = new Game(io, socket, finalQuizz, {
+      trackedEveningId:
+        session.role === "admin" && questionIndex < 0
+          ? eveningTracker.getActiveId(socket.handshake.auth.clientId)
+          : undefined,
       powerUpsEnabled: Boolean(payload.powerUpsEnabled),
       disabledPowerUps: payload.disabledPowerUps ?? [],
       noSpeedMode: Boolean(payload.noSpeedMode),
@@ -355,6 +393,22 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       game.showLeaderboard(),
     ),
   )
+
+  socket.on(EVENTS.MANAGER.SET_ANSWER_VIDEO_EXPANDED, (payload, ack) => {
+    const parsed = parsePayload(answerVideoExpandedSchema, payload)
+
+    if (!parsed || !socket.rooms.has(`manager-${parsed.gameId}`)) {
+      replyAck(ack, { ok: false })
+
+      return
+    }
+
+    const game = registry.getGameById(parsed.gameId)
+    const ok =
+      game?.setAnswerVideoExpanded(parsed.expanded, parsed.questionNumber) ??
+      false
+    replyAck(ack, { ok })
+  })
 
   socket.on(EVENTS.MANAGER.ARM_ROUND_EVENT, (payload) =>
     withManagerGame(gameIdOf(payload), socket, (game) => {

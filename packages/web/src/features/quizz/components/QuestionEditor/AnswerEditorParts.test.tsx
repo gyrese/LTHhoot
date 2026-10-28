@@ -23,19 +23,19 @@ vi.mock("react-i18next", () => ({
 afterEach(cleanup)
 
 describe("structure commune des réponses", () => {
-  it("keeps the answer panel collapsed until requested", () => {
+  it("shows answers immediately and lets the panel collapse", () => {
     const { container } = render(
       <AnswerEditorPanel>
         <input aria-label="Réponse correcte" />
       </AnswerEditorPanel>,
     )
     const panel = container.querySelector("details")!
-    expect(panel.open).toBe(false)
-    fireEvent.click(container.querySelector("summary")!)
     expect(panel.open).toBe(true)
     expect(
       screen.getByRole("textbox", { name: "Réponse correcte" }),
     ).toBeTruthy()
+    fireEvent.click(container.querySelector("summary")!)
+    expect(panel.open).toBe(false)
   })
   it("ajoute, modifie et retire une réponse sans descendre sous le minimum", () => {
     const onChange = vi.fn()

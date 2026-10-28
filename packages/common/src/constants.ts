@@ -22,6 +22,7 @@ export const EVENTS = {
     ROUND_EXTENDED: "game:roundExtended",
   },
   PLAYER: {
+    RECOVER: "player:recover",
     SUCCESS_RECONNECT: "player:successReconnect",
     JOIN: "player:join",
     LOGIN: "player:login",
@@ -31,6 +32,7 @@ export const EVENTS = {
     TIE_BREAK_ANSWER: "player:tieBreakAnswer",
   },
   MANAGER: {
+    CREATE_RECOVERY: "manager:createRecovery",
     SUCCESS_RECONNECT: "manager:successReconnect",
     LOG_ENTRY: "manager:logEntry",
     GET_LOGS: "manager:getLogs",
@@ -48,6 +50,7 @@ export const EVENTS = {
     ABORT_QUIZ: "manager:abortQuiz",
     NEXT_QUESTION: "manager:nextQuestion",
     SHOW_LEADERBOARD: "manager:showLeaderboard",
+    SET_ANSWER_VIDEO_EXPANDED: "manager:setAnswerVideoExpanded",
     GET_CONFIG: "manager:getConfig",
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
@@ -110,6 +113,9 @@ export const EVENTS = {
     SUBMIT_SUCCESS: "asyncQuizz:submitSuccess",
   },
   EVENING: {
+    OPEN: "evening:open",
+    CLOSE: "evening:close",
+    STATE: "evening:state",
     START: "evening:start",
     QUIZ_COMPLETE: "evening:quizComplete",
     COMPLETE: "evening:complete",

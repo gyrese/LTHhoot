@@ -1,4 +1,10 @@
 {
+  "answerVideo": {
+    "expand": "Video vergrößern",
+    "reduce": "Video verkleinern",
+    "title": "Antwortvideo",
+    "failed": "Die Videogröße konnte nicht geändert werden. Bitte erneut versuchen."
+  },
   "gridPick": "Finde die {{count}} richtigen Felder",
   "answerSent": "Antwort gesendet!",
   "answerSendFailed": "Antwort nicht gesendet – zum Wiederholen tippen",

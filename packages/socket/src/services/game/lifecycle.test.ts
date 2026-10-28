@@ -1,6 +1,8 @@
 import type { Quizz } from "@rahoot/common/types/game"
+import { EVENTS } from "@rahoot/common/constants"
 import type { Server, Socket } from "@rahoot/common/types/game/socket"
 import Game from "@rahoot/socket/services/game"
+import manager from "@rahoot/socket/services/manager"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import {
   playerToSnapshot,
@@ -48,6 +50,105 @@ afterAll(() => {
 })
 
 describe("Game.dispose", () => {
+  const privilegedRoles = ["admin", "guest", "remote"] as const
+  const authenticatePlayer = (
+    socket: Socket,
+    role: (typeof privilegedRoles)[number],
+  ) => {
+    if (role === "admin") {
+      manager.login(socket)
+    } else if (role === "guest") {
+      manager.loginGuest(socket, "compte-test")
+    } else {
+      manager.loginRemote(socket)
+    }
+  }
+
+  it.each(privilegedRoles)(
+    "refuse de générer un lien pour une identité %s",
+    (role) => {
+      const socket = fakeSocket(`joueur-${role}`, `identite-${role}`)
+      const game = new Game(io, fakeSocket("hote"), quizz)
+
+      try {
+        game.join(socket, "Alice")
+        authenticatePlayer(socket, role)
+        expect(game.createPlayerRecovery(socket.id)).toBeUndefined()
+      } finally {
+        manager.logout(socket)
+        game.dispose()
+      }
+    },
+  )
+
+  it.each(privilegedRoles)(
+    "refuse un lien si son identité devient %s après génération",
+    (role) => {
+      const socket = fakeSocket(`joueur-${role}`, `identite-${role}`)
+      const game = new Game(io, fakeSocket("hote"), quizz)
+
+      try {
+        game.join(socket, "Alice")
+        const link = game.createPlayerRecovery(socket.id)!
+        authenticatePlayer(socket, role)
+        expect(game.recoverPlayer(link.token)).toBeUndefined()
+        manager.logout(socket)
+        expect(game.recoverPlayer(link.token)).toBeUndefined()
+      } finally {
+        manager.logout(socket)
+        game.dispose()
+      }
+    },
+  )
+
+  it("récupère un joueur sur un autre téléphone sans perdre points ni pièces", () => {
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    game.join(fakeSocket("ancien", "identite"), "Alice")
+    Object.assign(game.players[0]!, { points: 2400, streak: 3, goldCoins: 120 })
+    const link = game.createPlayerRecovery("ancien")!
+    const identity = game.recoverPlayer(link.token)!
+    const phone = fakeSocket("nouveau", identity.clientId)
+    game.reconnect(phone)
+    expect(game.players).toHaveLength(1)
+    expect(game.players[0]).toMatchObject({
+      id: "nouveau",
+      points: 2400,
+      streak: 3,
+      goldCoins: 120,
+    })
+    expect(phone.emit).toHaveBeenCalledWith(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+      expect.objectContaining({
+        player: expect.objectContaining({ username: "Alice", points: 2400 }),
+      }),
+    )
+    expect(game.recoverPlayer(link.token)).toBeUndefined()
+    game.dispose()
+  })
+
+  it("refuse la récupération d'un joueur supprimé", () => {
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    game.join(fakeSocket("ancien", "identite"), "Alice")
+    const link = game.createPlayerRecovery("ancien")!
+    game.removePlayer("ancien")
+    expect(game.recoverPlayer(link.token)).toBeUndefined()
+    game.dispose()
+  })
+
+  it("laisse dix minutes pour scanner dans le lobby", () => {
+    vi.useFakeTimers()
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    game.join(fakeSocket("ancien", "identite"), "Alice")
+    game.schedulePlayerRemoval("ancien")
+    const link = game.createPlayerRecovery("ancien")!
+    vi.advanceTimersByTime(31_000)
+    expect(game.recoverPlayer(link.token)).toEqual({ clientId: "identite" })
+    game.reconnect(fakeSocket("nouveau", "identite"))
+    vi.advanceTimersByTime(600_000)
+    expect(game.players).toHaveLength(1)
+    game.dispose()
+    vi.useRealTimers()
+  })
   it("removeGame libère les timers et fait quitter les rooms", () => {
     vi.useFakeTimers()
 
@@ -119,6 +220,20 @@ describe("PlayerManager.join", () => {
 })
 
 describe("persistence — migration tolérante", () => {
+  it("conserve le rattachement à la soirée quand une partie est restaurée", () => {
+    const game = new Game(io, fakeSocket("hote-soiree"), quizz, {
+      trackedEveningId: "soiree-origine",
+    })
+    const snapshot = game.serialize()
+    const restored = Game.restore(io, snapshot)
+
+    expect(snapshot.trackedEveningId).toBe("soiree-origine")
+    expect(restored?.eveningTrackingId).toBe("soiree-origine")
+    expect(restored?.gameId).toBe(game.gameId)
+    game.dispose()
+    restored?.dispose()
+  })
+
   it("restaure pièces et inventaire, et accepte un ancien instantané", () => {
     const snapshot = playerToSnapshot(
       {

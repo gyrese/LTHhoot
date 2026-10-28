@@ -1,4 +1,10 @@
 {
+  "answerVideo": {
+    "expand": "Ingrandisci video",
+    "reduce": "Riduci video",
+    "title": "Video della risposta",
+    "failed": "Impossibile ridimensionare il video. Riprova."
+  },
   "gridPick": "Trova le {{count}} caselle corrette",
   "answerSent": "Risposta inviata!",
   "answerSendFailed": "Risposta non inviata — tocca per riprovare",

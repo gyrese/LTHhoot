@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "title": "LTNHoot — Quiz & animations · Les Toiles Noires",
+    "description": "Un quiz interactif pour réunir vos invités, jouer sur téléphone et vibrer devant le classement. Découvrez LTNHoot et demandez un devis aux Toiles Noires."
+  },
+  "nav": {
+    "skip": "Aller au contenu",
+    "label": "Navigation de présentation",
+    "game": "Le jeu",
+    "events": "Animations",
+    "app": "L’application",
+    "quote": "Parlons de votre soirée"
+  },
+  "hero": {
+    "line1": "La soirée commence.",
+    "line2": "La compétition aussi.",
+    "description": "Un écran, vos téléphones, et tout le monde entre dans le jeu. Le quiz interactif des Toiles Noires donne une nouvelle énergie à vos soirées.",
+    "quote": "Demander un devis",
+    "discover": "Découvrir le jeu"
+  },
+  "demo": {
+    "label": "Démo interactive",
+    "question": "Quelle est la capitale de La Réunion ?",
+    "instruction": "Cliquez sur votre réponse. À vous de jouer.",
+    "ready": "Une question, quatre possibilités. Laquelle choisissez-vous ?",
+    "correct": "Bien joué ! Saint-Denis est la bonne réponse.",
+    "incorrect": "C’était Saint-Denis. La prochaine sera la bonne !",
+    "again": "Rejouer la démo",
+    "caption": "Exemple de question. Cette démonstration ne rejoint aucune partie et n’enregistre aucun score."
+  },
+  "how": {
+    "title": "Tout le monde peut entrer dans la partie.",
+    "intro": "Une prise en main simple, pour garder l’attention sur ce qui compte : le plaisir de jouer ensemble.",
+    "join": {
+      "title": "Scannez. Vous êtes là.",
+      "text": "Les joueurs scannent le QR code ou saisissent le code de la partie dans leur navigateur. Un pseudo, et c’est parti."
+    },
+    "play": {
+      "title": "Le téléphone devient buzzer.",
+      "text": "Les questions s’affichent sur le grand écran. Chacun répond sur son téléphone, à son rythme ou contre la montre selon le mode choisi."
+    },
+    "win": {
+      "title": "Les points font le spectacle.",
+      "text": "Les réponses sont révélées et le classement évolue. Quiz après quiz, les scores de la soirée s’additionnent jusqu’au classement général."
+    }
+  },
+  "formats": {
+    "title": "Changez la question. Gardez l’envie de jouer.",
+    "intro": "Neuf formats pour varier les défis, surprendre les joueurs et donner du relief à votre quiz.",
+    "choose": "Choisir un format de question",
+    "preview": "Aperçu du format",
+    "note": "Aperçu illustratif. Le contenu des questions se prépare dans l’application.",
+    "true": "Vrai",
+    "false": "Faux",
+    "selected": "Case sélectionnée",
+    "fragment": "Fragment",
+    "clue": "Indice",
+    "items": {
+      "mcq": {
+        "name": "Choix multiples",
+        "description": "Plusieurs propositions, une réponse à trouver. Le grand classique qui rassemble tout le monde."
+      },
+      "true_false": {
+        "name": "Vrai ou faux",
+        "description": "Deux options pour trancher. Parfait pour jouer avec les idées reçues."
+      },
+      "open": {
+        "name": "Réponse libre",
+        "description": "Les joueurs écrivent leur réponse. À eux de trouver le mot juste.",
+        "sample": "Votre réponse…"
+      },
+      "image_sequence": {
+        "name": "Images progressives",
+        "description": "Les images se dévoilent au fil de la question. Chaque indice vous rapproche de la réponse."
+      },
+      "date": {
+        "name": "Date à trouver",
+        "description": "Un événement, une date. Faites appel à vos souvenirs.",
+        "sample": "JJ / MM / AAAA"
+      },
+      "slider": {
+        "name": "Estimation",
+        "description": "Glissez le curseur pour donner votre estimation. Il faut viser juste."
+      },
+      "puzzle": {
+        "name": "Puzzle",
+        "description": "Reconstituez l’image en remettant les morceaux à leur place."
+      },
+      "drop_pin": {
+        "name": "Repère sur une image",
+        "description": "Placez votre repère sur une image. Trouvez le bon endroit, sur une carte ou un autre visuel.",
+        "sample": "Où placer votre repère ?"
+      },
+      "grid": {
+        "name": "Grille",
+        "description": "Repérez la bonne case dans une grille. L’observation entre en jeu."
+      }
+    }
+  },
+  "benefits": {
+    "title": "Une soirée qui garde le fil.",
+    "scores": {
+      "title": "Un vrai classement de soirée.",
+      "text": "Démarrez la soirée, enchaînez les quiz puis clôturez-la. Les points des joueurs sont sauvegardés et additionnés pour révéler les gagnants."
+    },
+    "remote": {
+      "title": "L’animation au bout des doigts.",
+      "text": "L’animateur pilote la partie depuis la télécommande sur son téléphone. Il peut rester au plus près des joueurs."
+    },
+    "mobile": {
+      "title": "Rien à installer pour les joueurs.",
+      "text": "Un navigateur sur téléphone suffit pour participer. Aucun téléchargement d’application à demander à vos invités."
+    }
+  },
+  "paths": {
+    "title": "Votre soirée. Votre façon de jouer.",
+    "intro": "Confiez-nous l’animation, ou prenez les commandes de l’application.",
+    "event": {
+      "title": "On en fait une soirée ?",
+      "text": "Un événement d’entreprise, une soirée de bar, un moment entre proches : échangeons sur votre idée pour construire une animation avec Les Toiles Noires.",
+      "one": "Une proposition à partir de votre événement",
+      "two": "Le format et l’organisation à définir ensemble",
+      "three": "Un devis avant de vous engager",
+      "cta": "Parler de mon événement",
+      "note": "Prestation sur devis. Décrivez-nous votre projet pour vérifier les possibilités et les disponibilités."
+    },
+    "app": {
+      "title": "Vous avez les commandes.",
+      "text": "Vous disposez déjà d’un accès organisateur ? Préparez vos quiz et lancez vos parties. L’application est aussi disponible en open source pour l’installer vous-même.",
+      "manager": "Accéder à l’espace organisateur",
+      "join": "Rejoindre une partie avec un code",
+      "install": "Installer depuis GitHub",
+      "note": "L’espace organisateur nécessite un accès administrateur. L’installation autonome demande un hébergement et une configuration technique."
+    }
+  },
+  "quote": {
+    "title": "Et si votre prochaine soirée commençait ici ?",
+    "text": "Racontez-nous l’occasion, le lieu, les invités. Nous pourrons échanger sur votre projet et vous proposer un devis adapté."
+  },
+  "form": {
+    "name": "Prénom et nom",
+    "email": "Adresse e-mail",
+    "event": "Type d’événement",
+    "date": "Date envisagée",
+    "location": "Lieu de l’événement",
+    "participants": "Nombre de participants",
+    "message": "Votre idée, vos envies",
+    "optional": "Facultatif",
+    "choose": "Choisir un type",
+    "events": {
+      "business": "Événement d’entreprise",
+      "bar": "Soirée de bar ou restaurant",
+      "private": "Événement privé",
+      "association": "Événement associatif",
+      "other": "Autre occasion"
+    },
+    "messagePlaceholder": "Ambiance souhaitée, public, contraintes, questions…",
+    "notice": "Ce formulaire prépare un e-mail dans votre messagerie. Vous pourrez le relire et l’envoyer vous-même ; rien n’est envoyé automatiquement.",
+    "submit": "Ouvrir ma messagerie",
+    "subject": "Demande de devis — animation LTNHoot",
+    "prepared": "Le message est préparé. Si votre messagerie ne s’ouvre pas, écrivez-nous directement à l’adresse ci-dessous."
+  },
+  "faq": {
+    "title": "Avant de jouer.",
+    "app": {
+      "question": "Faut-il télécharger une application ?",
+      "answer": "Non. Les joueurs participent depuis le navigateur de leur téléphone en scannant un QR code ou en saisissant le code de la partie."
+    },
+    "equipment": {
+      "question": "De quoi a-t-on besoin pour jouer ?",
+      "answer": "Un téléphone avec un navigateur pour chaque joueur, un grand écran pour les questions et un accès réseau à l’application. L’organisateur prépare et pilote la partie depuis son espace."
+    },
+    "scores": {
+      "question": "Peut-on cumuler les points sur plusieurs quiz ?",
+      "answer": "Oui. L’organisateur démarre une soirée avant les quiz. Les scores des joueurs sont sauvegardés et additionnés. En terminant la soirée, il obtient le classement général et le ou les gagnants."
+    },
+    "quote": {
+      "question": "Comment envoyer ma demande de devis ?",
+      "answer": "Complétez le formulaire puis choisissez « Ouvrir ma messagerie ». Un brouillon s’ouvre dans votre application e-mail ; relisez-le et envoyez-le. Vous pouvez aussi écrire directement à contact@lestoilesnoires.re."
+    },
+    "admin": {
+      "question": "L’espace organisateur est-il ouvert à tous ?",
+      "answer": "Il nécessite un accès administrateur existant : ce n’est pas une inscription libre. Pour utiliser votre propre instance, le code open source et les instructions d’installation sont disponibles sur GitHub."
+    }
+  },
+  "footer": {
+    "by": "Une expérience Les Toiles Noires.",
+    "credits": "Basé sur Rahoot / Razzia · Licence MIT"
+  }
+}

@@ -1,4 +1,10 @@
 {
+  "answerVideo": {
+    "expand": "Agrandir la vidéo",
+    "reduce": "Réduire la vidéo",
+    "title": "Vidéo de la réponse",
+    "failed": "La vidéo n’a pas pu être redimensionnée. Réessayez."
+  },
   "gridPick": "Trouvez les {{count}} bonnes cases",
   "answerSent": "Réponse envoyée !",
   "answerSendFailed": "Réponse non envoyée — touche pour réessayer",

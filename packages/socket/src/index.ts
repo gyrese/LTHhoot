@@ -1,4 +1,5 @@
 import type { Server } from "@rahoot/common/types/game/socket"
+import { eveningTrackingHandlers } from "@rahoot/socket/handlers/evening-tracking"
 import { gameSocketHandlers } from "@rahoot/socket/handlers/game"
 import { managerSocketHandlers } from "@rahoot/socket/handlers/manager"
 import { quizzSocketHandlers } from "@rahoot/socket/handlers/quizz"
@@ -832,6 +833,7 @@ import { asyncQuizzSocketHandlers } from "@rahoot/socket/handlers/async-quiz"
 
 const socketHandlers: SocketHandler[] = [
   managerSocketHandlers,
+  eveningTrackingHandlers,
   quizzSocketHandlers,
   gameSocketHandlers,
   resultsSocketHandlers,

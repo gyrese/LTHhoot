@@ -8,6 +8,7 @@ import type {
 import AIGeneratorModal from "./index"
 
 const mocks = vi.hoisted(() => ({
+  quizzId: "test" as string | null,
   emit: vi.fn(),
   timeout: vi.fn(),
   importQuestions: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock("@rahoot/web/features/game/contexts/socket-context", () => ({
 }))
 vi.mock("../../contexts/quizz-editor-context", () => ({
   useQuizzEditor: () => ({
-    quizzId: "test",
+    quizzId: mocks.quizzId,
     subject: "Disney",
     questions: [{ question: "Question déjà présente" }],
     importQuestions: mocks.importQuestions,
@@ -48,6 +49,7 @@ let callback: (_error: Error | null, _reply: WorkshopReply) => void = () => {
 beforeEach(() => {
   localStorage.clear()
   vi.clearAllMocks()
+  mocks.quizzId = "test"
   mocks.socket.connected = true
   mocks.socket.timeout.mockReturnValue({ emit: mocks.emit })
   mocks.emit.mockImplementation(
@@ -188,4 +190,102 @@ it("allows editing answers and undoing an AI revision", () => {
   expect(
     (screen.getAllByLabelText("Réponse 1")[0] as HTMLInputElement).value,
   ).toBe("Une souris")
+})
+
+it("starts a new quiz empty even when the former shared history is saved", () => {
+  mocks.quizzId = null
+  localStorage.setItem(
+    "rahoot-ai-workshop-v1:new",
+    JSON.stringify({
+      messages: [{ role: "user", text: "Ancien quiz Disney" }],
+      questions: [
+        { id: "old", question: first, locked: false, selected: true },
+      ],
+      input: "Ancienne demande",
+      audience: "Ancien public",
+    }),
+  )
+
+  render(<AIGeneratorModal open onClose={vi.fn()} />)
+
+  expect(screen.queryByText("Ancien quiz Disney")).toBeNull()
+  expect(screen.queryByText(first.question, { selector: "p" })).toBeNull()
+  expect(
+    (
+      screen.getByRole("textbox", {
+        name: "Message à l’IA",
+      }) as HTMLTextAreaElement
+    ).value,
+  ).toBe("")
+  send("Des questions sur les sciences")
+  const request = mocks.emit.mock.calls[0][1] as WorkshopRequest
+  expect(request.history).toEqual([])
+  expect(request.questions).toEqual([])
+  expect(request.settings.instructions).not.toContain("Ancien public")
+})
+
+it("keeps an unsaved quiz conversation on reopening but resets it for the next quiz", () => {
+  mocks.quizzId = null
+  const close = vi.fn()
+  const view = render(<AIGeneratorModal open onClose={close} />)
+  send("Deux questions Disney")
+  replyWithQuestions()
+
+  view.rerender(<AIGeneratorModal open={false} onClose={close} />)
+  view.rerender(<AIGeneratorModal open onClose={close} />)
+  expect(screen.getByText("Deux questions Disney")).toBeTruthy()
+  expect(screen.getByText(first.question, { selector: "p" })).toBeTruthy()
+
+  view.unmount()
+  render(<AIGeneratorModal open onClose={close} />)
+  expect(screen.queryByText("Deux questions Disney")).toBeNull()
+  expect(screen.queryByText(first.question, { selector: "p" })).toBeNull()
+  send("Des questions sur les sciences")
+  const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
+  expect(request.history).toEqual([])
+  expect(request.questions).toEqual([])
+})
+
+it("preserves the current conversation and pending reply when the quiz is first saved", () => {
+  mocks.quizzId = null
+  const close = vi.fn()
+  const view = render(<AIGeneratorModal open onClose={close} />)
+  send("Deux questions Disney")
+
+  mocks.quizzId = "saved-quiz"
+  view.rerender(<AIGeneratorModal open onClose={close} />)
+  replyWithQuestions()
+  expect(screen.getByText("Deux questions Disney")).toBeTruthy()
+  expect(screen.getByText(first.question, { selector: "p" })).toBeTruthy()
+
+  view.unmount()
+  render(<AIGeneratorModal open onClose={close} />)
+  expect(screen.getByText("Deux questions Disney")).toBeTruthy()
+  expect(screen.getByText(first.question, { selector: "p" })).toBeTruthy()
+  expect(mocks.emit).toHaveBeenCalledTimes(1)
+})
+
+it("ignores a previous quiz reply after opening a new quiz", () => {
+  mocks.quizzId = null
+  const view = render(<AIGeneratorModal open onClose={vi.fn()} />)
+  send("Deux questions Disney")
+  const previousReply = callback
+  view.unmount()
+
+  render(<AIGeneratorModal open onClose={vi.fn()} />)
+  send("Des questions sur les sciences")
+  act(() =>
+    previousReply(null, {
+      result: {
+        message: "Réponse au quiz précédent",
+        operations: [{ type: "add", question: first }],
+      },
+    }),
+  )
+  expect(screen.queryByText("Deux questions Disney")).toBeNull()
+  expect(screen.queryByText("Réponse au quiz précédent")).toBeNull()
+  expect(screen.queryByText(first.question, { selector: "p" })).toBeNull()
+  const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
+  expect(request.history).toEqual([])
+  expect(request.questions).toEqual([])
 })

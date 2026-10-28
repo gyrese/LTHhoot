@@ -1,0 +1,23 @@
+{
+  "action": "Récupérer",
+  "forPlayer": "Récupérer {{username}}",
+  "instructions": "Faites scanner ce QR code au joueur, ou envoyez-lui le lien. Il retrouvera sa session et ses points.",
+  "loading": "Création du lien…",
+  "unavailable": "Ce joueur ou cette partie ne sont plus disponibles. Actualisez la télécommande.",
+  "invalid": "Ce lien a expiré, a déjà été utilisé ou le joueur ne fait plus partie de la partie. Demandez un nouveau lien à l’animateur.",
+  "network": "Connexion interrompue. Réessayez ; si le lien a déjà été utilisé, demandez-en un nouveau.",
+  "expires": "Usage unique · expire dans {{minutes}} min",
+  "address": "Adresse de récupération",
+  "copy": "Copier le lien",
+  "copied": "Lien copié",
+  "copyFailed": "Copie impossible. Sélectionnez et copiez l’adresse ci-dessus.",
+  "expired": "Ce lien a expiré. Générez-en un nouveau.",
+  "generate": "Générer un nouveau lien",
+  "close": "Fermer",
+  "resume": "Reprendre ma partie",
+  "resumeHelp": "Ce lien personnel vous permet de retrouver votre place, vos points et vos bonus. Appuyez pour reprendre sur ce téléphone.",
+  "restoring": "Récupération…",
+  "connecting": "Connexion…",
+  "storage": "Le navigateur ne peut pas enregistrer la session. Autorisez le stockage puis réessayez.",
+  "kick": "Expulser {{username}}"
+}

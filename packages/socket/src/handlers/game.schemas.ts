@@ -16,7 +16,17 @@ const disabledPowerUps = z.array(z.string().max(50)).max(50)
 
 export const gameIdSchema = z.object({ gameId: id })
 
+export const answerVideoExpandedSchema = z.object({
+  gameId: id,
+  questionNumber: z.number().int().min(0),
+  expanded: z.boolean(),
+})
+
 export const kickPlayerSchema = z.object({ gameId: id, playerId: id })
+export const recoverPlayerSchema = z.object({
+  gameId: id,
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/u),
+})
 
 export const createGameSchema = z.union([
   id,

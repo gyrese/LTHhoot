@@ -23,10 +23,13 @@ import {
   type Status,
   type StatusDataMap,
 } from "@rahoot/common/types/game/status"
+import eveningTracker from "@rahoot/socket/services/evening-tracker"
 import Config from "@rahoot/socket/services/config"
+import manager from "@rahoot/socket/services/manager"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { GameLogger } from "@rahoot/socket/services/game/logger"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
+import { RecoveryLinks } from "@rahoot/socket/services/game/recovery-links"
 import {
   isPowerUpType,
   PowerUpManager,
@@ -57,6 +60,53 @@ const ROUND_EVENT_LABELS: Record<RoundEventType, string> = {
 }
 
 class Game {
+  private readonly recoveryLinks = new RecoveryLinks()
+
+  createPlayerRecovery(playerId: string) {
+    const player = this.playerManager.findById(playerId)
+
+    if (!player || manager.hasSession(player.clientId)) {
+      return undefined
+    }
+
+    // Laisser le temps de scanner dans le lobby, même si le délai normal de
+    // retrait (30 s) est déjà armé. Une partie démarrée conserve ses joueurs.
+    const timer = this.disconnectTimers.get(playerId)
+
+    if (timer) {
+      clearTimeout(timer)
+      this.disconnectTimers.set(
+        playerId,
+        setTimeout(() => {
+          this.disconnectTimers.delete(playerId)
+
+          if (!this.started) {
+            this.removePlayer(playerId)
+          }
+        }, 600_000),
+      )
+    }
+
+    return {
+      ...this.recoveryLinks.create(player.clientId),
+      username: player.username,
+    }
+  }
+
+  recoverPlayer(token: string) {
+    const clientId = this.recoveryLinks.consume(token)
+
+    // Une expulsion ou suppression de joueur invalide aussi la récupération.
+    if (
+      !clientId ||
+      manager.hasSession(clientId) ||
+      !this.playerManager.findByClientId(clientId)
+    ) {
+      return undefined
+    }
+
+    return { clientId }
+  }
   readonly gameId: string
   readonly inviteCode: string
 
@@ -76,6 +126,7 @@ class Game {
     currentIndex: number
     powerUpsEnabled: boolean
   } | null = null
+  private trackedEveningId?: string
   private singleQuizPowerUpsEnabled = false
   private disabledPowerUps: string[] = []
   // Mode sans rapidité : chaque bonne réponse vaut le barème plein, quel que
@@ -142,6 +193,7 @@ class Game {
       noSpeedMode?: boolean
       fastMode?: boolean
       fastModeIntensity?: FastModeIntensity
+      trackedEveningId?: string
       demoOnly?: boolean
       restore?: { gameId: string; inviteCode: string; managerClientId: string }
     },
@@ -174,6 +226,7 @@ class Game {
     this.fastModeIntensity =
       options?.fastModeIntensity ?? DEFAULT_FAST_MODE_INTENSITY
     this.demoOnly = options?.demoOnly ?? false
+    this.trackedEveningId = options?.trackedEveningId
 
     this.cooldown = new CooldownTimer(io, this.gameId)
     this.playerManager = new PlayerManager(io, this.gameId)
@@ -242,6 +295,7 @@ class Game {
       noSpeedMode: this.noSpeedMode,
       fastMode: this.fastMode,
       fastModeIntensity: this.fastModeIntensity,
+      trackedEveningId: this.trackedEveningId,
       demoOnly: this.demoOnly,
       eveningGameResults: this.eveningGameResults,
       eveningQuizStartPoints: Object.fromEntries(this.eveningQuizStartPoints),
@@ -266,6 +320,7 @@ class Game {
       noSpeedMode: snapshot.noSpeedMode,
       fastMode: snapshot.fastMode,
       fastModeIntensity: snapshot.fastModeIntensity,
+      trackedEveningId: snapshot.trackedEveningId,
       demoOnly: snapshot.demoOnly,
       restore: {
         gameId: snapshot.gameId,
@@ -328,6 +383,24 @@ class Game {
       },
       onGameFinished: (result) => {
         Config.saveResult({ ...result, logs: this.logger.getAll() })
+
+        if (this.trackedEveningId) {
+          eveningTracker.record(
+            this._manager.clientId,
+            this.trackedEveningId,
+            // L'identité de partie reste stable après un redémarrage, même si
+            // le résultat est recalculé avec un nouvel horodatage.
+            { ...result, id: this.gameId },
+            this.players,
+          )
+          const evening = eveningTracker.get(this._manager.clientId)
+
+          if (evening) {
+            this.io
+              .to(`evening-owner-${this._manager.clientId}`)
+              .emit(EVENTS.EVENING.STATE, evening)
+          }
+        }
 
         if (!isEvening) {
           registry.removeGame(this.gameId)
@@ -777,6 +850,10 @@ class Game {
     }
 
     return { ok: true }
+  }
+
+  get eveningTrackingId() {
+    return this.trackedEveningId
   }
 
   get manager() {
@@ -1231,6 +1308,13 @@ class Game {
     })
 
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
+    // Actualiser l'identifiant utilisé par les actions de la télécommande.
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.REMOVE_PLAYER, oldSocketId)
+    this.io
+      .to(`manager-${this.gameId}`)
+      .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
     this.logAndEmit("info", `${player.username} reconnecté`)
 
     // Préchargement anticipé des médias pour le joueur reconnecté
@@ -1368,16 +1452,27 @@ class Game {
     this.playerManager.setDisconnected(socketId)
     this.playerManager.broadcastCount()
 
-    const timer = setTimeout(() => {
-      this.disconnectTimers.delete(socketId)
-      const removed = this.removePlayer(socketId)
+    const timer = setTimeout(
+      () => {
+        this.disconnectTimers.delete(socketId)
 
-      if (removed) {
-        console.log(
-          `[TIMEOUT] ${removed.username} supprimé après 30s sans reconnexion game=${this.inviteCode}`,
-        )
-      }
-    }, 30_000)
+        if (this.started) {
+          return
+        }
+
+        const removed = this.removePlayer(socketId)
+
+        if (removed) {
+          console.log(
+            `[TIMEOUT] ${removed.username} supprimé après 30s sans reconnexion game=${this.inviteCode}`,
+          )
+        }
+      },
+      Math.max(
+        30_000,
+        this.recoveryLinks.expiresAt(player.clientId) - Date.now(),
+      ),
+    )
 
     this.disconnectTimers.set(socketId, timer)
   }
@@ -1395,6 +1490,7 @@ class Game {
 
   async startDemo(socket: Socket) {
     this.logAndEmit("info", "Démarrage en mode démo")
+    this.trackedEveningId = undefined
     this.round.setDemoMode(true)
     await this.round.start(socket)
   }
@@ -1456,6 +1552,30 @@ class Game {
     this.io
       .to(`manager-${this.gameId}`)
       .emit(EVENTS.MANAGER.ROUND_EVENT_ARMED, { eventType })
+  }
+
+  setAnswerVideoExpanded(expanded: boolean, questionNumber: number): boolean {
+    if (
+      this.managerStatus?.name !== STATUS.SHOW_RESPONSES ||
+      questionNumber !== this.round.getReconnectInfo().current
+    ) {
+      return false
+    }
+
+    const data = this.managerStatus.data as StatusDataMap["SHOW_RESPONSES"]
+
+    if (!data.answerReveal?.enabled || !data.answerReveal.videoId) {
+      return false
+    }
+
+    // L'état appartient à cette réponse : synchronisé avec les télécommandes
+    // et restauré à la reconnexion, remplacé au prochain écran du jeu.
+    this.sendStatus(this._manager.id, STATUS.SHOW_RESPONSES, {
+      ...data,
+      answerVideoExpanded: expanded,
+    })
+
+    return true
   }
 
   showLeaderboard() {

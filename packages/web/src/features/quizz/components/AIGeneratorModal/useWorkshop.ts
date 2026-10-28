@@ -25,8 +25,12 @@ export default function useWorkshop(onClose: () => void) {
     subject,
     importQuestions,
   } = useQuizzEditor()
-  const storageKey = `rahoot-ai-workshop-v1:${quizzId || "new"}`
-  const [session, setSession] = useState(() => loadSession(storageKey))
+  // Unsaved quizzes keep their conversation in this editor instance only.
+  // A shared "new" backup would leak it into every subsequent new quiz.
+  const storageKey = quizzId ? `rahoot-ai-workshop-v1:${quizzId}` : null
+  const [session, setSession] = useState(() =>
+    storageKey ? loadSession(storageKey) : emptySession(),
+  )
   const [settings, setSettings] = useState(() => {
     const saved = loadSettings()
     return workshopRequestValidator.shape.settings.safeParse({
@@ -54,6 +58,9 @@ export default function useWorkshop(onClose: () => void) {
     }
   }, [])
   useEffect(() => {
+    if (!storageKey) {
+      return
+    }
     try {
       localStorage.setItem(storageKey, JSON.stringify(session))
       setStorageError(false)

@@ -401,7 +401,7 @@ class Config {
     Config.quizzCache.delete(owner ?? ADMIN_SCOPE)
   }
 
-  static saveResult(data: GameResult): void {
+  static saveResult(data: GameResult): boolean {
     try {
       const resultsPath = getPath("results")
 
@@ -426,8 +426,12 @@ class Config {
       )
 
       console.log(`Saved result for "${data.subject}"`)
+
+      return true
     } catch (error) {
       console.error("Failed to save result:", error)
+
+      return false
     }
   }
 

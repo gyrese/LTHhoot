@@ -1,5 +1,6 @@
 import { EVENTS } from "@rahoot/common/constants"
-import type { PublicPlayer } from "@rahoot/common/types/game"
+import type { AnswerReveal, PublicPlayer } from "@rahoot/common/types/game"
+import { AnswerVideoControl } from "@rahoot/web/features/game/components/remote/AnswerVideoControl"
 import { STATUS } from "@rahoot/common/types/game/status"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
 import { RoundEventDrawer } from "@rahoot/web/features/game/components/remote/RemoteControl.events"
@@ -443,6 +444,18 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       />
 
       <main className="relative z-10 flex-1 overflow-y-auto">
+        {activeTab === "jeu" &&
+          !eveningInterlude &&
+          status?.name === STATUS.SHOW_RESPONSES &&
+          questionStates && (
+            <AnswerVideoControl
+              gameId={gameId}
+              questionNumber={questionStates.current}
+              reveal={status.data.answerReveal as AnswerReveal | undefined}
+              expanded={status.data.answerVideoExpanded === true}
+              disabled={actionPending}
+            />
+          )}
         {activeTab === "jeu" && (
           <GamePanel
             status={status}
@@ -462,6 +475,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         )}
         {activeTab === "joueurs" && (
           <PlayersPanel
+            gameId={gameId}
             players={players}
             statusName={status?.name}
             answerCount={answerCount}

@@ -1,5 +1,4 @@
 import type {
-  AnswerReveal,
   DropPinZone,
   GridCell,
   QuestionLayout,
@@ -12,6 +11,7 @@ import {
   zoneCenter,
 } from "@rahoot/common/utils/drop-pin"
 import GridBoard from "@rahoot/web/features/game/components/GridBoard"
+import { AnswerRevealCard } from "@rahoot/web/features/game/components/AnswerRevealCard"
 import type { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import SlideCanvas from "@rahoot/web/features/game/components/LazySlideCanvas"
 import AnswerButton from "@rahoot/web/features/game/components/AnswerButton"
@@ -613,52 +613,6 @@ const CorrectSplitBar = ({
   )
 }
 
-// ── Carte « Réponse » ─────────────────────────────────────────────────────────
-
-const AnswerRevealCard = ({ reveal }: { reveal: AnswerReveal }) => {
-  const hasContent = reveal.image || reveal.videoId || reveal.text
-
-  if (!reveal.enabled || !hasContent) {
-    return null
-  }
-
-  return (
-    <div className="anim-show relative z-20 mx-auto w-full px-2">
-      <div className="overflow-hidden rounded-3xl border border-white/20 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
-        {/* Vidéo ou image */}
-        {reveal.videoId ? (
-          <div className="aspect-video w-full">
-            <iframe
-              src={`https://www.youtube.com/embed/${reveal.videoId}?autoplay=1&mute=0`}
-              title="Réponse"
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        ) : (
-          reveal.image && (
-            <img
-              src={reveal.image}
-              alt=""
-              className="max-h-[55vh] w-full bg-black/20 object-contain"
-            />
-          )
-        )}
-
-        {/* Texte */}
-        {reveal.text && (
-          <div className="px-6 py-4">
-            <p className="text-center text-lg leading-relaxed font-semibold text-white md:text-xl">
-              {reveal.text}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const Responses = ({
@@ -686,6 +640,7 @@ const Responses = ({
     layout,
     fontFamily,
     answerReveal,
+    answerVideoExpanded,
   },
 }: Props) => {
   const answers = rawAnswers ?? []
@@ -739,9 +694,15 @@ const Responses = ({
     reveal?.enabled &&
     (reveal.image || reveal.videoId || reveal.text),
   )
+  const videoExpanded = Boolean(
+    isHost && hasRevealCard && reveal?.videoId && answerVideoExpanded,
+  )
 
   return (
-    <div className="relative flex flex-1 flex-col justify-between overflow-hidden">
+    <div
+      className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden"
+      style={videoExpanded ? { containerType: "size" } : undefined}
+    >
       <div className="absolute inset-0 bg-black" />
       <div
         className="absolute inset-0"
@@ -777,7 +738,8 @@ const Responses = ({
 
       <div
         className={clsx(
-          "relative z-10 mx-auto w-full max-w-7xl flex-1 items-center justify-center px-6 py-4 transition-all duration-500",
+          "mx-auto w-full max-w-7xl flex-1 items-center justify-center px-6 py-4",
+          !videoExpanded && "relative z-10",
           hasRevealCard
             ? "grid grid-cols-1 gap-8 lg:grid-cols-12"
             : "flex flex-col gap-5",
@@ -854,8 +816,8 @@ const Responses = ({
         </div>
 
         {hasRevealCard && reveal && (
-          <div className="anim-show flex w-full items-center justify-center lg:col-span-5">
-            <AnswerRevealCard reveal={reveal} />
+          <div className="flex w-full items-center justify-center lg:col-span-5">
+            <AnswerRevealCard reveal={reveal} expanded={videoExpanded} />
           </div>
         )}
       </div>

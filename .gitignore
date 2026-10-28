@@ -13,6 +13,9 @@ tasks
 # Skills d'assistance IA (tooling local, hors app/VPS)
 /.agents
 /.claude
+/.codex
+/.impeccable
+/.tmp-tests
 /skills-lock.json
 # Artefacts de build TypeScript (incrémental) — jamais versionnés
 *.tsbuildinfo

@@ -64,6 +64,7 @@ export interface GameSnapshot {
   // restaurée repart sur le flux normal piloté par l'hôte.
   fastMode?: boolean
   fastModeIntensity?: FastModeIntensity
+  trackedEveningId?: string
   demoOnly?: boolean
   // Mode soirée : résultats des quiz déjà joués (awards de fin de soirée) et
   // cumul de chaque joueur (clientId → points) au début du quiz en cours.

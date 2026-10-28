@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './pages/__root'
+import { Route as PresentationRouteImport } from './pages/presentation'
 import { Route as authLayoutRouteImport } from './pages/(auth)/layout'
 import { Route as RemoteIndexRouteImport } from './pages/remote/index'
 import { Route as authIndexRouteImport } from './pages/(auth)/index'
 import { Route as SoloQuizzIdRouteImport } from './pages/solo/$quizzId'
 import { Route as RemoteGameIdRouteImport } from './pages/remote/$gameId'
+import { Route as RecoverGameIdRouteImport } from './pages/recover/$gameId'
 import { Route as PartyGameIdRouteImport } from './pages/party/$gameId'
 import { Route as ManagerConfigRouteImport } from './pages/manager/config'
 import { Route as ManagerQuizzLayoutRouteImport } from './pages/manager/quizz/layout'
@@ -23,6 +25,11 @@ import { Route as PartyManagerGameIdRouteImport } from './pages/party/manager/$g
 import { Route as ManagerQuizzQuizzIdRouteImport } from './pages/manager/quizz/$quizzId'
 import { Route as authManagerGuestRouteImport } from './pages/(auth)/manager/guest'
 
+const PresentationRoute = PresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const authLayoutRoute = authLayoutRouteImport.update({
   id: '/(auth)',
   getParentRoute: () => rootRouteImport,
@@ -45,6 +52,11 @@ const SoloQuizzIdRoute = SoloQuizzIdRouteImport.update({
 const RemoteGameIdRoute = RemoteGameIdRouteImport.update({
   id: '/remote/$gameId',
   path: '/remote/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoverGameIdRoute = RecoverGameIdRouteImport.update({
+  id: '/recover/$gameId',
+  path: '/recover/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartyGameIdRoute = PartyGameIdRouteImport.update({
@@ -89,9 +101,11 @@ const authManagerGuestRoute = authManagerGuestRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/presentation': typeof PresentationRoute
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/recover/$gameId': typeof RecoverGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
   '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/': typeof authIndexRoute
@@ -103,8 +117,10 @@ export interface FileRoutesByFullPath {
   '/manager/quizz/': typeof ManagerQuizzIndexRoute
 }
 export interface FileRoutesByTo {
+  '/presentation': typeof PresentationRoute
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/recover/$gameId': typeof RecoverGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
   '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/': typeof authIndexRoute
@@ -118,9 +134,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(auth)': typeof authLayoutRouteWithChildren
+  '/presentation': typeof PresentationRoute
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/recover/$gameId': typeof RecoverGameIdRoute
   '/remote/$gameId': typeof RemoteGameIdRoute
   '/solo/$quizzId': typeof SoloQuizzIdRoute
   '/(auth)/': typeof authIndexRoute
@@ -134,9 +152,11 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/presentation'
     | '/manager/quizz'
     | '/manager/config'
     | '/party/$gameId'
+    | '/recover/$gameId'
     | '/remote/$gameId'
     | '/solo/$quizzId'
     | '/'
@@ -148,8 +168,10 @@ export interface FileRouteTypes {
     | '/manager/quizz/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/presentation'
     | '/manager/config'
     | '/party/$gameId'
+    | '/recover/$gameId'
     | '/remote/$gameId'
     | '/solo/$quizzId'
     | '/'
@@ -162,9 +184,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/(auth)'
+    | '/presentation'
     | '/manager/quizz'
     | '/manager/config'
     | '/party/$gameId'
+    | '/recover/$gameId'
     | '/remote/$gameId'
     | '/solo/$quizzId'
     | '/(auth)/'
@@ -178,9 +202,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   authLayoutRoute: typeof authLayoutRouteWithChildren
+  PresentationRoute: typeof PresentationRoute
   ManagerQuizzLayoutRoute: typeof ManagerQuizzLayoutRouteWithChildren
   ManagerConfigRoute: typeof ManagerConfigRoute
   PartyGameIdRoute: typeof PartyGameIdRoute
+  RecoverGameIdRoute: typeof RecoverGameIdRoute
   RemoteGameIdRoute: typeof RemoteGameIdRoute
   SoloQuizzIdRoute: typeof SoloQuizzIdRoute
   RemoteIndexRoute: typeof RemoteIndexRoute
@@ -189,6 +215,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/presentation': {
+      id: '/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(auth)': {
       id: '/(auth)'
       path: ''
@@ -222,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/remote/$gameId'
       fullPath: '/remote/$gameId'
       preLoaderRoute: typeof RemoteGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recover/$gameId': {
+      id: '/recover/$gameId'
+      path: '/recover/$gameId'
+      fullPath: '/recover/$gameId'
+      preLoaderRoute: typeof RecoverGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party/$gameId': {
@@ -314,9 +354,11 @@ const ManagerQuizzLayoutRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   authLayoutRoute: authLayoutRouteWithChildren,
+  PresentationRoute: PresentationRoute,
   ManagerQuizzLayoutRoute: ManagerQuizzLayoutRouteWithChildren,
   ManagerConfigRoute: ManagerConfigRoute,
   PartyGameIdRoute: PartyGameIdRoute,
+  RecoverGameIdRoute: RecoverGameIdRoute,
   RemoteGameIdRoute: RemoteGameIdRoute,
   SoloQuizzIdRoute: SoloQuizzIdRoute,
   RemoteIndexRoute: RemoteIndexRoute,

@@ -1,6 +1,7 @@
 import { EVENTS } from "@rahoot/common/constants"
 import type { Socket } from "@rahoot/common/types/game/socket"
 import type { SocketContext } from "@rahoot/socket/handlers/types"
+import eveningTracker from "@rahoot/socket/services/evening-tracker"
 import Config from "@rahoot/socket/services/config"
 import { getClientIp as resolveClientIp } from "@rahoot/socket/utils/client-ip"
 
@@ -63,6 +64,10 @@ class Manager {
 
   getSession(socket: Socket): ManagerSession | undefined {
     return this.loggedClients.get(getClientId(socket))
+  }
+
+  hasSession(clientId: string): boolean {
+    return this.loggedClients.has(clientId)
   }
 
   // Utilisé hors-socket (endpoints HTTP /upload, médias) : on ne dispose alors
@@ -281,7 +286,9 @@ export const emitConfig = (socket: SocketContext["socket"]) => {
     return
   }
 
+  socket.join(`evening-owner-${getClientId(socket)}`)
   socket.emit(EVENTS.MANAGER.CONFIG, {
+    evening: eveningTracker.get(getClientId(socket)) ?? undefined,
     quizz: [...Config.quizzMeta(), ...Config.allGuestQuizzMeta()],
     results: Config.resultsMeta(),
     role: "admin",

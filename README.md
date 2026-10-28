@@ -43,6 +43,12 @@ L’interface est disponible en français, anglais, allemand, espagnol et italie
 | Grille            | Répondre à partir d’une grille de cases.                     |
 | Titre             | Insérer une diapositive de présentation entre les questions. |
 
+## Pr�sentation et demandes de devis
+
+La page publique `/presentation` pr�sente LTNHoot, propose une d�monstration interactive et distingue deux usages : organiser une animation avec Les Toiles Noires ou utiliser l�application soi-m�me. Elle est accessible depuis l��cran o� les joueurs rejoignent une partie.
+
+Les demandes de devis sont pr�par�es pour **contact@lestoilesnoires.re**. Le formulaire ouvre le logiciel de messagerie du visiteur avec les informations de son �v�nement ; il n�envoie aucun message automatiquement et ne n�cessite pas de service d�envoi d�e-mails c�t� serveur.
+
 ## Installation
 
 ### Avec Docker
@@ -148,6 +154,8 @@ Pour un hébergement public, configure HTTPS et le transfert des connexions WebS
 6. Lance la partie lorsque les joueurs sont prêts, puis avance jusqu’au podium.
 
 Pour piloter depuis un autre appareil, ouvre `/remote` et saisis le code de la partie. La télécommande donne accès aux commandes d’animation et à la gestion des joueurs. Le parcours actuel permet de la rejoindre avec le code : partage-le dans le cadre de l’événement.
+
+Lorsqu’une explication de réponse contient une vidéo YouTube activée, le bouton **Agrandir la vidéo** apparaît sur la télécommande. Il affiche la vidéo dans un cadre TV d’environ trois quarts de l’écran du salon ; **Réduire la vidéo** rétablit la présentation normale sans relancer la lecture. **Suivant** reste accessible sur le salon et la télécommande et poursuit le quiz normalement. Le mode agrandi est conservé lors d’une reconnexion, puis abandonné en quittant cette réponse.
 
 Les résultats des parties terminées sont disponibles dans la rubrique **Résultats** du manager.
 

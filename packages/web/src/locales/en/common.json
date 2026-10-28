@@ -27,5 +27,6 @@
     "title": "Connection lost",
     "subtitle": "Restoring your session…",
     "hint": "Check your Wi-Fi or mobile connection."
-  }
+  },
+  "discoverPresentation": "Discover LTNHoot and our events"
 }

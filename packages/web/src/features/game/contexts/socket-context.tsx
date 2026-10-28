@@ -208,7 +208,10 @@ const createSocketClient = (
       setIsConnected(true)
 
       // La télécommande restaure elle-même sa partie, sans ancienne session joueur/admin.
-      if (window.location.pathname.startsWith("/remote")) {
+      if (
+        window.location.pathname.startsWith("/remote") ||
+        window.location.pathname.startsWith("/recover/")
+      ) {
         finishReconnecting()
         return
       }

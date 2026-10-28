@@ -1,0 +1,23 @@
+{
+  "action": "Recover",
+  "forPlayer": "Recover {{username}}",
+  "instructions": "Ask the player to scan this QR code, or send them the link. Their session and points will be restored.",
+  "loading": "Creating link…",
+  "unavailable": "This player or game is no longer available. Refresh the remote.",
+  "invalid": "This link expired, was already used, or the player has left the game. Ask the host for a new link.",
+  "network": "Connection interrupted. Try again; if the link was already used, ask for a new one.",
+  "expires": "Single use · expires in {{minutes}} min",
+  "address": "Recovery address",
+  "copy": "Copy link",
+  "copied": "Link copied",
+  "copyFailed": "Unable to copy. Select and copy the address above.",
+  "expired": "This link expired. Generate a new one.",
+  "generate": "Generate a new link",
+  "close": "Close",
+  "resume": "Resume my game",
+  "resumeHelp": "This personal link restores your place, points and bonuses. Tap to resume on this phone.",
+  "restoring": "Restoring…",
+  "connecting": "Connecting…",
+  "storage": "The browser cannot save your session. Allow storage and try again.",
+  "kick": "Remove {{username}}"
+}

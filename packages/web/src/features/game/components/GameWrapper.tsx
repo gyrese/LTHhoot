@@ -195,7 +195,7 @@ const EveningProgressBar = ({ progress }: { progress: EveningProgress }) => {
   const ratio = Math.min(1, progress.current / Math.max(1, progress.total))
 
   return (
-    <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-30 flex w-56 -translate-x-1/2 flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
+    <div className="pointer-events-none flex w-56 max-w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
       <span className="text-center text-sm font-bold text-white tabular-nums">
         {t("game:evening.progressShort", {
           current: progress.current,
@@ -714,11 +714,19 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
           <div className="pointer-events-none absolute inset-0 bg-black/60" />
         )}
 
-        <div className="z-10 flex w-full flex-1 flex-col">
+        <div className="z-10 flex min-h-0 w-full flex-1 flex-col">
           {!isConnected && !statusName ? null : (
             <>
-              {/* Overlay compteur + bouton suivant (superposé, pas une barre) */}
-              <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3 z-30 flex items-start justify-between gap-2">
+              {/* Sur le projecteur, les commandes occupent leur propre ligne :
+                  elles ne doivent jamais recouvrir le titre ou une slide. */}
+              <div
+                className={clsx(
+                  "pointer-events-none z-30 flex items-start justify-between gap-2",
+                  manager && !isRoomScreen
+                    ? "relative flex-shrink-0 flex-wrap px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3"
+                    : "absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3",
+                )}
+              >
                 {/* Pas de compteur sur l'écran salon : aucune question n'est
                     en cours et il passerait sous « Fermer la session ». */}
                 {questionStates && !isRoomScreen && (
@@ -739,10 +747,13 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                     {questionStates.current} / {questionStates.total}
                   </div>
                 )}
+                {manager && eveningProgress && !eveningData && (
+                  <EveningProgressBar progress={eveningProgress} />
+                )}
                 {manager && (
                   // Ml-auto : sans le compteur (écran salon), justify-between
                   // collerait les boutons à gauche, sous « Fermer la session ».
-                  <div className="ml-auto flex items-start gap-2">
+                  <div className="ml-auto flex max-w-full flex-wrap items-start justify-end gap-2">
                     <button
                       type="button"
                       onClick={toggleMuted}
@@ -778,26 +789,23 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                 )}
               </div>
 
-              {/* Progression de la soirée (écran principal) */}
-              {manager && eveningProgress && !eveningData && (
-                <EveningProgressBar progress={eveningProgress} />
-              )}
-
               {/* Contenu principal. Fondu enchaîné : sortie et entrée se
                   chevauchent (mode par défaut, pas "wait") — sinon l'ancien
                   état disparaît avant que le nouveau soit visible et on voit
                   le fond générique du conteneur pendant l'intervalle.
                   `absolute inset-0` fait se superposer les deux états
                   pendant le chevauchement au lieu de s'empiler dans le flex. */}
-              <AnimatePresence initial={false}>
-                <motion.div
-                  key={statusName ?? "none"}
-                  className="absolute inset-0 flex flex-col"
-                  {...stateTransition()}
-                >
-                  {children}
-                </motion.div>
-              </AnimatePresence>
+              <div className="relative flex min-h-0 flex-1 flex-col">
+                <AnimatePresence initial={false}>
+                  <motion.div
+                    key={statusName ?? "none"}
+                    className="absolute inset-0 flex flex-col"
+                    {...stateTransition()}
+                  >
+                    {children}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
               {/* PIN de la partie affiché en bas à gauche de l'écran principal (projecteur) pour reconnexion rapide.
                   Masqué pendant les réponses : les cases occupent tout le bas de l'écran. */}

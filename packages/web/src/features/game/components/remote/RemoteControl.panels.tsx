@@ -1,4 +1,5 @@
 import type { PublicPlayer } from "@rahoot/common/types/game"
+import { PlayerRecovery } from "@rahoot/web/features/game/components/remote/PlayerRecovery"
 import { STATUS, type Status } from "@rahoot/common/types/game/status"
 import type { RoundEventType } from "@rahoot/common/types/round-event"
 import {
@@ -1406,23 +1407,25 @@ function FinishedPanel({ data }: { data: Record<string, unknown> }) {
 // ─── Panneau joueurs ──────────────────────────────────────────────────────────
 
 export function PlayersPanel({
+  gameId,
   players,
   statusName,
   answerCount,
   setKickTargetId,
 }: {
+  gameId: string
   players: PublicPlayer[]
   statusName: Status | undefined
   answerCount: number
   setKickTargetId: (_id: string | null) => void
 }) {
+  const { t } = useTranslation("recovery")
   return (
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold tracking-wider text-white/45 uppercase">
           Joueurs ({players.length})
         </h2>
-        <p className="text-xs text-white/25">Appuyer pour expulser</p>
       </div>
 
       {players.length === 0 ? (
@@ -1439,8 +1442,7 @@ export function PlayersPanel({
               return (
                 <div
                   key={player.id}
-                  onClick={() => setKickTargetId(player.id)}
-                  className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-white/3 active:bg-white/5"
+                  className="flex flex-wrap items-center gap-3 px-4 py-3"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-orange-500/25 to-violet-500/25 text-sm font-bold text-white">
                     {player.username[0]?.toUpperCase()}
@@ -1473,16 +1475,28 @@ export function PlayersPanel({
                     )}
                   />
 
-                  <svg
-                    className="h-4 w-4 shrink-0 text-white/15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                  <PlayerRecovery
+                    gameId={gameId}
+                    playerId={player.id}
+                    username={player.username}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setKickTargetId(player.id)}
+                    aria-label={t("kick", { username: player.username })}
+                    className="flex h-11 w-11 items-center justify-center rounded-lg text-red-300 hover:bg-white/10"
                   >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                    <svg
+                      className="h-4 w-4 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
               )
             })}

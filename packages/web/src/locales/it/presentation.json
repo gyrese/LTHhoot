@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "title": "LTNHoot — Quiz ed eventi · Les Toiles Noires",
+    "description": "Un quiz interattivo per riunire gli ospiti, giocare dal telefono e vivere la classifica. Scopri LTNHoot e richiedi un preventivo."
+  },
+  "nav": {
+    "skip": "Vai al contenuto",
+    "label": "Navigazione di presentazione",
+    "game": "Il gioco",
+    "events": "Eventi",
+    "app": "L’app",
+    "quote": "Parliamo della tua serata"
+  },
+  "hero": {
+    "line1": "La serata comincia.",
+    "line2": "Anche la sfida.",
+    "description": "Uno schermo, i vostri telefoni e tutti entrano in gioco. Il quiz interattivo di Les Toiles Noires dà nuova energia alle vostre serate.",
+    "quote": "Richiedi un preventivo",
+    "discover": "Scopri il gioco"
+  },
+  "demo": {
+    "label": "Demo interattiva",
+    "question": "Qual è il capoluogo della Riunione?",
+    "instruction": "Scegli la risposta. Tocca a te.",
+    "ready": "Una domanda, quattro possibilità. Quale scegli?",
+    "correct": "Ben fatto! Saint-Denis è la risposta corretta.",
+    "incorrect": "Era Saint-Denis. La prossima andrà meglio!",
+    "again": "Riprova la demo",
+    "caption": "Domanda di esempio. Questa demo non accede a una partita e non salva punteggi."
+  },
+  "how": {
+    "title": "Tutti possono entrare in gioco.",
+    "intro": "Semplice da usare, per concentrarsi su ciò che conta: divertirsi insieme.",
+    "join": {
+      "title": "Scansiona. Sei dentro.",
+      "text": "I giocatori scansionano il QR o inseriscono il codice nel browser. Un nome e si parte."
+    },
+    "play": {
+      "title": "Il telefono diventa un pulsante.",
+      "text": "Le domande appaiono sul grande schermo. Ognuno risponde sul telefono, con calma o contro il tempo in base alla modalità."
+    },
+    "win": {
+      "title": "I punti fanno spettacolo.",
+      "text": "Le risposte vengono svelate e la classifica cambia. Quiz dopo quiz, i punti della serata si sommano fino alla classifica generale."
+    }
+  },
+  "formats": {
+    "title": "Cambia la domanda. Mantieni la voglia.",
+    "intro": "Nove formati per variare le sfide, sorprendere i giocatori e dare ritmo al quiz.",
+    "choose": "Scegli un formato di domanda",
+    "preview": "Anteprima del formato",
+    "note": "Anteprima illustrativa. Le domande si preparano nell’app.",
+    "true": "Vero",
+    "false": "Falso",
+    "selected": "Casella selezionata",
+    "fragment": "Frammento",
+    "clue": "Indizio",
+    "items": {
+      "mcq": {
+        "name": "Scelta multipla",
+        "description": "Diverse opzioni, una risposta da trovare. Il grande classico che riunisce tutti."
+      },
+      "true_false": {
+        "name": "Vero o falso",
+        "description": "Due opzioni per decidere. Perfetto per mettere alla prova i luoghi comuni."
+      },
+      "open": {
+        "name": "Risposta aperta",
+        "description": "I giocatori scrivono la risposta. A loro trovare la parola giusta.",
+        "sample": "La tua risposta…"
+      },
+      "image_sequence": {
+        "name": "Immagini progressive",
+        "description": "Le immagini si rivelano durante la domanda. Ogni indizio ti avvicina alla risposta."
+      },
+      "date": {
+        "name": "Trova la data",
+        "description": "Un evento, una data. Metti alla prova la memoria.",
+        "sample": "GG / MM / AAAA"
+      },
+      "slider": {
+        "name": "Stima",
+        "description": "Sposta il cursore per dare la tua stima. Bisogna avvicinarsi al valore giusto."
+      },
+      "puzzle": {
+        "name": "Puzzle",
+        "description": "Rimetti i pezzi al loro posto per ricostruire l’immagine."
+      },
+      "drop_pin": {
+        "name": "Segnaposto su un’immagine",
+        "description": "Posiziona il segnaposto su un’immagine. Trova il punto giusto su una mappa o un altro elemento visivo.",
+        "sample": "Dove va il segnaposto?"
+      },
+      "grid": {
+        "name": "Griglia",
+        "description": "Trova la casella giusta nella griglia. Entra in gioco l’osservazione."
+      }
+    }
+  },
+  "benefits": {
+    "title": "Una serata che mantiene il filo.",
+    "scores": {
+      "title": "Una classifica per tutta la serata.",
+      "text": "Inizia la serata, gioca più quiz e concludila. I punti vengono salvati e sommati per scoprire i vincitori."
+    },
+    "remote": {
+      "title": "La conduzione a portata di mano.",
+      "text": "Il conduttore controlla la partita dal telecomando sul telefono, restando vicino ai giocatori."
+    },
+    "mobile": {
+      "title": "Niente da installare per i giocatori.",
+      "text": "Basta il browser del telefono per partecipare. Nessuna app da far scaricare agli ospiti."
+    }
+  },
+  "paths": {
+    "title": "La tua serata. Il tuo modo di giocare.",
+    "intro": "Affidaci l’animazione o prendi tu i comandi dell’app.",
+    "event": {
+      "title": "Ne facciamo una serata?",
+      "text": "Un evento aziendale, una serata al bar o tra amici: raccontaci la tua idea per costruire un’animazione con Les Toiles Noires.",
+      "one": "Una proposta a partire dal tuo evento",
+      "two": "Formato e organizzazione da definire insieme",
+      "three": "Un preventivo prima di confermare",
+      "cta": "Parla del tuo evento",
+      "note": "Servizio su preventivo. Descrivi il progetto per verificare possibilità e disponibilità."
+    },
+    "app": {
+      "title": "Hai tu i comandi.",
+      "text": "Hai già un accesso organizzatore? Prepara i quiz e avvia le partite. L’app è anche open source per installarla autonomamente.",
+      "manager": "Apri l’area organizzatore",
+      "join": "Entra in una partita con un codice",
+      "install": "Installa da GitHub",
+      "note": "L’area organizzatore richiede un accesso amministratore. L’installazione autonoma richiede hosting e configurazione tecnica."
+    }
+  },
+  "quote": {
+    "title": "E se la tua prossima serata iniziasse qui?",
+    "text": "Raccontaci l’occasione, il luogo e gli ospiti. Potremo parlare del progetto e proporti un preventivo adatto."
+  },
+  "form": {
+    "name": "Nome e cognome",
+    "email": "Indirizzo email",
+    "event": "Tipo di evento",
+    "date": "Data prevista",
+    "location": "Luogo dell’evento",
+    "participants": "Numero di partecipanti",
+    "message": "La tua idea, i tuoi desideri",
+    "optional": "Facoltativa",
+    "choose": "Scegli un tipo",
+    "events": {
+      "business": "Evento aziendale",
+      "bar": "Serata al bar o ristorante",
+      "private": "Evento privato",
+      "association": "Evento associativo",
+      "other": "Altra occasione"
+    },
+    "messagePlaceholder": "Atmosfera, pubblico, esigenze, domande…",
+    "notice": "Questo modulo prepara un’email nella tua app di posta. Potrai rileggerla e inviarla tu; nulla viene inviato automaticamente.",
+    "submit": "Apri la mia posta",
+    "subject": "Richiesta preventivo — evento LTNHoot",
+    "prepared": "Il messaggio è pronto. Se la posta non si apre, scrivici direttamente all’indirizzo qui sotto."
+  },
+  "faq": {
+    "title": "Prima di giocare.",
+    "app": {
+      "question": "Bisogna scaricare un’app?",
+      "answer": "No. I giocatori partecipano dal browser del telefono, scansionando un QR o inserendo il codice."
+    },
+    "equipment": {
+      "question": "Cosa serve per giocare?",
+      "answer": "Ogni giocatore ha bisogno di un telefono con browser, più un grande schermo per le domande e accesso di rete all’app. L’organizzatore prepara e controlla la partita dalla sua area."
+    },
+    "scores": {
+      "question": "Si possono sommare i punti di più quiz?",
+      "answer": "Sì. L’organizzatore avvia una serata prima dei quiz. I punteggi vengono salvati e sommati. Concludendo la serata si ottengono classifica generale e vincitore o vincitori a pari merito."
+    },
+    "quote": {
+      "question": "Come invio la richiesta di preventivo?",
+      "answer": "Compila il modulo e scegli «Apri la mia posta». Si aprirà una bozza nella tua app; rileggila e inviala. Puoi anche scrivere a contact@lestoilesnoires.re."
+    },
+    "admin": {
+      "question": "L’area organizzatore è aperta a tutti?",
+      "answer": "Richiede un accesso amministratore esistente; non è prevista la registrazione libera. Codice open source e istruzioni di installazione per la propria istanza sono su GitHub."
+    }
+  },
+  "footer": {
+    "by": "Un’esperienza Les Toiles Noires.",
+    "credits": "Basato su Rahoot / Razzia · Licenza MIT"
+  }
+}

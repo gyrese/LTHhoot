@@ -1,4 +1,10 @@
 {
+  "answerVideo": {
+    "expand": "Expand video",
+    "reduce": "Reduce video",
+    "title": "Answer video",
+    "failed": "The video could not be resized. Try again."
+  },
   "gridPick": "Find the {{count}} correct tiles",
   "answerSent": "Answer sent!",
   "answerSendFailed": "Answer not sent — tap to retry",

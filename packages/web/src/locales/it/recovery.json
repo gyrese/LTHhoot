@@ -1,0 +1,23 @@
+{
+  "action": "Recupera",
+  "forPlayer": "Recupera {{username}}",
+  "instructions": "Fai scansionare questo QR al giocatore o inviagli il link. Ritroverà la sessione e i punti.",
+  "loading": "Creazione del link…",
+  "unavailable": "Il giocatore o la partita non sono più disponibili. Aggiorna il telecomando.",
+  "invalid": "Questo link è scaduto, è già stato usato o il giocatore non è più nella partita. Chiedi un nuovo link al conduttore.",
+  "network": "Connessione interrotta. Riprova; se il link è già stato usato, chiedine uno nuovo.",
+  "expires": "Monouso · scade tra {{minutes}} min",
+  "address": "Indirizzo di recupero",
+  "copy": "Copia link",
+  "copied": "Link copiato",
+  "copyFailed": "Impossibile copiare. Seleziona e copia l’indirizzo sopra.",
+  "expired": "Il link è scaduto. Generane uno nuovo.",
+  "generate": "Genera un nuovo link",
+  "close": "Chiudi",
+  "resume": "Riprendi la mia partita",
+  "resumeHelp": "Questo link personale recupera il tuo posto, i punti e i bonus. Tocca per riprendere su questo telefono.",
+  "restoring": "Recupero…",
+  "connecting": "Connessione…",
+  "storage": "Il browser non può salvare la sessione. Consenti l’archiviazione e riprova.",
+  "kick": "Espelli {{username}}"
+}

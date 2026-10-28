@@ -13,11 +13,10 @@ import { translateServerError } from "@rahoot/web/features/manager/utils/errors"
 import DashboardSidebar from "./DashboardSidebar"
 import QuizzPanel from "./QuizzPanel"
 import ResultsPanel from "./ResultsPanel"
-import EveningFooter from "./EveningFooter"
+import EveningTrackingControl from "./EveningTrackingControl"
 import LaunchModal from "./LaunchModal"
 import PowerUpsSettingsModal from "./PowerUpsSettingsModal"
 import GuestAccountsModal from "./GuestAccountsModal"
-import { moveQuizInOrder } from "./library"
 import useLaunchMotion from "./useLaunchMotion"
 import {
   DEFAULT_FAST_MODE_INTENSITY,
@@ -30,7 +29,6 @@ import {
   Menu,
   Play,
   PlayCircle,
-  PartyPopper,
   SlidersHorizontal,
   Users,
   WifiOff,
@@ -66,8 +64,6 @@ const ManagerDashboard = ({ data }: Props) => {
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [view, setView] = useState<"quizz" | "results">("quizz")
-  const [eveningMode, setEveningMode] = useState(false)
-  const [eveningQuizIds, setEveningQuizIds] = useState<string[]>([])
   // Power-ups : un seul réglage partagé par la partie personnalisée et la
   // soirée (comme le mode rapide et le mode sans rapidité), désactivé par
   // défaut dans les deux cas — la liste des power-ups exclus suit le même
@@ -90,9 +86,9 @@ const ManagerDashboard = ({ data }: Props) => {
   const dashboardRef = useRef<HTMLDivElement>(null)
   useLaunchMotion(
     dashboardRef,
-    view === "quizz" && (eveningMode || Boolean(selectedQuizz)),
-    eveningMode,
-    eveningMode ? eveningQuizIds.join(",") : (selectedQuizz ?? ""),
+    view === "quizz" && Boolean(selectedQuizz),
+    false,
+    selectedQuizz ?? "",
   )
   // Lancement en cours : bloque le double clic sur « Démarrer » (qui créait
   // deux parties) jusqu'à la navigation vers le salon ou une erreur serveur.
@@ -133,9 +129,6 @@ const ManagerDashboard = ({ data }: Props) => {
   useEffect(() => {
     const ids = new Set(data.quizz.map((q) => q.id))
 
-    setEveningQuizIds((prev) =>
-      prev.every((id) => ids.has(id)) ? prev : prev.filter((id) => ids.has(id)),
-    )
     setSelectedQuizz((prev) => (prev && !ids.has(prev) ? null : prev))
   }, [data.quizz])
 
@@ -198,40 +191,6 @@ const ManagerDashboard = ({ data }: Props) => {
       socket?.emit(EVENTS.MANAGER.START_DEMO, { gameId })
     }
   })
-
-  const handleEveningStart = () => {
-    if (isStarting) {
-      return
-    }
-
-    if (eveningQuizIds.length < 2) {
-      toast.error(t("manager:evening.selectTwo"))
-
-      return
-    }
-
-    beginStarting()
-    setEveningProgress({ current: 1, total: eveningQuizIds.length })
-    socket?.emit(EVENTS.EVENING.START, {
-      quizIds: eveningQuizIds,
-      powerUpsEnabled,
-      disabledPowerUps,
-      noSpeedMode,
-      fastMode,
-      fastModeIntensity,
-    })
-  }
-
-  const handleToggleEveningQuizz = (id: string) => {
-    setEveningQuizIds((prev) =>
-      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id],
-    )
-  }
-
-  const handleToggleEveningOff = () => {
-    setEveningMode(false)
-    setEveningQuizIds([])
-  }
 
   const selectedQuizzMeta = data.quizz.find((q) => q.id === selectedQuizz)
   const selectedName = selectedQuizzMeta?.subject
@@ -299,36 +258,12 @@ const ManagerDashboard = ({ data }: Props) => {
                 </span>
               </span>
             )}
-            {!isGuest && view === "quizz" && (
-              <button
-                type="button"
-                className="dashboard-secondary"
-                aria-pressed={eveningMode}
-                aria-label={t(
-                  eveningMode
-                    ? "manager:evening.disable"
-                    : "manager:library.prepareEvening",
-                )}
-                title={t(
-                  eveningMode
-                    ? "manager:evening.disable"
-                    : "manager:library.prepareEvening",
-                )}
-                onClick={() =>
-                  eveningMode ? handleToggleEveningOff() : setEveningMode(true)
-                }
-              >
-                <PartyPopper className="size-4" />
-                <span className="hidden sm:inline">
-                  {t(
-                    eveningMode
-                      ? "manager:evening.disable"
-                      : "manager:library.prepareEvening",
-                  )}
-                </span>
-              </button>
+            {!isGuest && (
+              <EveningTrackingControl initialEvening={data.evening} />
             )}
-            <LanguageSwitcher />
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
             {!isGuest && (
               <button
                 type="button"
@@ -381,9 +316,6 @@ const ManagerDashboard = ({ data }: Props) => {
                 activeTag={activeTag}
                 selectedQuizz={selectedQuizz}
                 setSelectedQuizz={setSelectedQuizz}
-                eveningMode={eveningMode}
-                eveningQuizIds={eveningQuizIds}
-                onToggleEveningQuizz={handleToggleEveningQuizz}
                 onMoveToFolder={handleMoveToFolder}
                 onOpenFolder={openFolder}
                 onClearTag={() => setActiveTag(null)}
@@ -395,29 +327,7 @@ const ManagerDashboard = ({ data }: Props) => {
         </main>
 
         {/* Footer */}
-        {view === "quizz" && eveningMode && (
-          <EveningFooter
-            eveningQuizIds={eveningQuizIds}
-            quizzList={data.quizz}
-            powerUpsEnabled={powerUpsEnabled}
-            noSpeedMode={noSpeedMode}
-            onToggleNoSpeed={() => setNoSpeedMode((v) => !v)}
-            fastMode={fastMode}
-            onToggleFastMode={() => setFastMode((v) => !v)}
-            fastModeIntensity={fastModeIntensity}
-            onFastModeIntensityChange={setFastModeIntensity}
-            onRemove={handleToggleEveningQuizz}
-            onReorder={(id, direction) =>
-              setEveningQuizIds((prev) => moveQuizInOrder(prev, id, direction))
-            }
-            onStart={handleEveningStart}
-            isStarting={isStarting}
-            isConnected={isConnected}
-            onToggleOff={handleToggleEveningOff}
-            onOpenPowerUpsConfig={() => setPowerUpsModalOpen(true)}
-          />
-        )}
-        {view === "quizz" && !eveningMode && Boolean(selectedQuizz) && (
+        {view === "quizz" && Boolean(selectedQuizz) && (
           <footer className="relative z-10 flex min-h-16 shrink-0 items-center justify-between gap-2 border-t border-white/10 bg-black/30 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-5">
             <div
               data-launch-content

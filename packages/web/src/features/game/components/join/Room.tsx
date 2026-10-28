@@ -165,6 +165,12 @@ const Room = () => {
           </div>
         </div>
       </motion.div>
+      <a
+        href="/presentation"
+        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-center text-sm text-white/80 underline-offset-4 hover:text-white hover:underline focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:outline-none"
+      >
+        {t("common:discoverPresentation")}
+      </a>
     </div>
   )
 }

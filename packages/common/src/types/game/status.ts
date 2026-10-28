@@ -186,6 +186,7 @@ type ManagerExtraStatus = {
     fontFamily?: string
     audio?: string
     answerReveal?: AnswerReveal
+    answerVideoExpanded?: boolean
   }
   SHOW_LEADERBOARD: {
     oldLeaderboard: PublicPlayer[]

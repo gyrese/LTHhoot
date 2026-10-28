@@ -1,3 +1,4 @@
+import type { EveningSummary } from "@rahoot/common/types/evening"
 import { EVENTS } from "@rahoot/common/constants"
 import type {
   WorkshopRequest,
@@ -214,6 +215,8 @@ export interface ServerToClientEvents {
   [EVENTS.ASYNC_QUIZ.DATA]: (_quizz: SoloPublicQuizz) => void
   [EVENTS.ASYNC_QUIZ.SUBMIT_SUCCESS]: (_data: SoloSubmitResult) => void
 
+  [EVENTS.EVENING.STATE]: (_evening: EveningSummary) => void
+
   // Evening events
   [EVENTS.EVENING.QUIZ_COMPLETE]: (_data: {
     quizIndex: number
@@ -242,6 +245,18 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
+  [EVENTS.MANAGER.CREATE_RECOVERY]: (
+    _payload: { gameId: string; playerId: string },
+    _ack: (
+      _result:
+        | { token: string; expiresAt: number; username: string }
+        | { error: string },
+    ) => void,
+  ) => void
+  [EVENTS.PLAYER.RECOVER]: (
+    _payload: { gameId: string; token: string },
+    _ack: (_result: { clientId: string } | { error: string }) => void,
+  ) => void
   // Manager actions
   [EVENTS.GAME.CREATE]: (
     _payload:
@@ -282,6 +297,10 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.ABORT_QUIZ]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.SET_ANSWER_VIDEO_EXPANDED]: (
+    _message: { gameId: string; questionNumber: number; expanded: boolean },
+    _ack: (_result: { ok: boolean }) => void,
+  ) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
   [EVENTS.MANAGER.LOGOUT]: () => void
   [EVENTS.MANAGER.VALIDATE_OPEN_ANSWER]: (
@@ -410,6 +429,13 @@ export interface ClientToServerEvents {
   [EVENTS.ASYNC_QUIZ.SUBMIT]: (
     _payload: { sessionId: string },
     _ack?: (_res: SoloSubmitAck) => void,
+  ) => void
+
+  [EVENTS.EVENING.OPEN]: (
+    _ack: (_result: { evening: EveningSummary } | { error: string }) => void,
+  ) => void
+  [EVENTS.EVENING.CLOSE]: (
+    _ack: (_result: { evening: EveningSummary } | { error: string }) => void,
   ) => void
 
   // Evening actions

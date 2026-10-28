@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "title": "LTNHoot — Quiz & events · Les Toiles Noires",
+    "description": "An interactive quiz to bring guests together, play on phones and share the excitement of the leaderboard. Discover LTNHoot and request an event quote."
+  },
+  "nav": {
+    "skip": "Skip to content",
+    "label": "Presentation navigation",
+    "game": "The game",
+    "events": "Events",
+    "app": "The app",
+    "quote": "Let’s plan your evening"
+  },
+  "hero": {
+    "line1": "The evening begins.",
+    "line2": "So does the competition.",
+    "description": "One screen, your phones, and everyone’s in the game. The interactive quiz from Les Toiles Noires brings fresh energy to your evenings.",
+    "quote": "Request a quote",
+    "discover": "Discover the game"
+  },
+  "demo": {
+    "label": "Interactive demo",
+    "question": "What is the capital of Réunion?",
+    "instruction": "Choose your answer. Your turn.",
+    "ready": "One question, four options. Which will you choose?",
+    "correct": "Well played! Saint-Denis is correct.",
+    "incorrect": "It was Saint-Denis. You’ll get the next one!",
+    "again": "Try again",
+    "caption": "Sample question. This demo does not join a game or record any scores."
+  },
+  "how": {
+    "title": "Everyone can join the game.",
+    "intro": "Easy to pick up, so the focus stays on what matters: having fun together.",
+    "join": {
+      "title": "Scan. You’re in.",
+      "text": "Players scan the QR code or enter the game code in their browser. Pick a name, and you’re ready."
+    },
+    "play": {
+      "title": "Your phone becomes a buzzer.",
+      "text": "Questions appear on the big screen. Everyone answers on their phone, at their own pace or against the clock, depending on the mode."
+    },
+    "win": {
+      "title": "Let the points do the talking.",
+      "text": "Answers are revealed and the leaderboard changes. Quiz after quiz, evening scores add up to the final standings."
+    }
+  },
+  "formats": {
+    "title": "Change the question. Keep the energy.",
+    "intro": "Nine formats to vary the challenge, surprise players and make your quiz your own.",
+    "choose": "Choose a question format",
+    "preview": "Format preview",
+    "note": "Illustrative preview. Create your questions in the app.",
+    "true": "True",
+    "false": "False",
+    "selected": "Selected cell",
+    "fragment": "Fragment",
+    "clue": "Clue",
+    "items": {
+      "mcq": {
+        "name": "Multiple choice",
+        "description": "Several options, one answer to find. The classic that brings everyone together."
+      },
+      "true_false": {
+        "name": "True or false",
+        "description": "Two options to decide. Ideal for challenging common assumptions."
+      },
+      "open": {
+        "name": "Open answer",
+        "description": "Players type their answer. It’s up to them to find the right word.",
+        "sample": "Your answer…"
+      },
+      "image_sequence": {
+        "name": "Progressive images",
+        "description": "Images are revealed as the question unfolds. Each clue gets you closer to the answer."
+      },
+      "date": {
+        "name": "Find the date",
+        "description": "An event, a date. Put your memory to the test.",
+        "sample": "DD / MM / YYYY"
+      },
+      "slider": {
+        "name": "Estimation",
+        "description": "Move the slider to make your estimate. Aim for the right value."
+      },
+      "puzzle": {
+        "name": "Puzzle",
+        "description": "Put the pieces back in place to complete the image."
+      },
+      "drop_pin": {
+        "name": "Pin on an image",
+        "description": "Place your pin on an image. Find the right spot on a map or another visual.",
+        "sample": "Where does your pin go?"
+      },
+      "grid": {
+        "name": "Grid",
+        "description": "Find the right cell in a grid. Let your observation skills take over."
+      }
+    }
+  },
+  "benefits": {
+    "title": "An evening that stays connected.",
+    "scores": {
+      "title": "An evening-wide leaderboard.",
+      "text": "Start the evening, play several quizzes, then wrap it up. Players’ points are saved and added together to reveal the winners."
+    },
+    "remote": {
+      "title": "Hosting at your fingertips.",
+      "text": "The host controls the game with the remote on their phone, staying close to the players."
+    },
+    "mobile": {
+      "title": "No installation for players.",
+      "text": "A phone browser is enough to join. No app download to ask of your guests."
+    }
+  },
+  "paths": {
+    "title": "Your evening. Your way to play.",
+    "intro": "Let us host the event, or take control of the app yourself.",
+    "event": {
+      "title": "Shall we make an evening of it?",
+      "text": "A business event, a bar night, time with friends: tell us your idea and let’s plan an event with Les Toiles Noires.",
+      "one": "A proposal based on your event",
+      "two": "Format and arrangements agreed together",
+      "three": "A quote before you commit",
+      "cta": "Tell us about your event",
+      "note": "Quoted individually. Tell us about your project so we can confirm what’s possible and when."
+    },
+    "app": {
+      "title": "You’re in control.",
+      "text": "Already have organiser access? Prepare quizzes and host games. The app is also open source if you want to install it yourself.",
+      "manager": "Open organiser area",
+      "join": "Join a game with a code",
+      "install": "Install from GitHub",
+      "note": "The organiser area requires administrator access. Self-hosting requires hosting and technical configuration."
+    }
+  },
+  "quote": {
+    "title": "What if your next evening started here?",
+    "text": "Tell us about the occasion, the place and the guests. We can discuss your plans and put together a suitable quote."
+  },
+  "form": {
+    "name": "Full name",
+    "email": "Email address",
+    "event": "Event type",
+    "date": "Planned date",
+    "location": "Event location",
+    "participants": "Number of participants",
+    "message": "Your ideas and wishes",
+    "optional": "Optional",
+    "choose": "Choose a type",
+    "events": {
+      "business": "Business event",
+      "bar": "Bar or restaurant evening",
+      "private": "Private event",
+      "association": "Community event",
+      "other": "Other occasion"
+    },
+    "messagePlaceholder": "Atmosphere, audience, requirements, questions…",
+    "notice": "This form prepares an email in your email app. You can review and send it yourself; nothing is sent automatically.",
+    "submit": "Open my email app",
+    "subject": "Quote request — LTNHoot event",
+    "prepared": "Your message is prepared. If your email app does not open, write to us directly at the address below."
+  },
+  "faq": {
+    "title": "Before you play.",
+    "app": {
+      "question": "Do players need to download an app?",
+      "answer": "No. Players join in their phone browser by scanning a QR code or entering the game code."
+    },
+    "equipment": {
+      "question": "What equipment do we need?",
+      "answer": "Each player needs a phone with a browser. Questions need a large screen and network access to the app. The organiser prepares and controls the game from the organiser area."
+    },
+    "scores": {
+      "question": "Can points carry over across quizzes?",
+      "answer": "Yes. The organiser starts an evening before the quizzes. Players’ scores are saved and added together. Ending the evening reveals the overall leaderboard and the winner or joint winners."
+    },
+    "quote": {
+      "question": "How do I send my quote request?",
+      "answer": "Complete the form and choose “Open my email app”. A draft opens in your email app; review and send it. You can also write directly to contact@lestoilesnoires.re."
+    },
+    "admin": {
+      "question": "Can anyone access the organiser area?",
+      "answer": "It requires existing administrator access; there is no open signup. To run your own instance, the open-source code and installation instructions are available on GitHub."
+    }
+  },
+  "footer": {
+    "by": "An experience by Les Toiles Noires.",
+    "credits": "Based on Rahoot / Razzia · MIT licence"
+  }
+}

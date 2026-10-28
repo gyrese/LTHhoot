@@ -13,7 +13,6 @@ import {
   Undo2,
   X,
 } from "lucide-react"
-import { useQuizzEditor } from "../../contexts/quizz-editor-context"
 import EditorDialog from "../EditorDialog"
 import GeneratorForm from "./GeneratorForm"
 import WorkshopQuestionEditor from "./WorkshopQuestionEditor"
@@ -23,7 +22,9 @@ type Props = { open: boolean; onClose: () => void }
 const smallButton =
   "focus-ring text-ink-muted hover:bg-panel hover:text-ink flex size-8 shrink-0 items-center justify-center rounded-md disabled:opacity-40"
 
-function Workshop({ open, onClose }: Props) {
+// The editor provider is remounted for each quiz. Keep this instance alive
+// through the first save so its conversation and pending reply survive.
+export default function AIGeneratorModal({ open, onClose }: Props) {
   const { t } = useTranslation()
   const workshop = useWorkshop(onClose)
   const {
@@ -449,9 +450,4 @@ function Workshop({ open, onClose }: Props) {
       </div>
     </EditorDialog>
   )
-}
-
-export default function AIGeneratorModal(props: Props) {
-  const { quizzId } = useQuizzEditor()
-  return <Workshop key={quizzId || "new"} {...props} />
 }

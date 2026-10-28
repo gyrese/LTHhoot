@@ -1,0 +1,23 @@
+{
+  "action": "Wiederherstellen",
+  "forPlayer": "{{username}} wiederherstellen",
+  "instructions": "Lass den Spieler diesen QR-Code scannen oder sende ihm den Link. Sitzung und Punkte werden wiederhergestellt.",
+  "loading": "Link wird erstellt…",
+  "unavailable": "Spieler oder Spiel nicht mehr verfügbar. Fernbedienung aktualisieren.",
+  "invalid": "Dieser Link ist abgelaufen, wurde bereits verwendet oder der Spieler ist nicht mehr im Spiel. Bitte den Gastgeber um einen neuen Link.",
+  "network": "Verbindung unterbrochen. Erneut versuchen; falls der Link bereits verwendet wurde, einen neuen anfordern.",
+  "expires": "Einmalig · läuft in {{minutes}} Min. ab",
+  "address": "Wiederherstellungsadresse",
+  "copy": "Link kopieren",
+  "copied": "Link kopiert",
+  "copyFailed": "Kopieren fehlgeschlagen. Adresse oben auswählen und kopieren.",
+  "expired": "Link abgelaufen. Erstelle einen neuen.",
+  "generate": "Neuen Link erstellen",
+  "close": "Schließen",
+  "resume": "Mein Spiel fortsetzen",
+  "resumeHelp": "Dieser persönliche Link stellt deinen Platz, deine Punkte und Boni wieder her. Tippe, um auf diesem Telefon fortzufahren.",
+  "restoring": "Wird wiederhergestellt…",
+  "connecting": "Verbindung wird hergestellt…",
+  "storage": "Der Browser kann die Sitzung nicht speichern. Speicherzugriff erlauben und erneut versuchen.",
+  "kick": "{{username}} entfernen"
+}
