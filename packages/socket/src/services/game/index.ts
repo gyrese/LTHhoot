@@ -1469,7 +1469,10 @@ class Game {
       return
     }
 
-    this.logAndEmit("warn", `${player.username} déconnecté — place gardée 10 min`)
+    this.logAndEmit(
+      "warn",
+      `${player.username} déconnecté — place gardée 10 min`,
+    )
     console.log(
       `[DISCONNECT] ${player.username} (${player.clientId.substring(0, 8)}) socket=${socketId} game=${this.inviteCode} → place gardée 10 min`,
     )
