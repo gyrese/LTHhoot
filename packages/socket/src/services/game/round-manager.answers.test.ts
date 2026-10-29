@@ -119,6 +119,77 @@ describe("RoundManager — réponses", () => {
     expect(abort).toHaveBeenCalled()
   })
 
+  it("attend un joueur qui se met en veille pendant la question", async () => {
+    const { round, players, cooldown } = setup()
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    // La table B réfléchit, son téléphone se verrouille.
+    players.setDisconnected("b")
+
+    const abort = vi.spyOn(cooldown, "abort")
+
+    round.selectAnswer(playerSocket("a"), { answerId: 1 })
+    // Le chrono ne doit pas être coupé : B était là à l'ouverture.
+    expect(abort).not.toHaveBeenCalled()
+
+    // B rallume son téléphone (nouveau socket) et répond.
+    players.updateSocketId("b", "b2")
+    players.getAll()[1]!.connected = true
+    round.selectAnswer(playerSocket("b2"), { answerId: 0 })
+    expect(abort).toHaveBeenCalled()
+  })
+
+  it("n'attend pas un joueur déjà absent à l'ouverture de la question", async () => {
+    const { round, players, cooldown } = setup()
+    players.setDisconnected("b")
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    const abort = vi.spyOn(cooldown, "abort")
+
+    round.selectAnswer(playerSocket("a"), { answerId: 1 })
+    expect(abort).toHaveBeenCalled()
+  })
+
+  it("indique à la télécommande QUI a répondu, même après une reconnexion", async () => {
+    const { round, players } = setup()
+    const emitted: { room: string; event: string; payload: unknown }[] = []
+    const to = vi.spyOn(io, "to").mockImplementation(
+      (room) =>
+        ({
+          emit: (event: string, payload: unknown) => {
+            emitted.push({ room: String(room), event, payload })
+          },
+        }) as never,
+    )
+    const answeredFor = () =>
+      emitted
+        .filter(
+          (e) =>
+            e.room === "manager-g1" && e.event === "manager:answeredPlayers",
+        )
+        .at(-1)?.payload
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    // Seul « b » répond : c'est lui, et pas le 1er de la liste, qui est vert.
+    round.selectAnswer(playerSocket("b"), { answerId: 1 })
+    expect(answeredFor()).toEqual(["b"])
+
+    // « b » change de socket (téléphone rallumé) : la télécommande doit
+    // suivre le nouvel id, sinon il réapparaît comme « pas répondu ».
+    players.updateSocketId("b", "b2")
+    round.remapPlayerAnswer("b", "b2")
+    expect(answeredFor()).toEqual(["b2"])
+    expect(round.getAnsweredPlayerIds()).toEqual(["b2"])
+
+    to.mockRestore()
+  })
+
   it("stop() ferme la fenêtre de réponse", async () => {
     const { round } = setup()
 

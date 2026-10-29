@@ -196,7 +196,7 @@ export function RemoteHeader({
 
 export function GamePanel({
   status,
-  answerCount,
+  answeredIds,
   players,
   onValidateOpenAnswer,
   onInvalidateOpenAnswer,
@@ -211,7 +211,7 @@ export function GamePanel({
 }: {
   eveningInterlude: EveningInterlude
   status: GameStatus
-  answerCount: number
+  answeredIds: string[]
   players: PublicPlayer[]
   onValidateOpenAnswer: (_text: string) => void
   onInvalidateOpenAnswer: (_text: string) => void
@@ -264,7 +264,7 @@ export function GamePanel({
       return (
         <SelectAnswerPanel
           data={status.data}
-          answerCount={answerCount}
+          answeredIds={answeredIds}
           players={players}
           timer={timer}
           maxTime={maxTime}
@@ -796,17 +796,18 @@ function WaitPanel({
 
 function SelectAnswerPanel({
   data,
-  answerCount,
+  answeredIds,
   players,
   timer,
   maxTime,
 }: {
   data: Record<string, unknown>
-  answerCount: number
+  answeredIds: string[]
   players: PublicPlayer[]
   timer: number | null
   maxTime: number
 }) {
+  const answerCount = answeredIds.length
   const total = Number(data.totalPlayer ?? players.length)
   const question = String(data.question ?? "")
   const type = String(data.type ?? "mcq")
@@ -888,8 +889,8 @@ function SelectAnswerPanel({
             </p>
           </div>
           <div className="max-h-44 divide-y divide-white/5 overflow-y-auto">
-            {players.map((player, i) => {
-              const hasAnswered = i < answerCount
+            {players.map((player) => {
+              const hasAnswered = answeredIds.includes(player.id)
 
               return (
                 <div
@@ -1410,13 +1411,13 @@ export function PlayersPanel({
   gameId,
   players,
   statusName,
-  answerCount,
+  answeredIds,
   setKickTargetId,
 }: {
   gameId: string
   players: PublicPlayer[]
   statusName: Status | undefined
-  answerCount: number
+  answeredIds: string[]
   setKickTargetId: (_id: string | null) => void
 }) {
   const { t } = useTranslation("recovery")
@@ -1435,9 +1436,9 @@ export function PlayersPanel({
       ) : (
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm">
           <div className="divide-y divide-white/5">
-            {players.map((player, i) => {
-              const hasAnswered =
-                statusName === STATUS.SELECT_ANSWER && i < answerCount
+            {players.map((player) => {
+              // Pastille affichée seulement pendant SELECT_ANSWER (cf. plus bas).
+              const hasAnswered = answeredIds.includes(player.id)
 
               return (
                 <div

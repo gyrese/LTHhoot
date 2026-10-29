@@ -46,7 +46,12 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const [status, setStatus] = useState<GameStatus>(null)
   const [players, setPlayers] = useState<PublicPlayer[]>([])
   const [questionStates, setQuestionStates] = useState<QuestionStates>(null)
-  const [answerCount, setAnswerCount] = useState(0)
+  // Ids des joueurs ayant répondu (MANAGER.ANSWERED_PLAYERS) : la liste
+  // « Suivi joueurs » doit savoir QUI manque, pas seulement combien.
+  const [answeredIds, setAnsweredIds] = useState<string[]>([])
+  // Répondants transmis par SUCCESS_RECONNECT : appliqués par l'effet de
+  // changement de statut ci-dessous, qui sinon les remettrait à zéro.
+  const resyncAnsweredIdsRef = useRef<string[] | null>(null)
   const [inviteCode, setInviteCode] = useState("")
   const [timer, setTimer] = useState<number | null>(null)
   const [maxTime, setMaxTime] = useState(0)
@@ -74,7 +79,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
 
   useEffect(() => {
     if (status?.name === STATUS.SELECT_ANSWER) {
-      setAnswerCount(0)
+      setAnsweredIds(resyncAnsweredIdsRef.current ?? [])
       const time = Number(status.data.time) || 0
       setMaxTime(time)
       setTimer(time)
@@ -82,6 +87,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       setTimer(null)
     }
 
+    resyncAnsweredIdsRef.current = null
     setActionPending(false)
   }, [status?.name, status?.data])
 
@@ -127,10 +133,13 @@ export function RemoteControl({ gameId }: { gameId: string }) {
       currentQuestion,
       armedRoundEvent,
       isEveningMode: evening,
+      answeredPlayerIds,
     }) => {
       if (gId !== gameId) {
         return
       }
+
+      resyncAnsweredIdsRef.current = answeredPlayerIds ?? []
 
       if (authTimeoutRef.current) {
         clearTimeout(authTimeoutRef.current)
@@ -206,8 +215,8 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     toast.success("Joueur expulsé")
   })
 
-  useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
-    setAnswerCount(count)
+  useEvent(EVENTS.MANAGER.ANSWERED_PLAYERS, (playerIds) => {
+    setAnsweredIds(playerIds)
   })
 
   useEvent(EVENTS.GAME.COOLDOWN, (timeLeft: number) => {
@@ -329,7 +338,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
   const handlePrimary = useCallback(() => {
     if (
       status?.name === STATUS.SELECT_ANSWER &&
-      answerCount < players.filter((p) => p.connected).length
+      players.some((p) => p.connected && !answeredIds.includes(p.id))
     ) {
       setPendingConfirm("abort")
 
@@ -337,7 +346,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
     }
 
     runPrimary()
-  }, [status?.name, answerCount, players, runPrimary])
+  }, [status?.name, answeredIds, players, runPrimary])
 
   const handleArmEvent = useCallback(
     (eventType: RoundEventType | null) => {
@@ -459,7 +468,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
         {activeTab === "jeu" && (
           <GamePanel
             status={status}
-            answerCount={answerCount}
+            answeredIds={answeredIds}
             players={players}
             onValidateOpenAnswer={handleValidateOpenAnswer}
             onInvalidateOpenAnswer={handleInvalidateOpenAnswer}
@@ -478,7 +487,7 @@ export function RemoteControl({ gameId }: { gameId: string }) {
             gameId={gameId}
             players={players}
             statusName={status?.name}
-            answerCount={answerCount}
+            answeredIds={answeredIds}
             setKickTargetId={setKickTargetId}
           />
         )}

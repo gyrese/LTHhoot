@@ -149,6 +149,74 @@ describe("Game.dispose", () => {
     game.dispose()
     vi.useRealTimers()
   })
+
+  it("garde 10 min la place d'un joueur en veille dans le salon", () => {
+    vi.useFakeTimers()
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    game.join(fakeSocket("veille", "telephone"), "Alice")
+    game.schedulePlayerRemoval("veille")
+
+    // Téléphone verrouillé 5 min pendant l'attente du lancement.
+    vi.advanceTimersByTime(5 * 60_000)
+    expect(game.players).toHaveLength(1)
+
+    const phone = fakeSocket("reveil", "telephone")
+    game.reconnect(phone)
+    expect(phone.emit).toHaveBeenCalledWith(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+      expect.anything(),
+    )
+    game.dispose()
+    vi.useRealTimers()
+  })
+
+  it("retire du salon un joueur absent depuis plus de 10 min", () => {
+    vi.useFakeTimers()
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    game.join(fakeSocket("parti"), "Alice")
+    game.schedulePlayerRemoval("parti")
+    vi.advanceTimersByTime(10 * 60_000 + 1)
+    expect(game.players).toHaveLength(0)
+    game.dispose()
+    vi.useRealTimers()
+  })
+
+  it("une partie restaurée en cours ne retire jamais ses joueurs", () => {
+    vi.useFakeTimers()
+    const twoQuestions: Quizz = {
+      ...quizz,
+      questions: [quizz.questions[0]!, quizz.questions[0]!],
+    }
+    const original = new Game(io, fakeSocket("hote-restore"), twoQuestions)
+    const snapshot = {
+      ...original.serialize(),
+      resumeIndex: 1,
+      questionsHistory: [{}] as never,
+      players: [
+        { clientId: "c-restore", username: "Alice", points: 900, streak: 2 },
+      ],
+    }
+    original.dispose()
+
+    const restored = Game.restore(io, snapshot)!
+    expect(restored.started).toBe(false)
+    expect(restored.hasProgress).toBe(true)
+
+    // Retour du joueur après le redéploiement, puis nouvelle mise en veille.
+    restored.reconnect(fakeSocket("s-restore", "c-restore"))
+    restored.schedulePlayerRemoval("s-restore")
+    vi.advanceTimersByTime(60 * 60_000)
+    expect(restored.players).toMatchObject([{ username: "Alice", points: 900 }])
+    restored.dispose()
+    vi.useRealTimers()
+  })
+
+  it("une partie neuve non lancée n'a pas de progression", () => {
+    const game = new Game(io, fakeSocket("hote"), quizz)
+    expect(game.hasProgress).toBe(false)
+    game.dispose()
+  })
+
   it("removeGame libère les timers et fait quitter les rooms", () => {
     vi.useFakeTimers()
 

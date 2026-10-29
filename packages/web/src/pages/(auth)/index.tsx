@@ -13,15 +13,14 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 const PlayerAuthPage = () => {
-  const { isConnected, connect } = useSocket()
+  const { connect } = useSocket()
   const { player, reset } = usePlayerStore()
   const { t } = useTranslation()
 
+  // Connexion initiale seulement : cf. pages/__root.tsx.
   useEffect(() => {
-    if (!isConnected) {
-      connect()
-    }
-  }, [connect, isConnected])
+    connect()
+  }, [connect])
 
   // La reconnexion métier (PLAYER.RECONNECT si une session est persistée) est
   // émise une seule fois par le handler `connect` global du SocketProvider.

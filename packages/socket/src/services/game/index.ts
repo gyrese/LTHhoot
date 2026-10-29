@@ -59,6 +59,12 @@ const ROUND_EVENT_LABELS: Record<RoundEventType, string> = {
   [ROUND_EVENT_TYPE.SUDDEN_DEATH]: "Mort subite",
 }
 
+// Délai avant de retirer du salon un joueur déconnecté. Un téléphone verrouillé
+// coupe son socket presque aussitôt, et l'attente du lancement dure souvent
+// plusieurs minutes : à 30 s, le joueur perdait sa place et revenait à
+// l'accueil. Une partie avec progression ne retire jamais ses joueurs.
+const LOBBY_REMOVAL_DELAY_MS = 10 * 60_000
+
 class Game {
   private readonly recoveryLinks = new RecoveryLinks()
 
@@ -69,8 +75,8 @@ class Game {
       return undefined
     }
 
-    // Laisser le temps de scanner dans le lobby, même si le délai normal de
-    // retrait (30 s) est déjà armé. Une partie démarrée conserve ses joueurs.
+    // Laisser le temps de scanner dans le lobby, même si un retrait différé est
+    // déjà armé. Une partie avec progression conserve ses joueurs.
     const timer = this.disconnectTimers.get(playerId)
 
     if (timer) {
@@ -80,10 +86,10 @@ class Game {
         setTimeout(() => {
           this.disconnectTimers.delete(playerId)
 
-          if (!this.started) {
+          if (!this.hasProgress) {
             this.removePlayer(playerId)
           }
-        }, 600_000),
+        }, LOBBY_REMOVAL_DELAY_MS),
       )
     }
 
@@ -868,6 +874,18 @@ class Game {
     return this.round.isStarted()
   }
 
+  // Vrai dès que des points sont en jeu, y compris quand `started` est faux :
+  // partie restaurée après un redéploiement (elle repart non démarrée) ou
+  // soirée entre deux quiz. Un joueur d'une telle partie n'est jamais retiré
+  // sur simple déconnexion : il perdrait ses points.
+  get hasProgress(): boolean {
+    return (
+      this.started ||
+      this.round.getCheckpoint().resumeIndex > 0 ||
+      Boolean(this.eveningSession && this.eveningSession.currentIndex > 0)
+    )
+  }
+
   // Vrai s'il reste au moins un joueur connecté. Sert de garde au nettoyage des
   // parties « vides » : tant qu'un joueur est connecté (même si l'écran manager
   // a sauté et que la partie est pilotée par la seule télécommande), on ne doit
@@ -1107,6 +1125,7 @@ class Game {
       endsAt: endsAt > 0 ? endsAt : undefined,
       startedAt: startedAt > 0 ? startedAt : undefined,
       totalAnswered: this.round.getAnswersCount(),
+      answeredPlayerIds: this.round.getAnsweredPlayerIds(),
       players: this.playerManager.getAll().map(toPublicPlayer),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
@@ -1135,7 +1154,7 @@ class Game {
       if (oldSocket) {
         // Même logique que pour le joueur : reconnexion du même clientId, on
         // évite le RESET qui éjecterait l'écran manager légitime.
-        oldSocket.disconnect(true)
+        oldSocket.disconnect()
       }
     }
 
@@ -1167,6 +1186,7 @@ class Game {
       endsAt: endsAt > 0 ? endsAt : undefined,
       startedAt: startedAt > 0 ? startedAt : undefined,
       totalAnswered: this.round.getAnswersCount(),
+      answeredPlayerIds: this.round.getAnsweredPlayerIds(),
       players: this.playerManager.getAll().map(toPublicPlayer),
       armedRoundEvent: this.round.getArmedRoundEvent(),
       isEveningMode: Boolean(this.eveningSession),
@@ -1219,7 +1239,12 @@ class Game {
         // Pas de GAME.RESET ici : c'est le MÊME clientId qui se reconnecte (même
         // navigateur après un blip réseau). Émettre RESET renvoyait le joueur à
         // l'accueil = « déco sauvage ». On coupe juste le socket orphelin.
-        oldSocket.disconnect(true)
+        // Déconnexion EXPLICITE (sans fermer le transport) : le client reçoit
+        // « io server disconnect » et ne se reconnecte pas tout seul. Avec
+        // disconnect(true), il voyait une coupure réseau, se reconnectait et
+        // reprenait la session : deux onglets du même joueur se la volaient
+        // en boucle (14 reprises en 10 s mesurées, cf. test e2e 18).
+        oldSocket.disconnect()
       } else {
         console.log(
           `[TAKEOVER] Old socket ${oldSocketId} already gone from memory`,
@@ -1412,7 +1437,7 @@ class Game {
       this.playerManager.broadcastCount()
       this.logAndEmit(
         "warn",
-        `${player.username} retiré (30s sans reconnexion)`,
+        `${player.username} retiré (absent du salon depuis 10 min)`,
       )
       console.log(
         `[REMOVE] ${player.username} supprimé définitivement game=${this.inviteCode} joueurs restants=${this.playerManager.count()}`,
@@ -1444,9 +1469,9 @@ class Game {
       return
     }
 
-    this.logAndEmit("warn", `${player.username} déconnecté — grace period 30s`)
+    this.logAndEmit("warn", `${player.username} déconnecté — place gardée 10 min`)
     console.log(
-      `[DISCONNECT] ${player.username} (${player.clientId.substring(0, 8)}) socket=${socketId} game=${this.inviteCode} → grace period 30s`,
+      `[DISCONNECT] ${player.username} (${player.clientId.substring(0, 8)}) socket=${socketId} game=${this.inviteCode} → place gardée 10 min`,
     )
 
     this.playerManager.setDisconnected(socketId)
@@ -1456,7 +1481,7 @@ class Game {
       () => {
         this.disconnectTimers.delete(socketId)
 
-        if (this.started) {
+        if (this.hasProgress) {
           return
         }
 
@@ -1464,12 +1489,12 @@ class Game {
 
         if (removed) {
           console.log(
-            `[TIMEOUT] ${removed.username} supprimé après 30s sans reconnexion game=${this.inviteCode}`,
+            `[TIMEOUT] ${removed.username} supprimé après 10 min sans reconnexion game=${this.inviteCode}`,
           )
         }
       },
       Math.max(
-        30_000,
+        LOBBY_REMOVAL_DELAY_MS,
         this.recoveryLinks.expiresAt(player.clientId) - Date.now(),
       ),
     )

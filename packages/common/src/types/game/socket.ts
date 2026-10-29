@@ -159,6 +159,7 @@ export interface ServerToClientEvents {
     endsAt?: number
     startedAt?: number
     totalAnswered?: number
+    answeredPlayerIds?: string[]
     armedRoundEvent?: RoundEventType | null
     isEveningMode?: boolean
   }) => void
@@ -176,6 +177,9 @@ export interface ServerToClientEvents {
   [EVENTS.MANAGER.REMOVE_PLAYER]: (_playerId: string) => void
   [EVENTS.MANAGER.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.MANAGER.PLAYER_KICKED]: (_playerId: string) => void
+  // Ids socket des joueurs ayant répondu à la question en cours (hôte et
+  // télécommande) : le compteur seul ne dit pas QUI manque.
+  [EVENTS.MANAGER.ANSWERED_PLAYERS]: (_playerIds: string[]) => void
   [EVENTS.MANAGER.UNAUTHORIZED]: () => void
   [EVENTS.MANAGER.LOG_ENTRY]: (_entry: {
     id: string

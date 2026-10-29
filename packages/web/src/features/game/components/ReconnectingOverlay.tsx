@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react"
+import { LogOut, RotateCw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -8,9 +8,12 @@ const QUIT_DELAY_MS = 8000
 
 type Props = {
   onQuit: () => void
+  // Relance manuelle de la connexion : dernier recours si la reconnexion
+  // automatique n'aboutit pas.
+  onRetry: () => void
 }
 
-const ReconnectingOverlay = ({ onQuit }: Props) => {
+const ReconnectingOverlay = ({ onQuit, onRetry }: Props) => {
   const { t } = useTranslation()
   const [canQuit, setCanQuit] = useState(false)
 
@@ -45,14 +48,24 @@ const ReconnectingOverlay = ({ onQuit }: Props) => {
       </div>
 
       {canQuit && (
-        <button
-          type="button"
-          onClick={onQuit}
-          className="mt-12 flex min-h-[44px] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <LogOut size={16} aria-hidden="true" />
-          {t("common:quit")}
-        </button>
+        <div className="mt-12 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="flex min-h-[44px] items-center gap-2 rounded-full bg-orange-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-400"
+          >
+            <RotateCw size={16} aria-hidden="true" />
+            {t("common:retry")}
+          </button>
+          <button
+            type="button"
+            onClick={onQuit}
+            className="flex min-h-[44px] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOut size={16} aria-hidden="true" />
+            {t("common:quit")}
+          </button>
+        </div>
       )}
     </div>
   )

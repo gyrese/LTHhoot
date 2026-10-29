@@ -608,7 +608,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       managerGame.setManagerDisconnected()
       registry.markGameAsEmpty(managerGame)
 
-      if (!managerGame.started) {
+      if (!managerGame.hasProgress) {
         console.log(
           `[DISCONNECT] Manager game=${managerGame.inviteCode} → partie non démarrée, grace period 30s`,
         )
@@ -630,8 +630,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    if (!game.started) {
-      // Grace period : le joueur a 30s pour reconnecter avant d'être supprimé
+    // Partie restaurée ou soirée entre deux quiz : `started` est faux mais des
+    // points sont en jeu, le joueur est seulement marqué déconnecté.
+    if (!game.hasProgress) {
+      // Salon : la place est gardée 10 min avant retrait du joueur
       game.schedulePlayerRemoval(socket.id)
 
       return

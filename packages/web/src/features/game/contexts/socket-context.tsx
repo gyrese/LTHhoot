@@ -118,10 +118,14 @@ const createSocketClient = (
   setIsConnected: (_v: boolean) => void,
   setIsReconnecting: (_v: boolean) => void,
 ): TypedSocket | null => {
-  // Filet de sécurité : si une reconnexion métier est lancée mais que le serveur
-  // ne répond jamais (event perdu, partie disparue silencieusement…), on libère
-  // l'overlay au bout de RECONNECT_RESOLVE_TIMEOUT plutôt que de rester bloqué.
+  // Le serveur répond TOUJOURS à une resynchronisation (SUCCESS_RECONNECT ou
+  // RESET). Sans réponse au bout de RECONNECT_RESOLVE_TIMEOUT, l'émission s'est
+  // perdue : le nouveau socket n'a pas rejoint la room de la partie et ne
+  // recevrait plus rien. On la renvoie (le serveur est idempotent) avant de
+  // libérer l'overlay en dernier recours.
   const RECONNECT_RESOLVE_TIMEOUT = 5000
+  const MAX_RESYNC_RETRIES = 3
+  let resyncRetries = 0
   // Fenêtre de reconnexion silencieuse : une réattribution NAT opérateur ou un
   // handover 4G coupe le lien 1-3s (constaté en prod : 23 sessions / 159 avec
   // changement d'IP en cours de partie). Si la reconnexion + resync aboutissent
@@ -168,9 +172,22 @@ const createSocketClient = (
     setIsReconnecting(false)
   }
 
-  const armReconnectTimeout = () => {
+  const armReconnectTimeout = (resend: () => void) => {
     clearReconnectTimeout()
     reconnectTimeout = setTimeout(() => {
+      reconnectTimeout = null
+
+      if (resyncRetries < MAX_RESYNC_RETRIES) {
+        resyncRetries += 1
+        console.warn(
+          `[SESSION] Resynchronisation sans réponse, nouvel essai #${resyncRetries}`,
+        )
+        resend()
+        armReconnectTimeout(resend)
+
+        return
+      }
+
       console.warn(
         "[SESSION] Timeout de reconnexion : aucune réponse serveur, libération de l'overlay",
       )
@@ -206,6 +223,7 @@ const createSocketClient = (
         `[SOCKET] Connecté (POLLING) socket=${socketClient.id} transport=${transport}`,
       )
       setIsConnected(true)
+      resyncRetries = 0
 
       // La télécommande restaure elle-même sa partie, sans ancienne session joueur/admin.
       if (
@@ -225,7 +243,9 @@ const createSocketClient = (
       if (playerGameId) {
         debugLog(`[SESSION] Restauration session Joueur: ${playerGameId}`)
         showOverlayAfterGrace()
-        armReconnectTimeout()
+        armReconnectTimeout(() =>
+          emitResync(socketClient, "player", playerGameId),
+        )
         emitResync(socketClient, "player", playerGameId)
       } else {
         // Si on a un mot de passe manager en session, on s'authentifie systématiquement à la reconnexion.
@@ -253,7 +273,9 @@ const createSocketClient = (
         if (managerGameId) {
           debugLog(`[SESSION] Restauration session Manager: ${managerGameId}`)
           showOverlayAfterGrace()
-          armReconnectTimeout()
+          armReconnectTimeout(() =>
+            emitResync(socketClient, "manager", managerGameId),
+          )
           emitResync(socketClient, "manager", managerGameId)
         } else {
           finishReconnecting()
@@ -264,6 +286,9 @@ const createSocketClient = (
     socketClient.on("disconnect", (reason) => {
       debugLog(`[SOCKET] Déconnecté (POLLING) raison=${reason}`)
       setIsConnected(false)
+      // Socket coupé : les relances n'iraient nulle part. Le prochain
+      // `connect` relance lui-même la resynchronisation.
+      clearReconnectTimeout()
 
       // Déconnexion involontaire → reconnexion silencieuse d'abord : l'overlay
       // n'apparaît que si le blip dépasse la fenêtre de grâce.
@@ -378,16 +403,24 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     let lastProbe = 0
 
     const verifyLiveness = () => {
-      if (document.visibilityState === "hidden" || isReconnectingRef.current) {
+      if (document.visibilityState === "hidden") {
         return
       }
 
+      // Même overlay affiché : c'est justement là qu'il faut relancer. Après
+      // une coupure décidée par le serveur (« io server disconnect »),
+      // Socket.IO ne se reconnecte jamais seul et l'overlay restait figé.
       if (!socket.connected) {
         debugLog(
           "[WATCHDOG] Premier plan et socket déconnecté → reconnexion immédiate",
         )
         socket.connect()
 
+        return
+      }
+
+      // Resynchronisation déjà en cours : pas de sonde par-dessus.
+      if (isReconnectingRef.current) {
         return
       }
 
@@ -588,6 +621,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         <ReconnectingOverlay
           key="global-reconnect-overlay"
           onQuit={quitSession}
+          onRetry={reconnect}
         />
       )}
       <div

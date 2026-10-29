@@ -125,6 +125,11 @@ export class RoundManager {
   // réponse. Un joueur arrivé en cours de question n'a pas reçu la question :
   // il ne peut pas y répondre et ne compte pas dans le seuil de fin anticipée.
   private eligibleClientIds = new Set<string>()
+  // Joueurs CONNECTÉS à l'ouverture : la fin anticipée les attend même s'ils
+  // décrochent ensuite. Un téléphone qui se verrouille pendant la réflexion
+  // (question longue, table qui discute) ne doit pas faire couper le chrono
+  // aux autres. Seul un joueur déjà absent à l'ouverture n'est pas attendu.
+  private awaitedClientIds = new Set<string>()
   // Fin de la fenêtre de gel (power-up FREEZE) par clientId : appliquée côté
   // serveur, un client modifié ne peut pas répondre avant la fin du gel.
   private frozenUntil = new Map<string, number>()
@@ -174,6 +179,7 @@ export class RoundManager {
     this.acceptingAnswers = false
     this.playersAnswers = []
     this.eligibleClientIds.clear()
+    this.awaitedClientIds.clear()
     this.frozenUntil.clear()
   }
 
@@ -625,6 +631,12 @@ export class RoundManager {
       // reste gelé/mélangé indéfiniment aux questions suivantes.
       this.eligibleClientIds = new Set(
         this.opts.players.getAll().map((p) => p.clientId),
+      )
+      this.awaitedClientIds = new Set(
+        this.opts.players
+          .getAll()
+          .filter((p) => p.connected)
+          .map((p) => p.clientId),
       )
       this.frozenUntil.clear()
 
@@ -1148,6 +1160,7 @@ export class RoundManager {
     socket
       .to(this.opts.gameId)
       .emit(EVENTS.GAME.PLAYER_ANSWER, this.playersAnswers.length)
+    this.emitAnsweredPlayers()
     this.opts.players.broadcastCount()
 
     // Mort subite : la première bonne réponse arrête immédiatement la manche,
@@ -1164,18 +1177,23 @@ export class RoundManager {
       return "ok"
     }
 
-    // On compare au nombre de joueurs CONNECTÉS : un joueur déconnecté pendant
-    // la partie reste dans la liste (pour reconnexion) mais ne répondra jamais,
-    // sinon la manche ne se termine jamais en avance et tourne le timer complet.
-    // Seuls les joueurs présents à l'ouverture de la question comptent : un
-    // arrivant tardif ne peut pas répondre et bloquerait la fin anticipée.
-    const expectedAnswers = this.opts.players
+    // Fin anticipée quand chaque joueur attendu a répondu. Attendus : les
+    // joueurs connectés à l'ouverture (même déconnectés depuis : téléphone en
+    // veille pendant la réflexion), plus ceux revenus en cours de question.
+    // Un joueur déjà absent à l'ouverture et toujours absent ne bloque pas.
+    // Un arrivant tardif (hors `eligibleClientIds`) ne peut pas répondre et
+    // n'est jamais attendu.
+    const answeredIds = new Set(this.playersAnswers.map((a) => a.playerId))
+    const everyoneAnswered = this.opts.players
       .getAll()
-      .filter(
-        (p) => p.connected && this.eligibleClientIds.has(p.clientId),
-      ).length
+      .every(
+        (p) =>
+          answeredIds.has(p.id) ||
+          !this.eligibleClientIds.has(p.clientId) ||
+          (!p.connected && !this.awaitedClientIds.has(p.clientId)),
+      )
 
-    if (this.playersAnswers.length >= expectedAnswers) {
+    if (everyoneAnswered) {
       this.opts.cooldown.abort()
     }
 
@@ -1197,11 +1215,24 @@ export class RoundManager {
       return
     }
 
-    for (const answer of this.playersAnswers) {
-      if (answer.playerId === oldId) {
-        answer.playerId = newId
-      }
+    const answer = this.playersAnswers.find((a) => a.playerId === oldId)
+
+    if (answer) {
+      answer.playerId = newId
+      // La télécommande suit les joueurs par id : sans cet envoi, un joueur
+      // reconnecté après avoir répondu y apparaît comme « pas répondu ».
+      this.emitAnsweredPlayers()
     }
+  }
+
+  getAnsweredPlayerIds(): string[] {
+    return this.playersAnswers.map((a) => a.playerId)
+  }
+
+  private emitAnsweredPlayers(): void {
+    this.opts.io
+      .to(`manager-${this.opts.gameId}`)
+      .emit(EVENTS.MANAGER.ANSWERED_PLAYERS, this.getAnsweredPlayerIds())
   }
 
   getPlayerAnswer(playerId: string): Answer | undefined {

@@ -74,7 +74,9 @@ export class PlayerManager {
       if (oldSocket && oldSocket.id !== socket.id) {
         // Même clientId qui se ré-inscrit : on coupe l'ancien socket orphelin
         // sans GAME.RESET (qui éjecterait brutalement vers l'accueil).
-        oldSocket.disconnect(true)
+        // Déconnexion explicite : pas de reconnexion automatique de l'ancien
+        // onglet (cf. Game.reconnectPlayer).
+        oldSocket.disconnect()
       }
 
       // Les listes des autres écrans sont indexées par id socket : on retire
