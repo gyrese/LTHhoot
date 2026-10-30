@@ -137,7 +137,12 @@ const QuizzEditorSidebar = ({ onNavigate }: { onNavigate?: () => void }) => {
 
   const handleQuestionKeyDown =
     (id: string) => (event: KeyboardEvent<HTMLButtonElement>) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) {
+      if (
+        event.defaultPrevented ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+      ) {
         return
       }
 
@@ -544,6 +549,7 @@ const QuizzEditorSidebar = ({ onNavigate }: { onNavigate?: () => void }) => {
                       draggableId={q.id}
                       index={visibleIndex}
                       isDragDisabled={hasFilter || selectionMode}
+                      disableInteractiveElementBlocking
                     >
                       {(provided, snapshot) => (
                         <div
@@ -589,6 +595,7 @@ const QuizzEditorSidebar = ({ onNavigate }: { onNavigate?: () => void }) => {
                               menuOpen={contextMenu?.index === index}
                               onClick={handleSlideClick(index)}
                               onKeyDown={handleQuestionKeyDown(q.id)}
+                              dragHandleProps={provided.dragHandleProps}
                               buttonRef={(node) => {
                                 if (node) {
                                   questionButtons.current.set(q.id, node)

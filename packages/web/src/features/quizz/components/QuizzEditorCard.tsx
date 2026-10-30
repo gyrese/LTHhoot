@@ -1,4 +1,5 @@
 import type { QuestionType } from "@rahoot/common/types/game"
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd"
 import dateImg from "@rahoot/web/assets/game/types/date.png"
 import dropPinImg from "@rahoot/web/assets/game/types/drop_pin.png"
 import gridImg from "@rahoot/web/assets/game/types/grid.png"
@@ -48,6 +49,7 @@ type Props = {
   onClick: (_event: MouseEvent<HTMLButtonElement>) => void
   onKeyDown?: (_event: KeyboardEvent<HTMLButtonElement>) => void
   buttonRef?: Ref<HTMLButtonElement>
+  dragHandleProps?: DraggableProvidedDragHandleProps | null
   onDelete: () => void
   onDuplicate: () => void
   onToggleSelection?: () => void
@@ -69,6 +71,7 @@ const QuizzEditorCard = ({
   onClick,
   onKeyDown,
   buttonRef,
+  dragHandleProps,
   onDelete,
   onDuplicate,
   onToggleSelection,
@@ -104,6 +107,7 @@ const QuizzEditorCard = ({
         )}
       >
         <button
+          {...dragHandleProps}
           ref={buttonRef}
           type="button"
           onClick={onClick}
