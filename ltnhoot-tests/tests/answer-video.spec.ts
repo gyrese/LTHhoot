@@ -57,6 +57,15 @@ test.beforeAll(async () => {
     question: "Quelle planète est surnommée la planète rouge ?",
     answers: ["Mars", "Vénus", "Jupiter", "Saturne"],
     solutions: [0],
+    // Saved by the old two-to-four-answer flow: the last row covered the first.
+    layout: {
+      answers: [40, 964, 40, 964].map((x) => ({
+        x,
+        y: 976,
+        width: 916,
+        height: 88,
+      })),
+    },
     time: 30,
     cooldown: 5,
     showLeaderboard: true,
@@ -143,6 +152,53 @@ test("le mode TV garde le lecteur, les commandes et la progression du quiz", asy
   )
   await page.getByRole("button", { name: /Démarrer/u }).click()
   await selected
+  const questionTitle = salon.getByRole("heading", {
+    name: "Quelle planète est surnommée la planète rouge ?",
+    exact: true,
+  })
+  // The outgoing question screen briefly overlaps during the crossfade.
+  await expect(questionTitle).toHaveCount(1)
+  await expect(questionTitle).toBeVisible()
+  const scene = salon
+    .locator(".absolute.inset-0.flex.flex-col")
+    .filter({ has: questionTitle })
+  // The video controls must not reserve a separate strip above the question.
+  // Its background and slide frame fill the viewport at every screen ratio.
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1919, height: 877 },
+  ]) {
+    await salon.setViewportSize(viewport)
+    await expect.poll(async () => (await scene.boundingBox())?.y).toBe(0)
+    await expect
+      .poll(async () => (await scene.boundingBox())?.height)
+      .toBe(viewport.height)
+    const answerBoxes = salon.locator(".shadow-inset:visible")
+    await expect(answerBoxes).toHaveCount(4)
+    await expect
+      .poll(() =>
+        answerBoxes.evaluateAll((nodes) => {
+          const boxes = nodes.map((node) => node.getBoundingClientRect())
+          return boxes.every(
+            (box, index) =>
+              box.top >= 0 &&
+              box.bottom <= innerHeight &&
+              boxes
+                .slice(index + 1)
+                .every(
+                  (other) =>
+                    box.right <= other.left ||
+                    box.left >= other.right ||
+                    box.bottom <= other.top ||
+                    box.top >= other.bottom,
+                ),
+          )
+        }),
+      )
+      .toBe(true)
+  }
+  await salon.setViewportSize({ width: 1440, height: 900 })
+  await salon.screenshot({ path: testInfo.outputPath("salon-question.png") })
   player.emit("player:selectedAnswer", { gameId, data: { answerId: 0 } })
   const expand = page.getByRole("button", {
     name: "Agrandir la vidéo",

@@ -4,6 +4,7 @@ import type {
   QuestionLayoutBox,
 } from "@rahoot/common/types/game"
 import {
+  MAX_MCQ_ANSWERS,
   resolveQuestionFont,
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
@@ -84,14 +85,41 @@ export const defaultAnswerBoxes = (count: number): QuestionLayoutBox[] => {
   })
 }
 
+const sameBoxGeometry = (a: QuestionLayoutBox, b: QuestionLayoutBox) =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+
+const resolveAnswerBoxes = (
+  layout: QuestionLayout | undefined,
+  count: number,
+): QuestionLayoutBox[] => {
+  const defaults = defaultAnswerBoxes(count)
+  const boxes = defaults.map((box, index) => layout?.answers?.[index] ?? box)
+  // Older additions kept the two-answer row at the bottom and put the next
+  // row directly over it. Recover that exact default-grid collision, keeping
+  // styles and leaving manually positioned boxes alone.
+  const hasDuplicate = boxes.some((box, index) =>
+    boxes.slice(0, index).some((other) => sameBoxGeometry(box, other)),
+  )
+  const isDefaultGrid = boxes.every((box, index) =>
+    Array.from({ length: MAX_MCQ_ANSWERS - 1 }, (_, i) => i + 2).some(
+      (size) => {
+        const candidate = defaultAnswerBoxes(size)[index]
+        return candidate && sameBoxGeometry(box, candidate)
+      },
+    ),
+  )
+  return hasDuplicate && isDefaultGrid
+    ? boxes.map((box, index) => ({ ...box, ...defaults[index]! }))
+    : boxes
+}
+
 // Boîte effective d'une réponse : celle du layout si présente, sinon la boîte
 // par défaut (layout incomplet ou incohérent → jamais de case perdue).
 export const answerBoxAt = (
   layout: QuestionLayout | undefined,
   index: number,
   count: number,
-): QuestionLayoutBox =>
-  layout?.answers?.[index] ?? defaultAnswerBoxes(count)[index]!
+): QuestionLayoutBox => resolveAnswerBoxes(layout, count)[index]!
 
 // Layout complet (titre + toutes les réponses) prêt à être modifié : au
 // premier déplacement / redimensionnement / stylage, la boîte par défaut est
@@ -102,10 +130,7 @@ export const materializeLayout = (question: Question): QuestionLayout => {
 
   return {
     title: layout.title ?? defaultTitleBox(),
-    answers:
-      count > 0
-        ? Array.from({ length: count }, (_, i) => answerBoxAt(layout, i, count))
-        : undefined,
+    answers: count > 0 ? resolveAnswerBoxes(layout, count) : undefined,
   }
 }
 
@@ -142,21 +167,31 @@ export const updateLayoutBox = (
 }
 
 // Ajout / retrait d'une réponse de QCM : `layout.answers` reste aligné sur les
-// index des réponses. Une nouvelle case prend sa place par défaut dans la
-// nouvelle grille.
+// index des réponses. Les cases restées dans la grille par défaut suivent le
+// nouveau nombre de lignes ; les positions personnalisées sont conservées.
 export const resizeLayoutAnswers = (
   layout: QuestionLayout | undefined,
   count: number,
+  removedIndex?: number,
 ): QuestionLayout | undefined => {
   if (!layout?.answers) {
     return layout
   }
 
   const defaults = defaultAnswerBoxes(count)
-  const answers = Array.from(
-    { length: count },
-    (_, i) => layout.answers![i] ?? defaults[i]!,
-  )
+  const previousDefaults = defaultAnswerBoxes(layout.answers.length)
+  const previous = resolveAnswerBoxes(layout, layout.answers.length)
+    .map((box, index) => ({ box, index }))
+    .filter(({ index }) => index !== removedIndex)
+  const answers = Array.from({ length: count }, (_, index) => {
+    const source = previous[index]
+    if (!source) {
+      return defaults[index]!
+    }
+    return sameBoxGeometry(source.box, previousDefaults[source.index]!)
+      ? { ...source.box, ...defaults[index]! }
+      : source.box
+  })
 
   return { ...layout, answers }
 }

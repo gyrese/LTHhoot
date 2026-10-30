@@ -148,6 +148,57 @@ describe("matérialisation et mise à jour du layout", () => {
 
     expect(answerBoxAt(layout, 1, 2)).toEqual(defaultAnswerBoxes(2)[1])
   })
+
+  it("repositionne les anciennes cases à l'ajout d'une deuxième ligne", () => {
+    const two = defaultAnswerBoxes(2).map((box) => ({
+      ...box,
+      fill: "#123456",
+      fontSize: 28,
+    }))
+    const three = resizeLayoutAnswers({ answers: two }, 3)!
+    const four = resizeLayoutAnswers(three, 4)!
+
+    for (const [index, box] of four.answers!.entries()) {
+      expect(box).toMatchObject(defaultAnswerBoxes(4)[index]!)
+      expect(inSlide(box)).toBe(true)
+    }
+    expect(four.answers![0]).toMatchObject({ fill: "#123456", fontSize: 28 })
+    expect(four.answers![0]!.y + four.answers![0]!.height).toBeLessThan(
+      four.answers![2]!.y,
+    )
+    expect(resizeLayoutAnswers(four, 2)!.answers).toEqual(two)
+  })
+
+  it("répare les cases par défaut déjà superposées sans changer leur style", () => {
+    const broken = {
+      answers: [
+        ...defaultAnswerBoxes(2),
+        ...defaultAnswerBoxes(4).slice(2),
+      ].map((box) => ({ ...box, textColor: "#abcdef" })),
+    }
+    const question = mcq(["a", "b", "c", "d"], { layout: broken })
+    const resolved = materializeLayout(question)
+    expect(resolved.answers).toEqual(
+      defaultAnswerBoxes(4).map((box) => ({ ...box, textColor: "#abcdef" })),
+    )
+    for (let index = 0; index < 4; index += 1) {
+      expect(answerBoxAt(broken, index, 4)).toEqual(resolved.answers![index])
+    }
+    // Rendering an existing quiz does not mutate its saved data.
+    expect(broken.answers[0]!.y).toBe(broken.answers[2]!.y)
+  })
+
+  it("conserve les positions personnalisées à l'ajout et à la lecture", () => {
+    const boxes = defaultAnswerBoxes(2)
+    boxes[0] = { ...boxes[0]!, x: 100, y: 400, width: 500 }
+    const layout = { answers: boxes }
+    const grown = resizeLayoutAnswers(layout, 4)!
+    expect(grown.answers![0]).toEqual(boxes[0])
+    expect(grown.answers![1]).toEqual(defaultAnswerBoxes(4)[1])
+    expect(materializeLayout(mcq(["a", "b"], { layout })).answers).toEqual(
+      boxes,
+    )
+  })
 })
 
 describe("déplacement / redimensionnement", () => {

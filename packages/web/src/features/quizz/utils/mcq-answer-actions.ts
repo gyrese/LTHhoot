@@ -1,5 +1,6 @@
 import type { McqQuestion } from "@rahoot/common/types/game"
 import type { QuestionUpdate } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
+import { resizeLayoutAnswers } from "@rahoot/web/features/game/utils/question-layout"
 
 export const moveMcqAnswer = (
   question: McqQuestion,
@@ -57,13 +58,6 @@ export const removeMcqAnswer = (
   return {
     answers,
     solutions: remainingSolutions.length > 0 ? remainingSolutions : [0],
-    layout: question.layout?.answers
-      ? {
-          ...question.layout,
-          answers: question.layout.answers.filter(
-            (_, answerIndex) => answerIndex !== index,
-          ),
-        }
-      : question.layout,
+    layout: resizeLayoutAnswers(question.layout, answers.length, index),
   }
 }

@@ -717,14 +717,12 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
         <div className="z-10 flex min-h-0 w-full flex-1 flex-col">
           {!isConnected && !statusName ? null : (
             <>
-              {/* Sur le projecteur, les commandes occupent leur propre ligne :
-                  elles ne doivent jamais recouvrir le titre ou une slide. */}
+              {/* Commandes superposées : le fond et le repère 1920×1080 de la
+                  question doivent garder toute la hauteur de l'écran. */}
               <div
                 className={clsx(
-                  "pointer-events-none z-30 flex items-start justify-between gap-2",
-                  manager && !isRoomScreen
-                    ? "relative flex-shrink-0 flex-wrap px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3"
-                    : "absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3",
+                  "pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 left-3 z-30 flex items-start justify-between gap-2",
+                  manager && !isRoomScreen && "flex-wrap",
                 )}
               >
                 {/* Pas de compteur sur l'écran salon : aucune question n'est
