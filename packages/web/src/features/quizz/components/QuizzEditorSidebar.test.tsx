@@ -135,6 +135,30 @@ afterEach(() => {
 })
 
 describe("navigation dans les questions", () => {
+  it("ouvre les actions au-dessus du canvas, en dehors de la barre latérale", () => {
+    const { container } = render(<QuizzEditorSidebar />)
+    fireEvent.click(screen.getByRole("button", { name: "Actions question 2" }))
+    const menu = screen.getByRole("menu")
+    expect(menu.parentElement).toBe(document.body)
+    expect(container.contains(menu)).toBe(false)
+    fireEvent.click(screen.getByRole("menuitem", { name: "common:moveUp" }))
+    expect(state.reorderQuestions).toHaveBeenCalledWith(1, 0)
+    expect(screen.queryByRole("menu")).toBeNull()
+  })
+
+  it("garde les actions dans la fenêtre modale des diapositives sur mobile", () => {
+    render(
+      <dialog open aria-label="Diapositives">
+        <QuizzEditorSidebar />
+      </dialog>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Actions question 2" }))
+    const menu = screen.getByRole("menu")
+    expect(menu.parentElement).toBe(screen.getByRole("dialog"))
+    expect(menu.closest("aside")).toBeNull()
+    expect(menu.contains(document.activeElement)).toBe(true)
+  })
+
   it("rend le focus au bouton d'actions quand le menu ferme avec Échap", () => {
     render(<QuizzEditorSidebar />)
     const trigger = screen.getByRole("button", { name: "Actions question 2" })

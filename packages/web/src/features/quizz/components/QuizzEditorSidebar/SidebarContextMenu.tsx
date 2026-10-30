@@ -2,6 +2,7 @@ import { Plus, Copy, Trash2, ArrowUp, ArrowDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { motion, useReducedMotion } from "motion/react"
 import { type CSSProperties, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 
 const itemClass =
   "focus-ring flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left font-medium transition-colors duration-150 hover:bg-panel"
@@ -115,7 +116,11 @@ const SidebarContextMenu = ({
     transformOrigin: "top left",
   }
 
-  return (
+  // Escape the sidebar's stacking context so canvas answers cannot cover the
+  // menu. In the mobile modal, stay in its top layer and focus scope.
+  const portalRoot = returnFocusTo?.closest("dialog[open]") ?? document.body
+
+  return createPortal(
     <motion.div
       ref={menuRef}
       role="menu"
@@ -180,7 +185,8 @@ const SidebarContextMenu = ({
       >
         <Trash2 className="size-4" /> {t("common:delete", "Supprimer")}
       </button>
-    </motion.div>
+    </motion.div>,
+    portalRoot,
   )
 }
 
