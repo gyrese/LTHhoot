@@ -41,6 +41,44 @@ const replacement = {
   answers: ["Mercure", "Mars"],
 }
 
+it("honors an explicit slider request despite the saved question types", () => {
+  const sliderRequest = {
+    ...request,
+    message:
+      "Je veux un quiz Disney où les réponses sont forcément de type curseur (chiffres).",
+  }
+  const slider = {
+    ...question,
+    type: "slider",
+    question: "Combien de nains accompagnent Blanche-Neige ?",
+    correctValue: 7,
+    min: 0,
+    max: 15,
+    tolerance: 0,
+  }
+  const result = (question: unknown) => ({
+    message: "OK",
+    operations: [{ type: "add", question }],
+  })
+
+  expect(buildWorkshopPrompt(sliderRequest)).toContain(
+    "Only generate questions of the following types: slider.",
+  )
+  expect(parseWorkshopResult(result(slider), sliderRequest).operations).toEqual(
+    [
+      expect.objectContaining({
+        question: expect.objectContaining({ type: "slider" }),
+      }),
+    ],
+  )
+  expect(() => parseWorkshopResult(result(replacement), sliderRequest)).toThrow(
+    /format non autorisé/u,
+  )
+  expect(() => parseWorkshopResult(result(slider), request)).toThrow(
+    /format non autorisé/u,
+  )
+})
+
 it("accepts a targeted replacement while keeping stable ids", () => {
   const result = parseWorkshopResult(
     {

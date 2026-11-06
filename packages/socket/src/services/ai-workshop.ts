@@ -23,8 +23,19 @@ const responseValidator = z.object({
     .max(40),
 })
 
+function workshopQuestionTypes({ message, settings }: WorkshopRequest) {
+  const asksForSliders =
+    /\b(?:de type|au format|(?:questions?|réponses?)\s+(?:à|avec un))\s+(?:curseurs?|sliders?)\b/iu.test(
+      message,
+    ) || /\bslider[- ]only\b/iu.test(message)
+
+  return asksForSliders ? (["slider"] as const) : settings.questionTypes
+}
+
 export function buildWorkshopPrompt(request: WorkshopRequest) {
-  return `${buildGenerationPrompt({ ...request.settings, prompt: request.message })}
+  const questionTypes = workshopQuestionTypes(request)
+
+  return `${buildGenerationPrompt({ ...request.settings, questionTypes, prompt: request.message })}
 
 WORKSHOP MODE — the following protocol REPLACES the output format and count requirement above.
 You are helping the author build and revise a quiz over several turns. Reply in the author's language.
@@ -48,6 +59,7 @@ export function parseWorkshopResult(
   request: WorkshopRequest,
 ): WorkshopResult {
   const result = responseValidator.parse(raw)
+  const questionTypes = workshopQuestionTypes(request)
   const byId = new Map(request.questions.map((q) => [q.id, q]))
   const touched = new Set<string>()
   const titles = new Set(
@@ -125,12 +137,7 @@ export function parseWorkshopResult(
         : undefined,
     }
 
-    if (
-      !request.settings.questionTypes.includes(
-        operation.question
-          .type as WorkshopRequest["settings"]["questionTypes"][number],
-      )
-    ) {
+    if (!questionTypes.some((type) => type === question.type)) {
       throw new Error(
         "L’IA a proposé un format non autorisé. Votre brouillon est conservé.",
       )

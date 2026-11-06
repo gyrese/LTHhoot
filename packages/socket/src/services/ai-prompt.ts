@@ -103,7 +103,7 @@ const buildTimingSection = (time: number | null): string => {
 export const buildGenerationPrompt = (params: {
   prompt: string
   count: number
-  questionTypes: string[]
+  questionTypes: readonly string[]
   difficulties: readonly QuestionDifficulty[]
   tone: string
   language: string
@@ -121,7 +121,7 @@ export const buildGenerationPrompt = (params: {
 - "description": a short, appealing one-sentence description of the quiz as a whole (max 140 characters), written in the same tone and language as the questions. It presents the quiz to its players — never mention that it was AI-generated.
 - "questions": an array of exactly ${params.count} quiz questions.
 
-Only generate questions of the following types: ${params.questionTypes.join(", ")}. Vary the types across the list rather than repeating a single one.
+Only generate questions of the following types: ${params.questionTypes.join(", ")}.${params.questionTypes.length > 1 ? " Vary the types across the list rather than repeating a single one." : ""}
 
 ${language}
 
