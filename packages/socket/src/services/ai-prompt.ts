@@ -100,26 +100,44 @@ const buildTimingSection = (time: number | null): string => {
   return `For every question, set "time" to exactly ${time} and "cooldown" to exactly 5.`
 }
 
-export const buildGenerationPrompt = (params: {
-  prompt: string
-  count: number
-  questionTypes: readonly string[]
-  difficulties: readonly QuestionDifficulty[]
-  tone: string
-  language: string
-  time: number | null
-  withExplanations: boolean
-  instructions?: string
-}): string => {
+export const buildGenerationPrompt = (
+  params: {
+    prompt: string
+    count: number
+    questionTypes: readonly string[]
+    difficulties: readonly QuestionDifficulty[]
+    tone: string
+    language: string
+    time: number | null
+    withExplanations: boolean
+    instructions?: string
+  },
+  mode: "generation" | "workshop" = "generation",
+): string => {
   const tone = TONE_INSTRUCTIONS[params.tone] ?? TONE_INSTRUCTIONS[DEFAULT_TONE]
   const language =
     LANGUAGE_INSTRUCTIONS[params.language] ?? LANGUAGE_INSTRUCTIONS.auto
   const slices = distributeDifficulties(params.count, params.difficulties)
   const extra = params.instructions?.trim()
 
-  return `You are a quiz generator. Output a JSON object about the topic: "${params.prompt}", containing:
+  const introduction =
+    mode === "workshop"
+      ? "You are a quiz editor. Follow the workshop output protocol below."
+      : `You are a quiz generator. Output a JSON object about the topic: "${params.prompt}", containing:
 - "description": a short, appealing one-sentence description of the quiz as a whole (max 140 characters), written in the same tone and language as the questions. It presents the quiz to its players — never mention that it was AI-generated.
-- "questions": an array of exactly ${params.count} quiz questions.
+- "questions": an array of exactly ${params.count} quiz questions.`
+
+  const format =
+    mode === "workshop"
+      ? 'Use the schemas below for the nested "question" objects in add and replace operations. Omit imageQuery.'
+      : `${IMAGE_RULES}
+
+The output MUST be a valid JSON object shaped like:
+{ "description": "...", "questions": [ ... ] }
+
+Every object inside "questions" must strictly conform to one of the following schemas:`
+
+  return `${introduction}
 
 Only generate questions of the following types: ${params.questionTypes.join(", ")}.${params.questionTypes.length > 1 ? " Vary the types across the list rather than repeating a single one." : ""}
 
@@ -139,12 +157,7 @@ ${buildExplanationsSection(params.withExplanations)}
 ${extra ? `\nAdditional instructions from the quiz author (follow them closely):\n${extra}\n` : ``}
 Avoid near-duplicate questions: each one must cover a distinct angle of the topic.
 
-${IMAGE_RULES}
-
-The output MUST be a valid JSON object shaped like:
-{ "description": "...", "questions": [ ... ] }
-
-Every object inside "questions" must strictly conform to one of the following schemas:
+${format}
 
 1. MCQ ("mcq"):
    {

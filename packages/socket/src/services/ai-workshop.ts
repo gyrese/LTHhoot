@@ -35,12 +35,13 @@ function workshopQuestionTypes({ message, settings }: WorkshopRequest) {
 export function buildWorkshopPrompt(request: WorkshopRequest) {
   const questionTypes = workshopQuestionTypes(request)
 
-  return `${buildGenerationPrompt({ ...request.settings, questionTypes, prompt: request.message })}
+  return `${buildGenerationPrompt({ ...request.settings, questionTypes, prompt: request.message }, "workshop")}
 
-WORKSHOP MODE — the following protocol REPLACES the output format and count requirement above.
+WORKSHOP OUTPUT PROTOCOL
 You are helping the author build and revise a quiz over several turns. Reply in the author's language.
 Output ONLY { "message": "short reply to the author", "operations": [...] }.
 Allowed operations: {"type":"add","question":{...}}, {"type":"replace","id":"existing draft id","question":{...}}, {"type":"remove","id":"existing draft id"}.
+Every entry in operations is an operation object. Wrap EACH new question in its own add operation. The outer "type" is the operation ("add", "replace", or "remove"); the quiz type belongs inside the nested "question" object.
 Use the question schemas above, but OMIT imageQuery and all images, media, backgrounds, layouts and decorative elements. No external tools or web verification are available: never claim you checked sources.
 Only output CHANGED questions. Preserve every other draft question. NEVER alter or remove a locked question.
 If targetIds is nonempty, ONLY replace/remove those ids: do not add or alter any other question.

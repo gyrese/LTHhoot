@@ -216,4 +216,6 @@ it("provides numbered draft, existing quiz and bounded history as context", () =
   expect(prompt).toContain("Disney pour adultes")
   expect(prompt).toContain("NEVER alter or remove a locked question")
   expect(prompt).toContain("never claim you checked sources")
+  expect(prompt).toContain("Wrap EACH new question in its own add operation")
+  expect(prompt).not.toContain('{ "description": "...", "questions": [ ... ] }')
 })
