@@ -4,7 +4,10 @@ import { FREEZE_DURATION_MS } from "@rahoot/common/types/powerup"
 import { CooldownTimer } from "@rahoot/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@rahoot/socket/services/game/player-manager"
 import { PowerUpManager } from "@rahoot/socket/services/game/powerup-manager"
-import { RoundManager } from "@rahoot/socket/services/game/round-manager"
+import {
+  AWAITED_DISCONNECTED_GRACE_MS,
+  RoundManager,
+} from "@rahoot/socket/services/game/round-manager"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Serveur factice : le RoundManager ne fait qu'émettre dessus.
@@ -138,6 +141,64 @@ describe("RoundManager — réponses", () => {
     players.updateSocketId("b", "b2")
     players.getAll()[1]!.connected = true
     round.selectAnswer(playerSocket("b2"), { answerId: 0 })
+    expect(abort).toHaveBeenCalled()
+  })
+
+  it("n'attend pas indéfiniment un joueur parti en cours de question", async () => {
+    const { round, players, cooldown } = setup()
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    players.setDisconnected("b")
+    round.checkEarlyEnd()
+
+    const abort = vi.spyOn(cooldown, "abort")
+
+    round.selectAnswer(playerSocket("a"), { answerId: 1 })
+    expect(abort).not.toHaveBeenCalled()
+
+    // B ne revient jamais : le chrono est coupé après le délai de grâce.
+    await vi.advanceTimersByTimeAsync(AWAITED_DISCONNECTED_GRACE_MS)
+    expect(abort).toHaveBeenCalled()
+  })
+
+  it("annule le délai de grâce si le joueur revient sans avoir répondu", async () => {
+    const { round, players, cooldown } = setup()
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    players.setDisconnected("b")
+    round.selectAnswer(playerSocket("a"), { answerId: 1 })
+
+    const abort = vi.spyOn(cooldown, "abort")
+
+    // B rallume son téléphone avant la fin du délai, sans répondre encore.
+    await vi.advanceTimersByTimeAsync(AWAITED_DISCONNECTED_GRACE_MS / 2)
+    players.updateSocketId("b", "b2")
+    players.getAll()[1]!.connected = true
+    round.checkEarlyEnd()
+
+    await vi.advanceTimersByTimeAsync(AWAITED_DISCONNECTED_GRACE_MS)
+    expect(abort).not.toHaveBeenCalled()
+
+    round.selectAnswer(playerSocket("b2"), { answerId: 0 })
+    expect(abort).toHaveBeenCalled()
+  })
+
+  it("coupe le chrono quand le dernier joueur sans réponse est retiré", async () => {
+    const { round, players, cooldown } = setup()
+
+    void round.start(managerSocket)
+    await vi.advanceTimersByTimeAsync(WINDOW_OPENS_MS + 500)
+
+    round.selectAnswer(playerSocket("a"), { answerId: 1 })
+
+    const abort = vi.spyOn(cooldown, "abort")
+
+    players.remove("b")
+    round.checkEarlyEnd()
     expect(abort).toHaveBeenCalled()
   })
 

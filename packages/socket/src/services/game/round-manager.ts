@@ -55,6 +55,11 @@ import {
 import sleep from "@rahoot/socket/utils/sleep"
 import { nanoid } from "nanoid"
 
+// Quand tous les joueurs connectés ont répondu et qu'il ne reste que des
+// joueurs déconnectés en cours de question, délai laissé à ces derniers pour
+// revenir (téléphone déverrouillé) avant de couper le chrono.
+export const AWAITED_DISCONNECTED_GRACE_MS = 8_000
+
 type BroadcastFn = <T extends Status>(
   _status: T,
   _data: StatusDataMap[T],
@@ -130,6 +135,10 @@ export class RoundManager {
   // (question longue, table qui discute) ne doit pas faire couper le chrono
   // aux autres. Seul un joueur déjà absent à l'ouverture n'est pas attendu.
   private awaitedClientIds = new Set<string>()
+  // Délai de grâce armé quand il ne reste plus à attendre que des joueurs
+  // déconnectés : on laisse le temps à un téléphone en veille de revenir,
+  // mais pas jusqu'au bout du chrono (un joueur parti ne reviendra pas).
+  private awaitedGraceTimer: ReturnType<typeof setTimeout> | null = null
   // Fin de la fenêtre de gel (power-up FREEZE) par clientId : appliquée côté
   // serveur, un client modifié ne peut pas répondre avant la fin du gel.
   private frozenUntil = new Map<string, number>()
@@ -177,6 +186,7 @@ export class RoundManager {
   stop(): void {
     this.started = false
     this.acceptingAnswers = false
+    this.clearAwaitedGrace()
     this.playersAnswers = []
     this.eligibleClientIds.clear()
     this.awaitedClientIds.clear()
@@ -670,6 +680,7 @@ export class RoundManager {
 
       await this.opts.cooldown.start(this.roundDuration)
       this.acceptingAnswers = false
+      this.clearAwaitedGrace()
 
       if (!this.started) {
         return
@@ -682,6 +693,7 @@ export class RoundManager {
       }
     } finally {
       this.acceptingAnswers = false
+      this.clearAwaitedGrace()
       this.questionInProgress = false
     }
   }
@@ -1177,27 +1189,72 @@ export class RoundManager {
       return "ok"
     }
 
-    // Fin anticipée quand chaque joueur attendu a répondu. Attendus : les
-    // joueurs connectés à l'ouverture (même déconnectés depuis : téléphone en
-    // veille pendant la réflexion), plus ceux revenus en cours de question.
-    // Un joueur déjà absent à l'ouverture et toujours absent ne bloque pas.
-    // Un arrivant tardif (hors `eligibleClientIds`) ne peut pas répondre et
-    // n'est jamais attendu.
-    const answeredIds = new Set(this.playersAnswers.map((a) => a.playerId))
-    const everyoneAnswered = this.opts.players
-      .getAll()
-      .every(
-        (p) =>
-          answeredIds.has(p.id) ||
-          !this.eligibleClientIds.has(p.clientId) ||
-          (!p.connected && !this.awaitedClientIds.has(p.clientId)),
-      )
-
-    if (everyoneAnswered) {
-      this.opts.cooldown.abort()
-    }
+    this.checkEarlyEnd()
 
     return "ok"
+  }
+
+  /**
+   * Fin anticipée quand chaque joueur attendu a répondu. Attendus : les
+   * joueurs connectés à l'ouverture (même déconnectés depuis : téléphone en
+   * veille pendant la réflexion), plus ceux revenus en cours de question.
+   * Un joueur déjà absent à l'ouverture et toujours absent ne bloque pas.
+   * Un arrivant tardif (hors `eligibleClientIds`) ne peut pas répondre et
+   * n'est jamais attendu.
+   *
+   * S'il ne reste à attendre QUE des joueurs déconnectés, on leur laisse
+   * `AWAITED_DISCONNECTED_GRACE_MS` pour revenir, puis on coupe : sans ce
+   * délai, un joueur parti en cours de question faisait tourner le chrono
+   * jusqu'au bout alors que toute la salle avait répondu.
+   *
+   * À rappeler à chaque changement de la population (réponse, expulsion,
+   * retrait, déconnexion, reconnexion), pas seulement à la réception d'une
+   * réponse.
+   */
+  checkEarlyEnd(): void {
+    if (!this.acceptingAnswers) {
+      return
+    }
+
+    const answeredIds = new Set(this.playersAnswers.map((a) => a.playerId))
+    const pending = this.opts.players
+      .getAll()
+      .filter(
+        (p) =>
+          !answeredIds.has(p.id) &&
+          this.eligibleClientIds.has(p.clientId) &&
+          (p.connected || this.awaitedClientIds.has(p.clientId)),
+      )
+
+    if (pending.length === 0) {
+      this.clearAwaitedGrace()
+      this.opts.cooldown.abort()
+
+      return
+    }
+
+    if (pending.some((p) => p.connected)) {
+      this.clearAwaitedGrace()
+
+      return
+    }
+
+    this.awaitedGraceTimer ||= setTimeout(() => {
+      this.awaitedGraceTimer = null
+
+      // Un retour en cours de délai rappelle checkEarlyEnd() (reconnexion),
+      // qui annule ce timer : arrivé ici, seuls des absents restent attendus.
+      if (this.acceptingAnswers) {
+        this.opts.cooldown.abort()
+      }
+    }, AWAITED_DISCONNECTED_GRACE_MS)
+  }
+
+  private clearAwaitedGrace(): void {
+    if (this.awaitedGraceTimer) {
+      clearTimeout(this.awaitedGraceTimer)
+      this.awaitedGraceTimer = null
+    }
   }
 
   /**

@@ -1071,6 +1071,8 @@ class Game {
     if (this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
       this.logAndEmit("warn", `${player?.username ?? playerId} a été expulsé`)
+      // L'expulsé était peut-être le dernier à ne pas avoir répondu.
+      this.round.checkEarlyEnd()
     }
   }
 
@@ -1268,6 +1270,8 @@ class Game {
     // sinon les power-ups achetés sont perdus au moindre blip réseau.
     this.powerUpManager.remap(oldSocketId, newSocketId)
     player.connected = true
+    // De retour avant d'avoir répondu : annule le délai de grâce éventuel.
+    this.round.checkEarlyEnd()
 
     const MANAGER_ONLY_STATUSES: Status[] = [
       STATUS.SHOW_ROOM,
@@ -1435,6 +1439,7 @@ class Game {
         .emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.io.to(this.gameId).emit(EVENTS.GAME.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
+      this.round.checkEarlyEnd()
       this.logAndEmit(
         "warn",
         `${player.username} retiré (absent du salon depuis 10 min)`,
@@ -1456,6 +1461,8 @@ class Game {
     )
     this.playerManager.setDisconnected(socketId)
     this.playerManager.broadcastCount()
+    // Si tous les autres ont répondu, arme le délai de grâce du déconnecté.
+    this.round.checkEarlyEnd()
   }
 
   schedulePlayerRemoval(socketId: string) {
@@ -1479,6 +1486,7 @@ class Game {
 
     this.playerManager.setDisconnected(socketId)
     this.playerManager.broadcastCount()
+    this.round.checkEarlyEnd()
 
     const timer = setTimeout(
       () => {
