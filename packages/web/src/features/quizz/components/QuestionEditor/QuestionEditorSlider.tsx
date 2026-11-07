@@ -1,7 +1,5 @@
-import { ValidatedInput } from "../EditorValidation"
 import type { SliderQuestion } from "@rahoot/common/types/game"
 import { useQuizzEditor } from "@rahoot/web/features/quizz/contexts/quizz-editor-context"
-import { useId } from "react"
 import { useTranslation } from "react-i18next"
 import {
   AnswerEditorNumberField,
@@ -12,7 +10,6 @@ import {
 const QuestionEditorSlider = () => {
   const { currentQuestion, currentIndex, updateQuestion } = useQuizzEditor()
   const { t } = useTranslation()
-  const correctValueId = useId()
   const question = currentQuestion as SliderQuestion & { id: string }
 
   const updateMin = (newMin: number) => {
@@ -31,6 +28,9 @@ const QuestionEditorSlider = () => {
     })
   }
 
+  const updateCorrectValue = (correctValue: number) =>
+    updateQuestion(currentIndex, { correctValue })
+
   return (
     <AnswerEditorPanel>
       <AnswerEditorSection title={t("quizz:sliderCorrect")}>
@@ -48,30 +48,27 @@ const QuestionEditorSlider = () => {
             onChange={updateMax}
           />
         </div>
+        <AnswerEditorNumberField
+          key={question.id}
+          field="correctValue"
+          label={t("quizz:sliderCorrect")}
+          value={question.correctValue}
+          min={question.min}
+          max={question.max}
+          onChange={updateCorrectValue}
+        />
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor={correctValueId}
-            className="text-ink-muted text-xs font-semibold"
-          >
-            {t("quizz:sliderCorrect")}
-          </label>
-          <ValidatedInput
-            id={correctValueId}
-            field="correctValue"
+          <input
             type="range"
+            aria-label={t("quizz:sliderCorrect")}
             className="accent-primary w-full"
             value={question.correctValue}
             min={question.min}
             max={question.max}
-            onChange={(event) =>
-              updateQuestion(currentIndex, {
-                correctValue: Number(event.target.value),
-              })
-            }
+            onChange={(event) => updateCorrectValue(event.target.valueAsNumber)}
           />
           <div className="text-ink-muted flex justify-between text-xs tabular-nums">
             <span>{question.min}</span>
-            <span>{question.correctValue}</span>
             <span>{question.max}</span>
           </div>
         </div>
