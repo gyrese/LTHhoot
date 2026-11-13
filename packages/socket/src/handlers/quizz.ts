@@ -300,54 +300,6 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   )
 
   socket.on(
-    EVENTS.QUIZZ.AI_GENERATE,
-    withAIAuth(
-      async (
-        _session,
-        {
-          prompt,
-          count,
-          questionTypes,
-          difficulties,
-          tone,
-          language,
-          time,
-          withExplanations,
-          instructions,
-        },
-      ) => {
-        try {
-          const { questions, description } = await AIService.generateQuestions({
-            prompt,
-            count,
-            questionTypes,
-            difficulties,
-            tone,
-            language,
-            time,
-            withExplanations,
-            instructions,
-          })
-
-          socket.emit(EVENTS.QUIZZ.AI_GENERATE_SUCCESS, {
-            questions,
-            description,
-          })
-        } catch (error) {
-          console.error("Failed to generate quiz with AI:", error)
-          const message =
-            error instanceof Error
-              ? error.message
-              : "errors:quizz.aiGenerationFailed"
-          // Canal AI_ERROR dédié : QUIZZ.ERROR est aussi écouté par le flux de
-          // sauvegarde de l'éditeur (toast + reset d'état croisés).
-          socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
-        }
-      },
-    ),
-  )
-
-  socket.on(
     EVENTS.QUIZZ.AI_REPHRASE,
     withAIAuth(async (_session, { currentText }) => {
       try {

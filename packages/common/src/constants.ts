@@ -79,11 +79,9 @@ export const EVENTS = {
     MOVE_FOLDER: "quizz:moveFolder",
     SET_PUBLIC_INFO: "quizz:setPublicInfo",
     ERROR: "quizz:error",
-    AI_GENERATE: "quizz:aiGenerate",
     AI_WORKSHOP: "quizz:aiWorkshop",
     // Étape en cours d'une demande d'atelier (rédaction, relecture).
     AI_WORKSHOP_PROGRESS: "quizz:aiWorkshopProgress",
-    AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",
     AI_REPHRASE: "quizz:aiRephrase",
     AI_REPHRASE_SUCCESS: "quizz:aiRephraseSuccess",
     AI_SUGGEST_WRONG_ANSWERS: "quizz:aiSuggestWrongAnswers",

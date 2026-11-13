@@ -26,6 +26,10 @@ const LANGUAGE_RULES: Record<string, string> = {
   en: "Write every question, option and answer in ENGLISH, whatever the language of the conversation.",
 }
 
+// Sans explications par défaut, mais jamais interdites : formulée comme un
+// interdit, la consigne faisait refuser « avec explications » à l'IA.
+const EXPLANATIONS_ON_REQUEST = `Explanations: none by default. If the author asks for explanations, add to each question "answerReveal": { "enabled": true, "text": "..." } — 1 to 2 sentences on WHY the answer is correct, with a memorable detail, in the same tone and language.`
+
 const envelopeValidator = z.object({
   message: z.string().trim().max(3000).optional(),
   brief: z.string().trim().max(WORKSHOP_BRIEF_MAX).optional(),
@@ -84,7 +88,7 @@ DEFAULT SETTINGS (fallback only):
 - Difficulty: ${difficulties}.${settings.difficulties.length > 1 ? " Spread the batch across these levels, easiest first." : ""} The audience in the brief overrides this.
 - Tone: ${tone}
 - ${buildTimingSection(settings.time)}
-- ${buildExplanationsSection(settings.withExplanations)}
+- ${settings.withExplanations ? buildExplanationsSection(true) : EXPLANATIONS_ON_REQUEST}
 ${settings.instructions?.trim() ? `- Standing notes from the author: ${settings.instructions.trim()}\n` : ""}
 ${language}
 
@@ -118,7 +122,7 @@ Rules for operations:
 - Omit imageQuery, images, media, backgrounds, layouts and decorative elements.
 
 Question schemas for the nested "question" objects:
-${buildQuestionSchemas(false)}`
+${buildQuestionSchemas()}`
 }
 
 /**

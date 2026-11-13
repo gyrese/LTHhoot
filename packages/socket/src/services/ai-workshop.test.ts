@@ -320,3 +320,9 @@ it("passes feedback, source and free room to the writer and keeps the target cou
   expect(result.message).toBe("OK")
   expect(result.operations).toHaveLength(1)
 })
+
+it("offers explanations on request instead of forbidding them", () => {
+  const system = buildWorkshopSystemPrompt(request)
+  expect(system).toContain("If the author asks for explanations")
+  expect(system).not.toContain("Do NOT include")
+})

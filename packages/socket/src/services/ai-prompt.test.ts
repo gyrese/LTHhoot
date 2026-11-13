@@ -1,17 +1,12 @@
 import { distributeDifficulties } from "@rahoot/common/utils/difficulty"
 import { describe, expect, it } from "vitest"
-import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
-
-const baseParams = {
-  prompt: "Les capitales européennes",
-  count: 6,
-  questionTypes: ["mcq", "true_false"],
-  difficulties: ["medium"] as const,
-  tone: "fun",
-  language: "auto",
-  time: null,
-  withExplanations: false,
-}
+import {
+  TONE_INSTRUCTIONS,
+  WRITING_RULES,
+  buildExplanationsSection,
+  buildQuestionSchemas,
+  buildTimingSection,
+} from "@rahoot/socket/services/ai-prompt"
 
 describe("distributeDifficulties", () => {
   it("répartit équitablement quand le compte tombe juste", () => {
@@ -64,93 +59,40 @@ describe("distributeDifficulties", () => {
   })
 })
 
-describe("buildGenerationPrompt", () => {
-  it("injecte le sujet et le nombre demandé", () => {
-    const prompt = buildGenerationPrompt({
-      ...baseParams,
-      difficulties: ["medium"],
-    })
-
-    expect(prompt).toContain("Les capitales européennes")
-    expect(prompt).toContain("exactly 6 quiz questions")
-  })
-
-  it("détaille la répartition quand plusieurs niveaux sont mélangés", () => {
-    const prompt = buildGenerationPrompt({
-      ...baseParams,
-      count: 10,
-      difficulties: ["easy", "expert"],
-    })
-
-    expect(prompt).toContain(`exactly 5 question(s) with "difficulty": "easy"`)
-    expect(prompt).toContain(
-      `exactly 5 question(s) with "difficulty": "expert"`,
-    )
-    // Le ton ne doit pas dériver avec la difficulté.
-    expect(prompt).toContain("Keep the TONE identical across all levels")
-  })
-
-  it("change d'instruction de ton selon le registre choisi", () => {
-    const fun = buildGenerationPrompt({ ...baseParams, tone: "fun" })
-    const epic = buildGenerationPrompt({ ...baseParams, tone: "epic" })
-
-    expect(fun).toContain("pub-quiz host")
-    expect(epic).toContain("epic, dramatic")
-    expect(epic).not.toContain("pub-quiz host")
-  })
-
-  it("retombe sur le ton par défaut si le registre est inconnu", () => {
-    const prompt = buildGenerationPrompt({
-      ...baseParams,
-      tone: "n-importe-quoi",
-    })
-
-    expect(prompt).toContain("pub-quiz host")
-  })
-
+describe("briques du prompt de l'atelier", () => {
   it("impose la durée choisie, ou la laisse libre en mode auto", () => {
-    const fixed = buildGenerationPrompt({ ...baseParams, time: 30 })
-    const auto = buildGenerationPrompt({ ...baseParams, time: null })
-
-    expect(fixed).toContain(`set "time" to exactly 30`)
-    expect(auto).toContain("that fits its difficulty")
-  })
-
-  it("réclame toujours une description de quiz", () => {
-    const prompt = buildGenerationPrompt(baseParams)
-
-    expect(prompt).toContain(`"description"`)
-    expect(prompt).toContain(`{ "description": "...", "questions": [ ... ] }`)
+    expect(buildTimingSection(30)).toContain(`set "time" to exactly 30`)
+    expect(buildTimingSection(null)).toContain("that fits its difficulty")
   })
 
   it("n'exige la carte réponse que si les explications sont demandées", () => {
-    const withExplanations = buildGenerationPrompt({
-      ...baseParams,
-      withExplanations: true,
-    })
-    const without = buildGenerationPrompt(baseParams)
-
-    expect(withExplanations).toContain(`"answerReveal": { "enabled": true`)
-    expect(without).toContain(`Do NOT include an "answerReveal" field`)
+    expect(buildExplanationsSection(true)).toContain(
+      `"answerReveal": { "enabled": true`,
+    )
+    expect(buildExplanationsSection(false)).toContain(
+      `Do NOT include an "answerReveal" field`,
+    )
   })
 
-  it("impose les règles de rédaction et une recherche d'image par question", () => {
-    const prompt = buildGenerationPrompt(baseParams)
+  it("décrit chaque format de question, sans recherche d'image", () => {
+    const schemas = buildQuestionSchemas()
 
-    expect(prompt).toContain("NATIVE speaker")
-    expect(prompt).toContain(`"imageQuery"`)
+    for (const type of [
+      "mcq",
+      "true_false",
+      "open",
+      "slider",
+      "date",
+      "puzzle",
+    ]) {
+      expect(schemas).toContain(`"type": "${type}"`)
+    }
+    expect(schemas).not.toContain("imageQuery")
   })
 
-  it("force la langue demandée et n'ajoute les consignes que si elles existent", () => {
-    const withInstructions = buildGenerationPrompt({
-      ...baseParams,
-      language: "en",
-      instructions: "Évite les dates",
-    })
-    const without = buildGenerationPrompt(baseParams)
-
-    expect(withInstructions).toContain("in ENGLISH")
-    expect(withInstructions).toContain("Évite les dates")
-    expect(without).not.toContain("Additional instructions")
+  it("garde des tons sobres et des règles de rédaction natives", () => {
+    expect(TONE_INSTRUCTIONS.fun).toContain("pub-quiz host")
+    expect(TONE_INSTRUCTIONS.epic).toContain("epic, dramatic")
+    expect(WRITING_RULES).toContain("NATIVE speaker")
   })
 })

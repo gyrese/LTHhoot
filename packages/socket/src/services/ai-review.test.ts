@@ -152,3 +152,25 @@ it("rejects an unreadable review so the caller can fall back", () => {
   expect(fallback.message).toContain("Relecture des faits indisponible")
   expect(withoutReview(draft, false).message).toBe("Voici 2 questions.")
 })
+
+it("aligns photo keywords with the kept operations", () => {
+  const result = applyReview(
+    {
+      reviews: [
+        { id: "c1", verdict: "keep", imageQuery: "lighthouse brittany" },
+        { id: "c2", verdict: "drop", reason: "Faux.", imageQuery: null },
+        { id: "c3", verdict: "keep", imageQuery: "  " },
+      ],
+      selected: ["c1", "c3"],
+    },
+    draft,
+    request,
+  )
+
+  expect(titles(result)).toEqual(["Q1 ?", "Q3 ?", "remove"])
+  expect(result.imageQueries).toEqual([
+    "lighthouse brittany",
+    undefined,
+    undefined,
+  ])
+})

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
 import {
   Check,
+  CopyPlus,
+  Lightbulb,
   Loader2,
   Lock,
   LockOpen,
@@ -20,8 +22,28 @@ import GeneratorForm from "./GeneratorForm"
 import WorkshopQuestionEditor from "./WorkshopQuestionEditor"
 import useWorkshop from "./useWorkshop"
 import { FEEDBACK_REASONS } from "./workshop"
+import { explanationOf, summarizeAnswer } from "./answer-summary"
+import { DIFFICULTY_BADGE_CLASSES, DIFFICULTY_LABELS } from "./options"
 
 type Props = { open: boolean; onClose: () => void }
+
+// Demandes fréquentes, en un clic, une fois qu'un brouillon existe.
+const QUICK_ACTIONS = [
+  {
+    label: "Plus pointu",
+    prompt:
+      "Rends les questions non protégées plus pointues : faits moins connus, mauvaises réponses plus proches de la bonne. Garde le sujet et le format.",
+  },
+  {
+    label: "Autre angle",
+    prompt:
+      "Ajoute 5 questions sur le même sujet, mais sous un angle que le brouillon n'aborde pas encore.",
+  },
+  {
+    label: "Encore 5",
+    prompt: "Ajoute 5 questions dans le même esprit que le brouillon.",
+  },
+]
 const smallButton =
   "focus-ring text-ink-muted hover:bg-panel hover:text-ink flex size-8 shrink-0 items-center justify-center rounded-md disabled:opacity-40"
 
@@ -271,6 +293,25 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                   )}
                 </div>
               )}
+              {session.questions.length > 0 && (
+                <div
+                  role="group"
+                  aria-label="Raccourcis"
+                  className="flex flex-wrap gap-1.5"
+                >
+                  {QUICK_ACTIONS.map(({ label, prompt }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      disabled={loading}
+                      className="focus-ring border-border text-ink hover:bg-panel min-h-8 rounded-full border px-3 text-xs disabled:opacity-40"
+                      onClick={() => send(prompt)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <details>
                 <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
                   <Settings className="size-3.5" />
@@ -282,9 +323,6 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                     rien : « 3 questions ouvertes pour experts » l’emporte.
                   </p>
                   <GeneratorForm
-                    hidePrompt
-                    prompt=""
-                    onPromptChange={() => undefined}
                     settings={settings}
                     onSettingsChange={(patch) =>
                       setSettings((prev) => ({ ...prev, ...patch }))
@@ -401,14 +439,41 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                         }
                         className="accent-primary focus-ring mt-2 size-4 shrink-0"
                       />
+                      {item.question.background?.type === "image" && (
+                        <img
+                          src={item.question.background.value}
+                          alt=""
+                          loading="lazy"
+                          className="border-border mt-1 size-12 shrink-0 rounded-md border object-cover"
+                        />
+                      )}
                       <div className="min-w-0 flex-1">
-                        <span className="text-ink-muted text-xs">
+                        <span className="text-ink-muted flex flex-wrap items-center gap-1.5 text-xs">
                           {index + 1} ·{" "}
                           {t(`quizz:questionType.${item.question.type}`)}
+                          {item.question.difficulty && (
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${DIFFICULTY_BADGE_CLASSES[item.question.difficulty]}`}
+                            >
+                              {DIFFICULTY_LABELS[item.question.difficulty]}
+                            </span>
+                          )}
                         </span>
                         <p className="text-ink mt-1 text-sm font-semibold">
                           {item.question.question}
                         </p>
+                        {summarizeAnswer(item.question) && (
+                          <p className="text-ink-muted mt-1 text-xs">
+                            <span className="sr-only">Réponse : </span>→{" "}
+                            {summarizeAnswer(item.question)}
+                          </p>
+                        )}
+                        {explanationOf(item.question) && (
+                          <p className="text-ink-subtle mt-1 flex items-start gap-1.5 text-xs leading-snug">
+                            <Lightbulb className="mt-px size-3 shrink-0" />
+                            <span>{explanationOf(item.question)}</span>
+                          </p>
+                        )}
                       </div>
                       <button
                         type="button"
@@ -444,6 +509,20 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                         }
                       >
                         <RefreshCw className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className={smallButton}
+                        disabled={loading}
+                        aria-label={`Encore 3 questions comme la question ${index + 1}`}
+                        title="Encore 3 comme celle-ci"
+                        onClick={() =>
+                          send(
+                            `Ajoute 3 questions dans le même esprit que la question ${index + 1} (même angle, même niveau, même format), sur des faits différents.`,
+                          )
+                        }
+                      >
+                        <CopyPlus className="size-4" />
                       </button>
                       <button
                         type="button"

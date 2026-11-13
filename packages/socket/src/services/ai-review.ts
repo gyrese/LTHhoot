@@ -24,6 +24,12 @@ import {
 type ReviewOperation = Extract<WorkshopOperation, { question: unknown }>
 type Candidate = { id: string; operation: ReviewOperation }
 
+// Résultat relu + mots-clés de photo, alignés sur `operations` (usage
+// serveur : ils ne partent pas au client).
+export type ReviewedWorkshop = WorkshopResult & {
+  imageQueries: (string | undefined)[]
+}
+
 const reviewValidator = z.object({
   reviews: z
     .array(
@@ -32,6 +38,7 @@ const reviewValidator = z.object({
         verdict: z.enum(["keep", "fix", "drop"]),
         reason: z.string().max(400).nullish(),
         question: z.unknown().nullish(),
+        imageQuery: z.string().max(120).nullish(),
       }),
     )
     .max(60),
@@ -61,10 +68,12 @@ Then return "selected": the ids of the kept or fixed candidates, best first. Bes
 
 If a SOURCE TEXT is given, it is the reference for facts drawn from it.
 
-Output ONLY JSON: {"reviews":[{"id":"c1","verdict":"keep","reason":null,"question":null}],"selected":["c1"]}
+For every kept or fixed candidate, also give "imageQuery": 2 to 4 ENGLISH keywords for a stock-photo search (Unsplash) with a concrete, photographable subject (e.g. "cheetah running savanna"). The picture must NEVER show or give away the correct answer: illustrate the context, not the solution (for "Quelle est la capitale de l'Australie ?" use "australia outback kangaroo", not "canberra"). Null for dropped candidates.
+
+Output ONLY JSON: {"reviews":[{"id":"c1","verdict":"keep","reason":null,"question":null,"imageQuery":"lighthouse brittany coast"}],"selected":["c1"]}
 
 Question schemas for corrected questions:
-${buildQuestionSchemas(false)}`
+${buildQuestionSchemas()}`
 }
 
 export function buildReviewUserPrompt(
@@ -123,7 +132,7 @@ export function applyReview(
   result: ParsedWorkshop,
   request: WorkshopRequest,
   random: () => number = Math.random,
-): WorkshopResult {
+): ReviewedWorkshop {
   const review = reviewValidator.parse(raw)
   const candidates = reviewCandidates(result)
   const byId = new Map(review.reviews.map((entry) => [entry.id, entry]))
@@ -182,22 +191,30 @@ export function applyReview(
       .map(({ id }) => id),
   )
 
-  const operations = result.operations.flatMap<WorkshopOperation>(
-    (operation, index) => {
-      if (operation.type === "remove") {
-        return [operation]
-      }
+  const kept = result.operations.flatMap<{
+    operation: WorkshopOperation
+    imageQuery?: string
+  }>((operation, index) => {
+    if (operation.type === "remove") {
+      return [{ operation }]
+    }
 
-      const id = `c${index + 1}`
-      const reviewed = accepted.get(id)
+    const id = `c${index + 1}`
+    const reviewed = accepted.get(id)
 
-      if (!reviewed || (reviewed.type === "add" && !chosen.has(id))) {
-        return []
-      }
+    if (!reviewed || (reviewed.type === "add" && !chosen.has(id))) {
+      return []
+    }
 
-      return [reviewed]
-    },
-  )
+    return [
+      {
+        operation: reviewed,
+        imageQuery: byId.get(id)?.imageQuery?.trim() || undefined,
+      },
+    ]
+  })
+  const operations = kept.map(({ operation }) => operation)
+  const imageQueries = kept.map(({ imageQuery }) => imageQuery)
 
   return {
     message: `${result.message}${reviewNote({
@@ -208,6 +225,7 @@ export function applyReview(
     })}`,
     ...(result.brief ? { brief: result.brief } : {}),
     operations,
+    imageQueries,
   }
 }
 

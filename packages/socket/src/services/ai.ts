@@ -1,9 +1,8 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai"
 import { AI_TIMEOUT_MS, withTimeout } from "@rahoot/socket/utils/timeout"
-import { questionValidator } from "@rahoot/common/validators/quizz"
-import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
-import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
+import type { Question } from "@rahoot/common/types/game"
 import type {
+  WorkshopOperation,
   WorkshopRequest,
   WorkshopResult,
   WorkshopStage,
@@ -14,11 +13,11 @@ import {
   buildReviewUserPrompt,
   reviewCandidates,
   withoutReview,
+  type ReviewedWorkshop,
 } from "./ai-review"
 import {
   buildWorkshopSystemPrompt,
   buildWorkshopUserPrompt,
-  normalizeTimings,
   parseWorkshopResult,
 } from "./ai-workshop"
 import {
@@ -104,7 +103,9 @@ export class AIService {
         AI_TIMEOUT_MS,
       )
 
-      return applyReview(JSON.parse(review.text || "{}"), draft, request)
+      return await this.illustrate(
+        applyReview(JSON.parse(review.text || "{}"), draft, request),
+      )
     } catch (error) {
       // Une relecture ratée ne doit jamais faire perdre le tour.
       console.warn("AI workshop review failed, delivering unreviewed:", error)
@@ -135,6 +136,36 @@ export class AIService {
    * des mots-clés proposés par le modèle. Best-effort : sans clé Unsplash, ou si
    * une recherche échoue / ne renvoie rien, la question reste sans image.
    */
+  /**
+   * Ajoute une photo Unsplash en fond de chaque question relue, d'après les
+   * mots-clés de la relecture. Best-effort : sans photo, la question reste
+   * telle quelle.
+   */
+  private static async illustrate({
+    imageQueries,
+    ...result
+  }: ReviewedWorkshop): Promise<WorkshopResult> {
+    const targets = result.operations.flatMap((operation, index) =>
+      operation.type === "remove"
+        ? []
+        : [{ index, operation, query: imageQueries[index] }],
+    )
+    const questions = await this.attachImages(
+      targets.map(({ operation }) => operation.question as Question),
+      targets.map(({ query }) => query),
+    )
+    const operations = [...result.operations]
+
+    targets.forEach(({ index, operation }, position) => {
+      operations[index] = {
+        ...operation,
+        question: questions[position],
+      } as WorkshopOperation
+    })
+
+    return { ...result, operations }
+  }
+
   private static async attachImages(
     questions: Question[],
     imageQueries: (string | undefined)[],
@@ -173,121 +204,6 @@ export class AIService {
 
       return { ...question, background: { type: "image", value: photo.url } }
     })
-  }
-
-  /**
-   * Génère des questions de quiz via Gemini, illustrées par Unsplash.
-   */
-  public static async generateQuestions(params: {
-    prompt: string
-    count: number
-    questionTypes: string[]
-    difficulties: QuestionDifficulty[]
-    tone: string
-    language: string
-    time: number | null
-    withExplanations: boolean
-    instructions?: string
-  }): Promise<{ questions: Question[]; description: string }> {
-    if (
-      !Number.isInteger(params.count) ||
-      params.count < 1 ||
-      params.count > 50
-    ) {
-      throw new Error("Le nombre de questions doit être compris entre 1 et 50.")
-    }
-
-    const client = this.getClient()
-
-    const systemInstruction = buildGenerationPrompt(params)
-
-    try {
-      const response = await withTimeout(
-        client.models.generateContent({
-          model: TEXT_MODEL,
-          contents: systemInstruction,
-          config: {
-            responseMimeType: "application/json",
-            temperature: 0.7,
-          },
-        }),
-        AI_TIMEOUT_MS,
-      )
-
-      const { text } = response
-
-      if (!text) {
-        throw new Error("Empty response received from Gemini")
-      }
-
-      const parsed = JSON.parse(text)
-
-      // Le prompt demande { description, questions }, mais le modèle retombe
-      // parfois sur un tableau nu : les deux formes sont acceptées.
-      const rawQuestions = Array.isArray(parsed) ? parsed : parsed?.questions
-      const description = Array.isArray(parsed)
-        ? ""
-        : (parsed?.description ?? "")
-
-      if (!Array.isArray(rawQuestions)) {
-        throw new Error("Gemini response has no questions array")
-      }
-
-      // Validate each question using the common Zod validator
-      const validatedQuestions: Question[] = []
-      // Le validateur Zod retire les clés inconnues : on garde l'imageQuery
-      // de côté, alignée sur les questions retenues.
-      const imageQueries: (string | undefined)[] = []
-      for (const rawQuestion of rawQuestions) {
-        // Le modèle glisse parfois un type non demandé : on l'écarte plutôt
-        // que d'imposer à l'auteur une question qu'il n'a pas choisie.
-        const rawType = (rawQuestion as { type?: unknown } | null)?.type
-
-        if (
-          typeof rawType !== "string" ||
-          !params.questionTypes.includes(rawType)
-        ) {
-          continue
-        }
-
-        // Run Zod validator
-        const parseResult = questionValidator.safeParse(
-          normalizeTimings(rawQuestion, params.time),
-        )
-
-        if (parseResult.success) {
-          validatedQuestions.push(parseResult.data as Question)
-          const imageQuery = (rawQuestion as { imageQuery?: unknown })
-            ?.imageQuery
-          imageQueries.push(
-            typeof imageQuery === "string" && imageQuery.trim()
-              ? imageQuery.trim()
-              : undefined,
-          )
-        } else {
-          console.warn(
-            "AI generated an invalid question object:",
-            JSON.stringify(rawQuestion),
-            "Errors:",
-            parseResult.error.format(),
-          )
-        }
-      }
-
-      if (validatedQuestions.length === 0) {
-        throw new Error(
-          "None of the AI-generated questions matched the validation schema",
-        )
-      }
-
-      return {
-        questions: await this.attachImages(validatedQuestions, imageQueries),
-        description: typeof description === "string" ? description.trim() : "",
-      }
-    } catch (error) {
-      console.error("Error in AIService.generateQuestions:", error)
-      throw error
-    }
   }
 
   /**

@@ -11,8 +11,6 @@ import type {
   PublicPlayer,
   Quizz,
   QuizzWithId,
-  Question,
-  QuestionDifficulty,
 } from "@rahoot/common/types/game"
 import type { FastModeIntensity } from "@rahoot/common/types/fast-mode"
 import type { Status, StatusDataMap } from "@rahoot/common/types/game/status"
@@ -201,11 +199,6 @@ export interface ServerToClientEvents {
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_WORKSHOP_PROGRESS]: (_data: { stage: WorkshopStage }) => void
-  [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: {
-    questions: Question[]
-    // Description du quiz proposée par l'IA (vide si le modèle l'a omise).
-    description: string
-  }) => void
   [EVENTS.QUIZZ.AI_REPHRASE_SUCCESS]: (_data: { rephrased: string }) => void
   [EVENTS.QUIZZ.AI_SUGGEST_WRONG_ANSWERS_SUCCESS]: (_data: {
     wrongAnswers: string[]
@@ -347,21 +340,6 @@ export interface ClientToServerEvents {
     id: string
     publicName: string | null
     description: string | null
-  }) => void
-  [EVENTS.QUIZZ.AI_GENERATE]: (_data: {
-    prompt: string
-    count: number
-    questionTypes: string[]
-    // Plusieurs niveaux = lot mélangé, réparti équitablement par le serveur.
-    difficulties: QuestionDifficulty[]
-    tone: string
-    // Valeur "auto" : langue déduite du sujet saisi.
-    language: string
-    // Valeur nulle : l'IA module la durée selon la difficulté.
-    time: number | null
-    // Remplit la carte réponse (answerReveal) de chaque question.
-    withExplanations: boolean
-    instructions?: string
   }) => void
   [EVENTS.QUIZZ.AI_WORKSHOP]: (
     _data: WorkshopRequest,
