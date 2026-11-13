@@ -1,6 +1,10 @@
 import type { EveningSummary } from "@rahoot/common/types/evening"
 import { EVENTS } from "@rahoot/common/constants"
 import type {
+  ExplanationsReply,
+  ExplanationsRequest,
+} from "@rahoot/common/validators/ai-explanations"
+import type {
   WorkshopRequest,
   WorkshopReply,
   WorkshopStage,
@@ -355,6 +359,10 @@ export interface ClientToServerEvents {
     solutionText?: string
     type?: string
   }) => void
+  [EVENTS.QUIZZ.AI_GENERATE_EXPLANATIONS]: (
+    _data: ExplanationsRequest,
+    _reply: (_data: ExplanationsReply) => void,
+  ) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void

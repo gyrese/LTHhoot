@@ -1,4 +1,5 @@
 import EditorDialog from "./EditorDialog"
+import QuizzExplanationsSection from "./QuizzExplanationsSection"
 import { PODIUM_THEMES } from "@rahoot/common/constants"
 import type { PodiumThemeSetting } from "@rahoot/common/types/game"
 import { PODIUM_THEME_TOKENS } from "@rahoot/web/features/game/components/states/podium/themes"
@@ -385,6 +386,8 @@ const QuizzSettingsModal = ({ open, onClose }: Props) => {
                   />
                 </div>
               </div>
+
+              <QuizzExplanationsSection />
             </div>
 
             {/* Right column */}

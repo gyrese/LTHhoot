@@ -11,6 +11,7 @@ import manager, {
   type LibrarySession,
 } from "@rahoot/socket/services/manager"
 import { AIService } from "@rahoot/socket/services/ai"
+import { explanationsRequestValidator } from "@rahoot/common/validators/ai-explanations"
 import {
   workshopRequestValidator,
   type WorkshopReply,
@@ -359,6 +360,37 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:quizz.aiGenerationFailed"
         socket.emit(EVENTS.QUIZZ.AI_ERROR, message)
+      }
+    }),
+  )
+  socket.on(
+    EVENTS.QUIZZ.AI_GENERATE_EXPLANATIONS,
+    withAIAuth(async (_session, payload, reply) => {
+      if (typeof reply !== "function") {
+        return
+      }
+
+      const parsed = explanationsRequestValidator.safeParse(payload)
+
+      if (!parsed.success) {
+        reply({ error: "Questions invalides ou trop nombreuses." })
+
+        return
+      }
+
+      try {
+        reply({
+          explanations: await AIService.generateExplanations(parsed.data.items),
+        })
+      } catch (error) {
+        console.error("Failed to generate explanations with AI:", error)
+        const message = error instanceof Error ? error.message : ""
+
+        reply({
+          error: /429|quota|RESOURCE_EXHAUSTED|rate.?limit/iu.test(message)
+            ? "Le quota IA est atteint. Réessayez plus tard."
+            : "L’IA n’a pas pu générer les explications. Réessayez.",
+        })
       }
     }),
   )

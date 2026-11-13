@@ -16,6 +16,11 @@ import {
   type ReviewedWorkshop,
 } from "./ai-review"
 import {
+  buildExplanationsPrompt,
+  parseExplanations,
+} from "./ai-explanations"
+import type { ExplanationsRequest } from "@rahoot/common/validators/ai-explanations"
+import {
   buildWorkshopSystemPrompt,
   buildWorkshopUserPrompt,
   parseWorkshopResult,
@@ -357,5 +362,33 @@ Output MUST be a valid JSON object: { "explanation": "the explanation text" }`
       console.error("Error in AIService.generateExplanation:", error)
       throw error
     }
+  }
+
+  /**
+   * Génère l'explication de plusieurs questions en un seul appel (une entrée
+   * par question, dans l'ordre ; chaîne vide si l'IA n'a rien produit).
+   */
+  public static async generateExplanations(
+    items: ExplanationsRequest["items"],
+  ): Promise<string[]> {
+    const client = this.getClient()
+
+    const response = await withTimeout(
+      client.models.generateContent({
+        model: TEXT_MODEL,
+        contents: buildExplanationsPrompt(items),
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.7,
+        },
+      }),
+      AI_TIMEOUT_MS,
+    )
+
+    if (!response.text) {
+      throw new Error("Empty response received from Gemini")
+    }
+
+    return parseExplanations(response.text, items.length)
   }
 }
