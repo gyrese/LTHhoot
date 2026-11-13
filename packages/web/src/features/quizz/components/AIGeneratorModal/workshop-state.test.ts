@@ -4,7 +4,6 @@ import {
   applyWorkshopOperations,
   emptySession,
   loadSession,
-  numberedTargets,
   type DraftQuestion,
 } from "./workshop"
 
@@ -55,11 +54,19 @@ it("restores a saved conversation and safely ignores corrupted backups", () => {
   localStorage.removeItem("workshop-test")
 })
 
-it("scopes numbered requests without interpreting a requested count as a target", () => {
-  expect(numberedTargets("Remplace les questions 1 et 2", draft)).toEqual([
-    "a",
-    "b",
-  ])
-  expect(numberedTargets("Crée 10 questions Disney", draft)).toBeUndefined()
-  expect(() => numberedTargets("Change la question 7", draft)).toThrow()
+it("folds the former audience field into the brief", () => {
+  localStorage.setItem(
+    "workshop-legacy",
+    JSON.stringify({
+      questions: [],
+      messages: [],
+      input: "",
+      audience: "Adultes fans",
+    }),
+  )
+  expect(loadSession("workshop-legacy")).toEqual({
+    ...emptySession(),
+    brief: "Public visé : Adultes fans",
+  })
+  localStorage.removeItem("workshop-legacy")
 })

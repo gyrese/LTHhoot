@@ -3,7 +3,11 @@ import {
   workshopRequestValidator,
   type WorkshopRequest,
 } from "@rahoot/common/validators/ai-workshop"
-import { buildWorkshopPrompt, parseWorkshopResult } from "./ai-workshop"
+import {
+  buildWorkshopSystemPrompt,
+  buildWorkshopUserPrompt,
+  parseWorkshopResult,
+} from "./ai-workshop"
 
 const question = {
   type: "mcq" as const,
@@ -41,42 +45,65 @@ const replacement = {
   answers: ["Mercure", "Mars"],
 }
 
-it("honors an explicit slider request despite the saved question types", () => {
-  const sliderRequest = {
-    ...request,
-    message:
-      "Je veux un quiz Disney où les réponses sont forcément de type curseur (chiffres).",
-  }
-  const slider = {
-    ...question,
-    type: "slider",
-    question: "Combien de nains accompagnent Blanche-Neige ?",
-    correctValue: 7,
-    min: 0,
-    max: 15,
-    tolerance: 0,
+it("accepts any text format the author asks for, beyond the default types", () => {
+  const open = {
+    type: "open",
+    question: "Quel studio a produit Toy Story ?",
+    correctAnswers: ["pixar"],
+    time: 20,
+    cooldown: 5,
   }
   const result = (question: unknown) => ({
     message: "OK",
     operations: [{ type: "add", question }],
   })
 
-  expect(buildWorkshopPrompt(sliderRequest)).toContain(
-    "Only generate questions of the following types: slider.",
+  expect(buildWorkshopSystemPrompt(request)).toContain("Question types: mcq.")
+  expect(buildWorkshopSystemPrompt(request)).toContain("DEFAULT SETTINGS")
+  expect(parseWorkshopResult(result(open), request).operations).toEqual([
+    expect.objectContaining({
+      question: expect.objectContaining({ type: "open" }),
+    }),
+  ])
+  expect(() =>
+    parseWorkshopResult(result({ type: "title", title: "Intro" }), request),
+  ).toThrow(/exploitable/u)
+})
+
+it("keeps valid proposals and reports the discarded ones", () => {
+  const result = parseWorkshopResult(
+    {
+      message: "Voici deux questions.",
+      operations: [
+        { type: "add", question: replacement },
+        { type: "add", question: { ...replacement, solutions: [9] } },
+        {
+          type: "add",
+          question: { ...replacement, question: question.question },
+        },
+      ],
+    },
+    request,
   )
-  expect(parseWorkshopResult(result(slider), sliderRequest).operations).toEqual(
-    [
-      expect.objectContaining({
-        question: expect.objectContaining({ type: "slider" }),
-      }),
-    ],
+  expect(result.operations).toHaveLength(1)
+  expect(result.message).toContain("2 propositions écartées")
+  expect(result.message).toContain("doublon")
+})
+
+it("returns the updated brief and clamps model timings", () => {
+  const result = parseWorkshopResult(
+    {
+      message: "OK",
+      brief: "Sujet : Pixar\nPublic : adultes fans",
+      operations: [{ type: "add", question: { ...replacement, time: 900 } }],
+    },
+    request,
   )
-  expect(() => parseWorkshopResult(result(replacement), sliderRequest)).toThrow(
-    /format non autorisé/u,
-  )
-  expect(() => parseWorkshopResult(result(slider), request)).toThrow(
-    /format non autorisé/u,
-  )
+  expect(result.brief).toBe("Sujet : Pixar\nPublic : adultes fans")
+  expect(result.operations[0]).toMatchObject({ question: { time: 120 } })
+  expect(
+    parseWorkshopResult({ message: "OK", operations: [] }, request),
+  ).not.toHaveProperty("brief")
 })
 
 it("accepts a targeted replacement while keeping stable ids", () => {
@@ -106,8 +133,8 @@ it("rejects changes to locked, unknown or untargeted ids", () => {
     ).toThrow()
   }
 })
-it("rejects duplicate operations and malformed questions atomically", () => {
-  expect(() =>
+it("ignores a second operation on the same id and fails when nothing is usable", () => {
+  expect(
     parseWorkshopResult(
       {
         message: "OK",
@@ -117,8 +144,8 @@ it("rejects duplicate operations and malformed questions atomically", () => {
         ],
       },
       request,
-    ),
-  ).toThrow()
+    ).operations,
+  ).toEqual([{ type: "remove", id: "editable" }])
   expect(() =>
     parseWorkshopResult(
       {
@@ -207,15 +234,27 @@ it("rejects additions on a targeted turn and invalid request ids", () => {
     }).success,
   ).toBe(false)
 })
-it("provides numbered draft, existing quiz and bounded history as context", () => {
-  const prompt = buildWorkshopPrompt({
+it("puts the current request first, with the brief, draft and history as context", () => {
+  const prompt = buildWorkshopUserPrompt({
     ...request,
+    brief: "Public : adultes fans",
+    targetIds: ["editable"],
     history: [{ role: "user", text: "Disney pour adultes" }],
   })
+  expect(prompt.startsWith("CURRENT REQUEST:\nRemplace la question 2")).toBe(
+    true,
+  )
+  expect(prompt).toContain("Public : adultes fans")
   expect(prompt).toContain('"number":2')
+  expect(prompt).toContain('["editable"]')
   expect(prompt).toContain("Disney pour adultes")
-  expect(prompt).toContain("NEVER alter or remove a locked question")
-  expect(prompt).toContain("never claim you checked sources")
-  expect(prompt).toContain("Wrap EACH new question in its own add operation")
-  expect(prompt).not.toContain('{ "description": "...", "questions": [ ... ] }')
+  expect(prompt).toContain("Quelle est la capitale de la France ?")
+
+  const system = buildWorkshopSystemPrompt(request)
+  expect(system).toContain("PRIORITY ORDER")
+  expect(system).toContain("NEVER alter or remove a locked question")
+  expect(system).toContain("never claim you checked sources")
+  expect(system).toContain("Wrap EACH new question in its own add operation")
+  expect(system).not.toContain('imageQuery"')
+  expect(system).not.toContain('{ "description": "...", "questions": [ ... ] }')
 })

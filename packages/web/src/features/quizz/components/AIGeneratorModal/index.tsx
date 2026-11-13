@@ -6,6 +6,7 @@ import {
   Loader2,
   Lock,
   LockOpen,
+  NotebookPen,
   RefreshCw,
   Send,
   Settings,
@@ -145,6 +146,32 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
             aria-label="Conversation"
             className={`${mobileTab === "chat" ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col md:flex md:max-w-[44%]`}
           >
+            {(session.brief || session.messages.length > 0) && (
+              <details
+                open
+                className="border-border bg-panel shrink-0 border-b px-4 py-2"
+              >
+                <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
+                  <NotebookPen className="size-3.5" />
+                  Brief du quiz
+                  <span className="font-normal">
+                    · l’IA le tient à jour, tu peux le corriger
+                  </span>
+                </summary>
+                <textarea
+                  aria-label="Brief du quiz"
+                  value={session.brief}
+                  maxLength={1000}
+                  rows={3}
+                  disabled={loading}
+                  placeholder="Sujet, public, angle, niveau, formats, à éviter…"
+                  onChange={(e) =>
+                    setSession((prev) => ({ ...prev, brief: e.target.value }))
+                  }
+                  className="focus-ring border-border bg-surface text-ink mt-2 w-full resize-y rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                />
+              </details>
+            )}
             <div
               ref={conversationRef}
               className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4"
@@ -157,8 +184,9 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                     Quel quiz veux-tu créer ?
                   </h3>
                   <p className="text-ink-muted mt-2 text-sm">
-                    Décris ton idée, puis ajuste les propositions au fil de la
-                    conversation.
+                    Donne le sujet, le public et l’angle voulu (anecdotes,
+                    détails cachés, niveau…). L’IA en tire un brief qu’elle
+                    respecte à chaque tour.
                   </p>
                   <button
                     type="button"
@@ -218,25 +246,13 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
               <details>
                 <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
                   <Settings className="size-3.5" />
-                  Réglages
+                  Réglages par défaut
                 </summary>
                 <div className="mt-3 max-h-[35dvh] space-y-4 overflow-y-auto pr-1">
-                  <label className="text-ink block space-y-1 text-sm font-semibold">
-                    <span>Public visé</span>
-                    <input
-                      className="focus-ring border-border bg-surface w-full rounded-md border px-3 py-2 font-normal"
-                      maxLength={150}
-                      placeholder="Famille, adultes, passionnés…"
-                      value={session.audience}
-                      disabled={loading}
-                      onChange={(e) =>
-                        setSession((prev) => ({
-                          ...prev,
-                          audience: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
+                  <p className="text-ink-muted text-xs">
+                    Utilisés seulement quand ta demande ou le brief ne précisent
+                    rien : « 3 questions ouvertes pour experts » l’emporte.
+                  </p>
                   <GeneratorForm
                     hidePrompt
                     prompt=""

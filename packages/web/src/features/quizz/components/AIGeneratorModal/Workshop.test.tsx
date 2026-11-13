@@ -289,3 +289,28 @@ it("ignores a previous quiz reply after opening a new quiz", () => {
   expect(request.history).toEqual([])
   expect(request.questions).toEqual([])
 })
+
+it("keeps the brief returned by the AI, lets the author edit it and sends it back", () => {
+  render(<AIGeneratorModal open onClose={vi.fn()} />)
+  send("8 questions Pixar pour adultes fans")
+  act(() =>
+    callback(null, {
+      result: {
+        message: "Voici deux questions.",
+        brief: "Sujet : Pixar\nPublic : adultes fans",
+        operations: [{ type: "add", question: first }],
+      },
+    }),
+  )
+  const brief = screen.getByRole("textbox", {
+    name: "Brief du quiz",
+  }) as HTMLTextAreaElement
+  expect(brief.value).toBe("Sujet : Pixar\nPublic : adultes fans")
+  fireEvent.change(brief, {
+    target: { value: "Sujet : Pixar\nÀ éviter : A113" },
+  })
+  send("Encore 3 questions comme la question 1")
+  const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
+  expect(request.brief).toBe("Sujet : Pixar\nÀ éviter : A113")
+  expect(request.targetIds).toBeUndefined()
+})

@@ -1,6 +1,20 @@
 import { z } from "zod"
 import { questionValidator } from "./quizz"
 
+// Types que l'atelier sait produire sans média (`image_sequence` et `drop_pin`
+// exigent des images, `title` n'est pas une question).
+export const WORKSHOP_QUESTION_TYPES = [
+  "mcq",
+  "true_false",
+  "open",
+  "date",
+  "slider",
+  "puzzle",
+] as const
+
+export const WORKSHOP_HISTORY_LIMIT = 12
+export const WORKSHOP_BRIEF_MAX = 1000
+
 export const workshopSettingsValidator = z.object({
   count: z.number().int().min(1).max(20),
   difficulties: z
@@ -8,10 +22,7 @@ export const workshopSettingsValidator = z.object({
     .min(1)
     .max(4),
   tone: z.string().max(30),
-  questionTypes: z
-    .array(z.enum(["mcq", "true_false", "open", "date", "slider", "puzzle"]))
-    .min(1)
-    .max(6),
+  questionTypes: z.array(z.enum(WORKSHOP_QUESTION_TYPES)).min(1).max(6),
   language: z.enum(["auto", "fr", "en"]),
   time: z.number().int().min(5).max(120).nullable(),
   withExplanations: z.boolean(),
@@ -27,6 +38,9 @@ export const workshopQuestionValidator = z.object({
 export const workshopRequestValidator = z
   .object({
     message: z.string().trim().min(1).max(2000),
+    // Préférences durables du quiz (sujet, public, angle, à éviter) : elles
+    // survivent à la troncature de l'historique.
+    brief: z.string().max(WORKSHOP_BRIEF_MAX).optional(),
     history: z
       .array(
         z.object({
@@ -34,7 +48,7 @@ export const workshopRequestValidator = z
           text: z.string().max(3000),
         }),
       )
-      .max(8),
+      .max(WORKSHOP_HISTORY_LIMIT),
     questions: z.array(workshopQuestionValidator).max(20),
     existingQuestions: z.array(z.string().max(500)).max(100),
     targetIds: z.array(z.string().max(80)).max(20).optional(),
@@ -59,6 +73,8 @@ export type WorkshopOperation =
   | { type: "remove"; id: string }
 export type WorkshopResult = {
   message: string
+  // Brief mis à jour par l'IA ; absent quand il n'a pas changé.
+  brief?: string
   operations: WorkshopOperation[]
 }
 export type WorkshopReply = { result: WorkshopResult } | { error: string }

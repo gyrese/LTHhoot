@@ -1,5 +1,6 @@
 import { z } from "zod"
 import {
+  WORKSHOP_BRIEF_MAX,
   workshopQuestionValidator,
   type WorkshopOperation,
   type WorkshopQuestion,
@@ -11,7 +12,8 @@ export type WorkshopSession = {
   questions: DraftQuestion[]
   messages: ChatMessage[]
   input: string
-  audience: string
+  // Préférences durables du quiz, tenues à jour par l'IA et modifiables.
+  brief: string
 }
 
 const sessionValidator = z.object({
@@ -27,41 +29,26 @@ const sessionValidator = z.object({
     )
     .max(24),
   input: z.string().max(2000),
-  audience: z.string().max(150),
+  brief: z.string().max(WORKSHOP_BRIEF_MAX).optional(),
+  // Ancien champ « Public visé » : repris dans le brief au chargement.
+  audience: z.string().max(150).optional(),
 })
 
 export const emptySession = (): WorkshopSession => ({
   questions: [],
   messages: [],
   input: "",
-  audience: "",
+  brief: "",
 })
-
-export function numberedTargets(message: string, questions: DraftQuestion[]) {
-  const matches = [
-    ...message.matchAll(
-      /questions?\s*(?:n[°o]\s*)?(\d+(?:\s*(?:,|et|&)\s*\d+)*)/giu,
-    ),
-  ]
-  if (!matches.length) {
-    return undefined
-  }
-  const numbers = [
-    ...new Set(
-      matches.flatMap((match) => match[1].match(/\d+/gu)!.map(Number)),
-    ),
-  ]
-  if (numbers.some((number) => !questions[number - 1])) {
-    throw new Error("Une question demandée n’existe pas dans le brouillon.")
-  }
-  return numbers.map((number) => questions[number - 1].id)
-}
 
 export function loadSession(key: string): WorkshopSession {
   try {
-    return sessionValidator.parse(
+    const { audience, brief, ...session } = sessionValidator.parse(
       JSON.parse(localStorage.getItem(key) || "null"),
     )
+    const legacy = audience?.trim() ? `Public visé : ${audience.trim()}` : ""
+
+    return { ...session, brief: brief ?? legacy }
   } catch {
     return emptySession()
   }

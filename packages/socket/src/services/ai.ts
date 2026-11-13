@@ -7,7 +7,12 @@ import type {
   WorkshopRequest,
   WorkshopResult,
 } from "@rahoot/common/validators/ai-workshop"
-import { buildWorkshopPrompt, parseWorkshopResult } from "./ai-workshop"
+import {
+  buildWorkshopSystemPrompt,
+  buildWorkshopUserPrompt,
+  normalizeTimings,
+  parseWorkshopResult,
+} from "./ai-workshop"
 import {
   isUnsplashConfigured,
   searchUnsplash,
@@ -27,8 +32,9 @@ export class AIService {
     const response = await withTimeout(
       this.getClient().models.generateContent({
         model: TEXT_MODEL,
-        contents: buildWorkshopPrompt(request),
+        contents: buildWorkshopUserPrompt(request),
         config: {
+          systemInstruction: buildWorkshopSystemPrompt(request),
           responseMimeType: "application/json",
           temperature: 0.6,
           maxOutputTokens: 16000,
@@ -36,25 +42,8 @@ export class AIService {
       }),
       AI_TIMEOUT_MS,
     )
-    const raw = JSON.parse(response.text || "{}")
 
-    if (Array.isArray(raw.operations)) {
-      raw.operations = raw.operations.map(
-        (operation: Record<string, unknown>) => ({
-          ...operation,
-          ...(operation.question
-            ? {
-                question: this.normalizeTimings(
-                  operation.question,
-                  request.settings.time,
-                ),
-              }
-            : {}),
-        }),
-      )
-    }
-
-    return parseWorkshopResult(raw, request)
+    return parseWorkshopResult(JSON.parse(response.text || "{}"), request)
   }
 
   private static getClient(): GoogleGenAI {
@@ -72,36 +61,6 @@ export class AIService {
     }
 
     return this.genAI
-  }
-
-  private static clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(Math.round(value), min), max)
-  }
-
-  /**
-   * Aligne `time`/`cooldown` sur les bornes du validateur commun avant le
-   * safeParse : sans ça, une durée mal calibrée par le modèle fait rejeter une
-   * question par ailleurs parfaitement valide.
-   * `requestedTime` non nul = durée imposée par l'auteur, elle écrase l'IA.
-   */
-  private static normalizeTimings(
-    rawQuestion: unknown,
-    requestedTime: number | null,
-  ): unknown {
-    if (typeof rawQuestion !== "object" || rawQuestion === null) {
-      return rawQuestion
-    }
-
-    const question = rawQuestion as Record<string, unknown>
-    const aiTime = typeof question.time === "number" ? question.time : 20
-    const aiCooldown =
-      typeof question.cooldown === "number" ? question.cooldown : 5
-
-    return {
-      ...question,
-      time: this.clamp(requestedTime ?? aiTime, 5, 120),
-      cooldown: this.clamp(aiCooldown, 3, 15),
-    }
   }
 
   /**
@@ -226,7 +185,7 @@ export class AIService {
 
         // Run Zod validator
         const parseResult = questionValidator.safeParse(
-          this.normalizeTimings(rawQuestion, params.time),
+          normalizeTimings(rawQuestion, params.time),
         )
 
         if (parseResult.success) {

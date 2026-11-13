@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { EVENTS } from "@rahoot/common/constants"
 import {
+  WORKSHOP_HISTORY_LIMIT,
   workshopRequestValidator,
   type WorkshopReply,
 } from "@rahoot/common/validators/ai-workshop"
@@ -12,7 +13,6 @@ import {
   applyWorkshopOperations,
   emptySession,
   loadSession,
-  numberedTargets,
   type DraftQuestion,
   type ChatMessage,
 } from "./workshop"
@@ -79,17 +79,14 @@ export default function useWorkshop(onClose: () => void) {
       )
       return
     }
-    let targets = targetIds
-    try {
-      targets ??= numberedTargets(text, session.questions)
-    } catch (caught) {
-      setError((caught as Error).message)
-      return
-    }
+    // Seuls les boutons de carte ciblent une question : les numéros cités
+    // dans le texte sont laissés à l'IA (« encore 5 comme la question 2 »).
+    const targets = targetIds
     const parsed = workshopRequestValidator.safeParse({
       message: text.trim(),
+      brief: session.brief.trim() || undefined,
       history: (retry ? session.messages.slice(0, -1) : session.messages)
-        .slice(-8)
+        .slice(-WORKSHOP_HISTORY_LIMIT)
         .map((message) => ({ ...message, text: message.text.slice(0, 1000) })),
       questions: session.questions,
       existingQuestions: existingQuestions
@@ -101,9 +98,6 @@ export default function useWorkshop(onClose: () => void) {
         time: settings.time || null,
         instructions: [
           settings.instructions,
-          session.audience.trim()
-            ? `Public visé : ${session.audience.trim()}`
-            : "",
           subject ? `Titre du quiz en cours : ${subject}` : "",
         ]
           .filter(Boolean)
@@ -161,6 +155,7 @@ export default function useWorkshop(onClose: () => void) {
             setSession((prev) => ({
               ...prev,
               questions: next,
+              brief: reply.result.brief ?? prev.brief,
               messages: append(prev.messages, {
                 role: "assistant",
                 text: reply.result.message,
