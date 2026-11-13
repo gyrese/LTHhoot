@@ -81,6 +81,8 @@ export const EVENTS = {
     ERROR: "quizz:error",
     AI_GENERATE: "quizz:aiGenerate",
     AI_WORKSHOP: "quizz:aiWorkshop",
+    // Étape en cours d'une demande d'atelier (rédaction, relecture).
+    AI_WORKSHOP_PROGRESS: "quizz:aiWorkshopProgress",
     AI_GENERATE_SUCCESS: "quizz:aiGenerateSuccess",
     AI_REPHRASE: "quizz:aiRephrase",
     AI_REPHRASE_SUCCESS: "quizz:aiRephraseSuccess",

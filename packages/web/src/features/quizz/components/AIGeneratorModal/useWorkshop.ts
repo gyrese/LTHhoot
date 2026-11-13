@@ -5,14 +5,20 @@ import {
   WORKSHOP_HISTORY_LIMIT,
   workshopRequestValidator,
   type WorkshopReply,
+  type WorkshopStage,
 } from "@rahoot/common/validators/ai-workshop"
-import { useSocket } from "@rahoot/web/features/game/contexts/socket-context"
+import {
+  useEvent,
+  useSocket,
+} from "@rahoot/web/features/game/contexts/socket-context"
 import { useQuizzEditor } from "../../contexts/quizz-editor-context"
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from "./options"
 import {
   applyWorkshopOperations,
   emptySession,
   loadSession,
+  rememberFeedback,
+  REMOVED_REASON,
   type DraftQuestion,
   type ChatMessage,
 } from "./workshop"
@@ -41,6 +47,10 @@ export default function useWorkshop(onClose: () => void) {
       : DEFAULT_SETTINGS
   })
   const [loading, setLoading] = useState(false)
+  const [stage, setStage] = useState<WorkshopStage>("writing")
+  useEvent(EVENTS.QUIZZ.AI_WORKSHOP_PROGRESS, ({ stage: next }) =>
+    setStage(next),
+  )
   const busy = useRef(false)
   const mounted = useRef(true)
   const retryRef = useRef<{ text: string; targetIds?: string[] } | null>(null)
@@ -69,7 +79,14 @@ export default function useWorkshop(onClose: () => void) {
     }
   }, [storageKey, session])
 
-  const send = (text: string, targetIds?: string[], retry = false) => {
+  // `feedback` : retours à jour quand l'envoi suit leur ajout dans le même
+  // geste (l'état `session` n'est pas encore rafraîchi).
+  const send = (
+    text: string,
+    targetIds?: string[],
+    retry = false,
+    feedback = session.feedback,
+  ) => {
     if (busy.current || !text.trim()) {
       return
     }
@@ -85,6 +102,8 @@ export default function useWorkshop(onClose: () => void) {
     const parsed = workshopRequestValidator.safeParse({
       message: text.trim(),
       brief: session.brief.trim() || undefined,
+      source: session.source.trim() || undefined,
+      feedback: feedback.length ? feedback : undefined,
       history: (retry ? session.messages.slice(0, -1) : session.messages)
         .slice(-WORKSHOP_HISTORY_LIMIT)
         .map((message) => ({ ...message, text: message.text.slice(0, 1000) })),
@@ -114,6 +133,7 @@ export default function useWorkshop(onClose: () => void) {
     busy.current = true
     retryRef.current = { text, targetIds: targets }
     setLoading(true)
+    setStage("writing")
     setError("")
     saveSettings(settings)
     setSession((prev) => ({
@@ -124,7 +144,8 @@ export default function useWorkshop(onClose: () => void) {
         : append(prev.messages, { role: "user", text: text.trim() }),
     }))
     socket
-      .timeout(95000)
+      // Rédaction puis relecture des faits : deux appels de 90 s max.
+      .timeout(200000)
       .emit(
         EVENTS.QUIZZ.AI_WORKSHOP,
         parsed.data,
@@ -202,11 +223,42 @@ export default function useWorkshop(onClose: () => void) {
     onClose()
   }
   const remove = (id: string) => {
+    const removed = session.questions.find((q) => q.id === id)
     setPrevious(session.questions)
     setSession((prev) => ({
       ...prev,
       questions: prev.questions.filter((q) => q.id !== id),
+      feedback: removed
+        ? rememberFeedback(
+            prev.feedback,
+            removed.question.question,
+            REMOVED_REASON,
+          )
+        : prev.feedback,
     }))
+  }
+  // Remplace une question en disant pourquoi : la raison guide la
+  // proposition suivante et reste en mémoire pour les tours d'après.
+  const replaceWithReason = (id: string, reason: string) => {
+    const index = session.questions.findIndex((q) => q.id === id)
+
+    if (index < 0 || busy.current) {
+      return
+    }
+
+    const feedback = rememberFeedback(
+      session.feedback,
+      session.questions[index].question.question,
+      reason,
+    )
+
+    setSession((prev) => ({ ...prev, feedback }))
+    send(
+      `Remplace uniquement la question ${index + 1} (${reason.toLowerCase()}) par une autre qui corrige ce défaut, sur le même sujet.`,
+      [id],
+      false,
+      feedback,
+    )
   }
   const undo = () => {
     if (previous) {
@@ -227,6 +279,7 @@ export default function useWorkshop(onClose: () => void) {
     setSettings,
     subject,
     loading,
+    stage,
     error,
     storageError,
     previous,
@@ -238,6 +291,7 @@ export default function useWorkshop(onClose: () => void) {
     selected,
     importDraft,
     remove,
+    replaceWithReason,
     undo,
     reset,
     retry: retryRef.current

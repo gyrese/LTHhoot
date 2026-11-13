@@ -6,7 +6,15 @@ import { buildGenerationPrompt } from "@rahoot/socket/services/ai-prompt"
 import type {
   WorkshopRequest,
   WorkshopResult,
+  WorkshopStage,
 } from "@rahoot/common/validators/ai-workshop"
+import {
+  applyReview,
+  buildReviewSystemPrompt,
+  buildReviewUserPrompt,
+  reviewCandidates,
+  withoutReview,
+} from "./ai-review"
 import {
   buildWorkshopSystemPrompt,
   buildWorkshopUserPrompt,
@@ -32,12 +40,21 @@ const WORKSHOP_THINKING =
     | ThinkingLevel
     | undefined
 
+// Relecture des faits (2e appel). MEDIUM : ~20 s pour 8 questions, attrape
+// les erreurs que LOW laisse passer. `GEMINI_WORKSHOP_REVIEW=off` la coupe.
+const REVIEW_THINKING =
+  (process.env.GEMINI_REVIEW_THINKING?.toUpperCase() as ThinkingLevel) ||
+  ThinkingLevel.MEDIUM
+const REVIEW_ENABLED = process.env.GEMINI_WORKSHOP_REVIEW !== "off"
+
 export class AIService {
   private static genAI: GoogleGenAI | null = null
 
   public static async workshop(
     request: WorkshopRequest,
+    onProgress: (_stage: WorkshopStage) => void = () => undefined,
   ): Promise<WorkshopResult> {
+    onProgress("writing")
     const response = await withTimeout(
       this.getClient().models.generateContent({
         model: TEXT_MODEL,
@@ -55,7 +72,45 @@ export class AIService {
       AI_TIMEOUT_MS,
     )
 
-    return parseWorkshopResult(JSON.parse(response.text || "{}"), request)
+    const draft = parseWorkshopResult(
+      JSON.parse(response.text || "{}"),
+      request,
+    )
+    const candidates = reviewCandidates(draft)
+
+    if (!candidates.length) {
+      return withoutReview(draft, false)
+    }
+
+    if (!REVIEW_ENABLED) {
+      return withoutReview(draft, false)
+    }
+
+    onProgress("reviewing")
+
+    try {
+      const review = await withTimeout(
+        this.getClient().models.generateContent({
+          model: TEXT_MODEL,
+          contents: buildReviewUserPrompt(request, candidates),
+          config: {
+            systemInstruction: buildReviewSystemPrompt(),
+            thinkingConfig: { thinkingLevel: REVIEW_THINKING },
+            responseMimeType: "application/json",
+            temperature: 0.2,
+            maxOutputTokens: 16000,
+          },
+        }),
+        AI_TIMEOUT_MS,
+      )
+
+      return applyReview(JSON.parse(review.text || "{}"), draft, request)
+    } catch (error) {
+      // Une relecture ratée ne doit jamais faire perdre le tour.
+      console.warn("AI workshop review failed, delivering unreviewed:", error)
+
+      return withoutReview(draft)
+    }
   }
 
   private static getClient(): GoogleGenAI {

@@ -290,3 +290,33 @@ it("shuffles MCQ options and remaps the correct answers", () => {
     expect([...question.answers].sort()).toEqual([...mcq.answers].sort())
   }
 })
+
+it("passes feedback, source and free room to the writer and keeps the target count", () => {
+  const prompt = buildWorkshopUserPrompt({
+    ...request,
+    source: "Mars est la quatrième planète.",
+    feedback: [
+      { question: "Quelle planète est rouge ?", reason: "Trop facile" },
+    ],
+  })
+  expect(prompt).toContain("FREE ROOM: 18")
+  expect(prompt).toContain("Mars est la quatrième planète.")
+  expect(prompt).toContain('"reason":"Trop facile"')
+  expect(buildWorkshopSystemPrompt(request)).toContain('"keep"')
+
+  const result = parseWorkshopResult(
+    {
+      message: "OK",
+      keep: 1,
+      operations: [
+        { type: "add", question: replacement },
+        { type: "add", question: { ...replacement, solutions: [9] } },
+      ],
+    },
+    request,
+  )
+  expect(result.keep).toBe(1)
+  // Candidat invalide en sur-génération : écarté sans bruit pour l'auteur.
+  expect(result.message).toBe("OK")
+  expect(result.operations).toHaveLength(1)
+})

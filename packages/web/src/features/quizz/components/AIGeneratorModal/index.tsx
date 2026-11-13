@@ -14,10 +14,12 @@ import {
   Undo2,
   X,
 } from "lucide-react"
+import { WORKSHOP_SOURCE_MAX } from "@rahoot/common/validators/ai-workshop"
 import EditorDialog from "../EditorDialog"
 import GeneratorForm from "./GeneratorForm"
 import WorkshopQuestionEditor from "./WorkshopQuestionEditor"
 import useWorkshop from "./useWorkshop"
+import { FEEDBACK_REASONS } from "./workshop"
 
 type Props = { open: boolean; onClose: () => void }
 const smallButton =
@@ -35,6 +37,7 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
     setSettings,
     subject,
     loading,
+    stage,
     error,
     storageError,
     previous,
@@ -46,11 +49,14 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
     selected,
     importDraft,
     remove,
+    replaceWithReason,
     undo,
     reset,
     retry,
   } = workshop
   const [confirmReset, setConfirmReset] = useState(false)
+  // Question dont on affiche les raisons de remplacement.
+  const [feedbackFor, setFeedbackFor] = useState<string | null>(null)
   const conversationRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const area = conversationRef.current
@@ -146,32 +152,52 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
             aria-label="Conversation"
             className={`${mobileTab === "chat" ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col md:flex md:max-w-[44%]`}
           >
-            {(session.brief || session.messages.length > 0) && (
-              <details
-                open
-                className="border-border bg-panel shrink-0 border-b px-4 py-2"
-              >
-                <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
-                  <NotebookPen className="size-3.5" />
-                  Brief du quiz
-                  <span className="font-normal">
-                    · l’IA le tient à jour, tu peux le corriger
-                  </span>
-                </summary>
+            <details
+              className="border-border bg-panel shrink-0 border-b px-4 py-2"
+              open={Boolean(session.brief || session.messages.length)}
+            >
+              <summary className="focus-ring text-ink-muted flex cursor-pointer list-none items-center gap-2 rounded text-xs font-semibold">
+                <NotebookPen className="size-3.5" />
+                Brief et source
+                <span className="font-normal">
+                  · l’IA tient le brief à jour, tu peux le corriger
+                </span>
+              </summary>
+              <textarea
+                aria-label="Brief du quiz"
+                value={session.brief}
+                maxLength={1000}
+                rows={5}
+                disabled={loading}
+                placeholder="Sujet, public, angle, niveau, formats, à éviter…"
+                onChange={(e) =>
+                  setSession((prev) => ({ ...prev, brief: e.target.value }))
+                }
+                className="focus-ring border-border bg-surface text-ink mt-2 field-sizing-content max-h-48 w-full resize-y rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+              />
+              <label className="text-ink-muted mt-2 block text-xs font-semibold">
+                Texte source (facultatif)
+                <span className="font-normal">
+                  {" "}
+                  · l’IA puise ses questions dedans et vérifie contre lui
+                </span>
                 <textarea
-                  aria-label="Brief du quiz"
-                  value={session.brief}
-                  maxLength={1000}
-                  rows={5}
+                  aria-label="Texte source"
+                  value={session.source}
+                  maxLength={WORKSHOP_SOURCE_MAX}
+                  rows={2}
                   disabled={loading}
-                  placeholder="Sujet, public, angle, niveau, formats, à éviter…"
+                  placeholder="Colle un article, tes notes, un programme de cours…"
                   onChange={(e) =>
-                    setSession((prev) => ({ ...prev, brief: e.target.value }))
+                    setSession((prev) => ({
+                      ...prev,
+                      source: e.target.value,
+                    }))
                   }
-                  className="focus-ring border-border bg-surface text-ink mt-2 field-sizing-content max-h-48 w-full resize-y rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                  className="focus-ring border-border bg-surface text-ink mt-1 field-sizing-content max-h-40 w-full resize-y rounded-md border px-3 py-2 text-sm font-normal disabled:opacity-60"
                 />
-              </details>
-            )}
+              </label>
+            </details>
             <div
               ref={conversationRef}
               className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4"
@@ -223,7 +249,9 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                   className="text-ink-muted flex items-center gap-2 text-sm"
                 >
                   <Loader2 className="size-4 motion-safe:animate-spin" />
-                  L’IA prépare sa proposition…
+                  {stage === "reviewing"
+                    ? "Relecture des faits…"
+                    : "L’IA rédige ses propositions…"}
                 </div>
               )}
             </div>
@@ -407,11 +435,11 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                         className={smallButton}
                         disabled={loading || item.locked}
                         aria-label={`Remplacer la question ${index + 1}`}
-                        title="Proposer une autre question"
+                        aria-expanded={feedbackFor === item.id}
+                        title="Remplacer : dis pourquoi"
                         onClick={() =>
-                          send(
-                            `Remplace uniquement la question ${index + 1} par une autre sur le même thème et du même niveau.`,
-                            [item.id],
+                          setFeedbackFor((current) =>
+                            current === item.id ? null : item.id,
                           )
                         }
                       >
@@ -428,6 +456,31 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                         <X className="size-4" />
                       </button>
                     </div>
+                    {feedbackFor === item.id && (
+                      <div
+                        role="group"
+                        aria-label={`Pourquoi remplacer la question ${index + 1} ?`}
+                        className="mt-2 ml-6 flex flex-wrap items-center gap-1.5"
+                      >
+                        <span className="text-ink-muted text-xs">
+                          Pourquoi ?
+                        </span>
+                        {FEEDBACK_REASONS.map((reason) => (
+                          <button
+                            key={reason}
+                            type="button"
+                            disabled={loading}
+                            className="focus-ring border-border text-ink hover:bg-surface min-h-8 rounded-full border px-3 text-xs disabled:opacity-40"
+                            onClick={() => {
+                              setFeedbackFor(null)
+                              replaceWithReason(item.id, reason)
+                            }}
+                          >
+                            {reason}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <details className="mt-2 ml-6">
                       <summary className="focus-ring text-ink-muted cursor-pointer rounded text-xs font-semibold">
                         Réponses · Modifier

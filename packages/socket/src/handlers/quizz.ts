@@ -272,7 +272,11 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
       }
 
       try {
-        reply({ result: await AIService.workshop(parsed.data) })
+        reply({
+          result: await AIService.workshop(parsed.data, (stage) =>
+            socket.emit(EVENTS.QUIZZ.AI_WORKSHOP_PROGRESS, { stage }),
+          ),
+        })
       } catch (error) {
         console.error("AI workshop failed:", error)
         const message = error instanceof Error ? error.message : ""

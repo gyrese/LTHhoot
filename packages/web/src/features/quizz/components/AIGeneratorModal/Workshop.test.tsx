@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock("@rahoot/web/features/game/contexts/socket-context", () => ({
   useSocket: () => ({ socket: mocks.socket }),
+  useEvent: vi.fn(),
 }))
 vi.mock("../../contexts/quizz-editor-context", () => ({
   useQuizzEditor: () => ({
@@ -110,8 +111,13 @@ it("keeps locked questions during targeted revisions and imports only retained p
   fireEvent.click(
     screen.getByRole("button", { name: "Remplacer la question 2" }),
   )
+  fireEvent.click(screen.getByRole("button", { name: "Trop facile" }))
   const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
   expect(request.targetIds).toEqual([request.questions[1].id])
+  expect(request.message).toContain("trop facile")
+  expect(request.feedback).toEqual([
+    { question: "Qui est Donald ?", reason: "Trop facile" },
+  ])
   expect(request.questions[0].locked).toBe(true)
   act(() =>
     callback(null, {
@@ -313,4 +319,23 @@ it("keeps the brief returned by the AI, lets the author edit it and sends it bac
   const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
   expect(request.brief).toBe("Sujet : Pixar\nÀ éviter : A113")
   expect(request.targetIds).toBeUndefined()
+})
+
+it("remembers removed questions and sends the pasted source", () => {
+  render(<AIGeneratorModal open onClose={vi.fn()} />)
+  fireEvent.change(screen.getByRole("textbox", { name: "Texte source" }), {
+    target: { value: "Mickey est né en 1928." },
+  })
+  send("Deux questions Disney")
+  expect((mocks.emit.mock.calls[0][1] as WorkshopRequest).source).toBe(
+    "Mickey est né en 1928.",
+  )
+  replyWithQuestions()
+  fireEvent.click(screen.getByRole("button", { name: "Retirer la question 1" }))
+  send("Encore une")
+  const request = mocks.emit.mock.calls[1][1] as WorkshopRequest
+  expect(request.feedback).toEqual([
+    { question: "Qui est Mickey ?", reason: "Retirée par l’auteur" },
+  ])
+  expect(request.questions).toHaveLength(1)
 })

@@ -137,6 +137,8 @@ Les intégrations sont facultatives : les parties et l’éditeur fonctionnent s
 | `GEMINI_IMAGE_API_KEY`     | Clé dédiée aux images, prioritaire sur la clé commune.                                                                                                                        |
 | `GEMINI_TEXT_MODEL`        | Surcharge du modèle utilisé pour la génération de texte.                                                                                                                      |
 | `GEMINI_WORKSHOP_THINKING` | Niveau de réflexion de l’atelier IA (`MINIMAL`, `LOW`, `MEDIUM`, `HIGH`). Par défaut : celui du modèle ; `LOW` divise le temps par 2 à 3 mais fait plus d’erreurs factuelles. |
+| `GEMINI_REVIEW_THINKING`   | Niveau de réflexion de la relecture des faits de l’atelier (défaut `MEDIUM`).                                                                                                 |
+| `GEMINI_WORKSHOP_REVIEW`   | `off` désactive la relecture des faits (plus rapide, moins fiable).                                                                                                           |
 | `UNSPLASH_ACCESS_KEY`      | Recherche d’images Unsplash.                                                                                                                                                  |
 | `GIPHY_API_KEY`            | Recherche de GIF Giphy.                                                                                                                                                       |
 | `WS_PROXY_TARGET`          | Cible du proxy Vite en développement et en aperçu, `http://localhost:3001` par défaut.                                                                                        |

@@ -3,6 +3,7 @@ import { EVENTS } from "@rahoot/common/constants"
 import type {
   WorkshopRequest,
   WorkshopReply,
+  WorkshopStage,
 } from "@rahoot/common/validators/ai-workshop"
 import type {
   GameResult,
@@ -199,6 +200,7 @@ export interface ServerToClientEvents {
   }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
   [EVENTS.QUIZZ.AI_ERROR]: (_message: string) => void
+  [EVENTS.QUIZZ.AI_WORKSHOP_PROGRESS]: (_data: { stage: WorkshopStage }) => void
   [EVENTS.QUIZZ.AI_GENERATE_SUCCESS]: (_data: {
     questions: Question[]
     // Description du quiz proposée par l'IA (vide si le modèle l'a omise).

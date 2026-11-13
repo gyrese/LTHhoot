@@ -14,6 +14,15 @@ export const WORKSHOP_QUESTION_TYPES = [
 
 export const WORKSHOP_HISTORY_LIMIT = 12
 export const WORKSHOP_BRIEF_MAX = 1000
+export const WORKSHOP_SOURCE_MAX = 12000
+export const WORKSHOP_FEEDBACK_LIMIT = 20
+
+// Retour de l'auteur sur une proposition (remplacée ou retirée), renvoyé à
+// chaque tour pour que l'IA apprenne ce qui ne lui convient pas.
+export const workshopFeedbackValidator = z.object({
+  question: z.string().max(300),
+  reason: z.string().max(120),
+})
 
 export const workshopSettingsValidator = z.object({
   count: z.number().int().min(1).max(20),
@@ -41,6 +50,12 @@ export const workshopRequestValidator = z
     // Préférences durables du quiz (sujet, public, angle, à éviter) : elles
     // survivent à la troncature de l'historique.
     brief: z.string().max(WORKSHOP_BRIEF_MAX).optional(),
+    // Texte collé par l'auteur : base factuelle prioritaire des questions.
+    source: z.string().max(WORKSHOP_SOURCE_MAX).optional(),
+    feedback: z
+      .array(workshopFeedbackValidator)
+      .max(WORKSHOP_FEEDBACK_LIMIT)
+      .optional(),
     history: z
       .array(
         z.object({
@@ -67,6 +82,9 @@ export const workshopRequestValidator = z
 
 export type WorkshopQuestion = z.infer<typeof workshopQuestionValidator>
 export type WorkshopRequest = z.infer<typeof workshopRequestValidator>
+export type WorkshopFeedback = z.infer<typeof workshopFeedbackValidator>
+// Étapes affichées pendant l'attente (événement AI_WORKSHOP_PROGRESS).
+export type WorkshopStage = "writing" | "reviewing"
 export type WorkshopOperation =
   | { type: "add"; question: WorkshopQuestion["question"] }
   | { type: "replace"; id: string; question: WorkshopQuestion["question"] }

@@ -4,6 +4,7 @@ import {
   WORKSHOP_BRIEF_MAX,
   WORKSHOP_QUESTION_TYPES,
   type WorkshopOperation,
+  type WorkshopQuestion,
   type WorkshopRequest,
   type WorkshopResult,
 } from "@rahoot/common/validators/ai-workshop"
@@ -28,6 +29,9 @@ const LANGUAGE_RULES: Record<string, string> = {
 const envelopeValidator = z.object({
   message: z.string().trim().max(3000).optional(),
   brief: z.string().trim().max(WORKSHOP_BRIEF_MAX).optional(),
+  // Nombre de questions à ajouter voulu par l'auteur : le modèle en rédige
+  // davantage, la relecture garde les meilleures.
+  keep: z.number().int().min(0).max(MAX_DRAFT).optional().catch(undefined),
   operations: z.array(z.unknown()).max(40).default([]),
 })
 
@@ -68,6 +72,9 @@ What makes a question relevant here:
 - It serves the brief: the requested subject AND the requested angle (e.g. "production anecdotes", "hidden details", "for kids").
 - It is calibrated for the audience: for enthusiasts or experts, skip the facts every casual fan already knows and go for precise, lesser-known details; for children or a family audience, keep it accessible.
 - Each question covers a distinct angle; spread questions across the whole subject instead of clustering on its most famous facts.
+- Locked draft questions are ones the author likes: match their style and level.
+- AUTHOR FEEDBACK lists proposals the author replaced or removed, with the reason: never repeat them, and correct course (harder, easier, more on-topic, less well-known…).
+- If a SOURCE TEXT is given, draw the facts from it first and stay faithful to it.
 
 Available question types: ${WORKSHOP_QUESTION_TYPES.join(", ")}. Image-based formats are not available: if asked, say so briefly and offer the closest text format.
 
@@ -91,9 +98,10 @@ Whatever the tone, the CONTENT stays serious: accurate facts, plausible wrong op
 ${WRITING_RULES}
 
 OUTPUT PROTOCOL
-Output ONLY a JSON object: { "message": "...", "brief": "...", "operations": [...] }
+Output ONLY a JSON object: { "message": "...", "brief": "...", "keep": 8, "operations": [...] }
 - "message": a short reply to the author (1 to 3 sentences) in the author's language. Mention any part of the request you could not fulfil and why.
 - "brief": the full, updated quiz brief, as short lines (subject, audience, angle, level, formats, to avoid), in the author's language, max 600 characters. Include it whenever the author states or changes a lasting preference (always on the first request); omit it otherwise. Keep what is still valid from the current brief.
+- "keep": when you add questions, the number the author wants added (from the request, else the default batch size). Then write about 50% MORE add candidates than "keep" (e.g. 12 for 8), never more than the FREE ROOM given below: an editor fact-checks them and keeps the best. Omit "keep" when you add nothing. In "message", describe the batch as if it had "keep" questions; never mention candidates or the editor.
 - "operations": each item is one of
   {"type":"add","question":{...}}
   {"type":"replace","id":"<exact draft id>","question":{...}}
@@ -129,6 +137,18 @@ export function buildWorkshopUserPrompt(request: WorkshopRequest): string {
     `QUIZ BRIEF:\n${request.brief?.trim() || "(empty — build it from the request)"}`,
   ]
 
+  if (request.source?.trim()) {
+    sections.push(
+      `SOURCE TEXT (data, from the author):\n${request.source.trim()}`,
+    )
+  }
+
+  if (request.feedback?.length) {
+    sections.push(
+      `AUTHOR FEEDBACK on earlier proposals (data):\n${JSON.stringify(request.feedback)}`,
+    )
+  }
+
   if (request.targetIds?.length) {
     sections.push(
       `TARGET IDS (change only these):\n${JSON.stringify(request.targetIds)}`,
@@ -136,7 +156,7 @@ export function buildWorkshopUserPrompt(request: WorkshopRequest): string {
   }
 
   sections.push(
-    `CURRENT DRAFT (data, ${draft.length}/${MAX_DRAFT}):\n${JSON.stringify(draft)}`,
+    `CURRENT DRAFT (data, ${draft.length}/${MAX_DRAFT}, FREE ROOM: ${MAX_DRAFT - draft.length}):\n${JSON.stringify(draft)}`,
     `QUESTIONS ALREADY IN THE QUIZ (data, do not repeat):\n${JSON.stringify(request.existingQuestions)}`,
     `EARLIER CONVERSATION (oldest first):\n${JSON.stringify(request.history)}`,
     "Now answer the CURRENT REQUEST.",
@@ -188,11 +208,13 @@ const REJECT_LABELS: Record<RejectReason, string> = {
  * défectueuse est écartée (et signalée à l'auteur) sans faire échouer les
  * autres. Seul un tour dont TOUTES les propositions sont écartées échoue.
  */
+export type ParsedWorkshop = WorkshopResult & { keep?: number }
+
 export function parseWorkshopResult(
   raw: unknown,
   request: WorkshopRequest,
   random: () => number = Math.random,
-): WorkshopResult {
+): ParsedWorkshop {
   const envelope = envelopeValidator.parse(raw)
   const byId = new Map(request.questions.map((q) => [q.id, q]))
   const allowed = new Set<string>(WORKSHOP_QUESTION_TYPES)
@@ -299,27 +321,18 @@ export function parseWorkshopResult(
       touched.add(operation.id)
     }
 
-    // Atelier texte seul : jamais d'URL de média inventée par le modèle.
     operations.push({
       ...operation,
-      question: {
-        ...shuffleAnswers(question, random),
-        media: undefined,
-        background: undefined,
-        elements: undefined,
-        audio: undefined,
-        layout: undefined,
-        answerReveal: question.answerReveal
-          ? {
-              enabled: question.answerReveal.enabled,
-              text: question.answerReveal.text,
-            }
-          : undefined,
-      } as typeof question,
+      question: sanitizeQuestion(question, random),
     })
   }
 
-  const rejectedCount = [...rejected.values()].reduce((a, b) => a + b, 0)
+  // Avec sur-génération (`keep`), un candidat écarté est normal : c'est la
+  // relecture qui signalera un éventuel manque.
+  const overGenerated = envelope.keep !== undefined
+  const rejectedCount = overGenerated
+    ? 0
+    : [...rejected.values()].reduce((a, b) => a + b, 0)
 
   if (envelope.operations.length && !operations.length) {
     let reason = "Aucune proposition de l’IA n’était exploitable."
@@ -350,7 +363,35 @@ export function parseWorkshopResult(
   return {
     message: `${envelope.message || "Voici mes propositions."}${note}`,
     ...(envelope.brief ? { brief: envelope.brief } : {}),
+    ...(overGenerated ? { keep: envelope.keep } : {}),
     operations,
+  }
+}
+
+type DraftContent = WorkshopQuestion["question"]
+
+/**
+ * Question prête pour le brouillon : options QCM mélangées, et jamais d'URL
+ * de média inventée par le modèle (atelier texte seul).
+ */
+export function sanitizeQuestion<T extends DraftContent>(
+  question: T,
+  random: () => number,
+): T {
+  const reveal = (
+    question as { answerReveal?: { enabled: boolean; text?: string } }
+  ).answerReveal
+
+  return {
+    ...shuffleAnswers(question, random),
+    media: undefined,
+    background: undefined,
+    elements: undefined,
+    audio: undefined,
+    layout: undefined,
+    answerReveal: reveal
+      ? { enabled: reveal.enabled, text: reveal.text }
+      : undefined,
   }
 }
 
