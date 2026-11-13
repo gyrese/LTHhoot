@@ -126,19 +126,20 @@ Pour une installation neuve, remplace-la par ton propre mot de passe avant la pr
 
 Les intégrations sont facultatives : les parties et l’éditeur fonctionnent sans clé d’API.
 
-| Variable               | Rôle                                                                                                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CONFIG_PATH`          | Chemin du dossier de données. Par défaut, `config/` à la racine lorsque le serveur est lancé par les commandes du projet ; `/app/config` dans l’image Docker. |
-| `WS_PORT`              | Port du serveur Socket.IO, `3001` par défaut. Adapter aussi le proxy si ce port change.                                                                       |
-| `ALLOWED_ORIGIN`       | Origine autorisée pour le temps réel, par exemple `https://quiz.example.com`. En production, sans valeur, seules les requêtes de même origine sont acceptées. |
-| `REMOTE_PIN`           | PIN facultatif de session limitée de pilotage, d’au moins quatre caractères. Le parcours direct `/remote` utilise le code de partie.                          |
-| `GEMINI_API_KEY`       | Clé commune pour les fonctions IA de texte et d’image.                                                                                                        |
-| `GEMINI_TEXT_API_KEY`  | Clé dédiée au texte, prioritaire sur la clé commune.                                                                                                          |
-| `GEMINI_IMAGE_API_KEY` | Clé dédiée aux images, prioritaire sur la clé commune.                                                                                                        |
-| `GEMINI_TEXT_MODEL`    | Surcharge du modèle utilisé pour la génération de texte.                                                                                                      |
-| `UNSPLASH_ACCESS_KEY`  | Recherche d’images Unsplash.                                                                                                                                  |
-| `GIPHY_API_KEY`        | Recherche de GIF Giphy.                                                                                                                                       |
-| `WS_PROXY_TARGET`      | Cible du proxy Vite en développement et en aperçu, `http://localhost:3001` par défaut.                                                                        |
+| Variable                   | Rôle                                                                                                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONFIG_PATH`              | Chemin du dossier de données. Par défaut, `config/` à la racine lorsque le serveur est lancé par les commandes du projet ; `/app/config` dans l’image Docker.                 |
+| `WS_PORT`                  | Port du serveur Socket.IO, `3001` par défaut. Adapter aussi le proxy si ce port change.                                                                                       |
+| `ALLOWED_ORIGIN`           | Origine autorisée pour le temps réel, par exemple `https://quiz.example.com`. En production, sans valeur, seules les requêtes de même origine sont acceptées.                 |
+| `REMOTE_PIN`               | PIN facultatif de session limitée de pilotage, d’au moins quatre caractères. Le parcours direct `/remote` utilise le code de partie.                                          |
+| `GEMINI_API_KEY`           | Clé commune pour les fonctions IA de texte et d’image.                                                                                                                        |
+| `GEMINI_TEXT_API_KEY`      | Clé dédiée au texte, prioritaire sur la clé commune.                                                                                                                          |
+| `GEMINI_IMAGE_API_KEY`     | Clé dédiée aux images, prioritaire sur la clé commune.                                                                                                                        |
+| `GEMINI_TEXT_MODEL`        | Surcharge du modèle utilisé pour la génération de texte.                                                                                                                      |
+| `GEMINI_WORKSHOP_THINKING` | Niveau de réflexion de l’atelier IA (`MINIMAL`, `LOW`, `MEDIUM`, `HIGH`). Par défaut : celui du modèle ; `LOW` divise le temps par 2 à 3 mais fait plus d’erreurs factuelles. |
+| `UNSPLASH_ACCESS_KEY`      | Recherche d’images Unsplash.                                                                                                                                                  |
+| `GIPHY_API_KEY`            | Recherche de GIF Giphy.                                                                                                                                                       |
+| `WS_PROXY_TARGET`          | Cible du proxy Vite en développement et en aperçu, `http://localhost:3001` par défaut.                                                                                        |
 
 En développement, `pnpm dev` charge `.env`. Avec Docker, ajoute les variables voulues dans la section `environment` du service : un fichier `.env` seul ne les transmet pas automatiquement au conteneur. Le [compose.yml du dépôt](compose.yml) transmet déjà les principales clés d’intégration.
 

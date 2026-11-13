@@ -162,13 +162,13 @@ export default function AIGeneratorModal({ open, onClose }: Props) {
                   aria-label="Brief du quiz"
                   value={session.brief}
                   maxLength={1000}
-                  rows={3}
+                  rows={5}
                   disabled={loading}
                   placeholder="Sujet, public, angle, niveau, formats, à éviter…"
                   onChange={(e) =>
                     setSession((prev) => ({ ...prev, brief: e.target.value }))
                   }
-                  className="focus-ring border-border bg-surface text-ink mt-2 w-full resize-y rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                  className="focus-ring border-border bg-surface text-ink mt-2 field-sizing-content max-h-48 w-full resize-y rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                 />
               </details>
             )}

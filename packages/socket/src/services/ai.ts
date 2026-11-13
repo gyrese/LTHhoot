@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai"
+import { GoogleGenAI, ThinkingLevel } from "@google/genai"
 import { AI_TIMEOUT_MS, withTimeout } from "@rahoot/socket/utils/timeout"
 import { questionValidator } from "@rahoot/common/validators/quizz"
 import type { Question, QuestionDifficulty } from "@rahoot/common/types/game"
@@ -23,6 +23,15 @@ import {
 // justesse des faits et l'intérêt des questions, pour une latence similaire.
 const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash"
 
+// Réflexion de l'atelier : par défaut, celle du modèle. Mesuré le 2026-11-13
+// (8 questions) : LOW ≈ 12-15 s mais une date fausse et des questions plus
+// banales ; MEDIUM et défaut ≈ 27-38 s sans erreur relevée. L'exactitude
+// prime. Surchargeable (MINIMAL, LOW, MEDIUM, HIGH) sans redéployer.
+const WORKSHOP_THINKING =
+  process.env.GEMINI_WORKSHOP_THINKING?.toUpperCase() as
+    | ThinkingLevel
+    | undefined
+
 export class AIService {
   private static genAI: GoogleGenAI | null = null
 
@@ -35,6 +44,9 @@ export class AIService {
         contents: buildWorkshopUserPrompt(request),
         config: {
           systemInstruction: buildWorkshopSystemPrompt(request),
+          ...(WORKSHOP_THINKING
+            ? { thinkingConfig: { thinkingLevel: WORKSHOP_THINKING } }
+            : {}),
           responseMimeType: "application/json",
           temperature: 0.6,
           maxOutputTokens: 16000,

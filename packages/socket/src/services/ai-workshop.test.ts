@@ -258,3 +258,35 @@ it("puts the current request first, with the brief, draft and history as context
   expect(system).not.toContain('imageQuery"')
   expect(system).not.toContain('{ "description": "...", "questions": [ ... ] }')
 })
+
+it("shuffles MCQ options and remaps the correct answers", () => {
+  const mcq = {
+    ...replacement,
+    answers: ["Mercure", "Mars", "Vénus", "Jupiter"],
+    solutions: [0],
+  }
+  const result = parseWorkshopResult(
+    { message: "OK", operations: [{ type: "add", question: mcq }] },
+    request,
+    () => 0,
+  )
+  const shuffled = result.operations[0] as {
+    question: { answers: string[]; solutions: number[] }
+  }
+  expect(shuffled.question.answers).toEqual([
+    "Mars",
+    "Vénus",
+    "Jupiter",
+    "Mercure",
+  ])
+  expect(shuffled.question.solutions).toEqual([3])
+
+  for (let run = 0; run < 20; run += 1) {
+    const { question } = parseWorkshopResult(
+      { message: "OK", operations: [{ type: "add", question: mcq }] },
+      request,
+    ).operations[0] as typeof shuffled
+    expect(question.answers[question.solutions[0]]).toBe("Mercure")
+    expect([...question.answers].sort()).toEqual([...mcq.answers].sort())
+  }
+})

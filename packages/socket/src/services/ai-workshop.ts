@@ -191,6 +191,7 @@ const REJECT_LABELS: Record<RejectReason, string> = {
 export function parseWorkshopResult(
   raw: unknown,
   request: WorkshopRequest,
+  random: () => number = Math.random,
 ): WorkshopResult {
   const envelope = envelopeValidator.parse(raw)
   const byId = new Map(request.questions.map((q) => [q.id, q]))
@@ -302,7 +303,7 @@ export function parseWorkshopResult(
     operations.push({
       ...operation,
       question: {
-        ...question,
+        ...shuffleAnswers(question, random),
         media: undefined,
         background: undefined,
         elements: undefined,
@@ -350,6 +351,36 @@ export function parseWorkshopResult(
     message: `${envelope.message || "Voici mes propositions."}${note}`,
     ...(envelope.brief ? { brief: envelope.brief } : {}),
     operations,
+  }
+}
+
+/**
+ * Mélange les options d'un QCM et remappe les bonnes réponses. Mesuré le
+ * 2026-11-13 : malgré la consigne, le modèle place la bonne réponse en
+ * premier dans quasiment tous ses QCM — les joueurs le repéreraient vite.
+ */
+function shuffleAnswers<T extends { type: string }>(
+  question: T,
+  random: () => number,
+): T {
+  if (question.type !== "mcq") {
+    return question
+  }
+
+  const mcq = question as T & { answers: string[]; solutions: number[] }
+  const order = mcq.answers.map((_, index) => index)
+
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1))
+    ;[order[i], order[j]] = [order[j], order[i]]
+  }
+
+  return {
+    ...mcq,
+    answers: order.map((index) => mcq.answers[index]),
+    solutions: mcq.solutions
+      .map((solution) => order.indexOf(solution))
+      .sort((a, b) => a - b),
   }
 }
 
