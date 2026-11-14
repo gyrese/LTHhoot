@@ -23,7 +23,7 @@ export default function DoublePointsAnnouncement() {
       !message.current ||
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
     ) {
-      return
+      return undefined
     }
 
     const timeline = createTimeline({ defaults: { ease: "outCubic" } })
