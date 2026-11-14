@@ -15,10 +15,7 @@ import {
   withoutReview,
   type ReviewedWorkshop,
 } from "./ai-review"
-import {
-  buildExplanationsPrompt,
-  parseExplanations,
-} from "./ai-explanations"
+import { buildExplanationsPrompt, parseExplanations } from "./ai-explanations"
 import type { ExplanationsRequest } from "@rahoot/common/validators/ai-explanations"
 import {
   buildWorkshopSystemPrompt,
