@@ -1,4 +1,5 @@
 import type { CommonStatusDataMap } from "@rahoot/common/types/game/status"
+import { ROUND_EVENT_TYPE } from "@rahoot/common/types/round-event"
 import dateImg from "@rahoot/web/assets/game/types/date.png"
 import dropPinImg from "@rahoot/web/assets/game/types/drop_pin.png"
 import gridImg from "@rahoot/web/assets/game/types/grid.png"
@@ -12,6 +13,7 @@ import { ROUND_EVENT_META } from "@rahoot/web/features/game/utils/roundEventMeta
 import clsx from "clsx"
 import { motion, AnimatePresence } from "motion/react"
 import { useTranslation } from "react-i18next"
+import DoublePointsAnnouncement from "./DoublePointsAnnouncement"
 
 type Props = {
   data: CommonStatusDataMap["SHOW_PREPARED"]
@@ -47,32 +49,36 @@ const Prepared = ({ data: { questionNumber, type, roundEvent } }: Props) => {
           exit={{ opacity: 0, y: -20 }}
           className="flex flex-col items-center gap-8"
         >
-          {eventMeta && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className={clsx(
-                "flex items-center gap-3 rounded-2xl border px-6 py-3 backdrop-blur-sm",
-                eventMeta.accent,
-                eventMeta.border,
-              )}
-            >
-              <span className="text-3xl">{eventMeta.icon}</span>
-              <div className="flex flex-col">
-                <span
-                  className={clsx(
-                    "text-xl font-black tracking-wide uppercase",
-                    eventMeta.text,
-                  )}
-                >
-                  {t(eventMeta.labelKey)}
-                </span>
-                <span className="text-sm text-white/60">
-                  {t(eventMeta.hintKey)}
-                </span>
-              </div>
-            </motion.div>
+          {roundEvent === ROUND_EVENT_TYPE.DOUBLE_POINTS ? (
+            <DoublePointsAnnouncement />
+          ) : (
+            eventMeta && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className={clsx(
+                  "flex items-center gap-3 rounded-2xl border px-6 py-3 backdrop-blur-sm",
+                  eventMeta.accent,
+                  eventMeta.border,
+                )}
+              >
+                <span className="text-3xl">{eventMeta.icon}</span>
+                <div className="flex flex-col">
+                  <span
+                    className={clsx(
+                      "text-xl font-black tracking-wide uppercase",
+                      eventMeta.text,
+                    )}
+                  >
+                    {t(eventMeta.labelKey)}
+                  </span>
+                  <span className="text-sm text-white/60">
+                    {t(eventMeta.hintKey)}
+                  </span>
+                </div>
+              </motion.div>
+            )
           )}
 
           {/* Header */}
