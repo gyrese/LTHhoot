@@ -340,6 +340,12 @@ export interface ClientToServerEvents {
     id: string
     folder: string | null
   }) => void
+  // Copie d'un quiz dans la bibliothèque de la session. `subject` est le
+  // titre (déjà traduit) de la copie ; l'ack renvoie le nouvel id.
+  [EVENTS.QUIZZ.DUPLICATE]: (
+    _data: { id: string; subject: string },
+    _ack: (_result: QuizSaveAck) => void,
+  ) => void
   [EVENTS.QUIZZ.SET_PUBLIC_INFO]: (_data: {
     id: string
     publicName: string | null

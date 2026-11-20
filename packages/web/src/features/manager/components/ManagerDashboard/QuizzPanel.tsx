@@ -36,6 +36,7 @@ import {
   X,
   Share2,
   Archive,
+  Copy,
   FolderInput,
   FolderOpen,
   LayoutGrid,
@@ -558,6 +559,29 @@ const QuizzPanel = ({
     })
   }
 
+  // La copie arrive via emitConfig ; on la sélectionne (hors modes de
+  // sélection multiple) pour qu'elle soit repérable dans la grille.
+  const duplicateQuizz = (id: string, subject: string) => {
+    if (!socket?.connected) {
+      toast.error(t("manager:connection.lost"))
+      return
+    }
+    socket.emit(
+      EVENTS.QUIZZ.DUPLICATE,
+      { id, subject: t("manager:library.copyName", { name: subject }) },
+      (result) => {
+        if ("error" in result) {
+          toast.error(translateServerError(t, result.error))
+          return
+        }
+        toast.success(t("manager:library.duplicated", { name: subject }))
+        if (!eveningMode && !organizing) {
+          setSelectedQuizz(result.id)
+        }
+      },
+    )
+  }
+
   const openContextMenu = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement
     const folder = target.closest<HTMLElement>("[data-library-folder]")?.dataset
@@ -1076,6 +1100,15 @@ const QuizzPanel = ({
                         icon: <SquarePen className="size-4" />,
                         onSelect: edit,
                       },
+                    ]
+                  : []),
+                {
+                  label: t("manager:library.duplicate"),
+                  icon: <Copy className="size-4" />,
+                  onSelect: () => duplicateQuizz(q.id, q.subject),
+                },
+                ...(!isReadonly
+                  ? [
                       {
                         label: t("manager:library.move"),
                         icon: <FolderInput className="size-4" />,

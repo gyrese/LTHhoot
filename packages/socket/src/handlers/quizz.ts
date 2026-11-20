@@ -235,6 +235,37 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     }),
   )
 
+  // Lecture via readScope (l'admin peut copier un quiz invité dans sa propre
+  // bibliothèque), écriture toujours dans la bibliothèque de la session.
+  socket.on(
+    EVENTS.QUIZZ.DUPLICATE,
+    manager.withAnyAuth(socket, async (session, { id, subject }, ack) => {
+      if (typeof ack !== "function") {
+        return
+      }
+
+      try {
+        const scope = readScope(session, id)
+        const saved = await Config.duplicateQuizz(
+          scope,
+          subject,
+          ownerFor(session),
+        )
+
+        ack(saved)
+        emitConfig(socket)
+      } catch (error) {
+        console.error("Failed to duplicate quizz:", error)
+        ack({
+          error:
+            error instanceof Error && error.message.startsWith("errors:")
+              ? error.message
+              : "errors:quizz.failedToSave",
+        })
+      }
+    }),
+  )
+
   socket.on(
     EVENTS.QUIZZ.SET_PUBLIC_INFO,
     manager.withAnyAuth(socket, (session, { id, publicName, description }) => {

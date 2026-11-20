@@ -573,6 +573,33 @@ class Config {
     return { id, updatedAt }
   }
 
+  // Copie un quiz (lu dans `source`) vers la bibliothèque `targetOwner`, sous
+  // un nouvel id. La copie d'un quiz archivé revient dans son dossier
+  // d'origine ; une copie inter-bibliothèques (admin ← invité) n'hérite pas
+  // du dossier, propre à la bibliothèque source.
+  static duplicateQuizz(
+    source: { id: string; owner?: string },
+    subject: string,
+    targetOwner?: string,
+  ): Promise<{ id: string; updatedAt: number }> {
+    const copy: Partial<QuizzWithId> = structuredClone(
+      Config.quizzById(source.id, source.owner),
+    )
+    const folder = isArchived(copy.folder) ? copy.archivedFrom : copy.folder
+
+    delete copy.id
+    delete copy.updatedAt
+    delete copy.archivedAt
+    delete copy.archivedFrom
+    delete copy.folder
+
+    if (source.owner === targetOwner && folder) {
+      copy.folder = folder
+    }
+
+    return Config.saveQuizz({ ...copy, subject }, targetOwner)
+  }
+
   // ── Comptes invités ─────────────────────────────────────────────────────────
   // Stockés dans game.json (clé `guests`), à côté du mot de passe manager.
   // Chaque compte possède sa bibliothèque physiquement isolée (guests/<id>/quizz).
